@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "maxRetries": 3,
+  "qaGates": [
+    {
+      "name": "ESLint",
+      "enabled": true,
+      "command": "pnpm eslint . --ext .ts,.tsx",
+      "timeout": 60000,
+      "failOnError": true,
+      "order": 1
+    },
+    {
+      "name": "TypeScript",
+      "enabled": true,
+      "command": "pnpm tsc --noEmit",
+      "timeout": 120000,
+      "failOnError": true,
+      "order": 2
+    },
+    {
+      "name": "Tests",
+      "enabled": true,
+      "command": "pnpm test --run",
+      "timeout": 300000,
+      "failOnError": false,
+      "order": 3
+    },
+    {
+      "name": "Build",
+      "enabled": false,
+      "command": "pnpm build",
+      "timeout": 180000,
+      "failOnError": true,
+      "order": 4
+    }
+  ]
+}

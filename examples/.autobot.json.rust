@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "maxRetries": 3,
+  "qaGates": [
+    {
+      "name": "Cargo Format Check",
+      "enabled": true,
+      "command": "cargo fmt --check",
+      "timeout": 30000,
+      "failOnError": true,
+      "order": 1
+    },
+    {
+      "name": "Clippy",
+      "enabled": true,
+      "command": "cargo clippy -- -D warnings",
+      "timeout": 120000,
+      "failOnError": true,
+      "order": 2
+    },
+    {
+      "name": "Cargo Check",
+      "enabled": true,
+      "command": "cargo check",
+      "timeout": 180000,
+      "failOnError": true,
+      "order": 3
+    },
+    {
+      "name": "Cargo Test",
+      "enabled": true,
+      "command": "cargo test",
+      "timeout": 300000,
+      "failOnError": true,
+      "order": 4
+    }
+  ]
+}

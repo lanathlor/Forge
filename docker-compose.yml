@@ -1,0 +1,37 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - /home/lanath/Work:/workspace
+    environment:
+      - DATABASE_URL=/app/dev.db
+      - WORKSPACE_ROOT=/workspace
+      - CLAUDE_CODE_PATH=claude
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    working_dir: /app
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: autobot
+      POSTGRES_USER: autobot
+      POSTGRES_PASSWORD: autobot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    profiles:
+      - postgres
+
+volumes:
+  postgres_data:

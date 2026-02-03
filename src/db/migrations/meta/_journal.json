@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1769975111681,
+      "tag": "0000_right_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1770028470231,
+      "tag": "0001_loving_old_lace",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1770038003322,
+      "tag": "0002_loose_mother_askani",
+      "breakpoints": true
+    }
+  ]
+}

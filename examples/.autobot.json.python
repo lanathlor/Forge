@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "maxRetries": 3,
+  "qaGates": [
+    {
+      "name": "Ruff Linting",
+      "enabled": true,
+      "command": "ruff check .",
+      "timeout": 60000,
+      "failOnError": true,
+      "order": 1
+    },
+    {
+      "name": "Ruff Format",
+      "enabled": true,
+      "command": "ruff format --check .",
+      "timeout": 30000,
+      "failOnError": true,
+      "order": 2
+    },
+    {
+      "name": "MyPy Type Checking",
+      "enabled": true,
+      "command": "mypy .",
+      "timeout": 120000,
+      "failOnError": true,
+      "order": 3
+    },
+    {
+      "name": "Pytest",
+      "enabled": true,
+      "command": "pytest",
+      "timeout": 300000,
+      "failOnError": false,
+      "order": 4
+    }
+  ]
+}
