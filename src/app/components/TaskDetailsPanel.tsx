@@ -51,83 +51,17 @@ function TaskTabs({ task, taskId, output, outputEndRef, onReload }: { task: Task
   );
 }
 
-function useTaskLoader(taskId: string) {
+export function TaskDetailsPanel({ taskId, updates }: TaskDetailsPanelProps) {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [output, setOutput] = useState('');
-
-  const loadTask = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/tasks/${taskId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTask(data.task);
-        // Set initial output from database
-        setOutput(data.task.claudeOutput || '');
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Reset output when taskId changes
-    setOutput('');
-    setTask(null);
-    loadTask();
-  }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return { task, setTask, loading, output, setOutput, loadTask };
-}
-
-function useOutputUpdates(updates: TaskUpdate[], taskId: string, setOutput: React.Dispatch<React.SetStateAction<string>>, outputEndRef: React.RefObject<HTMLDivElement | null>) {
-  const processedCountRef = useRef(0);
-  const currentTaskIdRef = useRef(taskId);
-
-  useEffect(() => {
-    // Reset processed count when task changes
-    if (currentTaskIdRef.current !== taskId) {
-      currentTaskIdRef.current = taskId;
-      processedCountRef.current = 0;
-    }
-
-    // Filter updates for this specific task
-    const outputUpdates = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId);
-
-    // Only process new updates we haven't seen yet
-    const newUpdates = outputUpdates.slice(processedCountRef.current);
-
-    if (newUpdates.length > 0) {
-      const newOutput = newUpdates.map((x) => x.output || '').join('');
-      setOutput(prev => prev + newOutput);
-      processedCountRef.current = outputUpdates.length;
-
-      setTimeout(() => {
-        outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
-  }, [updates, taskId, setOutput, outputEndRef]);
-}
-
-function useStatusUpdates(updates: TaskUpdate[], taskId: string, task: Task | null, setTask: React.Dispatch<React.SetStateAction<Task | null>>, loadTask: () => Promise<void>) {
-  useEffect(() => {
-    const statusUpdates = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId);
-    const latestUpdate = statusUpdates[statusUpdates.length - 1];
-    if (latestUpdate?.status && task && task.status !== latestUpdate.status) {
-      setTask({ ...task, status: latestUpdate.status });
-      if (['waiting_qa', 'waiting_approval', 'completed', 'failed', 'approved'].includes(latestUpdate.status)) setTimeout(() => loadTask(), 500);
-    }
-  }, [updates, taskId, task, setTask, loadTask]);
-}
-
-export function TaskDetailsPanel({ taskId, updates }: TaskDetailsPanelProps) {
   const outputEndRef = useRef<HTMLDivElement>(null);
-  const { task, setTask, loading, output, setOutput, loadTask } = useTaskLoader(taskId);
-  useOutputUpdates(updates, taskId, setOutput, outputEndRef);
-  useStatusUpdates(updates, taskId, task, setTask, loadTask);
+
+  const loadTask = async () => { try { setLoading(true); const res = await fetch(`/api/tasks/${taskId}`); if (res.ok) { const data = await res.json(); setTask(data.task); if (data.task.claudeOutput) setOutput(data.task.claudeOutput); } } catch (e) { console.error(e); } finally { setLoading(false); } };
+  useEffect(() => { loadTask(); }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const u = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId); if (u.length > 0) { setOutput(u.map((x) => x.output || '').join('')); outputEndRef.current?.scrollIntoView({ behavior: 'smooth' }); } }, [updates, taskId]);
+  useEffect(() => { const u = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId); const last = u[u.length - 1]; if (u.length > 0 && last?.status && task) setTask({ ...task, status: last.status }); }, [updates, taskId, task]);
+
   if (loading) return <LoadingState />;
   if (!task) return <NotFoundState />;
   return <Card className="h-full flex flex-col"><TaskHeader task={task} /><CardContent className="flex-1 overflow-hidden"><TaskTabs task={task} taskId={taskId} output={output} outputEndRef={outputEndRef} onReload={loadTask} /></CardContent></Card>;
