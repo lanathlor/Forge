@@ -1,18 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as diffModule from '../diff';
 
-const { mockExecAsync } = vi.hoisted(() => ({
+const { mockExecAsync, mockGetContainerPath } = vi.hoisted(() => ({
   mockExecAsync: vi.fn(),
+  mockGetContainerPath: vi.fn((path: string) => path),
 }));
 
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-  default: { exec: vi.fn() },
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(() => mockExecAsync),
-  default: { promisify: vi.fn(() => mockExecAsync) },
+vi.mock('@/lib/qa-gates/command-executor', () => ({
+  execAsync: mockExecAsync,
+  getContainerPath: mockGetContainerPath,
 }));
 
 describe('git/diff', () => {
@@ -144,17 +140,17 @@ M\tfile3.ts`;
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         1,
         'git diff commit-abc HEAD',
-        { cwd: '/repo/path' }
+        { cwd: '/repo/path', timeout: 30000 }
       );
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         2,
         'git diff commit-abc HEAD --numstat',
-        { cwd: '/repo/path' }
+        { cwd: '/repo/path', timeout: 30000 }
       );
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         3,
         'git diff commit-abc HEAD --name-status',
-        { cwd: '/repo/path' }
+        { cwd: '/repo/path', timeout: 30000 }
       );
     });
   });

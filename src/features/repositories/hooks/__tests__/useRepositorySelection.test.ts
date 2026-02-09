@@ -202,7 +202,9 @@ describe('useRepositorySelection', () => {
 
       onSelect.mockClear();
 
-      result.current.handleSelect(mockRepo2);
+      act(() => {
+        result.current.handleSelect(mockRepo2);
+      });
 
       expect(onSelect).toHaveBeenCalledWith(mockRepo2);
       expect(onSelect).toHaveBeenCalledTimes(1);

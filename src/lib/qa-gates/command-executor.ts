@@ -38,16 +38,42 @@ export function getBashPath(): string {
 }
 
 /**
- * Convert host path to container path
+ * Convert host path to container path (only if running in container)
  * Host: /home/lanath/Work/* -> Container: /workspace/*
  */
 export function getContainerPath(hostPath: string): string {
-  const workspaceRoot = process.env.WORKSPACE_ROOT || '/workspace';
-  // If we're in a container and path starts with /home/lanath/Work
-  if (hostPath.startsWith('/home/lanath/Work')) {
+  // Check if we're running in a Docker container
+  // If WORKSPACE_ROOT is not set and /workspace doesn't exist, we're on the host
+  const workspaceRoot = process.env.WORKSPACE_ROOT;
+
+  // Only do path conversion if WORKSPACE_ROOT is explicitly set (indicating we're in a container)
+  if (workspaceRoot && hostPath.startsWith('/home/lanath/Work')) {
     return hostPath.replace('/home/lanath/Work', workspaceRoot);
   }
+
+  // Otherwise, return the original path (we're running on host)
   return hostPath;
+}
+
+function getGitSafeEnv() {
+  return {
+    ...process.env,
+    GIT_CONFIG_COUNT: '3',
+    GIT_CONFIG_KEY_0: 'safe.directory',
+    GIT_CONFIG_VALUE_0: '*',
+    GIT_CONFIG_KEY_1: 'user.name',
+    GIT_CONFIG_VALUE_1: 'Autobot',
+    GIT_CONFIG_KEY_2: 'user.email',
+    GIT_CONFIG_VALUE_2: 'autobot@example.com',
+  };
+}
+
+function createCommandError(code: number | null, stdout: string, stderr: string): CommandError {
+  const error: CommandError = new Error(`Command failed with exit code ${code}`);
+  error.stdout = stdout;
+  error.stderr = stderr;
+  error.code = code;
+  return error;
 }
 
 /**
@@ -59,39 +85,29 @@ export async function execAsync(
   options: ExecOptions
 ): Promise<ExecResult> {
   return new Promise((resolve, reject) => {
-    const bashPath = getBashPath();
-    const child = spawn(bashPath, ['-c', command], {
+    console.log(`[execAsync] Running command: ${command}`);
+    console.log(`[execAsync] Working directory: ${options.cwd}`);
+
+    const child = spawn(getBashPath(), ['-c', command], {
       cwd: options.cwd,
-      env: process.env,
+      env: getGitSafeEnv(),
       timeout: options.timeout,
     });
 
     let stdout = '';
     let stderr = '';
 
-    child.stdout?.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    child.stderr?.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    child.on('error', (error) => {
-      reject(error);
-    });
+    child.stdout?.on('data', (data) => { stdout += data.toString(); });
+    child.stderr?.on('data', (data) => { stderr += data.toString(); });
+    child.on('error', (error) => { reject(error); });
 
     child.on('close', (code) => {
       if (code === 0) {
+        console.log(`[execAsync] Command succeeded`);
         resolve({ stdout, stderr });
       } else {
-        const error: CommandError = new Error(
-          `Command failed with exit code ${code}`
-        );
-        error.stdout = stdout;
-        error.stderr = stderr;
-        error.code = code;
-        reject(error);
+        console.error(`[execAsync] Command failed with exit code ${code}`);
+        reject(createCommandError(code, stdout, stderr));
       }
     });
   });

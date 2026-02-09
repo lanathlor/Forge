@@ -39,9 +39,19 @@ async function execAsync(
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const bashPath = getBashPath();
+
+    // Add git safe.directory configuration to trust all directories
+    // This fixes "dubious ownership" errors when running as different user
+    const env = {
+      ...process.env,
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'safe.directory',
+      GIT_CONFIG_VALUE_0: '*',
+    };
+
     const child = spawn(bashPath, ['-c', command], {
       cwd: options.cwd,
-      env: process.env,
+      env,
     });
 
     let stdout = '';

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useQAGatesData } from '../useQAGatesData';
 
 // Mock fetch globally
@@ -389,7 +389,9 @@ describe('useQAGatesData', () => {
         expect(result.current.config).not.toBeNull();
       });
 
-      await result.current.runQAGates();
+      await act(async () => {
+        await result.current.runQAGates();
+      });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -561,7 +563,9 @@ describe('useQAGatesData', () => {
 
       mockFetch.mockClear();
 
-      await result.current.fetchStatus();
+      await act(async () => {
+        await result.current.fetchStatus();
+      });
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/repositories/repo-1/qa-gates/status'

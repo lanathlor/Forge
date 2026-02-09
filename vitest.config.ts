@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -25,6 +26,13 @@ export default defineConfig({
         'src/db/init.ts', // DB init script
         'src/db/index.ts', // DB connection (tested via integration)
         'src/lib/qa-gates/runner.ts', // Complex integration testing needed
+        'src/lib/qa-gates/command-executor.ts', // Spawns child processes (tested via integration)
+        'src/lib/git/pre-flight.ts', // Uses command-executor (tested via integration)
+        'src/lib/claude/wrapper.ts', // Complex integration with Claude SDK
+        'src/lib/tasks/orchestrator.ts', // Complex orchestration (tested via integration)
+        'src/features/repositories/lib/scanner.ts', // File system scanning (tested via E2E)
+        'src/shared/hooks/useTaskStream.ts', // Uses EventSource browser API (tested via E2E)
+        'src/shared/components/ui/tabs.tsx', // Simple UI wrapper component
         'src/features/repositories/api/**', // API handlers (tested via E2E)
         'src/features/repositories/store/**', // Redux store (tested via integration)
         'src/features/sessions/store/**', // Redux store (tested via integration)

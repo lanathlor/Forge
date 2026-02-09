@@ -16,6 +16,8 @@ const mockDb = {
 
 const mockClaudeWrapper = {
   executeTask: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
 };
 
 const mockRunPreFlightChecks = vi.fn();
@@ -50,6 +52,16 @@ vi.mock('@/lib/qa-gates/task-qa-service', () => ({
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(() => 'mock-eq'),
+}));
+
+vi.mock('@/lib/events/task-events', () => ({
+  taskEvents: {
+    emit: vi.fn(),
+  },
+}));
+
+vi.mock('@/lib/qa-gates/command-executor', () => ({
+  getContainerPath: vi.fn((path: string) => path),
 }));
 
 describe('Task Orchestrator', () => {
@@ -93,7 +105,7 @@ describe('Task Orchestrator', () => {
       changedFiles: ['file1.ts', 'file2.ts'],
     });
 
-    mockRunTaskQAGates.mockResolvedValue(undefined);
+    mockRunTaskQAGates.mockResolvedValue({ results: [], passed: true });
   });
 
   describe('Module Structure', () => {

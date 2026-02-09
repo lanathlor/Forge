@@ -3,7 +3,7 @@ import { qaGateResults, tasks } from '@/db/schema';
 import type { QAGateStatus } from '@/db/schema/qa-gates';
 import { eq } from 'drizzle-orm';
 import { loadRepositoryConfig, type QAGateConfig } from './config-loader';
-import { execAsync } from './command-executor';
+import { execAsync, getContainerPath } from './command-executor';
 
 interface GateResult {
   gateName: string;
@@ -169,9 +169,12 @@ async function runSingleGate(
 ): Promise<GateResult> {
   const startTime = Date.now();
 
+  // Convert host path to container path
+  const containerPath = getContainerPath(repoPath);
+
   try {
     const { stdout } = await execAsync(gate.command, {
-      cwd: repoPath,
+      cwd: containerPath,
       timeout: gate.timeout || 60000,
     });
 

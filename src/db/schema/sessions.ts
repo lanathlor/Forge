@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 import { repositories } from './repositories';
+import { tasks } from './tasks';
 
 export type SessionStatus = 'active' | 'paused' | 'completed' | 'abandoned';
 
@@ -25,11 +26,12 @@ export const sessions = sqliteTable('sessions', {
     .$defaultFn(() => new Date()),
 });
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
+export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   repository: one(repositories, {
     fields: [sessions.repositoryId],
     references: [repositories.id],
   }),
+  tasks: many(tasks),
 }));
 
 export type Session = typeof sessions.$inferSelect;

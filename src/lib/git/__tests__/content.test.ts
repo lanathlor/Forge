@@ -1,18 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as contentModule from '../content';
 
-const { mockExecAsync } = vi.hoisted(() => ({
+const { mockExecAsync, mockGetContainerPath } = vi.hoisted(() => ({
   mockExecAsync: vi.fn(),
+  mockGetContainerPath: vi.fn((path: string) => path),
 }));
 
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-  default: { exec: vi.fn() },
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(() => mockExecAsync),
-  default: { promisify: vi.fn(() => mockExecAsync) },
+vi.mock('@/lib/qa-gates/command-executor', () => ({
+  execAsync: mockExecAsync,
+  getContainerPath: mockGetContainerPath,
 }));
 
 describe('git/content', () => {
@@ -34,6 +30,7 @@ describe('git/content', () => {
       expect(content).toBe(mockStdout);
       expect(mockExecAsync).toHaveBeenCalledWith('git show abc123:src/file.ts', {
         cwd: '/repo/path',
+        timeout: 30000,
       });
     });
 
@@ -47,6 +44,7 @@ describe('git/content', () => {
 
       expect(mockExecAsync).toHaveBeenCalledWith('git show HEAD:src/file.ts', {
         cwd: '/repo/path',
+        timeout: 30000,
       });
     });
 

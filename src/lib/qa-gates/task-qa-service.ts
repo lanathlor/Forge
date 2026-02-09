@@ -3,6 +3,7 @@ import { tasks, qaGateResults } from '@/db/schema';
 import type { QAGateStatus } from '@/db/schema/qa-gates';
 import { eq } from 'drizzle-orm';
 import { runQAGates } from '@/lib/qa-gates/runner';
+import { taskEvents } from '@/lib/events/task-events';
 
 interface GateResult {
   gateName: string;
@@ -40,15 +41,27 @@ export async function clearOldResults(taskId: string) {
  */
 export async function updateTaskStatus(
   taskId: string,
-  allPassed: boolean
+  allPassed: boolean,
+  sessionId?: string
 ) {
+  const status = allPassed ? 'waiting_approval' : 'qa_failed';
+
   await db
     .update(tasks)
     .set({
-      status: allPassed ? 'waiting_approval' : 'qa_failed',
+      status,
       updatedAt: new Date(),
     })
     .where(eq(tasks.id, taskId));
+
+  // Emit status update
+  if (sessionId) {
+    taskEvents.emit('task:update', {
+      sessionId,
+      taskId,
+      status,
+    });
+  }
 }
 
 /**
@@ -62,19 +75,39 @@ export async function runTaskQAGates(taskId: string) {
   }
 
   const repoPath = task.session.repository.path;
+  const sessionId = task.sessionId;
 
   // Clear old results
   await clearOldResults(taskId);
 
+  // Emit QA start
+  taskEvents.emit('task:update', {
+    sessionId,
+    taskId,
+    status: 'qa_running',
+  });
+
   // Run gates
   const results: GateResult[] = await runQAGates(taskId, repoPath);
+
+  // Emit individual gate results
+  for (const result of results) {
+    taskEvents.emit('qa:update', {
+      sessionId,
+      taskId,
+      gateName: result.gateName,
+      status: result.status,
+      output: result.output,
+      errors: result.errors,
+    });
+  }
 
   // Update task status based on results
   const allPassed = results.every(
     (r) => r.status === 'passed' || r.status === 'skipped'
   );
 
-  await updateTaskStatus(taskId, allPassed);
+  await updateTaskStatus(taskId, allPassed, sessionId);
 
   return { results, passed: allPassed };
 }

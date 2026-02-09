@@ -1,7 +1,4 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execAsync, getContainerPath } from '@/lib/qa-gates/command-executor';
 
 export async function getFileContent(
   repoPath: string,
@@ -9,9 +6,12 @@ export async function getFileContent(
   commit: string = 'HEAD'
 ): Promise<string> {
   try {
+    // Convert host path to container path
+    const containerPath = getContainerPath(repoPath);
+
     const { stdout } = await execAsync(
       `git show ${commit}:${filePath}`,
-      { cwd: repoPath }
+      { cwd: containerPath, timeout: 30000 }
     );
     return stdout;
   } catch (_error) {
@@ -25,10 +25,25 @@ export async function getFileContentBeforeAndAfter(
   filePath: string,
   fromCommit: string
 ): Promise<{ before: string; after: string }> {
-  const [before, after] = await Promise.all([
-    getFileContent(repoPath, filePath, fromCommit),
-    getFileContent(repoPath, filePath, 'HEAD'),
-  ]);
+  // Get the "before" content from the starting commit
+  const before = await getFileContent(repoPath, filePath, fromCommit);
+
+  // For "after", read from working directory to include uncommitted changes
+  // First try to get from working directory, fall back to HEAD if that fails
+  const containerPath = getContainerPath(repoPath);
+  const fs = await import('fs/promises');
+  const path = await import('path');
+
+  let after: string;
+  try {
+    // Try reading from working directory first (includes uncommitted changes)
+    const fullPath = path.join(containerPath, filePath);
+    after = await fs.readFile(fullPath, 'utf-8');
+  } catch {
+    // If file doesn't exist in working directory, try HEAD
+    // (file might have been deleted)
+    after = await getFileContent(repoPath, filePath, 'HEAD');
+  }
 
   return { before, after };
 }

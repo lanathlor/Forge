@@ -26,16 +26,25 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
       setLoading(true);
       const res = await fetch(`/api/tasks/${taskId}/diff`);
       if (!res.ok) {
-        throw new Error('Failed to load diff');
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.error || 'Failed to load diff';
+        const details = errorData.details ? ` (${errorData.details})` : '';
+        console.error(`[DiffViewer] Failed to load diff for task ${taskId}:`, errorMsg, details);
+        throw new Error(`${errorMsg}${details}`);
       }
       const data = await res.json();
+      console.log(`[DiffViewer] Loaded diff for task ${taskId}:`, {
+        filesChanged: data.changedFiles?.length || 0,
+        stats: data.stats,
+      });
       setDiff(data);
 
       // Auto-select first file
-      if (data.changedFiles.length > 0) {
+      if (data.changedFiles && data.changedFiles.length > 0) {
         setSelectedFile(data.changedFiles[0]);
       }
     } catch (err) {
+      console.error(`[DiffViewer] Error loading diff:`, err);
       setError(err instanceof Error ? err.message : 'Failed to load diff');
     } finally {
       setLoading(false);
@@ -46,11 +55,19 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
     try {
       const res = await fetch(`/api/tasks/${taskId}/files/${path}`);
       if (!res.ok) {
-        throw new Error('Failed to load file content');
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.error || 'Failed to load file content';
+        console.error(`[DiffViewer] Failed to load file content for ${path}:`, errorMsg);
+        throw new Error(errorMsg);
       }
       const data = await res.json();
+      console.log(`[DiffViewer] Loaded file content for ${path}:`, {
+        beforeLength: data.before?.length || 0,
+        afterLength: data.after?.length || 0,
+      });
       setFileContent(data);
     } catch (err) {
+      console.error(`[DiffViewer] Error loading file content:`, err);
       setError(
         err instanceof Error ? err.message : 'Failed to load file content'
       );

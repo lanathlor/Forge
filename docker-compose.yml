@@ -4,21 +4,28 @@ services:
       context: .
       dockerfile: Dockerfile
       target: dev
+      args:
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-100}
+    user: "${USER_UID:-1000}:${USER_GID:-100}"
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - .:/app
-      - /app/node_modules
       - /app/.next
+      - /app/node_modules
       - /home/lanath/Work:/workspace
+      - ~/.claude:/home/node/.claude
     environment:
       - DATABASE_URL=/app/dev.db
       - WORKSPACE_ROOT=/workspace
       - CLAUDE_CODE_PATH=claude
+      - SIMULATE_CLAUDE=false
       - NODE_ENV=development
     stdin_open: true
     tty: true
     working_dir: /app
+    # Command is inherited from Dockerfile CMD
 
   postgres:
     image: postgres:16-alpine

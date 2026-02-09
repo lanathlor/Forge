@@ -1,8 +1,5 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { execAsync, getContainerPath } from '@/lib/qa-gates/command-executor';
 import type { FileChange } from '@/db/schema/tasks';
-
-const execAsync = promisify(exec);
 
 export type { FileChange } from '@/db/schema/tasks';
 
@@ -18,43 +15,44 @@ export interface DiffStats {
   deletions: number;
 }
 
+function getDiffBase(fromCommit: string): string {
+  // Handle special case: repository had no commits when task started
+  // Use the empty tree hash (Git's special hash for an empty repository)
+  const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+  return fromCommit === 'initial' ? EMPTY_TREE_HASH : fromCommit;
+}
+
+async function getGitDiffOutputs(containerPath: string, diffBase: string) {
+  // Compare against working directory (includes both committed and uncommitted changes)
+  // Using just `git diff ${diffBase}` instead of `git diff ${diffBase} HEAD`
+  // This captures all changes since the starting commit, even if not committed
+  const [fullDiffResult, statResult, nameStatusResult] = await Promise.all([
+    execAsync(`git diff ${diffBase}`, { cwd: containerPath, timeout: 30000 }),
+    execAsync(`git diff ${diffBase} --numstat`, { cwd: containerPath, timeout: 30000 }),
+    execAsync(`git diff ${diffBase} --name-status`, { cwd: containerPath, timeout: 30000 }),
+  ]);
+  return {
+    fullDiff: fullDiffResult.stdout,
+    statOutput: statResult.stdout,
+    nameStatusOutput: nameStatusResult.stdout,
+  };
+}
+
 export async function captureDiff(
   repoPath: string,
   fromCommit: string
 ): Promise<DiffResult> {
-  // Get full diff
-  const { stdout: fullDiff } = await execAsync(
-    `git diff ${fromCommit} HEAD`,
-    { cwd: repoPath }
-  );
+  const containerPath = getContainerPath(repoPath);
+  console.log(`[captureDiff] Capturing diff from commit: ${fromCommit}`);
 
-  // Get file stats
-  const { stdout: statOutput } = await execAsync(
-    `git diff ${fromCommit} HEAD --numstat`,
-    { cwd: repoPath }
-  );
+  const diffBase = getDiffBase(fromCommit);
+  console.log(`[captureDiff] Using diff base: ${diffBase}`);
 
-  // Get changed file names with status
-  const { stdout: nameStatusOutput } = await execAsync(
-    `git diff ${fromCommit} HEAD --name-status`,
-    { cwd: repoPath }
-  );
-
-  // Parse changed files
-  const changedFiles = parseChangedFiles(
-    statOutput,
-    nameStatusOutput,
-    fullDiff
-  );
-
-  // Calculate stats
+  const { fullDiff, statOutput, nameStatusOutput } = await getGitDiffOutputs(containerPath, diffBase);
+  const changedFiles = parseChangedFiles(statOutput, nameStatusOutput, fullDiff);
   const stats = calculateStats(changedFiles);
 
-  return {
-    fullDiff,
-    changedFiles,
-    stats,
-  };
+  return { fullDiff, changedFiles, stats };
 }
 
 /* eslint-disable max-lines-per-function, complexity */
