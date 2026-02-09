@@ -58,31 +58,39 @@ function constructCommitMessagePrompt(
     .map((f) => `- ${f.path} (${f.status}, +${f.additions} -${f.deletions})`)
     .join('\n');
 
-  return `Write a git commit message for the following changes.
+  return `Analyze the git diff below and write a specific, accurate commit message.
 
-Task Description: ${taskPrompt}
+CRITICAL: Your commit message must accurately reflect what actually changed in the code.
+Focus on the PRIMARY PURPOSE and IMPACT of these changes, not just listing files.
 
-Files Changed (${fileCount}):
+Task Context: ${taskPrompt}
+
+Changed Files (${fileCount}): ${insertions} insertions, ${deletions} deletions
 ${filesChangedList}
 
-Statistics: ${insertions} insertions(+), ${deletions} deletions(-)
+Full Diff:
+${diffContent.length > 8000 ? diffContent.substring(0, 8000) + '\n... (diff truncated)' : diffContent}
 
-Diff:
-${diffContent.length > 8000 ? diffContent.substring(0, 8000) + '\n... (truncated)' : diffContent}
+INSTRUCTIONS:
+1. Read the diff carefully to understand what actually changed
+2. Identify the main purpose: Is this fixing a bug? Adding a feature? Refactoring? Improving something?
+3. Write a specific subject line that describes the actual change, not generic summaries
+4. In the body, explain WHAT changed and WHY, with specific details from the diff
+5. Use conventional commits format: <type>(<scope>): <subject>
+6. Types: feat, fix, refactor, docs, test, chore, style, perf, ci, build
+7. Subject line under 72 chars, imperative mood, lowercase, no period
+8. Add body with bullet points for complex changes
 
-Requirements:
-- Use conventional commits format: <type>(<scope>): <subject>
-- Types: feat, fix, refactor, docs, test, chore, style, perf, ci, build
-- First line under 72 characters
-- Use imperative mood ("add" not "added")
-- Don't capitalize first letter
-- No period at end of subject
-- Add blank line then body if change is complex
+GOOD examples (specific and actionable):
+fix(commit): use heredoc for multiline commit messages
+fix(git): add user.name and user.email config for container commits
+feat(auth): add JWT token validation middleware
+refactor(api): extract error handling into middleware layer
 
-Examples:
-feat(api): add error handling to user endpoints
-fix(auth): resolve token expiration edge case
-refactor(db): simplify query builder interface
+BAD examples (too vague, avoid these):
+feat(docker): improve container setup
+fix: update various files
+chore: make improvements
 
-Output ONLY the commit message text, nothing else. No markdown, no code blocks, no explanations.`;
+Output ONLY the commit message. No markdown, no code blocks, no explanations.`;
 }

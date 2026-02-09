@@ -18,8 +18,8 @@ interface ClaudeTaskResult {
 }
 
 class ClaudeCodeWrapper extends EventEmitter {
-  private process: ChildProcess | null = null;
-  private output: string[] = [];
+  private processes: Map<string, ChildProcess> = new Map();
+  private outputs: Map<string, string[]> = new Map();
 
   /* eslint-disable max-lines-per-function */
   async executeTask(options: ClaudeTaskOptions): Promise<ClaudeTaskResult> {
@@ -89,11 +89,17 @@ class ClaudeCodeWrapper extends EventEmitter {
   ) {
     const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
     console.log(`[ClaudeWrapper] Spawning Claude Code at: ${claudeCodePath}`);
-    console.log(`[ClaudeWrapper] Working dir: ${workingDirectory}, Prompt: [${_prompt.length} chars]`);
+    console.log(`[ClaudeWrapper] Task ${taskId} - Working dir: ${workingDirectory}, Prompt: [${_prompt.length} chars]`);
 
-    this.process = spawn(
+    const childProcess = spawn(
       claudeCodePath,
-      ['--dangerously-skip-permissions'],
+      [
+        '--dangerously-skip-permissions',
+        '--print',
+        '--output-format', 'stream-json',
+        '--include-partial-messages',
+        '--verbose',
+      ],
       {
         cwd: workingDirectory,
         env: process.env,
@@ -101,43 +107,41 @@ class ClaudeCodeWrapper extends EventEmitter {
       }
     );
 
-    console.log(`[ClaudeWrapper] Process spawned with PID: ${this.process.pid}`);
-    this.setupProcessHandlers(taskId, resolve, reject);
+    // Store process in map
+    this.processes.set(taskId, childProcess);
+    this.outputs.set(taskId, []);
+
+    console.log(`[ClaudeWrapper] Task ${taskId} - Process spawned with PID: ${childProcess.pid}`);
+    this.setupProcessHandlers(taskId, childProcess, resolve, reject);
 
     // Write prompt to stdin and close stdin stream
-    console.log(`[ClaudeWrapper] Writing prompt to stdin...`);
-    this.process.stdin?.write(_prompt + '\n');
-    this.process.stdin?.end();
-    console.log(`[ClaudeWrapper] Prompt sent, stdin closed`);
+    console.log(`[ClaudeWrapper] Task ${taskId} - Writing prompt to stdin...`);
+    childProcess.stdin?.write(_prompt + '\n');
+    childProcess.stdin?.end();
+    console.log(`[ClaudeWrapper] Task ${taskId} - Prompt sent, stdin closed`);
   }
 
   private setupProcessHandlers(
     taskId: string,
+    process: ChildProcess,
     resolve: (value: ClaudeTaskResult) => void,
     reject: (reason: Error) => void
   ) {
-    console.log(`[ClaudeWrapper] Setting up process handlers for task ${taskId}`);
+    console.log(`[ClaudeWrapper] Task ${taskId} - Setting up process handlers`);
 
-    // Capture stdout
-    this.process?.stdout?.on('data', (data) => {
-      const text = data.toString();
-      this.output.push(text);
-
-      // Log to backend console for real-time feedback
-      console.log(`[Claude Output ${taskId}] ${text}`);
-
-      this.emit('output', {
-        taskId,
-        type: 'stdout',
-        data: text,
-        timestamp: new Date(),
-      });
-
-      this.appendTaskOutput(taskId, text);
+    // Capture stdout (stream-json format)
+    let buffer = '';
+    process.stdout?.on('data', (data) => {
+      buffer += data.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (line.trim()) this.processOutputLine(line, taskId);
+      }
     });
 
     // Capture stderr
-    this.process?.stderr?.on('data', (data) => {
+    process.stderr?.on('data', (data) => {
       const text = data.toString();
 
       // Log stderr to backend console
@@ -154,12 +158,13 @@ class ClaudeCodeWrapper extends EventEmitter {
     });
 
     // Handle completion
-    this.process?.on('close', (exitCode) => {
-      console.log(`[ClaudeWrapper] Process closed for task ${taskId} with exit code: ${exitCode}`);
+    process.on('close', (exitCode) => {
+      console.log(`[ClaudeWrapper] Task ${taskId} - Process closed with exit code: ${exitCode}`);
 
+      const taskOutput = this.outputs.get(taskId) || [];
       const result: ClaudeTaskResult = {
         exitCode: exitCode || 0,
-        output: this.output.join(''),
+        output: taskOutput.join(''),
       };
 
       if (exitCode === 0) {
@@ -173,26 +178,27 @@ class ClaudeCodeWrapper extends EventEmitter {
         reject(new Error(error));
       }
 
-      this.cleanup();
+      this.cleanupTask(taskId);
     });
 
     // Handle errors
-    this.process?.on('error', (err) => {
-      console.error(`[ClaudeWrapper] Process error for task ${taskId}:`, err.message);
+    process.on('error', (err) => {
+      console.error(`[ClaudeWrapper] Task ${taskId} - Process error:`, err.message);
       this.emit('failed', { taskId, error: err.message });
       reject(err);
-      this.cleanup();
+      this.cleanupTask(taskId);
     });
 
-    console.log(`[ClaudeWrapper] Process handlers setup complete, waiting for output...`);
+    console.log(`[ClaudeWrapper] Task ${taskId} - Process handlers setup complete`);
   }
 
   async cancel(taskId: string): Promise<void> {
-    if (this.process) {
-      console.log(`[ClaudeWrapper] Cancelling task ${taskId}, sending SIGTERM to PID ${this.process.pid}`);
-      this.process.kill('SIGTERM');
+    const process = this.processes.get(taskId);
+    if (process) {
+      console.log(`[ClaudeWrapper] Cancelling task ${taskId}, sending SIGTERM to PID ${process.pid}`);
+      process.kill('SIGTERM');
       this.emit('cancelled', { taskId });
-      this.cleanup();
+      this.cleanupTask(taskId);
       console.log(`[ClaudeWrapper] Task ${taskId} cancelled and cleaned up`);
     } else {
       console.log(`[ClaudeWrapper] No active process to cancel for task ${taskId}`);
@@ -225,10 +231,45 @@ class ClaudeCodeWrapper extends EventEmitter {
     }
   }
 
-  private cleanup(): void {
-    console.log(`[ClaudeWrapper] Cleaning up process and output buffer`);
-    this.process = null;
-    this.output = [];
+  private cleanupTask(taskId: string): void {
+    console.log(`[ClaudeWrapper] Cleaning up task ${taskId}`);
+    this.processes.delete(taskId);
+    this.outputs.delete(taskId);
+  }
+
+  private processOutputLine(line: string, taskId: string): void {
+    try {
+      const json = JSON.parse(line);
+      this.handleJsonOutput(json, taskId);
+    } catch (_error) {
+      this.handleRawOutput(line, taskId);
+    }
+  }
+
+  private handleJsonOutput(json: { type: string; event?: { type: string; delta?: { text?: string } }; subtype?: string; duration_ms?: number }, taskId: string): void {
+    if (json.type === 'stream_event' && json.event?.type === 'content_block_delta') {
+      const text = json.event.delta?.text;
+      if (text) this.emitOutputText(text, taskId);
+    } else if (json.type === 'system') {
+      console.log(`[Claude System ${taskId}]`, json.subtype || 'init');
+    } else if (json.type === 'result') {
+      console.log(`[Claude Result ${taskId}]`, json.subtype, `(${json.duration_ms}ms)`);
+    }
+  }
+
+  private handleRawOutput(line: string, taskId: string): void {
+    console.log(`[Claude Raw ${taskId}]`, line);
+    this.emitOutputText(line + '\n', taskId);
+  }
+
+  private emitOutputText(text: string, taskId: string): void {
+    const taskOutput = this.outputs.get(taskId) || [];
+    taskOutput.push(text);
+    this.outputs.set(taskId, taskOutput);
+
+    console.log(`[Claude Output ${taskId}]`, text);
+    this.emit('output', { taskId, type: 'stdout', data: text, timestamp: new Date() });
+    this.appendTaskOutput(taskId, text);
   }
 
   /**
