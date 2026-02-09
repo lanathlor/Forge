@@ -7,6 +7,7 @@ A session system that groups related tasks together, providing context and organ
 ## User Problem
 
 **Without this feature**:
+
 - Tasks scattered without context
 - Hard to review what was accomplished
 - Can't resume work after break
@@ -14,6 +15,7 @@ A session system that groups related tasks together, providing context and organ
 - Lost track of decision-making process
 
 **With this feature**:
+
 - Related tasks grouped together
 - Clear work sessions with start/end
 - Resume work anytime
@@ -23,6 +25,7 @@ A session system that groups related tasks together, providing context and organ
 ## User Stories
 
 ### Story 1: Organized Work
+
 ```
 AS A developer
 I WANT to group related tasks into sessions
@@ -30,6 +33,7 @@ SO THAT I can organize my work logically
 ```
 
 ### Story 2: Resume Work
+
 ```
 AS A developer
 I WANT to resume a previous session
@@ -37,6 +41,7 @@ SO THAT I can continue where I left off
 ```
 
 ### Story 3: Review History
+
 ```
 AS A developer
 I WANT to see all tasks in a session
@@ -196,28 +201,54 @@ SO THAT I understand what was accomplished
 ```typescript
 // src/db/schema.ts
 
-export const sessionStatusEnum = ['active', 'paused', 'completed', 'abandoned'] as const;
+export const sessionStatusEnum = [
+  'active',
+  'paused',
+  'completed',
+  'abandoned',
+] as const;
 
-export const sessions = sqliteTable('sessions', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  repositoryId: text('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    repositoryId: text('repository_id')
+      .notNull()
+      .references(() => repositories.id, { onDelete: 'cascade' }),
 
-  status: text('status', { enum: sessionStatusEnum }).notNull().default('active'),
+    status: text('status', { enum: sessionStatusEnum })
+      .notNull()
+      .default('active'),
 
-  startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  endedAt: integer('ended_at', { mode: 'timestamp' }),
-  lastActivity: integer('last_activity', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+    startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    endedAt: integer('ended_at', { mode: 'timestamp' }),
+    lastActivity: integer('last_activity', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
 
-  // Metadata
-  startBranch: text('start_branch'),
-  endBranch: text('end_branch'),
+    // Metadata
+    startBranch: text('start_branch'),
+    endBranch: text('end_branch'),
 
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-}, (table) => ({
-  repoStatusIdx: index('session_repo_status_idx').on(table.repositoryId, table.status),
-  activityIdx: index('session_activity_idx').on(table.lastActivity),
-}));
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+  },
+  (table) => ({
+    repoStatusIdx: index('session_repo_status_idx').on(
+      table.repositoryId,
+      table.status
+    ),
+    activityIdx: index('session_activity_idx').on(table.lastActivity),
+  })
+);
 ```
 
 ### Session Management Logic
@@ -247,7 +278,8 @@ export async function getActiveSession(
 
   if (activeSession) {
     // Update last activity
-    await db.update(sessions)
+    await db
+      .update(sessions)
       .set({ lastActivity: new Date() })
       .where(eq(sessions.id, activeSession.id));
   }
@@ -255,9 +287,7 @@ export async function getActiveSession(
   return activeSession;
 }
 
-export async function createSession(
-  repositoryId: string
-): Promise<Session> {
+export async function createSession(repositoryId: string): Promise<Session> {
   // Get current branch
   const repository = await db.query.repositories.findFirst({
     where: eq(repositories.id, repositoryId),
@@ -267,7 +297,8 @@ export async function createSession(
     throw new Error('Repository not found');
   }
 
-  const [session] = await db.insert(sessions)
+  const [session] = await db
+    .insert(sessions)
     .values({
       repositoryId,
       status: 'active',
@@ -311,7 +342,8 @@ export async function endSession(sessionId: string): Promise<Session> {
   );
 
   // Update session
-  const [updatedSession] = await db.update(sessions)
+  const [updatedSession] = await db
+    .update(sessions)
     .set({
       status: 'completed',
       endedAt: new Date(),
@@ -324,7 +356,8 @@ export async function endSession(sessionId: string): Promise<Session> {
 }
 
 export async function pauseSession(sessionId: string): Promise<Session> {
-  const [session] = await db.update(sessions)
+  const [session] = await db
+    .update(sessions)
     .set({ status: 'paused' })
     .where(eq(sessions.id, sessionId))
     .returning();
@@ -333,7 +366,8 @@ export async function pauseSession(sessionId: string): Promise<Session> {
 }
 
 export async function resumeSession(sessionId: string): Promise<Session> {
-  const [session] = await db.update(sessions)
+  const [session] = await db
+    .update(sessions)
     .set({
       status: 'active',
       lastActivity: new Date(),
@@ -358,19 +392,23 @@ export async function getSessionSummary(sessionId: string) {
   }
 
   const totalTasks = session.tasks.length;
-  const completedTasks = session.tasks.filter(t => t.status === 'completed').length;
-  const rejectedTasks = session.tasks.filter(t => t.status === 'rejected').length;
-  const failedTasks = session.tasks.filter(t => t.status === 'failed').length;
+  const completedTasks = session.tasks.filter(
+    (t) => t.status === 'completed'
+  ).length;
+  const rejectedTasks = session.tasks.filter(
+    (t) => t.status === 'rejected'
+  ).length;
+  const failedTasks = session.tasks.filter((t) => t.status === 'failed').length;
 
   // Count unique files changed
   const allFiles = new Set<string>();
-  session.tasks.forEach(task => {
+  session.tasks.forEach((task) => {
     const files = JSON.parse(task.filesChanged || '[]') as string[];
-    files?.forEach(f => allFiles.add(f));
+    files?.forEach((f) => allFiles.add(f));
   });
 
   // Count commits
-  const commits = session.tasks.filter(t => t.committedSha).length;
+  const commits = session.tasks.filter((t) => t.committedSha).length;
 
   // Calculate duration
   const duration = session.endedAt
@@ -395,11 +433,14 @@ export async function listSessions(
   repositoryId: string,
   options?: {
     limit?: number;
-    status?: typeof sessionStatusEnum[number];
+    status?: (typeof sessionStatusEnum)[number];
   }
 ) {
   const whereConditions = options?.status
-    ? and(eq(sessions.repositoryId, repositoryId), eq(sessions.status, options.status))
+    ? and(
+        eq(sessions.repositoryId, repositoryId),
+        eq(sessions.status, options.status)
+      )
     : eq(sessions.repositoryId, repositoryId);
 
   return await db.query.sessions.findMany({
@@ -437,7 +478,8 @@ export async function cleanupInactiveSessions(): Promise<void> {
   });
 
   for (const session of inactiveSessions) {
-    await db.update(sessions)
+    await db
+      .update(sessions)
       .set({
         status: 'abandoned',
         endedAt: new Date(),
@@ -453,6 +495,7 @@ setInterval(cleanupInactiveSessions, 60 * 60 * 1000); // Every hour
 ### API Endpoints
 
 **GET /api/sessions?repositoryId=xxx**
+
 ```typescript
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -469,6 +512,7 @@ export async function GET(request: Request) {
 ```
 
 **GET /api/sessions/:id**
+
 ```typescript
 export async function GET(
   request: Request,
@@ -481,6 +525,7 @@ export async function GET(
 ```
 
 **POST /api/sessions**
+
 ```typescript
 export async function POST(request: Request) {
   const { repositoryId } = await request.json();
@@ -492,6 +537,7 @@ export async function POST(request: Request) {
 ```
 
 **POST /api/sessions/:id/end**
+
 ```typescript
 export async function POST(
   request: Request,
@@ -504,6 +550,7 @@ export async function POST(
 ```
 
 **POST /api/sessions/:id/pause**
+
 ```typescript
 export async function POST(
   request: Request,
@@ -516,6 +563,7 @@ export async function POST(
 ```
 
 **POST /api/sessions/:id/resume**
+
 ```typescript
 export async function POST(
   request: Request,
@@ -602,18 +650,23 @@ export function SessionHeader({ session, onEndSession }: SessionHeaderProps) {
 ## Edge Cases
 
 ### Scenario: User Forgets to End Session
+
 **Handling**: Auto-abandon after 24h inactivity
 
 ### Scenario: Multiple Sessions Active
+
 **Handling**: Only allow one active session per repository
 
 ### Scenario: Session Started on Branch A, User Switches to Branch B
+
 **Handling**: Track both startBranch and endBranch for reference
 
 ### Scenario: Session with No Tasks
+
 **Handling**: Allow empty sessions, show "No tasks yet" in history
 
 ### Scenario: User Deletes Session
+
 **Handling**: Cascade delete all associated tasks (warn user first)
 
 ## Acceptance Criteria
@@ -632,11 +685,13 @@ export function SessionHeader({ session, onEndSession }: SessionHeaderProps) {
 ## Dependencies
 
 **Required for**:
+
 - Work organization
 - Task context
 - History tracking
 
 **Depends on**:
+
 - Repository selected
 - Database schema
 - Task management

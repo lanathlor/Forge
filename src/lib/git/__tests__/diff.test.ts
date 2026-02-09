@@ -137,19 +137,21 @@ M\tfile3.ts`;
 
       await diffModule.captureDiff('/repo/path', 'commit-abc');
 
+      // Note: Implementation compares against working directory (no HEAD)
+      // to capture both committed and uncommitted changes
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         1,
-        'git diff commit-abc HEAD',
+        'git diff commit-abc',
         { cwd: '/repo/path', timeout: 30000 }
       );
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         2,
-        'git diff commit-abc HEAD --numstat',
+        'git diff commit-abc --numstat',
         { cwd: '/repo/path', timeout: 30000 }
       );
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         3,
-        'git diff commit-abc HEAD --name-status',
+        'git diff commit-abc --name-status',
         { cwd: '/repo/path', timeout: 30000 }
       );
     });

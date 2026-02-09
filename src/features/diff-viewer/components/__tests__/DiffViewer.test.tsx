@@ -99,6 +99,7 @@ describe('DiffViewer', () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 404,
+        json: async () => ({ error: 'Failed to load diff' }),
       });
 
       render(<DiffViewer taskId="test-task-1" />);
@@ -131,6 +132,7 @@ describe('DiffViewer', () => {
         .mockResolvedValueOnce({
           ok: false,
           status: 404,
+          json: async () => ({ error: 'Failed to load file content' }),
         });
 
       render(<DiffViewer taskId="test-task-1" />);
