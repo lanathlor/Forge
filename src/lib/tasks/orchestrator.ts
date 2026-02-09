@@ -264,8 +264,10 @@ export async function executeTask(taskId: string): Promise<void> {
 
     // Forward Claude output events to task events
     const outputHandler = (data: { taskId: string; output?: string; data?: string }) => {
+      console.log(`[Orchestrator] Received output event for task ${data.taskId}, target: ${taskId}`);
       if (data.taskId === taskId) {
         const output = data.output || data.data || '';
+        console.log(`[Orchestrator] Emitting task:output event, length: ${output.length}`);
         taskEvents.emit('task:output', {
           sessionId,
           taskId,

@@ -51,17 +51,61 @@ function TaskTabs({ task, taskId, output, outputEndRef, onReload }: { task: Task
   );
 }
 
-export function TaskDetailsPanel({ taskId, updates }: TaskDetailsPanelProps) {
+function processOutputUpdates(updates: TaskUpdate[], taskId: string, processedRef: React.MutableRefObject<number>, setOutput: React.Dispatch<React.SetStateAction<string>>, outputEndRef: React.RefObject<HTMLDivElement | null>) {
+  const outputUpdates = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId);
+  const newUpdates = outputUpdates.slice(processedRef.current);
+  if (newUpdates.length > 0) {
+    const newOutput = newUpdates.map((x) => x.output || '').join('');
+    console.log('[TaskDetailsPanel] Appending new output, length:', newOutput.length);
+    setOutput(prev => prev + newOutput);
+    processedRef.current = outputUpdates.length;
+    setTimeout(() => { outputEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100);
+  }
+}
+
+function processStatusUpdates(updates: TaskUpdate[], taskId: string, setTask: React.Dispatch<React.SetStateAction<Task | null>>, loadTask: () => void) {
+  const statusUpdates = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId);
+  const latest = statusUpdates[statusUpdates.length - 1];
+  const newStatus = latest?.status;
+  if (newStatus && typeof newStatus === 'string') {
+    const status: string = newStatus;
+    setTask(prev => {
+      if (prev && prev.status !== status) {
+        console.log('[TaskDetailsPanel] Status changed:', prev.status, '->', status);
+        if (['waiting_approval', 'completed', 'failed', 'approved'].includes(status)) { setTimeout(() => loadTask(), 500); }
+        return { ...prev, status };
+      }
+      return prev;
+    });
+  }
+}
+
+function useTaskData(taskId: string, updates: TaskUpdate[]) {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [output, setOutput] = useState('');
   const outputEndRef = useRef<HTMLDivElement>(null);
+  const processedUpdatesRef = useRef(0);
+  const currentTaskRef = useRef(taskId);
+  const loadTask = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/tasks/${taskId}`);
+      if (res.ok) { const data = await res.json(); setTask(data.task); setOutput(data.task.claudeOutput || ''); console.log('[TaskDetailsPanel] Loaded task, initial output length:', data.task.claudeOutput?.length || 0); }
+    } catch (e) { console.error('[TaskDetailsPanel] Load error:', e); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => {
+    if (currentTaskRef.current !== taskId) { console.log('[TaskDetailsPanel] Task changed, resetting'); currentTaskRef.current = taskId; processedUpdatesRef.current = 0; setOutput(''); setTask(null); }
+    loadTask();
+  }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { processOutputUpdates(updates, taskId, processedUpdatesRef, setOutput, outputEndRef); }, [updates, taskId]);
+  useEffect(() => { processStatusUpdates(updates, taskId, setTask, loadTask); }, [updates, taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { task, loading, output, outputEndRef, loadTask };
+}
 
-  const loadTask = async () => { try { setLoading(true); const res = await fetch(`/api/tasks/${taskId}`); if (res.ok) { const data = await res.json(); setTask(data.task); if (data.task.claudeOutput) setOutput(data.task.claudeOutput); } } catch (e) { console.error(e); } finally { setLoading(false); } };
-  useEffect(() => { loadTask(); }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { const u = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId); if (u.length > 0) { setOutput(u.map((x) => x.output || '').join('')); outputEndRef.current?.scrollIntoView({ behavior: 'smooth' }); } }, [updates, taskId]);
-  useEffect(() => { const u = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId); const last = u[u.length - 1]; if (u.length > 0 && last?.status && task) setTask({ ...task, status: last.status }); }, [updates, taskId, task]);
-
+export function TaskDetailsPanel({ taskId, updates }: TaskDetailsPanelProps) {
+  const { task, loading, output, outputEndRef, loadTask } = useTaskData(taskId, updates);
   if (loading) return <LoadingState />;
   if (!task) return <NotFoundState />;
   return <Card className="h-full flex flex-col"><TaskHeader task={task} /><CardContent className="flex-1 overflow-hidden"><TaskTabs task={task} taskId={taskId} output={output} outputEndRef={outputEndRef} onReload={loadTask} /></CardContent></Card>;

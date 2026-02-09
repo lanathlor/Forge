@@ -28,9 +28,17 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    console.log('[PromptInput] Submit clicked, sessionId:', sessionId, 'prompt:', prompt.substring(0, 50));
 
     if (!prompt.trim()) {
+      console.log('[PromptInput] Empty prompt, showing error');
       setError('Please enter a prompt');
+      return;
+    }
+
+    if (!sessionId) {
+      console.error('[PromptInput] No sessionId!');
+      setError('No active session. Please select a repository first.');
       return;
     }
 
@@ -38,6 +46,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
       setIsSubmitting(true);
       setError(null);
 
+      console.log('[PromptInput] Sending POST to /api/tasks');
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,12 +56,15 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
         }),
       });
 
+      console.log('[PromptInput] Response status:', res.status);
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to create task');
       }
 
       const data = await res.json();
+      console.log('[PromptInput] Task created:', data.task.id);
 
       // Clear prompt on success
       setPrompt('');
@@ -62,7 +74,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
         onTaskCreated(data.task.id);
       }
     } catch (err) {
-      console.error('Failed to submit prompt:', err);
+      console.error('[PromptInput] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit prompt');
     } finally {
       setIsSubmitting(false);
