@@ -68,10 +68,8 @@ export async function GET(request: NextRequest) {
       };
 
       const onTaskOutput = (data: TaskOutputEvent) => {
-        console.log(`[SSE] Received task:output event for session ${data.sessionId}, target: ${sessionId}`);
         if (data.sessionId === sessionId) {
           try {
-            console.log(`[SSE] Sending task_output to client, taskId: ${data.taskId}, length: ${data.output?.length}`);
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({
@@ -106,11 +104,9 @@ export async function GET(request: NextRequest) {
       };
 
       // Register listeners
-      console.log(`[SSE] Registering listeners for session: ${sessionId}`);
       taskEvents.on('task:update', onTaskUpdate);
       taskEvents.on('task:output', onTaskOutput);
       taskEvents.on('qa:update', onQAGateUpdate);
-      console.log(`[SSE] Listeners registered, waiting for events...`);
 
       // Keep-alive ping every 30 seconds to prevent timeout
       const keepAliveInterval = setInterval(() => {
