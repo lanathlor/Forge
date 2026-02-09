@@ -55,7 +55,13 @@ export default function HomePage() {
               {selectedRepo && activeSession ? (
                 <DashboardLayout
                   sessionId={activeSession.id}
+                  repositoryId={selectedRepo.id}
                   repositoryName={selectedRepo.name}
+                  onSessionEnded={() => {
+                    // Clear session and reload to get a new one
+                    setActiveSession(null);
+                    loadActiveSession(selectedRepo.id);
+                  }}
                 />
               ) : selectedRepo ? (
                 <RepositoryContent repository={selectedRepo} />

@@ -1,17 +1,23 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
-import { sessions } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import {
+  getOrCreateActiveSession,
+  listSessionsWithStats,
+  type ListSessionsOptions,
+} from '@/lib/sessions';
+import type { SessionStatus } from '@/db/schema/sessions';
 
 /**
  * GET /api/sessions?repositoryId=xxx
  * Get or create active session for a repository
+ *
+ * GET /api/sessions?repositoryId=xxx&list=true&limit=10&status=completed
+ * List sessions for a repository with optional filtering
  */
-/* eslint-disable max-lines-per-function */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const repositoryId = searchParams.get('repositoryId');
+  const listMode = searchParams.get('list') === 'true';
 
   if (!repositoryId) {
     return NextResponse.json(
@@ -21,37 +27,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Check for existing active session
-    const activeSession = await db.query.sessions.findFirst({
-      where: and(
-        eq(sessions.repositoryId, repositoryId),
-        eq(sessions.status, 'active')
-      ),
-    });
+    if (listMode) {
+      // List mode: return paginated sessions with stats
+      const options: ListSessionsOptions = {
+        limit: parseInt(searchParams.get('limit') || '10', 10),
+        offset: parseInt(searchParams.get('offset') || '0', 10),
+      };
 
-    if (activeSession) {
-      // Update last activity
-      await db
-        .update(sessions)
-        .set({
-          lastActivity: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(sessions.id, activeSession.id));
+      const status = searchParams.get('status') as SessionStatus | null;
+      if (status) {
+        options.status = status;
+      }
 
-      return NextResponse.json({ session: activeSession });
+      const sessions = await listSessionsWithStats(repositoryId, options);
+      return NextResponse.json({ sessions });
     }
 
-    // Create new session if none exists
-    const [newSession] = await db
-      .insert(sessions)
-      .values({
-        repositoryId,
-        status: 'active',
-      })
-      .returning();
-
-    return NextResponse.json({ session: newSession });
+    // Default mode: get or create active session
+    const session = await getOrCreateActiveSession(repositoryId);
+    return NextResponse.json({ session });
   } catch (error) {
     console.error('Error in sessions API:', error);
     return NextResponse.json(

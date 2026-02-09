@@ -8,29 +8,50 @@ import { PromptInput } from './PromptInput';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { useGetSessionQuery } from '@/features/sessions/store/sessionsApi';
+import {
+  SessionHeader,
+  SessionHistoryModal,
+  SessionSummaryModal,
+} from '@/features/sessions/components';
 
 interface DashboardLayoutProps {
   sessionId: string;
+  repositoryId: string;
   repositoryName: string;
+  onSessionEnded?: () => void;
 }
 
 /**
  * Main Dashboard Layout Component
  * Implements 3-column layout for desktop, stacked for mobile:
- * - Repository info (top on mobile)
- * - Task timeline (middle on mobile)
- * - Task details panel (bottom on mobile)
+ * - Session header (top)
+ * - Connection status & prompt input
+ * - Task timeline (left on desktop)
+ * - Task details panel (right on desktop)
  *
  * Features:
  * - Real-time updates via SSE
  * - Mobile-responsive layout
- * - Connection status indicator
+ * - Session management (pause, resume, end)
+ * - Session history and summary modals
  */
 /* eslint-disable max-lines-per-function */
-export function DashboardLayout({ sessionId, repositoryName }: DashboardLayoutProps) {
+export function DashboardLayout({
+  sessionId,
+  repositoryId,
+  repositoryName,
+  onSessionEnded,
+}: DashboardLayoutProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+
+  const { data: sessionData } = useGetSessionQuery(sessionId);
   const { updates, connected, error, reconnect } = useTaskStream(sessionId);
+
+  const session = sessionData?.session;
 
   const handleTaskCreated = useCallback((taskId: string) => {
     // Auto-select the newly created task
@@ -39,19 +60,37 @@ export function DashboardLayout({ sessionId, repositoryName }: DashboardLayoutPr
     setRefreshTrigger((prev) => prev + 1);
   }, []);
 
-  return (
-    <div className="h-full flex flex-col gap-4">
-      {/* Connection Status Bar - Mobile & Desktop */}
-      <div className="flex items-center justify-between gap-2 p-2 sm:p-3 rounded-lg border bg-card">
-        <div className="flex items-center gap-2">
-          <h2 className="font-semibold text-sm sm:text-base truncate">
-            {repositoryName}
-          </h2>
-          <Badge variant="secondary" className="text-xs">
-            {sessionId.slice(0, 8)}
-          </Badge>
-        </div>
+  const handleSessionEnded = useCallback(() => {
+    setShowSummaryModal(true);
+    onSessionEnded?.();
+  }, [onSessionEnded]);
 
+  const handleSelectSession = useCallback((_newSessionId: string) => {
+    // Reload to switch to the new session
+    // A more elegant solution would be to update the parent state
+    window.location.reload();
+  }, []);
+
+  const handleNewSession = useCallback(() => {
+    // Reload to create a new session
+    onSessionEnded?.();
+  }, [onSessionEnded]);
+
+  return (
+    <div className="h-full flex flex-col gap-3">
+      {/* Session Header with controls */}
+      {session && (
+        <SessionHeader
+          session={session}
+          repositoryName={repositoryName}
+          onOpenHistory={() => setShowHistoryModal(true)}
+          onOpenSummary={() => setShowSummaryModal(true)}
+          onSessionEnded={handleSessionEnded}
+        />
+      )}
+
+      {/* Connection Status Bar */}
+      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-card/50">
         <div className="flex items-center gap-2 flex-shrink-0">
           {connected ? (
             <>
@@ -79,6 +118,10 @@ export function DashboardLayout({ sessionId, repositoryName }: DashboardLayoutPr
             </>
           )}
         </div>
+
+        <Badge variant="secondary" className="text-xs">
+          Session: {sessionId.slice(0, 8)}
+        </Badge>
       </div>
 
       {/* Prompt Input - Full Width */}
@@ -120,6 +163,24 @@ export function DashboardLayout({ sessionId, repositoryName }: DashboardLayoutPr
           )}
         </div>
       </div>
+
+      {/* Session History Modal */}
+      <SessionHistoryModal
+        repositoryId={repositoryId}
+        repositoryName={repositoryName}
+        currentSessionId={sessionId}
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        onSelectSession={handleSelectSession}
+      />
+
+      {/* Session Summary Modal */}
+      <SessionSummaryModal
+        sessionId={sessionId}
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        onNewSession={handleNewSession}
+      />
     </div>
   );
 }
