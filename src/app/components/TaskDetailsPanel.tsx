@@ -56,11 +56,12 @@ export function TaskDetailsPanel({ taskId, updates }: TaskDetailsPanelProps) {
   const [loading, setLoading] = useState(true);
   const [output, setOutput] = useState('');
   const outputEndRef = useRef<HTMLDivElement>(null);
+  const processedOutputCount = useRef(0);
 
   const loadTask = async () => { try { setLoading(true); const res = await fetch(`/api/tasks/${taskId}`); if (res.ok) { const data = await res.json(); setTask(data.task); if (data.task.claudeOutput) setOutput(data.task.claudeOutput); } } catch (e) { console.error(e); } finally { setLoading(false); } };
-  useEffect(() => { loadTask(); }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { const u = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId); if (u.length > 0) { setOutput(u.map((x) => x.output || '').join('')); outputEndRef.current?.scrollIntoView({ behavior: 'smooth' }); } }, [updates, taskId]);
-  useEffect(() => { const u = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId); const last = u[u.length - 1]; if (u.length > 0 && last?.status && task) setTask({ ...task, status: last.status }); }, [updates, taskId, task]);
+  useEffect(() => { loadTask(); processedOutputCount.current = 0; setOutput(''); }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const outputUpdates = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId); const newUpdates = outputUpdates.slice(processedOutputCount.current); if (newUpdates.length > 0) { const newOutput = newUpdates.map((x) => x.output || '').join(''); setOutput(prev => prev + newOutput); processedOutputCount.current = outputUpdates.length; outputEndRef.current?.scrollIntoView({ behavior: 'smooth' }); } }, [updates, taskId]);
+  useEffect(() => { const statusUpdates = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId); const last = statusUpdates[statusUpdates.length - 1]; if (last?.status) { const newStatus = last.status; setTask(prev => prev ? { ...prev, status: newStatus } : null); } }, [updates, taskId]);
 
   if (loading) return <LoadingState />;
   if (!task) return <NotFoundState />;

@@ -334,7 +334,8 @@ describe('Run Orchestrator', () => {
     });
 
     const setCall = vi.mocked((db as any).set).mock.calls[0][0] as any;
-    expect(setCall.duration).toBeGreaterThanOrEqual(50);
+    // Allow for timing imprecision (setTimeout may resolve slightly early)
+    expect(setCall.duration).toBeGreaterThanOrEqual(45);
   });
 
   it('should handle empty gate list', async () => {

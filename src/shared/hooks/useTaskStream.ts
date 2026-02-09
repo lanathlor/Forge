@@ -62,23 +62,32 @@ export function useTaskStream(
   }, []);
 
   const connect = useCallback(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      console.log('[useTaskStream] No sessionId, skipping connection');
+      return;
+    }
 
+    console.log('[useTaskStream] Connecting to SSE with sessionId:', sessionId);
     cleanup();
 
     try {
-      const eventSource = new EventSource(`/api/stream?sessionId=${sessionId}`);
+      const url = `/api/stream?sessionId=${sessionId}`;
+      console.log('[useTaskStream] Creating EventSource:', url);
+      const eventSource = new EventSource(url);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
+        console.log('[useTaskStream] Connection opened');
         setConnected(true);
         setError(null);
         reconnectAttemptRef.current = 0;
       };
 
       eventSource.onmessage = (event) => {
+        console.log('[useTaskStream] Received message:', event.data);
         try {
           const data: TaskUpdate = JSON.parse(event.data);
+          console.log('[useTaskStream] Parsed data:', data);
 
           if (data.type === 'connected') {
             setConnected(true);
@@ -87,6 +96,7 @@ export function useTaskStream(
 
           setUpdates((prev) => {
             const newUpdates = [...prev, data];
+            console.log('[useTaskStream] Total updates:', newUpdates.length);
             // Limit updates array size to prevent memory issues
             if (newUpdates.length > maxUpdates) {
               return newUpdates.slice(newUpdates.length - maxUpdates);
@@ -124,11 +134,16 @@ export function useTaskStream(
   }, [sessionId, autoReconnect, reconnectDelay, maxUpdates, cleanup]);
 
   useEffect(() => {
+    console.log('[useTaskStream] useEffect triggered, sessionId:', sessionId);
     if (sessionId) {
+      console.log('[useTaskStream] SessionId exists, calling connect()');
       connect();
+    } else {
+      console.log('[useTaskStream] SessionId is null/undefined, skipping connect');
     }
 
     return () => {
+      console.log('[useTaskStream] Cleanup called');
       cleanup();
     };
   }, [sessionId, connect, cleanup]);

@@ -74,7 +74,7 @@ describe('claude/commit-message', () => {
       );
 
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
-      expect(prompt).toContain('Task Context: Implement user authentication');
+      expect(prompt).toContain('Task Description: Implement user authentication');
     });
 
     it('should include file change statistics in the prompt', async () => {
@@ -83,7 +83,8 @@ describe('claude/commit-message', () => {
       await generateCommitMessage('Test', defaultFilesChanged, defaultDiffContent, '/repo');
 
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
-      expect(prompt).toContain('Changed Files (2): 45 insertions, 5 deletions');
+      expect(prompt).toContain('Files Changed (2):');
+      expect(prompt).toContain('Statistics: 45 insertions(+), 5 deletions(-)');
       expect(prompt).toContain('- src/auth.ts (modified, +15 -5)');
       expect(prompt).toContain('- src/utils.ts (added, +30 -0)');
     });
@@ -94,7 +95,7 @@ describe('claude/commit-message', () => {
       await generateCommitMessage('Fix', defaultFilesChanged, defaultDiffContent, '/repo');
 
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
-      expect(prompt).toContain('Full Diff:');
+      expect(prompt).toContain('Diff:');
       expect(prompt).toContain('diff --git a/src/auth.ts b/src/auth.ts');
     });
 
@@ -105,7 +106,7 @@ describe('claude/commit-message', () => {
       await generateCommitMessage('Refactor', defaultFilesChanged, longDiff, '/repo');
 
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
-      expect(prompt).toContain('... (diff truncated)');
+      expect(prompt).toContain('... (truncated)');
       expect(prompt.length).toBeLessThan(longDiff.length + 2000); // Some extra for prompt text
     });
 
@@ -143,7 +144,8 @@ describe('claude/commit-message', () => {
       await generateCommitMessage('Empty', [], defaultDiffContent, '/repo');
 
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
-      expect(prompt).toContain('Changed Files (0): 0 insertions, 0 deletions');
+      expect(prompt).toContain('Files Changed (0):');
+      expect(prompt).toContain('Statistics: 0 insertions(+), 0 deletions(-)');
     });
 
     it('should handle single file change', async () => {
@@ -155,7 +157,8 @@ describe('claude/commit-message', () => {
       await generateCommitMessage('Update docs', singleFile, 'diff content', '/repo');
 
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
-      expect(prompt).toContain('Changed Files (1): 5 insertions, 2 deletions');
+      expect(prompt).toContain('Files Changed (1):');
+      expect(prompt).toContain('Statistics: 5 insertions(+), 2 deletions(-)');
       expect(prompt).toContain('- README.md (modified, +5 -2)');
     });
 
@@ -179,7 +182,7 @@ describe('claude/commit-message', () => {
       const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
       expect(prompt).toContain('conventional commits format');
       expect(prompt).toContain('feat, fix, refactor, docs, test, chore, style, perf, ci, build');
-      expect(prompt).toContain('Subject line under 72 chars');
+      expect(prompt).toContain('First line under 72 characters');
     });
   });
 });

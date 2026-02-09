@@ -264,16 +264,24 @@ export async function executeTask(taskId: string): Promise<void> {
 
     // Forward Claude output events to task events
     const outputHandler = (data: { taskId: string; output?: string; data?: string }) => {
-      if (data.taskId === taskId) {
+      try {
+        console.log(`[Orchestrator] Received output event for task ${data.taskId}, expecting ${taskId}`);
         const output = data.output || data.data || '';
+        console.log(`[Orchestrator] Output extracted: "${output}"`);
+        console.log(`[Orchestrator] About to emit to sessionId: ${sessionId}`);
+        console.log(`[Orchestrator] taskEvents listener count for 'task:output': ${taskEvents.listenerCount('task:output')}`);
         taskEvents.emit('task:output', {
           sessionId,
           taskId,
           output,
         });
+        console.log(`[Orchestrator] Successfully emitted task:output event`);
+      } catch (err) {
+        console.error(`[Orchestrator] ERROR in outputHandler:`, err);
       }
     };
 
+    console.log(`[Orchestrator] Registering output handler for task ${taskId}`);
     claudeWrapper.on('output', outputHandler);
 
     console.log(`[Task ${taskId}] Invoking Claude with prompt: "${task.prompt.substring(0, 100)}..."`);

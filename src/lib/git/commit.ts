@@ -28,18 +28,47 @@ export function generateBasicCommitMessage(taskPrompt: string, filesChanged: Fil
 }
 
 async function stageFiles(containerPath: string, filesChanged: FileChange[]) {
+  console.log(`[stageFiles] Staging ${filesChanged.length} files`);
   for (const file of filesChanged) {
     const cmd = file.status === 'deleted' ? `git rm "${file.path}"` : `git add "${file.path}"`;
-    await execAsync(cmd, { cwd: containerPath, timeout: 10000 });
+    console.log(`[stageFiles] Executing: ${cmd}`);
+    try {
+      await execAsync(cmd, { cwd: containerPath, timeout: 10000 });
+      console.log(`[stageFiles] Successfully staged: ${file.path}`);
+    } catch (error: unknown) {
+      console.error(`[stageFiles] Failed to stage ${file.path}:`, error);
+      if (error && typeof error === 'object' && 'stderr' in error) {
+        console.error(`[stageFiles] Git stderr:`, (error as { stderr: string }).stderr);
+      }
+      throw error;
+    }
   }
 }
 
 async function createCommit(containerPath: string, message: string): Promise<string> {
   const escapedMessage = message.replace(/'/g, "'\\''");
   const commitCmd = `git commit -F - <<'EOF'\n${escapedMessage}\nEOF`;
-  await execAsync(commitCmd, { cwd: containerPath, timeout: 10000 });
-  const { stdout: sha } = await execAsync('git rev-parse HEAD', { cwd: containerPath, timeout: 5000 });
-  return sha.trim();
+  console.log(`[createCommit] Executing git commit with message length: ${message.length}`);
+  console.log(`[createCommit] Command: ${commitCmd.substring(0, 100)}...`);
+
+  try {
+    const result = await execAsync(commitCmd, { cwd: containerPath, timeout: 10000 });
+    console.log(`[createCommit] Commit successful, stdout:`, result.stdout);
+
+    const { stdout: sha } = await execAsync('git rev-parse HEAD', { cwd: containerPath, timeout: 5000 });
+    return sha.trim();
+  } catch (error: unknown) {
+    console.error(`[createCommit] Git commit failed:`, error);
+    if (error && typeof error === 'object') {
+      if ('stderr' in error) {
+        console.error(`[createCommit] Git stderr:`, (error as { stderr: string }).stderr);
+      }
+      if ('stdout' in error) {
+        console.error(`[createCommit] Git stdout:`, (error as { stdout: string }).stdout);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function commitTaskChanges(repoPath: string, filesChanged: FileChange[], message: string): Promise<CommitResult> {
@@ -47,13 +76,38 @@ export async function commitTaskChanges(repoPath: string, filesChanged: FileChan
   console.log(`[commitTaskChanges] Committing ${filesChanged.length} files in ${containerPath}`);
 
   try {
-    await stageFiles(containerPath, filesChanged);
-    console.log(`[commitTaskChanges] Files staged successfully`);
+    // Check if there are any uncommitted changes
+    const { stdout: statusOutput } = await execAsync('git status --porcelain', { cwd: containerPath, timeout: 5000 });
+    const hasUncommittedChanges = statusOutput.trim().length > 0;
 
-    const sha = await createCommit(containerPath, message);
-    console.log(`[commitTaskChanges] Commit SHA: ${sha}`);
+    console.log(`[commitTaskChanges] Uncommitted changes: ${hasUncommittedChanges}`);
+    console.log(`[commitTaskChanges] Git status output: ${statusOutput.substring(0, 200)}`);
 
-    return { sha, message, filesCommitted: filesChanged.map(f => f.path), timestamp: new Date() };
+    let sha: string;
+    let commitMessage: string;
+
+    if (hasUncommittedChanges) {
+      // There are uncommitted changes, stage and commit them
+      await stageFiles(containerPath, filesChanged);
+      console.log(`[commitTaskChanges] Files staged successfully`);
+
+      sha = await createCommit(containerPath, message);
+      commitMessage = message;
+      console.log(`[commitTaskChanges] Created new commit: ${sha}`);
+    } else {
+      // No uncommitted changes, Claude Code likely already committed during execution
+      // Use the current HEAD commit SHA and message
+      const { stdout: headSha } = await execAsync('git rev-parse HEAD', { cwd: containerPath, timeout: 5000 });
+      sha = headSha.trim();
+
+      const { stdout: existingMessage } = await execAsync('git log -1 --format=%B', { cwd: containerPath, timeout: 5000 });
+      commitMessage = existingMessage.trim();
+
+      console.log(`[commitTaskChanges] No uncommitted changes, using existing HEAD commit: ${sha}`);
+      console.log(`[commitTaskChanges] Existing commit message: ${commitMessage.substring(0, 100)}...`);
+    }
+
+    return { sha, message: commitMessage, filesCommitted: filesChanged.map(f => f.path), timestamp: new Date() };
   } catch (error) {
     console.error(`[commitTaskChanges] Error:`, error);
     throw new Error(`Failed to commit changes: ${error instanceof Error ? error.message : 'Unknown error'}`);

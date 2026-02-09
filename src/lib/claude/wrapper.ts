@@ -93,7 +93,13 @@ class ClaudeCodeWrapper extends EventEmitter {
 
     this.process = spawn(
       claudeCodePath,
-      ['--dangerously-skip-permissions'],
+      [
+        '--dangerously-skip-permissions',
+        '--print',
+        '--output-format', 'stream-json',
+        '--include-partial-messages',
+        '--verbose',
+      ],
       {
         cwd: workingDirectory,
         env: process.env,
@@ -123,17 +129,41 @@ class ClaudeCodeWrapper extends EventEmitter {
       const text = data.toString();
       this.output.push(text);
 
-      // Log to backend console for real-time feedback
-      console.log(`[Claude Output ${taskId}] ${text}`);
+      // Parse stream-json output and extract human-readable text
+      const lines = text.split('\n').filter((line: string) => line.trim());
+      for (const line of lines) {
+        try {
+          const parsed = JSON.parse(line);
 
-      this.emit('output', {
-        taskId,
-        type: 'stdout',
-        data: text,
-        timestamp: new Date(),
-      });
+          // Extract text from text_delta events
+          if (parsed.type === 'stream_event' &&
+              parsed.event?.type === 'content_block_delta' &&
+              parsed.event?.delta?.type === 'text_delta') {
+            const humanText = parsed.event.delta.text;
 
-      this.appendTaskOutput(taskId, text);
+            console.log(`[Claude Output ${taskId}] ${humanText}`);
+
+            this.emit('output', {
+              taskId,
+              output: humanText,
+              timestamp: new Date(),
+            });
+
+            this.appendTaskOutput(taskId, humanText);
+          }
+        } catch (_e) {
+          // Not JSON or parsing failed, treat as plain text
+          console.log(`[Claude Output ${taskId}] ${line}`);
+
+          this.emit('output', {
+            taskId,
+            output: line,
+            timestamp: new Date(),
+          });
+
+          this.appendTaskOutput(taskId, line);
+        }
+      }
     });
 
     // Capture stderr
@@ -143,7 +173,8 @@ class ClaudeCodeWrapper extends EventEmitter {
       // Log stderr to backend console
       console.error(`[Claude Error ${taskId}] ${text}`);
 
-      this.emit('error', {
+      // Emit as 'output' instead of 'error' to avoid unhandled EventEmitter errors
+      this.emit('output', {
         taskId,
         type: 'stderr',
         data: text,
@@ -271,7 +302,10 @@ class ClaudeCodeWrapper extends EventEmitter {
 
       const childProcess = spawn(
         claudeCodePath,
-        ['--dangerously-skip-permissions'],
+        [
+          '--dangerously-skip-permissions',
+          '--print',
+        ],
         {
           cwd: workingDirectory,
           env: process.env,

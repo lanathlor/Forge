@@ -118,6 +118,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'M src/index.ts\nA src/new.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add for first file
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add for second file
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
@@ -137,6 +138,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'D deleted-file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git rm
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha123\n', stderr: '' }); // git rev-parse HEAD
@@ -155,6 +157,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'M modified-file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha456\n', stderr: '' }); // git rev-parse HEAD
@@ -172,7 +175,9 @@ describe('git/commit', () => {
         { path: 'file.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
       ];
 
-      mockExecAsync.mockRejectedValueOnce(new Error('Failed to stage file'));
+      mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockRejectedValueOnce(new Error('Failed to stage file')); // git add fails
 
       await expect(commitModule.commitTaskChanges('/repo', filesChanged, 'Test'))
         .rejects.toThrow('Failed to commit changes: Failed to stage file');
@@ -184,8 +189,9 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
-        .mockRejectedValueOnce(new Error('Nothing to commit'));
+        .mockRejectedValueOnce(new Error('Nothing to commit')); // git commit fails
 
       await expect(commitModule.commitTaskChanges('/repo', filesChanged, 'Test'))
         .rejects.toThrow('Failed to commit changes: Nothing to commit');
@@ -197,14 +203,15 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha789\n', stderr: '' }); // git rev-parse HEAD
 
       await commitModule.commitTaskChanges('/repo', filesChanged, "Fix user's profile bug");
 
-      // Check that the commit command was called with escaped message
-      const commitCall = mockExecAsync.mock.calls[1];
+      // Check that the commit command was called with escaped message (call index 2 after status and add)
+      const commitCall = mockExecAsync.mock.calls[2];
       expect(commitCall?.[0]).toContain("Fix user'\\''s profile bug");
     });
 
@@ -216,15 +223,17 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: '', stderr: '' })
-        .mockResolvedValueOnce({ stdout: '', stderr: '' })
-        .mockResolvedValueOnce({ stdout: 'sha\n', stderr: '' });
+        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
+        .mockResolvedValueOnce({ stdout: 'sha\n', stderr: '' }); // git rev-parse HEAD
 
       await commitModule.commitTaskChanges('/host/path', filesChanged, 'Test');
 
       expect(mockGetContainerPath).toHaveBeenCalledWith('/host/path');
+      // Verify container path is used - the second call (git add) uses the container path with timeout 10000
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.any(String),
+        'git add "file.ts"',
         { cwd: '/container/path', timeout: 10000 }
       );
     });
@@ -249,6 +258,7 @@ describe('git/commit', () => {
     it('should approve and commit task successfully', async () => {
       mockDb.query.tasks.findFirst.mockResolvedValueOnce(mockTask);
       mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'M src/auth.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'commit-sha\n', stderr: '' }); // git rev-parse HEAD
