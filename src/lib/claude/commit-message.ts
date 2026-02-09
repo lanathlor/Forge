@@ -84,5 +84,6 @@ feat(api): add error handling to user endpoints
 fix(auth): resolve token expiration edge case
 refactor(db): simplify query builder interface
 
-Output ONLY the commit message text, nothing else. No markdown, no code blocks, no explanations.`;
+Output ONLY the commit message text, nothing else. No markdown, no code blocks, no explanations.
+Do NOT include any "Co-Authored-By" or "Co-authored-by" lines.`;
 }
