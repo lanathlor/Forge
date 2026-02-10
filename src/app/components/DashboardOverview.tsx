@@ -4,14 +4,12 @@ import * as React from 'react';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { ActionCard, ListCard, type ListCardItem } from '@/shared/components/ui/dashboard-cards';
+import { ListCard, type ListCardItem } from '@/shared/components/ui/dashboard-cards';
 import { MultiRepoCommandCenter } from './MultiRepoCommandCenter';
+import { QuickActions } from './QuickActions';
 import {
   Activity,
   CheckCircle2,
-  Plus,
-  GitBranch,
-  FileCode,
   Zap,
   RefreshCw,
   PlayCircle,
@@ -79,10 +77,15 @@ export interface DashboardOverviewProps {
   metrics?: DashboardMetrics;
   /** New metrics data format for the enhanced MetricsGrid */
   metricsData?: MetricsData;
+  /** @deprecated Use onNewTask instead - legacy prop kept for backward compatibility */
   quickActions?: QuickAction[];
   recentActivity?: RecentActivityItem[];
+  /** @deprecated Use onNewTask instead */
   onCreateTask?: () => void;
+  onNewTask?: () => void;
   onStartSession?: () => void;
+  onBrowsePlans?: () => void;
+  onViewRepositories?: () => void;
   onPauseSession?: () => void;
   onResumeSession?: () => void;
   onSelectRepo?: (repositoryId: string) => void;
@@ -115,48 +118,6 @@ function convertLegacyMetrics(metrics?: DashboardMetrics): MetricsData | undefin
       successRate: metrics.successRateTrend,
     },
   };
-}
-
-/* ============================================
-   QUICK ACTIONS SECTION
-   ============================================ */
-
-const DEFAULT_QUICK_ACTIONS: QuickAction[] = [
-  { id: 'new-task', title: 'Create New Task', description: 'Start a new automated task', icon: <Plus className="h-5 w-5" />, variant: 'primary' },
-  { id: 'browse-repos', title: 'Browse Repositories', description: 'View and manage your repos', icon: <GitBranch className="h-5 w-5" /> },
-  { id: 'view-code', title: 'Code Explorer', description: 'Browse generated code changes', icon: <FileCode className="h-5 w-5" /> },
-];
-
-interface QuickActionsProps {
-  quickActions?: QuickAction[];
-  onCreateTask?: () => void;
-  loading?: boolean;
-}
-
-function QuickActions({ quickActions, onCreateTask, loading }: QuickActionsProps) {
-  const actions = quickActions || DEFAULT_QUICK_ACTIONS;
-
-  return (
-    <section aria-labelledby="quick-actions-heading">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 id="quick-actions-heading" className="text-base font-semibold text-text-primary">Quick Actions</h3>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {actions.map((action) => (
-          <ActionCard
-            key={action.id}
-            icon={action.icon}
-            title={action.title}
-            description={action.description}
-            variant={action.variant === 'primary' ? 'primary' : 'default'}
-            onClick={action.id === 'new-task' && onCreateTask ? onCreateTask : action.onClick}
-            loading={loading}
-            size="sm"
-          />
-        ))}
-      </div>
-    </section>
-  );
 }
 
 /* ============================================
@@ -279,14 +240,18 @@ function SectionDivider() {
  *
  * Uses CSS Grid with responsive columns and proper spacing.
  */
+// eslint-disable-next-line max-lines-per-function
 export function DashboardOverview({
   sessionStatus: _sessionStatus,
   metrics,
   metricsData,
-  quickActions,
+  quickActions: _quickActions,
   recentActivity,
   onCreateTask,
-  onStartSession: _onStartSession,
+  onNewTask,
+  onStartSession,
+  onBrowsePlans,
+  onViewRepositories,
   onPauseSession: _onPauseSession,
   onResumeSession: _onResumeSession,
   onSelectRepo,
@@ -298,6 +263,9 @@ export function DashboardOverview({
 }: DashboardOverviewProps) {
   // Support both new metricsData and legacy metrics props
   const resolvedMetrics = metricsData ?? convertLegacyMetrics(metrics);
+
+  // Support both legacy onCreateTask and new onNewTask
+  const handleNewTask = onNewTask ?? onCreateTask;
 
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
@@ -314,14 +282,19 @@ export function DashboardOverview({
 
       <SectionDivider />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-8">
-        <div className="lg:col-span-3">
-          <QuickActions quickActions={quickActions} onCreateTask={onCreateTask} loading={loading} />
-        </div>
-        <div className="lg:col-span-2">
-          <RecentActivity recentActivity={recentActivity} loading={loading} />
-        </div>
-      </div>
+      {/* Quick Actions - Full width for better touch accessibility */}
+      <QuickActions
+        onNewTask={handleNewTask}
+        onStartSession={onStartSession}
+        onBrowsePlans={onBrowsePlans}
+        onViewRepositories={onViewRepositories}
+        loading={loading}
+      />
+
+      <SectionDivider />
+
+      {/* Recent Activity */}
+      <RecentActivity recentActivity={recentActivity} loading={loading} />
     </div>
   );
 }
