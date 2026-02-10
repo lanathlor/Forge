@@ -27,7 +27,8 @@ describe('git/diff', () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: fullDiff, stderr: '' }) // git diff
         .mockResolvedValueOnce({ stdout: '10\t5\tfile.ts', stderr: '' }) // --numstat
-        .mockResolvedValueOnce({ stdout: 'M\tfile.ts', stderr: '' }); // --name-status
+        .mockResolvedValueOnce({ stdout: 'M\tfile.ts', stderr: '' }) // --name-status
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -46,7 +47,8 @@ describe('git/diff', () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: 'diff content', stderr: '' })
         .mockResolvedValueOnce({ stdout: '50\t0\tnew.ts', stderr: '' })
-        .mockResolvedValueOnce({ stdout: 'A\tnew.ts', stderr: '' });
+        .mockResolvedValueOnce({ stdout: 'A\tnew.ts', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -59,7 +61,8 @@ describe('git/diff', () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: 'diff content', stderr: '' })
         .mockResolvedValueOnce({ stdout: '0\t30\tdeleted.ts', stderr: '' })
-        .mockResolvedValueOnce({ stdout: 'D\tdeleted.ts', stderr: '' });
+        .mockResolvedValueOnce({ stdout: 'D\tdeleted.ts', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -74,7 +77,8 @@ describe('git/diff', () => {
         .mockResolvedValueOnce({
           stdout: 'R100\told-name.ts\tnew-name.ts',
           stderr: '',
-        });
+        })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -87,7 +91,8 @@ describe('git/diff', () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: 'Binary files differ', stderr: '' })
         .mockResolvedValueOnce({ stdout: '-\t-\timage.png', stderr: '' })
-        .mockResolvedValueOnce({ stdout: 'M\timage.png', stderr: '' });
+        .mockResolvedValueOnce({ stdout: 'M\timage.png', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -99,7 +104,8 @@ describe('git/diff', () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: '', stderr: '' })
         .mockResolvedValueOnce({ stdout: '', stderr: '' })
-        .mockResolvedValueOnce({ stdout: '', stderr: '' });
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -120,7 +126,8 @@ M\tfile3.ts`;
       mockExecAsync
         .mockResolvedValueOnce({ stdout: multiFileDiff, stderr: '' })
         .mockResolvedValueOnce({ stdout: numstat, stderr: '' })
-        .mockResolvedValueOnce({ stdout: nameStatus, stderr: '' });
+        .mockResolvedValueOnce({ stdout: nameStatus, stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       const result = await diffModule.captureDiff('/repo', 'abc123');
 
@@ -133,7 +140,8 @@ M\tfile3.ts`;
       mockExecAsync
         .mockResolvedValueOnce({ stdout: '', stderr: '' })
         .mockResolvedValueOnce({ stdout: '', stderr: '' })
-        .mockResolvedValueOnce({ stdout: '', stderr: '' });
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // untracked files
 
       await diffModule.captureDiff('/repo/path', 'commit-abc');
 
@@ -152,6 +160,11 @@ M\tfile3.ts`;
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         3,
         'git diff commit-abc --name-status',
+        { cwd: '/repo/path', timeout: 30000 }
+      );
+      expect(mockExecAsync).toHaveBeenNthCalledWith(
+        4,
+        'git ls-files --others --exclude-standard',
         { cwd: '/repo/path', timeout: 30000 }
       );
     });
