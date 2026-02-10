@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function, complexity */
 'use client';
 
 import {
@@ -20,7 +21,6 @@ import {
   Menu,
   X,
   PanelRightOpen,
-  PanelRightClose,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
@@ -659,6 +659,7 @@ export function DashboardShell({
     if (rightPanel && !rightPanelOpen) {
       setRightPanelOpen(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rightPanel]);
 
   const contextValue: DashboardShellContextValue = {

@@ -34,7 +34,13 @@ export interface ReviewPlanRequest {
 
 export interface ReviewResult {
   iterationId: string;
-  suggestions: any[];
+  suggestions: Array<{
+    type: string;
+    target: string;
+    reasoning: string;
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+  }>;
 }
 
 export interface ApplySuggestionsRequest {

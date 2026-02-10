@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function, complexity */
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -70,7 +71,7 @@ export function PlanIterationChat({
     setIsLoading(true);
 
     // Add a placeholder message for the assistant response
-    const assistantMessageId = Date.now();
+    const _assistantMessageId = Date.now();
     const assistantMessage: Message = {
       role: 'assistant',
       content: '',

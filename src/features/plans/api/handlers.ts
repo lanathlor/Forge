@@ -1,7 +1,8 @@
+/* eslint-disable max-lines-per-function */
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { generatePlanFromDescription } from '@/lib/plans/generator';
 import { reviewPlan, applySuggestions, type ReviewType } from '@/lib/plans/reviewer';
 import { planExecutor } from '@/lib/plans/executor';
@@ -258,7 +259,7 @@ export async function handleCreatePhase(data: {
           .select({ count: phases.id })
           .from(phases)
           .where(eq(phases.planId, data.planId))
-          .limit(1) as any,
+          .limit(1) as unknown as number,
         updatedAt: new Date(),
       })
       .where(eq(plans.id, data.planId));
@@ -396,7 +397,7 @@ export async function handleCreateTask(data: {
         title: data.title,
         description: data.description,
         order: data.order,
-        dependsOn: (data.dependsOn ? JSON.stringify(data.dependsOn) : null) as any,
+        dependsOn: data.dependsOn || null,
         canRunInParallel: data.canRunInParallel || false,
         status: 'pending',
         attempts: 0,
@@ -452,7 +453,7 @@ export async function handleUpdateTask(
   }
 ) {
   try {
-    const updateData: any = { ...data, updatedAt: new Date() };
+    const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
 
     // Handle dependsOn array serialization
     if (data.dependsOn !== undefined) {

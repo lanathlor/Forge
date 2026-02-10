@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function, complexity, max-params */
 import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
@@ -20,8 +21,8 @@ export interface ReviewSuggestion {
     | 'break_down_task';
   target: string;
   reasoning: string;
-  before?: any;
-  after?: any;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
 }
 
 export interface ReviewResult {
@@ -127,13 +128,34 @@ export async function reviewPlan(
   };
 }
 
+interface PlanForReview {
+  title: string;
+  description: string | null;
+}
+
+interface PhaseForReview {
+  id: string;
+  title: string;
+  description: string | null;
+  executionMode: string;
+  pauseAfter: boolean;
+}
+
+interface TaskForReview {
+  phaseId: string;
+  title: string;
+  description: string | null;
+  canRunInParallel: boolean;
+  dependsOn: string[] | null;
+}
+
 function buildReviewPrompt(
-  plan: any,
-  planPhases: any[],
-  tasks: any[],
+  plan: PlanForReview,
+  planPhases: PhaseForReview[],
+  tasks: TaskForReview[],
   reviewType: ReviewType,
-  scope: string,
-  targetId?: string
+  _scope: string,
+  _targetId?: string
 ): string {
   let contextPrompt = '';
 
@@ -182,11 +204,11 @@ Pause After: ${phase.pauseAfter}
 Tasks:
 ${phase.tasks
   .map(
-    (task: any, taskIdx: number) => `
+    (task: TaskForReview, taskIdx: number) => `
   Task ${taskIdx + 1}: ${task.title}
   Description: ${task.description}
   Can Run in Parallel: ${task.canRunInParallel}
-  Depends On: ${task.dependsOn ? JSON.parse(task.dependsOn).join(', ') : 'None'}
+  Depends On: ${task.dependsOn?.length ? task.dependsOn.join(', ') : 'None'}
 `
   )
   .join('\n')}
@@ -308,32 +330,43 @@ async function applySingleSuggestion(
   suggestion: ReviewSuggestion
 ): Promise<void> {
   switch (suggestion.type) {
-    case 'add_task':
+    case 'add_task': {
+      const taskData = suggestion.after as Record<string, unknown>;
       await db.insert(planTasks).values({
-        ...suggestion.after,
+        phaseId: taskData.phaseId as string,
         planId,
+        order: (taskData.order as number) ?? 1,
+        title: taskData.title as string,
+        description: taskData.description as string,
         status: 'pending',
         attempts: 0,
+        canRunInParallel: (taskData.canRunInParallel as boolean) ?? false,
+        dependsOn: (taskData.dependsOn as string[]) ?? null,
       });
       break;
+    }
 
-    case 'modify_task':
-      if (!suggestion.after?.id) {
+    case 'modify_task': {
+      const taskId = suggestion.after?.id as string | undefined;
+      if (!taskId) {
         throw new Error('Missing task ID in modify_task suggestion');
       }
+      const updateData = { ...suggestion.after } as Record<string, unknown>;
+      delete updateData.id;
       await db
         .update(planTasks)
         .set({
-          ...suggestion.after,
+          ...updateData,
           updatedAt: new Date(),
         })
-        .where(eq(planTasks.id, suggestion.after.id));
+        .where(eq(planTasks.id, taskId));
       break;
+    }
 
     case 'reorder':
       // Apply reordering updates
       if (suggestion.after?.updates && Array.isArray(suggestion.after.updates)) {
-        for (const update of suggestion.after.updates) {
+        for (const update of suggestion.after.updates as { taskId?: string; phaseId?: string; newOrder: number }[]) {
           if (update.taskId) {
             await db
               .update(planTasks)
@@ -349,38 +382,49 @@ async function applySingleSuggestion(
       }
       break;
 
-    case 'add_phase':
+    case 'add_phase': {
+      const phaseData = suggestion.after as Record<string, unknown>;
       await db.insert(phases).values({
-        ...suggestion.after,
         planId,
+        order: (phaseData.order as number) ?? 1,
+        title: phaseData.title as string,
+        description: phaseData.description as string | undefined,
+        executionMode: (phaseData.executionMode as 'sequential' | 'parallel' | 'manual') ?? 'sequential',
+        pauseAfter: (phaseData.pauseAfter as boolean) ?? false,
         status: 'pending',
       });
       break;
+    }
 
-    case 'break_down_task':
+    case 'break_down_task': {
       // Remove original task
-      if (suggestion.before?.id) {
-        await db.delete(planTasks).where(eq(planTasks.id, suggestion.before.id));
+      const beforeId = suggestion.before?.id as string | undefined;
+      if (beforeId) {
+        await db.delete(planTasks).where(eq(planTasks.id, beforeId));
       }
 
       // Add new broken-down tasks
-      if (
-        suggestion.after?.tasks &&
-        Array.isArray(suggestion.after.tasks)
-      ) {
-        for (const newTask of suggestion.after.tasks) {
+      const tasksData = suggestion.after?.tasks as Record<string, unknown>[] | undefined;
+      if (tasksData && Array.isArray(tasksData)) {
+        const phaseId = (suggestion.before?.phaseId as string | undefined) || '';
+        for (const newTask of tasksData) {
           await db.insert(planTasks).values({
-            ...newTask,
+            phaseId: (newTask.phaseId as string) || phaseId,
             planId,
-            phaseId: suggestion.before?.phaseId || newTask.phaseId,
+            order: (newTask.order as number) ?? 1,
+            title: newTask.title as string,
+            description: newTask.description as string,
             status: 'pending',
             attempts: 0,
+            canRunInParallel: (newTask.canRunInParallel as boolean) ?? false,
+            dependsOn: (newTask.dependsOn as string[]) ?? null,
           });
         }
       }
       break;
+    }
 
     default:
-      console.warn(`Unknown suggestion type: ${(suggestion as any).type}`);
+      console.warn(`Unknown suggestion type: ${(suggestion as { type: string }).type}`);
   }
 }

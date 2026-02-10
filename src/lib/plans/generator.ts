@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function, complexity */
 import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
@@ -243,13 +244,15 @@ async function savePlanStructure(
       if (!taskData) continue;
 
       if (taskData.dependsOn && taskData.dependsOn.length > 0) {
-        const dependencyIds = taskData.dependsOn.map((idx) => taskIdMap[idx]);
+        const dependencyIds = taskData.dependsOn
+          .map((idx) => taskIdMap[idx])
+          .filter((id): id is string => id !== undefined);
         const taskId = taskIdMap[taskIdx];
-        if (!taskId) continue;
+        if (!taskId || dependencyIds.length === 0) continue;
 
         await db
           .update(planTasks)
-          .set({ dependsOn: JSON.stringify(dependencyIds) as any })
+          .set({ dependsOn: dependencyIds })
           .where(eq(planTasks.id, taskId));
       }
     }

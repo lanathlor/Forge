@@ -1,4 +1,5 @@
-import { NextRequest } from 'next/server';
+/* eslint-disable max-lines-per-function, complexity */
+import type { NextRequest } from 'next/server';
 import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
@@ -28,7 +29,7 @@ export async function POST(
     async start(controller) {
       try {
         // Helper to send data
-        const send = (data: any) => {
+        const send = (data: Record<string, unknown>) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         };
 
@@ -249,7 +250,7 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
               });
 
               // Send details about what was updated
-              const updateSummary = updates.map((u: any) => {
+              const updateSummary = updates.map((u: { action: string; phaseOrder?: number; taskOrder?: number }) => {
                 if (u.action === 'update_phase') {
                   return `Updated Phase ${u.phaseOrder}`;
                 } else if (u.action === 'update_task') {

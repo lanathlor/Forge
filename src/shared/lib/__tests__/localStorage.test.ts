@@ -138,4 +138,84 @@ describe('localStorage utility', () => {
       expect(Object.isFrozen(STORAGE_KEYS)).toBe(false); // const doesn't freeze objects
     });
   });
+
+  describe('SSR handling', () => {
+    it('get should return null when window is undefined', () => {
+      const originalWindow = globalThis.window;
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete (globalThis as { window?: typeof window }).window;
+
+      const result = storage.get('test-key');
+      expect(result).toBeNull();
+
+      // Restore window
+      (globalThis as { window?: typeof window }).window = originalWindow;
+    });
+
+    it('set should return false when window is undefined', () => {
+      const originalWindow = globalThis.window;
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete (globalThis as { window?: typeof window }).window;
+
+      const result = storage.set('test-key', 'test-value');
+      expect(result).toBe(false);
+
+      // Restore window
+      (globalThis as { window?: typeof window }).window = originalWindow;
+    });
+
+    it('remove should return false when window is undefined', () => {
+      const originalWindow = globalThis.window;
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete (globalThis as { window?: typeof window }).window;
+
+      const result = storage.remove('test-key');
+      expect(result).toBe(false);
+
+      // Restore window
+      (globalThis as { window?: typeof window }).window = originalWindow;
+    });
+
+    it('clear should return false when window is undefined', () => {
+      const originalWindow = globalThis.window;
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete (globalThis as { window?: typeof window }).window;
+
+      const result = storage.clear();
+      expect(result).toBe(false);
+
+      // Restore window
+      (globalThis as { window?: typeof window }).window = originalWindow;
+    });
+  });
+
+  describe('localStorage errors', () => {
+    it('remove should return false when localStorage.removeItem throws', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+
+      const result = storage.remove('test-key');
+      expect(result).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      removeItemSpy.mockRestore();
+    });
+
+    it('clear should return false when localStorage.clear throws', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const clearSpy = vi.spyOn(localStorage, 'clear').mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+
+      const result = storage.clear();
+      expect(result).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      clearSpy.mockRestore();
+    });
+  });
 });

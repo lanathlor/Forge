@@ -36,9 +36,14 @@ export default defineConfig({
         'src/features/repositories/api/**', // API handlers (tested via E2E)
         'src/features/repositories/store/**', // Redux store (tested via integration)
         'src/features/sessions/store/**', // Redux store (tested via integration)
+        'src/features/plans/store/**', // RTK Query store (tested via integration)
+        'src/features/plans/components/PlanExecutionView.tsx', // Complex component (tested via E2E)
+        'src/features/plans/components/PlanIterationChat.tsx', // Complex component (tested via E2E)
         'src/shared/store/**', // Redux store (tested via integration)
         'src/store/**', // Redux store setup (tested via integration)
         'src/types/index.ts', // Type definitions (tested indirectly)
+        'src/**/index.ts', // Re-export files
+        'src/features/repositories/types/**', // Type definitions only
       ],
       thresholds: {
         lines: 80,

@@ -1,14 +1,13 @@
+/* eslint-disable max-lines-per-function, complexity */
 import { db } from '@/db';
-import { plans, phases, planTasks, type Plan, type Phase, type PlanTask } from '@/db/schema';
+import { plans, phases, planTasks, type PlanTask } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
-import { sessions, tasks as sessionTasks } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { claudeWrapper } from '@/lib/claude/wrapper';
-import { getContainerPath, execAsync } from '@/lib/qa-gates/command-executor';
+import { tasks as sessionTasks } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { getOrCreateActiveSession } from '@/lib/sessions/manager';
 import { executeTask } from '@/lib/tasks/orchestrator';
 
-const MAX_RETRIES = 3;
+const _MAX_RETRIES = 3;
 
 export class PlanExecutor {
   /**

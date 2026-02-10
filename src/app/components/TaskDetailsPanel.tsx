@@ -34,7 +34,7 @@ function TaskHeader({ task }: { task: Task }) {
   return (
     <CardHeader className="flex-shrink-0 pb-3"><div className="flex items-start justify-between gap-4 flex-wrap"><div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-2">{STATUS_ICONS[task.status]}<Badge variant="secondary" className="text-xs">{task.status.replace('_', ' ')}</Badge></div>
-      <CardTitle className="text-base sm:text-lg break-words">{task.prompt}</CardTitle>
+      <CardTitle className="text-base sm:text-lg max-h-12 overflow-hidden text-ellipsis" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}} title={task.prompt}>{task.prompt}</CardTitle>
     </div></div></CardHeader>
   );
 }
