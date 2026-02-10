@@ -24,6 +24,7 @@ import {
   X,
   Map,
   Activity,
+  Circle,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
@@ -265,6 +266,7 @@ function NavItemButton({
     onClick?.();
   };
 
+  // Enhanced status styles with priority consideration
   const statusStyles = {
     default: '',
     active: 'bg-accent-primary-subtle text-accent-primary border-l-2 border-accent-primary',
@@ -281,6 +283,9 @@ function NavItemButton({
     success: 'text-success',
   };
 
+  // Priority-based styling: primary items are more prominent
+  const isPrimary = item.priority === 'primary';
+
   return (
     <button
       ref={buttonRef}
@@ -289,23 +294,29 @@ function NavItemButton({
       tabIndex={item.disabled ? -1 : tabIndex}
       disabled={item.disabled}
       className={cn(
-        'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium',
+        'group relative flex w-full items-center gap-3 rounded-lg text-sm font-medium',
         'transition-all duration-200 ease-in-out',
-        'hover:bg-surface-interactive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2',
+        'hover:bg-surface-interactive',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset',
+        // Priority-based sizing
+        isPrimary ? 'px-3 py-2.5' : 'px-3 py-2',
         item.active
           ? statusStyles.active
           : statusStyles[item.status || 'default'] || 'text-text-secondary hover:text-text-primary',
         collapsed ? 'justify-center px-2' : 'justify-start',
-        item.disabled && 'cursor-not-allowed opacity-50'
+        item.disabled && 'cursor-not-allowed opacity-50',
+        // Priority indicator for primary items
+        isPrimary && !item.active && 'hover:translate-x-0.5'
       )}
       title={collapsed ? item.label : item.tooltip}
       aria-label={item.label}
       aria-current={item.active ? 'page' : undefined}
       aria-disabled={item.disabled}
+      data-priority={item.priority}
     >
       {/* Running indicator pulse */}
       {item.status === 'running' && (
-        <span className="absolute left-1 top-1/2 -translate-y-1/2">
+        <span className="absolute left-1 top-1/2 -translate-y-1/2" aria-hidden="true">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-info" />
@@ -313,10 +324,18 @@ function NavItemButton({
         </span>
       )}
 
+      {/* Priority indicator dot for active primary items */}
+      {isPrimary && item.active && !collapsed && (
+        <span className="absolute -left-0.5 top-1/2 -translate-y-1/2" aria-hidden="true">
+          <Circle className="h-1.5 w-1.5 fill-accent-primary text-accent-primary" />
+        </span>
+      )}
+
       {/* Icon */}
       <Icon
         className={cn(
-          'h-5 w-5 flex-shrink-0 transition-colors duration-200',
+          'flex-shrink-0 transition-colors duration-200',
+          isPrimary ? 'h-5 w-5' : 'h-4 w-4',
           item.active ? iconStatusStyles.active : iconStatusStyles[item.status || 'default']
         )}
       />
@@ -325,7 +344,8 @@ function NavItemButton({
       <span
         className={cn(
           'whitespace-nowrap transition-all duration-300 ease-in-out',
-          collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+          collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
+          isPrimary ? 'font-medium' : 'font-normal text-text-secondary'
         )}
       >
         {item.label}
@@ -333,7 +353,7 @@ function NavItemButton({
 
       {/* Shortcut hint */}
       {item.shortcutHint && !collapsed && (
-        <span className="ml-auto text-xs text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="ml-auto text-xs text-text-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
           {item.shortcutHint}
         </span>
       )}
@@ -343,8 +363,13 @@ function NavItemButton({
         <span
           className={cn(
             'ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold',
+            'transition-transform duration-200 group-hover:scale-110',
             item.status === 'running'
               ? 'bg-info text-info-foreground'
+              : item.status === 'error'
+              ? 'bg-error text-error-foreground'
+              : item.status === 'success'
+              ? 'bg-success text-success-foreground'
               : 'bg-accent-primary text-accent-primary-foreground'
           )}
         >
@@ -357,8 +382,13 @@ function NavItemButton({
         <span
           className={cn(
             'absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
+            'animate-in fade-in zoom-in-95 duration-200',
             item.status === 'running'
               ? 'bg-info text-info-foreground'
+              : item.status === 'error'
+              ? 'bg-error text-error-foreground'
+              : item.status === 'success'
+              ? 'bg-success text-success-foreground'
               : 'bg-accent-primary text-accent-primary-foreground'
           )}
         >
@@ -470,6 +500,12 @@ function Sidebar({
         onKeyDown={onKeyDown}
         aria-label="Primary navigation"
       >
+        {/* Section label - only visible when not collapsed */}
+        {!collapsed && (
+          <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+            Main
+          </div>
+        )}
         <div className="space-y-1" role="list">
           {primaryItems.map((item, index) => (
             <NavItemButton
@@ -486,6 +522,12 @@ function Sidebar({
 
       {/* Secondary Navigation (Settings, Help) */}
       <div className="border-t border-border-default p-2" role="list" aria-label="Secondary navigation">
+        {/* Section label - only visible when not collapsed */}
+        {!collapsed && (
+          <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+            More
+          </div>
+        )}
         <div className="space-y-1">
           {secondaryItems.map((item, index) => (
             <NavItemButton
@@ -531,6 +573,9 @@ function MobileDrawer({
   onKeyDown,
 }: MobileDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const touchStartX = useRef<number | null>(null);
+  const isDragging = useRef(false);
 
   // Prevent body scroll when open
   useEffect(() => {
@@ -555,39 +600,67 @@ function MobileDrawer({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
 
-  // Focus trap
+  // Focus trap and initial focus
   useEffect(() => {
-    if (open && drawerRef.current) {
-      const focusableElements = drawerRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0];
-      if (firstElement) {
-        firstElement.focus();
-      }
+    if (open && closeButtonRef.current) {
+      // Focus the close button when drawer opens for immediate keyboard accessibility
+      closeButtonRef.current.focus();
     }
   }, [open]);
 
+  // Touch swipe to close
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (touch) {
+      touchStartX.current = touch.clientX;
+      isDragging.current = true;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current || touchStartX.current === null) return;
+
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    const currentX = touch.clientX;
+    const diff = touchStartX.current - currentX;
+
+    // If swiping left more than 50px, close the drawer
+    if (diff > 50) {
+      isDragging.current = false;
+      onClose();
+    }
+  }, [onClose]);
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartX.current = null;
+    isDragging.current = false;
+  }, []);
+
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop with fade animation */}
       <div
         className={cn(
-          'fixed inset-0 z-overlay bg-black/50 backdrop-blur-sm md:hidden',
-          'transition-opacity duration-300 ease-in-out',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+          'fixed inset-0 z-overlay bg-black/60 backdrop-blur-sm md:hidden',
+          'transition-all duration-300 ease-out',
+          open
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
         )}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Drawer Panel */}
+      {/* Drawer Panel with slide animation */}
       <div
         ref={drawerRef}
         className={cn(
           'fixed inset-y-0 left-0 z-modal flex flex-col bg-surface-raised md:hidden',
           'shadow-elevation-highest safe-top safe-bottom',
-          'transition-transform duration-300 ease-in-out will-change-transform'
+          'transition-transform duration-300 ease-out will-change-transform',
+          open ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{ width: MOBILE_DRAWER_WIDTH }}
         role="dialog"
@@ -596,74 +669,94 @@ function MobileDrawer({
         aria-hidden={!open}
         data-state={open ? 'open' : 'closed'}
         inert={!open ? true : undefined}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <div
-          className={cn(
-            'transition-transform duration-300 ease-in-out h-full flex flex-col',
-            open ? 'translate-x-0' : '-translate-x-full'
-          )}
-        >
-          {/* Header */}
-          <div className="flex h-14 items-center justify-between border-b border-border-default px-4">
-            {logo || <span className="text-lg font-semibold text-text-primary">Menu</span>}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-9 w-9 text-text-muted hover:text-text-primary"
-              aria-label="Close menu"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+        {/* Header with close button */}
+        <div className="flex h-14 items-center justify-between border-b border-border-default px-4 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {logo || (
+              <span className="text-lg font-semibold text-text-primary">Autobot</span>
+            )}
           </div>
-
-          {/* Status Indicators */}
-          {statusIndicators.length > 0 && (
-            <div className="flex flex-wrap gap-2 border-b border-border-default px-4 py-3">
-              {statusIndicators.map((indicator) => (
-                <StatusIndicatorBadge key={indicator.id} indicator={indicator} />
-              ))}
-            </div>
-          )}
-
-          {/* Primary Navigation */}
-          <nav
-            className="flex-1 overflow-y-auto p-3 scrollbar-hide"
-            onKeyDown={onKeyDown}
-            aria-label="Primary navigation"
+          <Button
+            ref={closeButtonRef}
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className={cn(
+              'h-9 w-9 text-text-muted hover:text-text-primary',
+              'focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset'
+            )}
+            aria-label="Close menu"
           >
-            <div className="space-y-1" role="list">
-              {primaryItems.map((item, index) => (
-                <NavItemButton
-                  key={item.id}
-                  item={item}
-                  collapsed={false}
-                  focused={focusedIndex === index}
-                  onClick={onClose}
-                  onFocus={() => onFocusChange(index)}
-                  tabIndex={focusedIndex === index ? 0 : -1}
-                />
-              ))}
-            </div>
-          </nav>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
-          {/* Secondary Navigation */}
-          <div className="border-t border-border-default p-3" role="list" aria-label="Secondary navigation">
-            <div className="space-y-1">
-              {secondaryItems.map((item, index) => (
-                <NavItemButton
-                  key={item.id}
-                  item={item}
-                  collapsed={false}
-                  focused={focusedIndex === primaryItems.length + index}
-                  onClick={onClose}
-                  onFocus={() => onFocusChange(primaryItems.length + index)}
-                  tabIndex={focusedIndex === primaryItems.length + index ? 0 : -1}
-                />
-              ))}
-            </div>
+        {/* Status Indicators - compact horizontal list */}
+        {statusIndicators.length > 0 && (
+          <div className="flex flex-wrap gap-2 border-b border-border-default px-4 py-3 flex-shrink-0">
+            {statusIndicators.map((indicator) => (
+              <StatusIndicatorBadge key={indicator.id} indicator={indicator} />
+            ))}
+          </div>
+        )}
+
+        {/* Primary Navigation - scrollable */}
+        <nav
+          className="flex-1 overflow-y-auto p-3 scrollbar-hide min-h-0"
+          onKeyDown={onKeyDown}
+          aria-label="Primary navigation"
+        >
+          <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+            Main
+          </div>
+          <div className="space-y-1" role="list">
+            {primaryItems.map((item, index) => (
+              <NavItemButton
+                key={item.id}
+                item={item}
+                collapsed={false}
+                focused={focusedIndex === index}
+                onClick={onClose}
+                onFocus={() => onFocusChange(index)}
+                tabIndex={focusedIndex === index ? 0 : -1}
+              />
+            ))}
+          </div>
+        </nav>
+
+        {/* Secondary Navigation - fixed at bottom */}
+        <div
+          className="border-t border-border-default p-3 flex-shrink-0"
+          role="list"
+          aria-label="Secondary navigation"
+        >
+          <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+            More
+          </div>
+          <div className="space-y-1">
+            {secondaryItems.map((item, index) => (
+              <NavItemButton
+                key={item.id}
+                item={item}
+                collapsed={false}
+                focused={focusedIndex === primaryItems.length + index}
+                onClick={onClose}
+                onFocus={() => onFocusChange(primaryItems.length + index)}
+                tabIndex={focusedIndex === primaryItems.length + index ? 0 : -1}
+              />
+            ))}
           </div>
         </div>
+
+        {/* Swipe hint indicator */}
+        <div
+          className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-16 bg-border-default rounded-l opacity-50"
+          aria-hidden="true"
+        />
       </div>
     </>
   );
@@ -680,23 +773,46 @@ interface MobileHeaderProps {
 }
 
 function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProps) {
+  // Show only the most important indicators on mobile (max 2)
+  const visibleIndicators = statusIndicators.slice(0, 2);
+  const hasRunningIndicator = statusIndicators.some(i => i.pulse);
+
   return (
     <header className="flex h-14 items-center justify-between border-b border-border-default bg-surface-raised px-4 md:hidden safe-top">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onMenuOpen}
-        className="h-9 w-9 text-text-muted hover:text-text-primary"
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
+      {/* Hamburger menu button with optional running indicator */}
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMenuOpen}
+          className={cn(
+            'h-10 w-10 text-text-muted hover:text-text-primary',
+            'focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset'
+          )}
+          aria-label="Open navigation menu"
+          aria-expanded="false"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        {/* Running tasks indicator dot */}
+        {hasRunningIndicator && (
+          <span className="absolute top-1 right-1 flex h-2.5 w-2.5" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-info" />
+          </span>
+        )}
+      </div>
 
-      {header || <span className="text-lg font-semibold text-text-primary">Autobot</span>}
+      {/* Center logo/title */}
+      <div className="flex-1 flex justify-center">
+        {header || (
+          <span className="text-lg font-semibold text-text-primary">Autobot</span>
+        )}
+      </div>
 
       {/* Mobile status indicators (compact) */}
-      <div className="flex items-center gap-1.5">
-        {statusIndicators.slice(0, 2).map((indicator) => (
+      <div className="flex items-center gap-1.5 min-w-10 justify-end">
+        {visibleIndicators.map((indicator) => (
           <StatusIndicatorBadge key={indicator.id} indicator={indicator} collapsed />
         ))}
       </div>
@@ -773,27 +889,55 @@ export function Navigation({
     }
   }, [breakpoint, mobileMenuOpen]);
 
-  // Keyboard navigation
+  // Enhanced keyboard navigation with skip functionality
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLElement>) => {
       const itemCount = allItems.length;
 
+      // Skip disabled items when navigating
+      const findNextEnabled = (startIndex: number, direction: 1 | -1): number => {
+        let index = startIndex;
+        let attempts = 0;
+        while (attempts < itemCount) {
+          index = (index + direction + itemCount) % itemCount;
+          if (!allItems[index]?.disabled) {
+            return index;
+          }
+          attempts++;
+        }
+        return startIndex; // Fallback if all items are disabled
+      };
+
       switch (e.key) {
         case 'ArrowDown':
+        case 'ArrowRight':
           e.preventDefault();
-          setFocusedIndex((prev) => (prev + 1) % itemCount);
+          setFocusedIndex(findNextEnabled(focusedIndex, 1));
           break;
         case 'ArrowUp':
+        case 'ArrowLeft':
           e.preventDefault();
-          setFocusedIndex((prev) => (prev - 1 + itemCount) % itemCount);
+          setFocusedIndex(findNextEnabled(focusedIndex, -1));
           break;
         case 'Home':
           e.preventDefault();
-          setFocusedIndex(0);
+          // Find first non-disabled item
+          for (let i = 0; i < itemCount; i++) {
+            if (!allItems[i]?.disabled) {
+              setFocusedIndex(i);
+              break;
+            }
+          }
           break;
         case 'End':
           e.preventDefault();
-          setFocusedIndex(itemCount - 1);
+          // Find last non-disabled item
+          for (let i = itemCount - 1; i >= 0; i--) {
+            if (!allItems[i]?.disabled) {
+              setFocusedIndex(i);
+              break;
+            }
+          }
           break;
         case 'Enter':
         case ' ': {
@@ -807,6 +951,9 @@ export function Navigation({
           }
           break;
         }
+        case 'Tab':
+          // Allow normal tab behavior but announce current position
+          break;
       }
     },
     [allItems, focusedIndex, breakpoint]

@@ -501,3 +501,122 @@ describe('useNavigation hook', () => {
     consoleSpy.mockRestore();
   });
 });
+
+describe('Navigation priority indicators', () => {
+  beforeEach(() => {
+    mockMatchMedia(1280);
+    vi.clearAllMocks();
+  });
+
+  it('should render section labels when sidebar is expanded', () => {
+    render(<Navigation items={testNavItems} />);
+
+    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(within(sidebar).getByText('Main')).toBeInTheDocument();
+    expect(within(sidebar).getByText('More')).toBeInTheDocument();
+  });
+
+  it('should apply data-priority attribute to nav items', () => {
+    render(<Navigation items={testNavItems} />);
+
+    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+    expect(sessionsButton).toHaveAttribute('data-priority', 'primary');
+
+    const settingsButton = within(sidebar).getByRole('button', { name: 'Settings' });
+    expect(settingsButton).toHaveAttribute('data-priority', 'secondary');
+  });
+
+  it('should display different badge colors based on status', () => {
+    const itemsWithStatus: NavItem[] = [
+      {
+        id: 'running-item',
+        label: 'Running Task',
+        icon: Activity,
+        priority: 'primary',
+        badge: 5,
+        status: 'running',
+      },
+      {
+        id: 'error-item',
+        label: 'Error Task',
+        icon: Activity,
+        priority: 'primary',
+        badge: 2,
+        status: 'error',
+      },
+    ];
+
+    render(<Navigation items={itemsWithStatus} />);
+
+    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+
+    // Check running badge has info styling
+    const runningBadge = within(sidebar).getByText('5');
+    expect(runningBadge).toHaveClass('bg-info');
+
+    // Check error badge has error styling
+    const errorBadge = within(sidebar).getByText('2');
+    expect(errorBadge).toHaveClass('bg-error');
+  });
+});
+
+describe('Navigation keyboard navigation enhancements', () => {
+  beforeEach(() => {
+    mockMatchMedia(1280);
+    vi.clearAllMocks();
+  });
+
+  it('should skip disabled items when navigating with arrow keys', async () => {
+    const user = userEvent.setup();
+
+    const itemsWithDisabled: NavItem[] = [
+      { id: 'first', label: 'First', icon: Activity, priority: 'primary' },
+      { id: 'disabled', label: 'Disabled', icon: Map, priority: 'primary', disabled: true },
+      { id: 'third', label: 'Third', icon: Settings, priority: 'secondary' },
+    ];
+
+    render(<Navigation items={itemsWithDisabled} />);
+
+    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const firstButton = within(sidebar).getByRole('button', { name: 'First' });
+    firstButton.focus();
+
+    // Navigate down - should skip disabled and go to Third
+    await user.keyboard('{ArrowDown}');
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Third' }));
+    });
+  });
+
+  it('should support ArrowRight for forward navigation', async () => {
+    const user = userEvent.setup();
+    render(<Navigation items={testNavItems} />);
+
+    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+    sessionsButton.focus();
+
+    await user.keyboard('{ArrowRight}');
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Plans' }));
+    });
+  });
+
+  it('should support ArrowLeft for backward navigation', async () => {
+    const user = userEvent.setup();
+    render(<Navigation items={testNavItems} />);
+
+    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const plansButton = within(sidebar).getByRole('button', { name: 'Plans' });
+    plansButton.focus();
+
+    await user.keyboard('{ArrowLeft}');
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Sessions' }));
+    });
+  });
+});
