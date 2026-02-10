@@ -409,4 +409,18 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Pulsing border animation for attention-needed items */
+  @keyframes pulse-border {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--warning) / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 4px hsl(var(--warning) / 0.2);
+    }
+  }
+
+  .animate-pulse-border {
+    animation: pulse-border 2s ease-in-out infinite;
+  }
 }

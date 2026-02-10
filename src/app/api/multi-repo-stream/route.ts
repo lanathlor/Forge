@@ -1,0 +1,215 @@
+import type { NextRequest } from 'next/server';
+import { db } from '@/db';
+import { repositories } from '@/db/schema/repositories';
+import { sessions } from '@/db/schema/sessions';
+import { tasks } from '@/db/schema/tasks';
+import { eq, desc } from 'drizzle-orm';
+import { taskEvents } from '@/lib/events/task-events';
+import type { ClaudeStatus, RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
+
+/**
+ * Status mappings for task status to Claude status
+ */
+const THINKING_STATUSES = ['running', 'pre_flight', 'qa_running'];
+const WRITING_STATUSES = ['waiting_qa', 'approved'];
+const STUCK_STATUSES = ['failed', 'qa_failed'];
+
+/**
+ * Map task status to Claude status for UI display
+ */
+function getClaudeStatus(
+  taskStatus: string | null,
+  sessionStatus: string | null
+): ClaudeStatus {
+  if (sessionStatus === 'paused') return 'paused';
+  if (!taskStatus) return 'idle';
+  if (THINKING_STATUSES.includes(taskStatus)) return 'thinking';
+  if (WRITING_STATUSES.includes(taskStatus)) return 'writing';
+  if (taskStatus === 'waiting_approval') return 'waiting_input';
+  if (STUCK_STATUSES.includes(taskStatus)) return 'stuck';
+  return 'idle';
+}
+
+/**
+ * Format task prompt for display (truncate if needed)
+ */
+function formatTaskPrompt(prompt: string): string {
+  return prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt;
+}
+
+/**
+ * Fetch the current task for a session
+ */
+async function fetchCurrentTask(sessionId: string) {
+  const latestTask = await db.query.tasks.findFirst({
+    where: eq(tasks.sessionId, sessionId),
+    orderBy: [desc(tasks.updatedAt)],
+  });
+
+  const terminalStatuses = ['completed', 'rejected', 'cancelled'];
+  if (!latestTask || terminalStatuses.includes(latestTask.status)) {
+    return null;
+  }
+
+  return {
+    id: latestTask.id,
+    prompt: formatTaskPrompt(latestTask.prompt),
+    status: latestTask.status,
+    progress: undefined,
+  };
+}
+
+/** Calculate time elapsed since session started */
+function calcTimeElapsed(startedAt: Date | null | undefined): number {
+  return startedAt ? Date.now() - startedAt.getTime() : 0;
+}
+
+/** Get last activity timestamp or current time */
+function getLastActivity(lastActivity: Date | null | undefined): string {
+  return lastActivity?.toISOString() ?? new Date().toISOString();
+}
+
+/** Check if status requires attention */
+function checkNeedsAttention(status: ClaudeStatus): boolean {
+  return status === 'stuck' || status === 'waiting_input';
+}
+
+/**
+ * Build repository session state from database records
+ */
+async function buildRepoSessionState(repo: { id: string; name: string }): Promise<RepoSessionState> {
+  const session = await db.query.sessions.findFirst({
+    where: eq(sessions.repositoryId, repo.id),
+    orderBy: [desc(sessions.lastActivity)],
+  });
+
+  const currentTask = session ? await fetchCurrentTask(session.id) : null;
+  const sessionStatus = session?.status ?? null;
+  const claudeStatus = getClaudeStatus(currentTask?.status ?? null, sessionStatus);
+
+  return {
+    repositoryId: repo.id,
+    repositoryName: repo.name,
+    sessionId: session?.id ?? null,
+    sessionStatus,
+    claudeStatus,
+    currentTask,
+    timeElapsed: calcTimeElapsed(session?.startedAt),
+    lastActivity: getLastActivity(session?.lastActivity),
+    needsAttention: checkNeedsAttention(claudeStatus),
+  };
+}
+
+/**
+ * Fetch all repositories with their session states
+ */
+async function getAllRepoStates(): Promise<RepoSessionState[]> {
+  const allRepos = await db.query.repositories.findMany({
+    columns: { id: true, name: true },
+  });
+  return Promise.all(allRepos.map((repo) => buildRepoSessionState(repo)));
+}
+
+/** Encode SSE message */
+function encodeSSE(encoder: TextEncoder, data: object): Uint8Array {
+  return encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+/** Send connected event */
+function sendConnected(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+  controller.enqueue(encodeSSE(encoder, { type: 'connected', timestamp: new Date().toISOString() }));
+}
+
+/** Send bulk update event */
+function sendBulkUpdate(controller: ReadableStreamDefaultController, encoder: TextEncoder, states: RepoSessionState[]) {
+  controller.enqueue(encodeSSE(encoder, { type: 'bulk_update', repositories: states, timestamp: new Date().toISOString() }));
+}
+
+/** Send repo update event */
+function sendRepoUpdate(controller: ReadableStreamDefaultController, encoder: TextEncoder, state: RepoSessionState) {
+  controller.enqueue(encodeSSE(encoder, { type: 'repo_update', repository: state, timestamp: new Date().toISOString() }));
+}
+
+/** Create task update handler */
+function createTaskUpdateHandler(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+  return async (data: { sessionId: string; taskId: string }) => {
+    try {
+      const session = await db.query.sessions.findFirst({
+        where: eq(sessions.id, data.sessionId),
+        columns: { repositoryId: true },
+      });
+      if (!session) return;
+
+      const repo = await db.query.repositories.findFirst({
+        where: eq(repositories.id, session.repositoryId),
+        columns: { id: true, name: true },
+      });
+      if (!repo) return;
+
+      const state = await buildRepoSessionState(repo);
+      sendRepoUpdate(controller, encoder, state);
+    } catch (error) {
+      console.error('[multi-repo-stream] Error handling task update:', error);
+    }
+  };
+}
+
+/** Setup intervals for keep-alive and refresh */
+function setupIntervals(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+  const keepAliveInterval = setInterval(() => {
+    try {
+      controller.enqueue(encoder.encode(': keep-alive\n\n'));
+    } catch {
+      clearInterval(keepAliveInterval);
+    }
+  }, 30000);
+
+  const refreshInterval = setInterval(async () => {
+    try {
+      const states = await getAllRepoStates();
+      sendBulkUpdate(controller, encoder, states);
+    } catch {
+      // Ignore errors during refresh
+    }
+  }, 10000);
+
+  return { keepAliveInterval, refreshInterval };
+}
+
+/**
+ * Server-Sent Events endpoint for real-time multi-repo updates
+ */
+export async function GET(request: NextRequest) {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      sendConnected(controller, encoder);
+      const initialStates = await getAllRepoStates();
+      sendBulkUpdate(controller, encoder, initialStates);
+
+      const onTaskUpdate = createTaskUpdateHandler(controller, encoder);
+      taskEvents.on('task:update', onTaskUpdate);
+      taskEvents.on('task:output', onTaskUpdate);
+
+      const { keepAliveInterval, refreshInterval } = setupIntervals(controller, encoder);
+
+      request.signal.addEventListener('abort', () => {
+        clearInterval(keepAliveInterval);
+        clearInterval(refreshInterval);
+        taskEvents.off('task:update', onTaskUpdate);
+        taskEvents.off('task:output', onTaskUpdate);
+        try { controller.close(); } catch { /* already closed */ }
+      });
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}

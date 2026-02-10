@@ -2,10 +2,10 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/shared/lib/utils';
-import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { StatCard, ActionCard, ListCard, type ListCardItem } from '@/shared/components/ui/dashboard-cards';
+import { MultiRepoCommandCenter } from './MultiRepoCommandCenter';
 import {
   Activity,
   CheckCircle2,
@@ -17,9 +17,7 @@ import {
   BarChart3,
   RefreshCw,
   PlayCircle,
-  PauseCircle,
   XCircle,
-  type LucideIcon,
 } from 'lucide-react';
 
 /* ============================================
@@ -81,198 +79,12 @@ export interface DashboardOverviewProps {
   onStartSession?: () => void;
   onPauseSession?: () => void;
   onResumeSession?: () => void;
+  onSelectRepo?: (repositoryId: string) => void;
+  onPauseRepo?: (repositoryId: string, sessionId: string) => void;
+  onResumeRepo?: (repositoryId: string, sessionId: string) => void;
+  selectedRepoId?: string;
   loading?: boolean;
   className?: string;
-}
-
-/* ============================================
-   HERO SECTION HELPERS
-   ============================================ */
-
-interface SessionStatusConfig {
-  icon: LucideIcon;
-  label: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-}
-
-const SESSION_STATUS_CONFIGS: Record<SessionStatus['status'], SessionStatusConfig> = {
-  active: {
-    icon: PlayCircle,
-    label: 'Active Session',
-    color: 'text-success',
-    bgColor: 'bg-success/10',
-    borderColor: 'border-success/20',
-  },
-  paused: {
-    icon: PauseCircle,
-    label: 'Session Paused',
-    color: 'text-warning',
-    bgColor: 'bg-warning/10',
-    borderColor: 'border-warning/20',
-  },
-  idle: {
-    icon: Clock,
-    label: 'No Active Session',
-    color: 'text-text-muted',
-    bgColor: 'bg-muted/50',
-    borderColor: 'border-border-default',
-  },
-  completed: {
-    icon: CheckCircle2,
-    label: 'Session Completed',
-    color: 'text-info',
-    bgColor: 'bg-info/10',
-    borderColor: 'border-info/20',
-  },
-};
-
-function HeroSkeleton() {
-  return (
-    <Card className="relative overflow-hidden">
-      <CardContent className="p-6 sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 animate-pulse rounded-xl bg-muted" />
-            <div className="space-y-2">
-              <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-              <div className="h-4 w-48 animate-pulse rounded bg-muted" />
-            </div>
-          </div>
-          <div className="h-10 w-32 animate-pulse rounded-lg bg-muted" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ActiveIndicator() {
-  return (
-    <span className="relative flex h-2.5 w-2.5">
-      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
-    </span>
-  );
-}
-
-interface SessionInfoProps {
-  config: SessionStatusConfig;
-  status: SessionStatus['status'];
-  sessionStatus?: SessionStatus;
-}
-
-function SessionInfo({ config, status, sessionStatus }: SessionInfoProps) {
-  const StatusIcon = config.icon;
-  return (
-    <div className="flex items-center gap-4">
-      <div className={cn('flex h-14 w-14 items-center justify-center rounded-xl', config.bgColor)}>
-        <StatusIcon className={cn('h-7 w-7', config.color)} />
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-text-primary">{config.label}</h2>
-          {status === 'active' && <ActiveIndicator />}
-        </div>
-        {sessionStatus?.repositoryName && (
-          <p className="mt-1 flex items-center gap-2 text-sm text-text-secondary">
-            <GitBranch className="h-4 w-4" />
-            {sessionStatus.repositoryName}
-          </p>
-        )}
-        {sessionStatus?.currentTask && (
-          <p className="mt-1 text-sm text-text-muted">Working on: {sessionStatus.currentTask.title}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface SessionActionsProps {
-  status: SessionStatus['status'];
-  onStartSession?: () => void;
-  onPauseSession?: () => void;
-  onResumeSession?: () => void;
-}
-
-function SessionActions({ status, onStartSession, onPauseSession, onResumeSession }: SessionActionsProps) {
-  return (
-    <div className="flex items-center gap-3">
-      {status === 'idle' && onStartSession && (
-        <Button onClick={onStartSession} className="gap-2">
-          <PlayCircle className="h-4 w-4" />
-          Start Session
-        </Button>
-      )}
-      {status === 'active' && onPauseSession && (
-        <Button variant="outline" onClick={onPauseSession} className="gap-2">
-          <PauseCircle className="h-4 w-4" />
-          Pause
-        </Button>
-      )}
-      {status === 'paused' && onResumeSession && (
-        <Button onClick={onResumeSession} className="gap-2">
-          <PlayCircle className="h-4 w-4" />
-          Resume
-        </Button>
-      )}
-    </div>
-  );
-}
-
-interface TaskProgressBarProps {
-  progress: number;
-}
-
-function TaskProgressBar({ progress }: TaskProgressBarProps) {
-  return (
-    <div className="mt-6">
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="text-text-secondary">Task Progress</span>
-        <span className="font-medium text-text-primary">{progress}%</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-accent-primary transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-interface HeroSectionProps {
-  sessionStatus?: SessionStatus;
-  onStartSession?: () => void;
-  onPauseSession?: () => void;
-  onResumeSession?: () => void;
-  loading?: boolean;
-}
-
-function HeroSection({ sessionStatus, onStartSession, onPauseSession, onResumeSession, loading }: HeroSectionProps) {
-  if (loading) return <HeroSkeleton />;
-
-  const status = sessionStatus?.status || 'idle';
-  const config = SESSION_STATUS_CONFIGS[status];
-  const showProgress = sessionStatus?.currentTask?.progress !== undefined && status === 'active';
-
-  return (
-    <Card className={cn('relative overflow-hidden border-2 transition-colors', config.borderColor)}>
-      <div className={cn('absolute inset-0 opacity-50', config.bgColor)} />
-      <CardContent className="relative p-6 sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <SessionInfo config={config} status={status} sessionStatus={sessionStatus} />
-          <SessionActions
-            status={status}
-            onStartSession={onStartSession}
-            onPauseSession={onPauseSession}
-            onResumeSession={onResumeSession}
-          />
-        </div>
-        {showProgress && <TaskProgressBar progress={sessionStatus!.currentTask!.progress!} />}
-      </CardContent>
-    </Card>
-  );
 }
 
 /* ============================================
@@ -529,25 +341,30 @@ function SectionDivider() {
  * Uses CSS Grid with responsive columns and proper spacing.
  */
 export function DashboardOverview({
-  sessionStatus,
+  sessionStatus: _sessionStatus,
   metrics,
   quickActions,
   recentActivity,
   onCreateTask,
-  onStartSession,
-  onPauseSession,
-  onResumeSession,
+  onStartSession: _onStartSession,
+  onPauseSession: _onPauseSession,
+  onResumeSession: _onResumeSession,
+  onSelectRepo,
+  onPauseRepo,
+  onResumeRepo,
+  selectedRepoId,
   loading,
   className,
 }: DashboardOverviewProps) {
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
-      <HeroSection
-        sessionStatus={sessionStatus}
-        onStartSession={onStartSession}
-        onPauseSession={onPauseSession}
-        onResumeSession={onResumeSession}
-        loading={loading}
+      {/* Multi-Repo Command Center - Primary hero section */}
+      <MultiRepoCommandCenter
+        onSelectRepo={onSelectRepo}
+        onPauseRepo={onPauseRepo}
+        onResumeRepo={onResumeRepo}
+        selectedRepoId={selectedRepoId}
+        maxVisible={6}
       />
 
       <MetricsGrid metrics={metrics} loading={loading} />

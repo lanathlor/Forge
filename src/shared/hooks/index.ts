@@ -9,6 +9,13 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 export { useTaskStream } from './useTaskStream';
 export type { TaskUpdate } from './useTaskStream';
 
+export { useMultiRepoStream } from './useMultiRepoStream';
+export type {
+  ClaudeStatus,
+  RepoSessionState,
+  MultiRepoUpdate,
+} from './useMultiRepoStream';
+
 // Responsive hooks
 export { useMediaQuery } from './useMediaQuery';
 
