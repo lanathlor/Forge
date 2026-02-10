@@ -364,7 +364,7 @@ export function DashboardOverview({
         onPauseRepo={onPauseRepo}
         onResumeRepo={onResumeRepo}
         selectedRepoId={selectedRepoId}
-        maxVisible={6}
+        maxVisible={8}
       />
 
       <MetricsGrid metrics={metrics} loading={loading} />
