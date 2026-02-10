@@ -4,6 +4,53 @@ import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 const COMMIT_MESSAGE_GENERATION_TIMEOUT = 30000; // 30 seconds
 
+// Common preamble patterns Claude uses before commit messages
+const PREAMBLE_PATTERNS = [
+  /^Now I have a complete/i,
+  /^Now I have the full/i,
+  /^Here'?s? (?:the|a) commit message/i,
+  /^Let me (?:write|create|generate)/i,
+  /^I'll (?:write|create|generate)/i,
+  /^Based on the changes/i,
+  /^Looking at (?:the|these) changes/i,
+];
+
+const CONVENTIONAL_COMMIT_REGEX = /^(feat|fix|refactor|docs|test|chore|style|perf|ci|build)(\(.+?\))?:/i;
+
+function isPreambleLine(line: string): boolean {
+  return PREAMBLE_PATTERNS.some(pattern => pattern.test(line));
+}
+
+/**
+ * Extract the actual commit message from Claude's output, removing any preamble
+ */
+function extractCommitMessage(rawOutput: string): string {
+  const lines = rawOutput.split('\n');
+  let startIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]?.trim() ?? '';
+    if (!line) continue;
+    if (isPreambleLine(line)) continue;
+
+    // Found a non-preamble line - check if it's a conventional commit or use as-is
+    if (CONVENTIONAL_COMMIT_REGEX.test(line)) {
+      startIndex = i;
+      break;
+    }
+    // Non-preamble, non-conventional commit line - assume it's the message start
+    startIndex = i;
+    break;
+  }
+
+  const commitMessage = lines.slice(startIndex).join('\n').trim();
+  if (!commitMessage) {
+    console.warn('[extractCommitMessage] Failed to extract commit message, using raw output');
+    return rawOutput.trim();
+  }
+  return commitMessage;
+}
+
 /**
  * Generate a commit message using Claude Code CLI based on the task prompt and diff
  */
@@ -24,14 +71,21 @@ export async function generateCommitMessage(
   console.log('[generateCommitMessage] Working directory:', workingDirectory);
 
   try {
-    const commitMessage = await claudeWrapper.executeOneShot(
+    const rawOutput = await claudeWrapper.executeOneShot(
       prompt,
       workingDirectory,
       COMMIT_MESSAGE_GENERATION_TIMEOUT
     );
 
+    console.log('[generateCommitMessage] Raw output from Claude:');
+    console.log('[generateCommitMessage]', rawOutput.substring(0, 200));
+
+    // Extract the actual commit message, removing Claude's preamble
+    const commitMessage = extractCommitMessage(rawOutput);
+
     console.log('[generateCommitMessage] Successfully generated commit message');
     console.log('[generateCommitMessage] Message length:', commitMessage.length);
+    console.log('[generateCommitMessage] First line:', commitMessage.split('\n')[0]);
 
     return commitMessage;
   } catch (error) {

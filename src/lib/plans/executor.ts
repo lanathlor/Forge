@@ -3,13 +3,87 @@ import { db } from '@/db';
 import { plans, phases, planTasks, type PlanTask } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
 import { tasks as sessionTasks } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { getOrCreateActiveSession } from '@/lib/sessions/manager';
 import { executeTask } from '@/lib/tasks/orchestrator';
 
 const _MAX_RETRIES = 3;
 
 export class PlanExecutor {
+  /**
+   * Clean up any stuck tasks/plans from server restarts
+   * Call this on application startup
+   */
+  async cleanupStuckExecutions(): Promise<void> {
+    console.log('[PlanExecutor] Checking for stuck tasks and plans...');
+
+    // Find all tasks stuck in running states
+    const stuckTasks = await db
+      .select()
+      .from(sessionTasks)
+      .where(
+        inArray(sessionTasks.status, ['running', 'pre_flight', 'waiting_qa', 'qa_running'])
+      );
+
+    if (stuckTasks.length > 0) {
+      console.log(`[PlanExecutor] Found ${stuckTasks.length} stuck tasks, marking as failed`);
+
+      for (const task of stuckTasks) {
+        await db
+          .update(sessionTasks)
+          .set({
+            status: 'failed',
+            claudeOutput: (task.claudeOutput || '') + '\n\n❌ Task interrupted by server restart',
+            updatedAt: new Date(),
+          })
+          .where(eq(sessionTasks.id, task.id));
+      }
+    }
+
+    // Find all plan_tasks stuck in running state
+    const stuckPlanTasks = await db
+      .select()
+      .from(planTasks)
+      .where(eq(planTasks.status, 'running'));
+
+    if (stuckPlanTasks.length > 0) {
+      console.log(`[PlanExecutor] Found ${stuckPlanTasks.length} stuck plan tasks, marking as failed`);
+
+      for (const planTask of stuckPlanTasks) {
+        await db
+          .update(planTasks)
+          .set({
+            status: 'failed',
+            lastError: 'Task execution interrupted by server restart',
+            updatedAt: new Date(),
+          })
+          .where(eq(planTasks.id, planTask.id));
+      }
+    }
+
+    // Find all plans stuck in running state
+    const stuckPlans = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.status, 'running'));
+
+    if (stuckPlans.length > 0) {
+      console.log(`[PlanExecutor] Found ${stuckPlans.length} stuck plans, marking as paused`);
+
+      for (const plan of stuckPlans) {
+        await db
+          .update(plans)
+          .set({
+            status: 'paused',
+            updatedAt: new Date(),
+          })
+          .where(eq(plans.id, plan.id));
+      }
+    }
+
+    console.log('[PlanExecutor] Cleanup complete');
+  }
+
   /**
    * Execute a plan from start or resume from where it left off
    */

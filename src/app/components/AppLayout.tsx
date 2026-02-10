@@ -3,8 +3,9 @@
 
 import { type ReactNode, useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks';
-import { setSidebarCollapsed } from '@/features/sessions/store/sessionSlice';
+import { setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
 import { Navigation, useNavigationItems } from '@/shared/components/navigation';
+import { QuickSwitchDock } from './QuickSwitchDock';
 import { cn } from '@/shared/lib/utils';
 
 export interface AppLayoutProps {
@@ -40,6 +41,15 @@ export function AppLayout({
 }: AppLayoutProps) {
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(state => state.session.isSidebarCollapsed);
+  const currentRepositoryId = useAppSelector(state => state.session.currentRepositoryId);
+
+  // Handle repo selection from QuickSwitchDock with zero page reload
+  const handleDockSelectRepo = useCallback((repositoryId: string, sessionId?: string | null) => {
+    dispatch(setCurrentRepository(repositoryId));
+    if (sessionId) {
+      dispatch(setCurrentSession(sessionId));
+    }
+  }, [dispatch]);
 
   // Track active navigation for view switching (future: could route between views)
   const [currentNavItem, setCurrentNavItem] = useState(activeNavItem);
@@ -89,10 +99,22 @@ export function AppLayout({
           'flex-1 flex flex-col overflow-hidden',
           'bg-surface-default',
           // Add padding top for mobile header
-          'pt-14 md:pt-0'
+          'pt-14 md:pt-0',
+          // Add padding bottom for mobile tab bar
+          'pb-16 md:pb-0'
         )}
       >
-        {children}
+        {/* Quick-Switch Repo Dock - Desktop: top bar, Mobile: bottom tab bar */}
+        <QuickSwitchDock
+          selectedRepoId={currentRepositoryId || undefined}
+          onSelectRepo={handleDockSelectRepo}
+          position="top"
+        />
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
       </main>
     </div>
   );
