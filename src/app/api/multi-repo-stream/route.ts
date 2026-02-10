@@ -5,6 +5,7 @@ import { sessions } from '@/db/schema/sessions';
 import { tasks } from '@/db/schema/tasks';
 import { eq, desc } from 'drizzle-orm';
 import { taskEvents } from '@/lib/events/task-events';
+import { getStuckDetector } from '@/lib/stuck-detection';
 import type { ClaudeStatus, RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
 
 /**
@@ -107,7 +108,23 @@ async function getAllRepoStates(): Promise<RepoSessionState[]> {
   const allRepos = await db.query.repositories.findMany({
     columns: { id: true, name: true },
   });
-  return Promise.all(allRepos.map((repo) => buildRepoSessionState(repo)));
+  const states = await Promise.all(allRepos.map((repo) => buildRepoSessionState(repo)));
+
+  // Update stuck detector with all repo states
+  const detector = getStuckDetector();
+  for (const state of states) {
+    detector.updateRepoState({
+      repositoryId: state.repositoryId,
+      repositoryName: state.repositoryName,
+      sessionId: state.sessionId,
+      taskId: state.currentTask?.id ?? null,
+      status: state.currentTask?.status ?? null,
+      hasOutput: false,
+      blockedQAGate: null,
+    });
+  }
+
+  return states;
 }
 
 /** Encode SSE message */
@@ -148,6 +165,18 @@ function createTaskUpdateHandler(controller: ReadableStreamDefaultController, en
 
       const state = await buildRepoSessionState(repo);
       sendRepoUpdate(controller, encoder, state);
+
+      // Update stuck detector with new state
+      const detector = getStuckDetector();
+      detector.updateRepoState({
+        repositoryId: repo.id,
+        repositoryName: repo.name,
+        sessionId: state.sessionId,
+        taskId: state.currentTask?.id ?? null,
+        status: state.currentTask?.status ?? null,
+        hasOutput: true,
+        blockedQAGate: null,
+      });
     } catch (error) {
       console.error('[multi-repo-stream] Error handling task update:', error);
     }

@@ -8,6 +8,8 @@ import {
   type RepoSessionState,
   type ClaudeStatus,
 } from '@/shared/hooks/useMultiRepoStream';
+import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
+import type { StuckAlert, StuckStatus } from '@/lib/stuck-detection/types';
 import {
   Brain,
   Pencil,
@@ -21,6 +23,7 @@ import {
   WifiOff,
   Loader2,
   X,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -190,45 +193,52 @@ interface RepoPillProps {
   repo: RepoSessionState;
   isSelected: boolean;
   shortcutNumber?: number;
+  stuckAlert?: StuckAlert | null;
   onClick: () => void;
 }
 
-function RepoPill({ repo, isSelected, shortcutNumber, onClick }: RepoPillProps) {
+function RepoPillBadges({ hasStuckAlert, stuckAlert, shortcutNumber }: { hasStuckAlert: boolean; stuckAlert?: StuckAlert | null; shortcutNumber?: number }) {
+  return (
+    <>
+      {hasStuckAlert && <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold animate-bounce">!</span>}
+      {stuckAlert && stuckAlert.stuckDurationSeconds > 0 && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-red-500/90 text-white text-[8px] font-mono whitespace-nowrap">{formatStuckTime(stuckAlert.stuckDurationSeconds)}</span>}
+      {shortcutNumber && !hasStuckAlert && <span className="hidden group-hover:flex absolute -top-5 left-1/2 -translate-x-1/2 items-center justify-center px-1.5 py-0.5 rounded bg-foreground/90 text-background text-[10px] font-mono whitespace-nowrap">⌘{shortcutNumber}</span>}
+    </>
+  );
+}
+
+function getRepoPillClassName(config: StatusConfig, isSelected: boolean, needsAttention: boolean, hasStuckAlert: boolean) {
+  return cn(
+    'group relative flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-200',
+    'hover:scale-105 active:scale-95',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    config.bgColor,
+    isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+    needsAttention && 'animate-pulse-border',
+    hasStuckAlert && 'ring-2 ring-red-500 ring-offset-1 animate-pulse'
+  );
+}
+
+function RepoPill({ repo, isSelected, shortcutNumber, stuckAlert, onClick }: RepoPillProps) {
   const config = STATUS_CONFIGS[repo.claudeStatus];
   const shortName = getShortName(repo.repositoryName);
+  const hasStuckAlert = Boolean(stuckAlert && !stuckAlert.acknowledged);
+  const title = `${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}${stuckAlert ? ` - ${stuckAlert.description}` : ''}`;
 
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'group relative flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-200',
-        'hover:scale-105 active:scale-95',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        config.bgColor,
-        isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-        repo.needsAttention && 'animate-pulse-border'
-      )}
-      title={`${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}`}
-    >
-      {/* Repo Icon */}
+    <button onClick={onClick} className={getRepoPillClassName(config, isSelected, repo.needsAttention, hasStuckAlert)} title={title}>
       <GitBranch className={cn('h-3.5 w-3.5 shrink-0', config.color)} />
-
-      {/* Repo Name */}
-      <span className={cn('text-xs font-medium truncate max-w-[100px]', config.color)}>
-        {shortName}
-      </span>
-
-      {/* Status Dot */}
+      <span className={cn('text-xs font-medium truncate max-w-[100px]', config.color)}>{shortName}</span>
       <StatusDot status={repo.claudeStatus} size="sm" />
-
-      {/* Keyboard Shortcut Hint (shown on hover for desktop) */}
-      {shortcutNumber && (
-        <span className="hidden group-hover:flex absolute -top-5 left-1/2 -translate-x-1/2 items-center justify-center px-1.5 py-0.5 rounded bg-foreground/90 text-background text-[10px] font-mono whitespace-nowrap">
-          ⌘{shortcutNumber}
-        </span>
-      )}
+      <RepoPillBadges hasStuckAlert={hasStuckAlert} stuckAlert={stuckAlert} shortcutNumber={shortcutNumber} />
     </button>
   );
+}
+
+function formatStuckTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  return `${Math.floor(seconds / 3600)}h`;
 }
 
 /* ============================================
@@ -488,6 +498,7 @@ export function QuickSwitchDock({
   className,
 }: QuickSwitchDockProps) {
   const { repositories, connected, error } = useMultiRepoStream();
+  const { status: stuckStatus, getAlertForRepo } = useStuckDetection();
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   // Sort repos by activity/priority for display
@@ -557,6 +568,7 @@ export function QuickSwitchDock({
                 repo={repo}
                 isSelected={repo.repositoryId === selectedRepoId}
                 shortcutNumber={index < 9 ? index + 1 : undefined}
+                stuckAlert={getAlertForRepo(repo.repositoryId)}
                 onClick={() => handleSelectRepo(repo.repositoryId, repo.sessionId)}
               />
             ))}
@@ -573,7 +585,7 @@ export function QuickSwitchDock({
         {activeRepos.length > 0 && (
           <>
             <div className="h-4 w-px bg-border" />
-            <DockStats repos={activeRepos} />
+            <DockStats repos={activeRepos} stuckStatus={stuckStatus} />
           </>
         )}
       </div>
@@ -604,33 +616,52 @@ export function QuickSwitchDock({
    SUBCOMPONENTS - Dock Stats
    ============================================ */
 
-function DockStats({ repos }: { repos: RepoSessionState[] }) {
-  const stats = useMemo(() => ({
-    active: repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length,
-    waiting: repos.filter(r => r.claudeStatus === 'waiting_input').length,
-    stuck: repos.filter(r => r.claudeStatus === 'stuck').length,
-  }), [repos]);
+interface DockStatsProps {
+  repos: RepoSessionState[];
+  stuckStatus: StuckStatus | null;
+}
+
+interface DisplayStats {
+  active: number;
+  waiting: number;
+  stuck: number;
+  failed?: number;
+  qaBlocked?: number;
+}
+
+function useDisplayStats(repos: RepoSessionState[], stuckStatus: StuckStatus | null): DisplayStats {
+  return useMemo(() => {
+    const active = repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length;
+    const waiting = repos.filter(r => r.claudeStatus === 'waiting_input').length;
+    const stuck = repos.filter(r => r.claudeStatus === 'stuck').length;
+
+    if (!stuckStatus) return { active, waiting, stuck };
+
+    return {
+      active,
+      waiting: stuckStatus.waitingInputCount || waiting,
+      stuck: stuckStatus.totalStuckCount,
+      failed: stuckStatus.failedCount,
+      qaBlocked: stuckStatus.qaBlockedCount,
+    };
+  }, [repos, stuckStatus]);
+}
+
+function StatItem({ show, color, icon, label }: { show: boolean; color: string; icon: React.ReactNode; label: string }) {
+  if (!show) return null;
+  return <span className={cn('flex items-center gap-1', color)}>{icon}{label}</span>;
+}
+
+function DockStats({ repos, stuckStatus }: DockStatsProps) {
+  const stats = useDisplayStats(repos, stuckStatus);
 
   return (
     <div className="flex items-center gap-3 text-[10px]">
-      {stats.active > 0 && (
-        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          {stats.active} active
-        </span>
-      )}
-      {stats.waiting > 0 && (
-        <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          {stats.waiting} waiting
-        </span>
-      )}
-      {stats.stuck > 0 && (
-        <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-          {stats.stuck} stuck
-        </span>
-      )}
+      <StatItem show={stats.active > 0} color="text-emerald-600 dark:text-emerald-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />} label={`${stats.active} active`} />
+      <StatItem show={stats.waiting > 0} color="text-amber-600 dark:text-amber-400" icon={<Bell className="h-3 w-3" />} label={`${stats.waiting} waiting`} />
+      <StatItem show={Boolean(stats.failed && stats.failed > 0)} color="text-orange-600 dark:text-orange-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-orange-500" />} label={`${stats.failed} failed`} />
+      <StatItem show={Boolean(stats.qaBlocked && stats.qaBlocked > 0)} color="text-purple-600 dark:text-purple-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-purple-500" />} label={`${stats.qaBlocked} blocked`} />
+      <StatItem show={stats.stuck > 0} color="text-red-600 dark:text-red-400 font-semibold" icon={<AlertTriangle className="h-3 w-3 animate-pulse" />} label={`${stats.stuck} stuck`} />
     </div>
   );
 }

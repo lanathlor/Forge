@@ -32,7 +32,12 @@ export default defineConfig({
         'src/lib/tasks/orchestrator.ts', // Complex orchestration (tested via integration)
         'src/features/repositories/lib/scanner.ts', // File system scanning (tested via E2E)
         'src/shared/hooks/useTaskStream.ts', // Uses EventSource browser API (tested via E2E)
+        'src/shared/hooks/useStuckDetection.ts', // Uses EventSource browser API (tested via E2E)
+        'src/shared/hooks/useStuckDetectionConfig.ts', // Uses fetch for config (tested via E2E)
+        'src/shared/hooks/useMultiRepoStream.ts', // Uses EventSource browser API (tested via E2E)
         'src/shared/components/ui/tabs.tsx', // Simple UI wrapper component
+        'src/shared/components/ui/toast.tsx', // Complex toast component (tested via E2E)
+        'src/lib/stuck-detection/**', // Stuck detection system (tested via E2E and integration)
         'src/features/repositories/api/**', // API handlers (tested via E2E)
         'src/features/repositories/store/**', // Redux store (tested via integration)
         'src/features/sessions/store/**', // Redux store (tested via integration)

@@ -7,6 +7,10 @@ import { QuickActions } from './QuickActions';
 import { RecentActivity as RecentActivityFeed, type ActivityItem } from './RecentActivity';
 import { useGetActivityQuery } from '@/features/activity/store/activityApi';
 import { MetricsGrid, type MetricsData } from './MetricsGrid';
+import { NeedsAttention } from './NeedsAttention';
+import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
+import { useStuckToasts } from '@/shared/components/ui/toast';
+import type { StuckAlert } from '@/lib/stuck-detection/types';
 
 /* ============================================
    TYPES & INTERFACES
@@ -184,6 +188,26 @@ function RecentActivitySection({ repositoryId, onItemClick, loading: externalLoa
 }
 
 /* ============================================
+   STUCK DETECTION INTEGRATION
+   ============================================ */
+
+function useStuckDetectionIntegration(
+  onSelectRepo?: (repositoryId: string) => void
+) {
+  const { showStuckAlert, resolveStuckAlert } = useStuckToasts();
+
+  const handleStuckDetected = React.useCallback((alert: StuckAlert) => {
+    showStuckAlert(alert.repositoryId, alert.repositoryName, alert.reason, alert.stuckDurationSeconds, () => onSelectRepo?.(alert.repositoryId));
+  }, [showStuckAlert, onSelectRepo]);
+
+  const handleStuckResolved = React.useCallback((alert: StuckAlert) => {
+    resolveStuckAlert(alert.repositoryId);
+  }, [resolveStuckAlert]);
+
+  useStuckDetection({ onStuckDetected: handleStuckDetected, onStuckResolved: handleStuckResolved });
+}
+
+/* ============================================
    MAIN DASHBOARD OVERVIEW COMPONENT
    ============================================ */
 
@@ -198,30 +222,21 @@ export function DashboardOverview(props: DashboardOverviewProps) {
   const resolvedMetrics = metricsData ?? convertLegacyMetrics(metrics);
   const handleNewTask = onNewTask ?? onCreateTask;
 
+  useStuckDetectionIntegration(onSelectRepo);
+
+  const handleNeedsAttentionSelect = React.useCallback((repositoryId: string, _sessionId?: string | null) => {
+    onSelectRepo?.(repositoryId);
+  }, [onSelectRepo]);
+
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
-      <MultiRepoCommandCenter
-        onSelectRepo={onSelectRepo}
-        onPauseRepo={onPauseRepo}
-        onResumeRepo={onResumeRepo}
-        selectedRepoId={selectedRepoId}
-        maxVisible={8}
-      />
+      <NeedsAttention onSelectRepo={handleNeedsAttentionSelect} maxVisible={3} />
+      <MultiRepoCommandCenter onSelectRepo={onSelectRepo} onPauseRepo={onPauseRepo} onResumeRepo={onResumeRepo} selectedRepoId={selectedRepoId} maxVisible={8} />
       <MetricsGrid metrics={resolvedMetrics} loading={loading} />
       <SectionDivider />
-      <QuickActions
-        onNewTask={handleNewTask}
-        onStartSession={onStartSession}
-        onBrowsePlans={onBrowsePlans}
-        onViewRepositories={onViewRepositories}
-        loading={loading}
-      />
+      <QuickActions onNewTask={handleNewTask} onStartSession={onStartSession} onBrowsePlans={onBrowsePlans} onViewRepositories={onViewRepositories} loading={loading} />
       <SectionDivider />
-      <RecentActivitySection
-        repositoryId={selectedRepoId}
-        onItemClick={onActivityItemClick}
-        loading={loading}
-      />
+      <RecentActivitySection repositoryId={selectedRepoId} onItemClick={onActivityItemClick} loading={loading} />
     </div>
   );
 }
