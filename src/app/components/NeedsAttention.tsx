@@ -100,7 +100,8 @@ function useAlertDuration(initialDuration: number, alertId: string) {
   const [displayDuration, setDisplayDuration] = useState(initialDuration);
   useEffect(() => {
     setDisplayDuration(initialDuration);
-    const interval = setInterval(() => setDisplayDuration(d => d + 1), 1000);
+    // Update every 10 seconds to reduce re-render frequency
+    const interval = setInterval(() => setDisplayDuration(d => d + 10), 10000);
     return () => clearInterval(interval);
   }, [initialDuration, alertId]);
   return displayDuration;
@@ -143,7 +144,7 @@ function AlertItem({ alert, onView, onAcknowledge }: AlertItemProps) {
   const displayDuration = useAlertDuration(alert.stuckDurationSeconds, alert.id);
 
   return (
-    <div className={cn('flex items-start gap-3 p-3 rounded-lg border transition-all', severityConfig.bgColor, severityConfig.borderColor, alert.acknowledged && 'opacity-60', !alert.acknowledged && alert.severity === 'critical' && 'animate-pulse')}>
+    <div className={cn('flex items-start gap-3 p-3 rounded-lg border transition-all', severityConfig.bgColor, severityConfig.borderColor, alert.acknowledged && 'opacity-60')}>
       <div className={cn('shrink-0 mt-0.5', severityConfig.color)}><SeverityIcon className="h-5 w-5" /></div>
       <div className="flex-1 min-w-0">
         <AlertItemHeader alert={alert} severityConfig={severityConfig} />
@@ -177,11 +178,11 @@ interface SummaryHeaderProps {
   onToggle: () => void;
 }
 
-function SummaryHeaderIcon({ hasAlerts, severityConfig, isCritical }: { hasAlerts: boolean; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] | null; isCritical: boolean }) {
+function SummaryHeaderIcon({ hasAlerts, severityConfig }: { hasAlerts: boolean; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] | null }) {
   if (hasAlerts) {
     return (
       <div className={cn('flex items-center justify-center h-8 w-8 rounded-full', severityConfig?.bgColor || 'bg-muted')}>
-        <AlertTriangle className={cn('h-4 w-4', severityConfig?.color || 'text-muted-foreground', isCritical && 'animate-pulse')} />
+        <AlertTriangle className={cn('h-4 w-4', severityConfig?.color || 'text-muted-foreground')} />
       </div>
     );
   }
@@ -200,7 +201,7 @@ function SummaryHeaderTitle({ hasAlerts, count }: { hasAlerts: boolean; count: n
     <div>
       <h3 className="text-sm font-semibold flex items-center gap-2">
         Needs Attention
-        {hasAlerts && <Badge variant="destructive" className="text-[10px] h-5 px-1.5 animate-pulse">{count}</Badge>}
+        {hasAlerts && <Badge variant="destructive" className="text-[10px] h-5 px-1.5">{count}</Badge>}
       </h3>
       <p className="text-xs text-muted-foreground">{message}</p>
     </div>
@@ -214,7 +215,7 @@ function SummaryHeader({ status, isCollapsed, onToggle }: SummaryHeaderProps) {
   return (
     <div className={cn('flex items-center justify-between cursor-pointer select-none', 'hover:bg-muted/50 rounded-lg -mx-2 px-2 py-1 transition-colors')} onClick={onToggle}>
       <div className="flex items-center gap-3">
-        <SummaryHeaderIcon hasAlerts={hasAlerts} severityConfig={severityConfig} isCritical={status.highestSeverity === 'critical'} />
+        <SummaryHeaderIcon hasAlerts={hasAlerts} severityConfig={severityConfig} />
         <SummaryHeaderTitle hasAlerts={hasAlerts} count={status.totalStuckCount} />
       </div>
       {hasAlerts && (
