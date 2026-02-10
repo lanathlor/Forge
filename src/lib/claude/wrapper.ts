@@ -267,6 +267,123 @@ class ClaudeCodeWrapper extends EventEmitter {
    * Returns the output directly without storing to database
    * Useful for commit message generation and other quick tasks
    */
+  /**
+   * Execute Claude with streaming output via callback
+   */
+  async executeWithStream(
+    prompt: string,
+    workingDirectory: string,
+    onChunk: (text: string) => void,
+    timeoutMs = 120000
+  ): Promise<string> {
+    const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
+
+    console.log(`[ClaudeWrapper] executeWithStream called`);
+    console.log(`[ClaudeWrapper] Working directory: ${workingDirectory}`);
+    console.log(`[ClaudeWrapper] SIMULATE_CLAUDE env var: "${process.env.SIMULATE_CLAUDE}"`);
+    console.log(`[ClaudeWrapper] All env keys:`, Object.keys(process.env).filter(k => k.includes('CLAUDE') || k.includes('SIMULATE')));
+
+    // Check if we're in simulation mode
+    const simulateClaudeCode = process.env.SIMULATE_CLAUDE === 'true';
+    console.log(`[ClaudeWrapper] Using simulation mode: ${simulateClaudeCode}`);
+
+    if (simulateClaudeCode) {
+      console.log(`[ClaudeWrapper] Simulating streaming execution...`);
+      const mockResponse = `I'll expand the plan with more detail.
+
+<UPDATES>
+[
+  {"action": "update_phase", "phaseOrder": 1, "updates": {"description": "Enhanced description with more specific implementation details and technical requirements."}}
+]
+</UPDATES>`;
+      const words = mockResponse.split(' ');
+      for (const word of words) {
+        onChunk(word + ' ');
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      return mockResponse;
+    }
+
+    return new Promise((resolve, reject) => {
+      let fullOutput = '';
+
+      const timeout = setTimeout(() => {
+        childProcess?.kill('SIGTERM');
+        reject(new Error(`Streaming execution timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      const childProcess = spawn(
+        claudeCodePath,
+        [
+          '--dangerously-skip-permissions',
+          '--print',
+          '--output-format', 'stream-json',
+          '--include-partial-messages',
+          '--verbose',
+        ],
+        {
+          cwd: workingDirectory,
+          env: process.env,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        }
+      );
+
+      console.log(`[ClaudeWrapper] Streaming process spawned with PID: ${childProcess.pid}`);
+
+      childProcess.stdout?.on('data', (data) => {
+        const text = data.toString();
+        const lines = text.split('\n').filter((line: string) => line.trim());
+
+        for (const line of lines) {
+          try {
+            const parsed = JSON.parse(line);
+
+            // Extract text from text_delta events
+            if (parsed.type === 'stream_event' &&
+                parsed.event?.type === 'content_block_delta' &&
+                parsed.event?.delta?.type === 'text_delta') {
+              const humanText = parsed.event.delta.text;
+              fullOutput += humanText;
+              onChunk(humanText);
+            }
+          } catch (_e) {
+            // Not JSON, ignore
+          }
+        }
+      });
+
+      let errorOutput = '';
+
+      childProcess.stderr?.on('data', (data) => {
+        errorOutput += data.toString();
+        console.error(`[ClaudeWrapper] Streaming stderr: ${data.toString()}`);
+      });
+
+      childProcess.on('close', (exitCode) => {
+        clearTimeout(timeout);
+        console.log(`[ClaudeWrapper] Streaming process closed with exit code: ${exitCode}`);
+
+        if (exitCode === 0) {
+          resolve(fullOutput);
+        } else {
+          const errorMsg = errorOutput || `Claude Code exited with code ${exitCode}`;
+          console.error(`[ClaudeWrapper] Error details:`, errorMsg);
+          reject(new Error(errorMsg));
+        }
+      });
+
+      childProcess.on('error', (err) => {
+        clearTimeout(timeout);
+        console.error(`[ClaudeWrapper] Streaming process error:`, err);
+        reject(err);
+      });
+
+      // Write prompt to stdin
+      childProcess.stdin?.write(prompt + '\n');
+      childProcess.stdin?.end();
+    });
+  }
+
   async executeOneShot(
     prompt: string,
     workingDirectory: string,
