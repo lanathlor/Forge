@@ -331,11 +331,14 @@ IMPORTANT: When creating commits, use semantic commit message format:
       throw new Error('Failed to create session task');
     }
 
-    // Update plan task with session ID and status
+    console.log(`[PlanExecutor] Created session task ${sessionTask.id} for plan task ${task.title}`);
+
+    // Update plan task with session and task IDs
     await db
       .update(planTasks)
       .set({
-        sessionId: sessionTask.id,
+        sessionId: session.id,
+        taskId: sessionTask.id,
         status: 'running',
         startedAt: task.startedAt || new Date(),
         attempts: task.attempts + 1,
@@ -352,12 +355,22 @@ IMPORTANT: When creating commits, use semantic commit message format:
       })
       .where(eq(plans.id, task.planId));
 
-    try {
-      // Execute the task using the existing orchestrator
-      // This will handle all the Claude execution, QA gates, commits, etc.
-      await executeTask(sessionTask.id);
+    // Execute the task asynchronously (fire and forget)
+    // This prevents timeout issues and allows the UI to track progress
+    executeTask(sessionTask.id).catch((error) => {
+      console.error(`[PlanExecutor] Task ${sessionTask.id} execution failed:`, error);
+    });
 
-      // Check the final status of the session task
+    console.log(`[PlanExecutor] Started async execution of task ${sessionTask.id}`);
+
+    // Poll for task completion
+    const maxPolls = 120; // 10 minutes with 5-second intervals
+    let polls = 0;
+
+    while (polls < maxPolls) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      polls++;
+
       const [completedSessionTask] = await db
         .select()
         .from(sessionTasks)
@@ -365,10 +378,12 @@ IMPORTANT: When creating commits, use semantic commit message format:
         .limit(1);
 
       if (!completedSessionTask) {
-        throw new Error('Session task not found after execution');
+        throw new Error('Session task not found during polling');
       }
 
-      // Update plan task based on session task result
+      console.log(`[PlanExecutor] Poll ${polls}: Task status = ${completedSessionTask.status}`);
+
+      // Check if task is in a terminal state
       if (completedSessionTask.status === 'completed') {
         await db
           .update(planTasks)
@@ -382,8 +397,8 @@ IMPORTANT: When creating commits, use semantic commit message format:
 
         await this.updatePlanCompletedTasks(task.planId);
         console.log(`[PlanExecutor] Task completed: ${task.title}`);
+        return;
       } else if (completedSessionTask.status === 'failed' || completedSessionTask.status === 'qa_failed') {
-        // Task failed
         const errorMsg = `Task execution failed with status: ${completedSessionTask.status}`;
 
         await db
@@ -398,7 +413,6 @@ IMPORTANT: When creating commits, use semantic commit message format:
         await this.pausePlan(task.planId, 'task_failed', taskId);
         throw new Error(errorMsg);
       } else if (completedSessionTask.status === 'rejected') {
-        // Task was rejected by user
         await db
           .update(planTasks)
           .set({
@@ -408,26 +422,30 @@ IMPORTANT: When creating commits, use semantic commit message format:
           .where(eq(planTasks.id, taskId));
 
         console.log(`[PlanExecutor] Task rejected/skipped: ${task.title}`);
-      } else {
-        // Unexpected status
-        throw new Error(`Unexpected task status: ${completedSessionTask.status}`);
+        return;
+      } else if (completedSessionTask.status === 'waiting_approval') {
+        // Task is waiting for user approval - pause the plan
+        console.log(`[PlanExecutor] Task waiting for approval, pausing plan`);
+        await this.pausePlan(task.planId, 'waiting_approval', taskId);
+        return;
       }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[PlanExecutor] Task execution failed:`, errorMsg);
 
-      await db
-        .update(planTasks)
-        .set({
-          status: 'failed',
-          lastError: errorMsg,
-          updatedAt: new Date(),
-        })
-        .where(eq(planTasks.id, taskId));
-
-      await this.pausePlan(task.planId, 'task_failed', taskId);
-      throw error;
+      // Continue polling if status is: pending, pre_flight, running, waiting_qa, qa_running
     }
+
+    // Timeout reached
+    const errorMsg = 'Task execution timed out after 10 minutes';
+    await db
+      .update(planTasks)
+      .set({
+        status: 'failed',
+        lastError: errorMsg,
+        updatedAt: new Date(),
+      })
+      .where(eq(planTasks.id, taskId));
+
+    await this.pausePlan(task.planId, 'task_timeout', taskId);
+    throw new Error(errorMsg);
   }
 
   /**

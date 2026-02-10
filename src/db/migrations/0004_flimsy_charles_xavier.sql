@@ -1,0 +1,1 @@
+ALTER TABLE plan_tasks ADD `task_id` text;

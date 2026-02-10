@@ -24,7 +24,8 @@ export const planTasks = sqliteTable('plan_tasks', {
   lastQaResults: text('last_qa_results', { mode: 'json' }),
 
   // Results
-  sessionId: text('session_id'), // Claude session that executed this
+  sessionId: text('session_id'), // Session that executed this task
+  taskId: text('task_id'), // Task ID in the sessions/tasks system (for timeline visibility)
   commitSha: text('commit_sha'),
 
   startedAt: integer('started_at', { mode: 'timestamp' }),
