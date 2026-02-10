@@ -26,15 +26,17 @@ async function getGitDiffOutputs(containerPath: string, diffBase: string) {
   // Compare against working directory (includes both committed and uncommitted changes)
   // Using just `git diff ${diffBase}` instead of `git diff ${diffBase} HEAD`
   // This captures all changes since the starting commit, even if not committed
-  const [fullDiffResult, statResult, nameStatusResult] = await Promise.all([
+  const [fullDiffResult, statResult, nameStatusResult, untrackedFilesResult] = await Promise.all([
     execAsync(`git diff ${diffBase}`, { cwd: containerPath, timeout: 30000 }),
     execAsync(`git diff ${diffBase} --numstat`, { cwd: containerPath, timeout: 30000 }),
     execAsync(`git diff ${diffBase} --name-status`, { cwd: containerPath, timeout: 30000 }),
+    execAsync(`git ls-files --others --exclude-standard`, { cwd: containerPath, timeout: 30000 }),
   ]);
   return {
     fullDiff: fullDiffResult.stdout,
     statOutput: statResult.stdout,
     nameStatusOutput: nameStatusResult.stdout,
+    untrackedFiles: untrackedFilesResult.stdout,
   };
 }
 
@@ -48,9 +50,11 @@ export async function captureDiff(
   const diffBase = getDiffBase(fromCommit);
   console.log(`[captureDiff] Using diff base: ${diffBase}`);
 
-  const { fullDiff, statOutput, nameStatusOutput } = await getGitDiffOutputs(containerPath, diffBase);
-  const changedFiles = parseChangedFiles(statOutput, nameStatusOutput, fullDiff);
+  const { fullDiff, statOutput, nameStatusOutput, untrackedFiles } = await getGitDiffOutputs(containerPath, diffBase);
+  const changedFiles = parseChangedFiles(statOutput, nameStatusOutput, fullDiff, untrackedFiles);
   const stats = calculateStats(changedFiles);
+
+  console.log(`[captureDiff] Found ${changedFiles.length} changed files (${changedFiles.filter(f => f.status === 'added').length} new, ${changedFiles.filter(f => f.status === 'modified').length} modified, ${changedFiles.filter(f => f.status === 'deleted').length} deleted)`);
 
   return { fullDiff, changedFiles, stats };
 }
@@ -59,12 +63,14 @@ export async function captureDiff(
 function parseChangedFiles(
   statOutput: string,
   nameStatusOutput: string,
-  fullDiff: string
+  fullDiff: string,
+  untrackedFiles: string
 ): FileChange[] {
   const statLines = statOutput.trim().split('\n').filter(Boolean);
   const nameStatusLines = nameStatusOutput.trim().split('\n').filter(Boolean);
 
-  return statLines.map((statLine, index) => {
+  // Parse tracked file changes (from git diff)
+  const trackedChanges = statLines.map((statLine, index) => {
     const parts = statLine.split('\t');
     const addStr = parts[0] || '0';
     const delStr = parts[1] || '0';
@@ -111,6 +117,19 @@ function parseChangedFiles(
       patch,
     };
   });
+
+  // Parse untracked files (new files that git diff doesn't show)
+  const untrackedLines = untrackedFiles.trim().split('\n').filter(Boolean);
+  const untrackedChanges: FileChange[] = untrackedLines.map((path) => ({
+    path,
+    status: 'added' as const,
+    additions: 0, // We don't have stats for untracked files
+    deletions: 0,
+    patch: '', // No patch available for untracked files
+  }));
+
+  // Combine both tracked and untracked changes
+  return [...trackedChanges, ...untrackedChanges];
 }
 
 function extractFilePatch(fullDiff: string, filePath: string): string {
