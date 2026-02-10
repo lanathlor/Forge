@@ -9,7 +9,7 @@ import {
   type ClaudeStatus,
 } from '@/shared/hooks/useMultiRepoStream';
 import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
-import type { StuckAlert, StuckStatus } from '@/lib/stuck-detection/types';
+import type { StuckAlert } from '@/lib/stuck-detection/types';
 import {
   Brain,
   Pencil,
@@ -498,7 +498,7 @@ export function QuickSwitchDock({
   className,
 }: QuickSwitchDockProps) {
   const { repositories, connected, error } = useMultiRepoStream();
-  const { status: stuckStatus, getAlertForRepo } = useStuckDetection();
+  const { getAlertForRepo } = useStuckDetection();
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   // Sort repos by activity/priority for display
@@ -585,7 +585,7 @@ export function QuickSwitchDock({
         {activeRepos.length > 0 && (
           <>
             <div className="h-4 w-px bg-border" />
-            <DockStats repos={activeRepos} stuckStatus={stuckStatus} />
+            <DockStats repos={activeRepos} />
           </>
         )}
       </div>
@@ -618,33 +618,23 @@ export function QuickSwitchDock({
 
 interface DockStatsProps {
   repos: RepoSessionState[];
-  stuckStatus: StuckStatus | null;
 }
 
 interface DisplayStats {
   active: number;
   waiting: number;
   stuck: number;
-  failed?: number;
-  qaBlocked?: number;
 }
 
-function useDisplayStats(repos: RepoSessionState[], stuckStatus: StuckStatus | null): DisplayStats {
+function useDisplayStats(repos: RepoSessionState[]): DisplayStats {
   return useMemo(() => {
+    // Count stats based on each repo's claudeStatus (which reflects the last task)
     const active = repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length;
     const waiting = repos.filter(r => r.claudeStatus === 'waiting_input').length;
     const stuck = repos.filter(r => r.claudeStatus === 'stuck').length;
 
-    if (!stuckStatus) return { active, waiting, stuck };
-
-    return {
-      active,
-      waiting: stuckStatus.waitingInputCount || waiting,
-      stuck: stuckStatus.totalStuckCount,
-      failed: stuckStatus.failedCount,
-      qaBlocked: stuckStatus.qaBlockedCount,
-    };
-  }, [repos, stuckStatus]);
+    return { active, waiting, stuck };
+  }, [repos]);
 }
 
 function StatItem({ show, color, icon, label }: { show: boolean; color: string; icon: React.ReactNode; label: string }) {
@@ -652,15 +642,13 @@ function StatItem({ show, color, icon, label }: { show: boolean; color: string; 
   return <span className={cn('flex items-center gap-1', color)}>{icon}{label}</span>;
 }
 
-function DockStats({ repos, stuckStatus }: DockStatsProps) {
-  const stats = useDisplayStats(repos, stuckStatus);
+function DockStats({ repos }: DockStatsProps) {
+  const stats = useDisplayStats(repos);
 
   return (
     <div className="flex items-center gap-3 text-[10px]">
       <StatItem show={stats.active > 0} color="text-emerald-600 dark:text-emerald-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />} label={`${stats.active} active`} />
       <StatItem show={stats.waiting > 0} color="text-amber-600 dark:text-amber-400" icon={<Bell className="h-3 w-3" />} label={`${stats.waiting} waiting`} />
-      <StatItem show={Boolean(stats.failed && stats.failed > 0)} color="text-orange-600 dark:text-orange-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-orange-500" />} label={`${stats.failed} failed`} />
-      <StatItem show={Boolean(stats.qaBlocked && stats.qaBlocked > 0)} color="text-purple-600 dark:text-purple-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-purple-500" />} label={`${stats.qaBlocked} blocked`} />
       <StatItem show={stats.stuck > 0} color="text-red-600 dark:text-red-400 font-semibold" icon={<AlertTriangle className="h-3 w-3 animate-pulse" />} label={`${stats.stuck} stuck`} />
     </div>
   );
