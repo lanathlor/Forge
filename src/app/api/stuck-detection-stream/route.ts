@@ -45,6 +45,7 @@ function setupIntervals(
     }
   }, 30000);
 
+  // Only send periodic updates every 30 seconds - real-time events are already pushed immediately
   const statusInterval = setInterval(() => {
     try {
       const status = detector.getStatus();
@@ -52,7 +53,7 @@ function setupIntervals(
     } catch {
       clearInterval(statusInterval);
     }
-  }, 5000);
+  }, 30000);
 
   return { keepAliveInterval, statusInterval };
 }
