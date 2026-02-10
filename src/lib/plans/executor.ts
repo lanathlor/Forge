@@ -293,10 +293,10 @@ export class PlanExecutor {
     // Get or create a session for this repository
     const session = await getOrCreateActiveSession(plan.repositoryId);
 
-    // Build prompt with semantic commit guidance
+    // Build prompt for plan task execution
     let prompt = `${task.description}`;
 
-    // Add plan context and commit message guidance
+    // Add plan context
     const planContext = `Plan: ${plan.title}${plan.description ? '\n' + plan.description : ''}`;
 
     prompt = `${planContext}
@@ -304,12 +304,7 @@ export class PlanExecutor {
 Task: ${task.title}
 ${prompt}
 
-IMPORTANT: When creating commits, use semantic commit message format:
-- Use conventional commits: <type>(<scope>): <subject>
-- Types: feat, fix, refactor, docs, test, chore, style, perf, ci, build
-- Example: "feat(plans): add task execution tracking"
-- Keep subject under 72 characters
-- Use imperative mood`;
+IMPORTANT: Make the code changes but DO NOT commit them. The system will automatically commit your changes after running QA gates.`;
 
     // Add retry context if needed
     if (task.attempts > 0 && task.lastError) {

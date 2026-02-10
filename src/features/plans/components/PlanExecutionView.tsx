@@ -20,6 +20,7 @@ import {
   useCreatePlanTaskMutation,
   useUpdatePlanTaskMutation,
   useDeletePlanTaskMutation,
+  useRetryPlanTaskMutation,
 } from '../store/plansApi';
 import type { Phase, PlanTask } from '@/db/schema';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
@@ -45,6 +46,7 @@ export function PlanExecutionView({ planId, onReview }: PlanExecutionViewProps) 
   const [createTask] = useCreatePlanTaskMutation();
   const [updateTask] = useUpdatePlanTaskMutation();
   const [deleteTask] = useDeletePlanTaskMutation();
+  const [retryTask] = useRetryPlanTaskMutation();
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -421,6 +423,18 @@ export function PlanExecutionView({ planId, onReview }: PlanExecutionViewProps) 
                                   }}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                              {task.status === 'failed' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    retryTask(task.id);
+                                  }}
+                                >
+                                  Retry
                                 </Button>
                               )}
                               {task.attempts > 0 && (

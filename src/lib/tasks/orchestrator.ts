@@ -10,6 +10,56 @@ import { taskEvents } from '@/lib/events/task-events';
 
 const MAX_QA_ATTEMPTS = 3;
 
+async function emitAndAppendOutput(
+  taskId: string,
+  sessionId: string,
+  message: string
+): Promise<void> {
+  taskEvents.emit('task:output', { sessionId, taskId, output: message });
+
+  const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+  await db
+    .update(tasks)
+    .set({
+      claudeOutput: (task?.claudeOutput || '') + message,
+      updatedAt: new Date(),
+    })
+    .where(eq(tasks.id, taskId));
+}
+
+async function invokeClaudeForRetry(
+  taskId: string,
+  sessionId: string,
+  containerPath: string,
+  retryPrompt: string
+): Promise<void> {
+  const outputHandler = (data: { taskId: string; output?: string; data?: string }) => {
+    if (data.taskId === taskId) {
+      const output = data.output || data.data || '';
+      taskEvents.emit('task:output', { sessionId, taskId, output });
+    }
+  };
+
+  claudeWrapper.on('output', outputHandler);
+
+  console.log(`[Task ${taskId}] Invoking Claude for retry with prompt length: ${retryPrompt.length} chars`);
+
+  try {
+    await claudeWrapper.executeTask({
+      workingDirectory: containerPath,
+      prompt: retryPrompt,
+      taskId,
+    });
+
+    const retryCompleteMessage = `\n✓ Claude retry execution completed\n`;
+    taskEvents.emit('task:output', { sessionId, taskId, output: retryCompleteMessage });
+
+    console.log(`[Task ${taskId}] Claude retry execution completed`);
+  } finally {
+    claudeWrapper.off('output', outputHandler);
+  }
+}
+
 /* eslint-disable max-lines-per-function */
 /**
  * Run QA gates with automatic retry on failure
@@ -25,16 +75,24 @@ async function runQAGatesWithRetry(
   let attempt = 1;
 
   while (attempt <= MAX_QA_ATTEMPTS) {
+    const qaStartMessage = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔍 QA GATES - Attempt ${attempt}/${MAX_QA_ATTEMPTS}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     console.log(`[Task ${taskId}] QA attempt ${attempt}/${MAX_QA_ATTEMPTS}`);
 
-    // Update attempt counter
     await db
       .update(tasks)
       .set({ currentQAAttempt: attempt, updatedAt: new Date() })
       .where(eq(tasks.id, taskId));
 
+    await emitAndAppendOutput(taskId, sessionId, qaStartMessage);
+
     // Run QA gates
     const { results, passed } = await runTaskQAGates(taskId);
+
+    const qaResultMessage = passed
+      ? `\n✅ QA gates PASSED on attempt ${attempt}\n`
+      : `\n❌ QA gates FAILED on attempt ${attempt}\n${results.filter(r => r.status === 'failed').map(r => `  • ${r.gateName}: ${r.errors?.join(', ') || r.output}`).join('\n')}\n`;
+
+    await emitAndAppendOutput(taskId, sessionId, qaResultMessage);
 
     if (passed) {
       console.log(`[Task ${taskId}] QA gates passed on attempt ${attempt}`);
@@ -45,6 +103,8 @@ async function runQAGatesWithRetry(
 
     // If this was the last attempt, give up
     if (attempt >= MAX_QA_ATTEMPTS) {
+      const failMessage = `\n🚫 Maximum QA attempts (${MAX_QA_ATTEMPTS}) reached. Task failed.\n`;
+      taskEvents.emit('task:output', { sessionId, taskId, output: failMessage });
       console.log(`[Task ${taskId}] Max QA attempts reached, task failed`);
       return;
     }
@@ -53,54 +113,24 @@ async function runQAGatesWithRetry(
     const failedGates = results.filter((r) => r.status === 'failed');
     const retryPrompt = buildRetryPrompt(originalPrompt, failedGates, attempt);
 
+    const retryStartMessage = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔄 RETRY ATTEMPT ${attempt + 1}/${MAX_QA_ATTEMPTS}\nInvoking Claude to fix QA failures...\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
     console.log(`[Task ${taskId}] Invoking Claude to fix QA failures (attempt ${attempt + 1})`);
+
+    await emitAndAppendOutput(taskId, sessionId, retryStartMessage);
 
     // Update status to show we're retrying
     await db
       .update(tasks)
-      .set({
-        status: 'running',
-        updatedAt: new Date(),
-      })
+      .set({ status: 'running', updatedAt: new Date() })
       .where(eq(tasks.id, taskId));
 
-    taskEvents.emit('task:update', {
-      sessionId,
-      taskId,
-      status: 'running',
-    });
+    taskEvents.emit('task:update', { sessionId, taskId, status: 'running' });
 
-    // Invoke Claude to fix the issues
-    const outputHandler = (data: { taskId: string; output?: string; data?: string }) => {
-      if (data.taskId === taskId) {
-        const output = data.output || data.data || '';
-        taskEvents.emit('task:output', {
-          sessionId,
-          taskId,
-          output,
-        });
-      }
-    };
-
-    claudeWrapper.on('output', outputHandler);
-
-    console.log(`[Task ${taskId}] Invoking Claude for retry with prompt length: ${retryPrompt.length} chars`);
-
-    try {
-      await claudeWrapper.executeTask({
-        workingDirectory: containerPath,
-        prompt: retryPrompt,
-        taskId,
-      });
-      console.log(`[Task ${taskId}] Claude retry execution completed`);
-    } finally {
-      claudeWrapper.off('output', outputHandler);
-    }
+    await invokeClaudeForRetry(taskId, sessionId, containerPath, retryPrompt);
 
     // Capture new diff
-    const task = await db.query.tasks.findFirst({
-      where: eq(tasks.id, taskId),
-    });
+    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
 
     if (!task) {
       throw new Error('Task not found after retry');
@@ -118,11 +148,7 @@ async function runQAGatesWithRetry(
       })
       .where(eq(tasks.id, taskId));
 
-    taskEvents.emit('task:update', {
-      sessionId,
-      taskId,
-      status: 'waiting_qa',
-    });
+    taskEvents.emit('task:update', { sessionId, taskId, status: 'waiting_qa' });
 
     // Increment attempt and loop
     attempt++;

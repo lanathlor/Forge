@@ -117,6 +117,86 @@ class ClaudeCodeWrapper extends EventEmitter {
     console.log(`[ClaudeWrapper] Prompt sent, stdin closed`);
   }
 
+  private handleTextDelta(taskId: string, delta: Record<string, unknown>): void {
+    const humanText = delta.text as string;
+    this.emitAndAppend(taskId, humanText, `[Claude Output ${taskId}] ${humanText}`);
+  }
+
+  private handleToolUse(taskId: string, contentBlock: Record<string, unknown>): void {
+    const toolName = (contentBlock.name as string) || 'unknown';
+    const toolMessage = `\n🔧 Tool: ${toolName}\n`;
+    this.emitAndAppend(taskId, toolMessage, `[Claude Tool ${taskId}] Using tool: ${toolName}`);
+  }
+
+  private handleInputJsonDelta(taskId: string, delta: Record<string, unknown>): void {
+    const inputDelta = delta.partial_json as string;
+    this.emitAndAppend(taskId, inputDelta, `[Claude Tool Input ${taskId}] ${inputDelta}`);
+  }
+
+  private handleStreamEvent(
+    taskId: string,
+    event: Record<string, unknown>
+  ): boolean {
+    const delta = event.delta as Record<string, unknown> | undefined;
+    const contentBlock = event.content_block as Record<string, unknown> | undefined;
+
+    if (event.type === 'content_block_delta') {
+      if (delta?.type === 'text_delta') {
+        this.handleTextDelta(taskId, delta);
+        return true;
+      }
+      if (delta?.type === 'input_json_delta') {
+        this.handleInputJsonDelta(taskId, delta);
+        return true;
+      }
+    }
+
+    if (event.type === 'content_block_start' && contentBlock?.type === 'tool_use') {
+      this.handleToolUse(taskId, contentBlock);
+      return true;
+    }
+
+    return false;
+  }
+
+  private handleToolResult(taskId: string, parsed: Record<string, unknown>): void {
+    const toolName = (parsed.tool_name as string) || 'unknown';
+    const isError = (parsed.is_error as boolean) || false;
+    const resultPrefix = isError ? '❌ Tool Error' : '✓ Tool Complete';
+    const toolResultMessage = `\n${resultPrefix}: ${toolName}\n`;
+    this.emitAndAppend(taskId, toolResultMessage, `[Claude Tool Result ${taskId}] ${toolName} - ${isError ? 'error' : 'success'}`);
+  }
+
+  private handleParsedEvent(taskId: string, parsed: Record<string, unknown>): void {
+    if (parsed.type === 'stream_event') {
+      const event = parsed.event as Record<string, unknown> | undefined;
+      if (event) {
+        this.handleStreamEvent(taskId, event);
+      }
+      return;
+    }
+
+    if (parsed.type === 'tool_result') {
+      this.handleToolResult(taskId, parsed);
+    }
+  }
+
+  private emitAndAppend(taskId: string, output: string, logMessage: string): void {
+    console.log(logMessage);
+    this.emit('output', { taskId, output, timestamp: new Date() });
+    this.appendTaskOutput(taskId, output);
+  }
+
+  private processStdoutLine(taskId: string, line: string): void {
+    try {
+      const parsed = JSON.parse(line) as Record<string, unknown>;
+      this.handleParsedEvent(taskId, parsed);
+    } catch (_e) {
+      // Not JSON or parsing failed, treat as plain text
+      this.emitAndAppend(taskId, line, `[Claude Output ${taskId}] ${line}`);
+    }
+  }
+
   private setupProcessHandlers(
     taskId: string,
     resolve: (value: ClaudeTaskResult) => void,
@@ -129,40 +209,10 @@ class ClaudeCodeWrapper extends EventEmitter {
       const text = data.toString();
       this.output.push(text);
 
-      // Parse stream-json output and extract human-readable text
+      // Parse stream-json output and extract all relevant events
       const lines = text.split('\n').filter((line: string) => line.trim());
       for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line);
-
-          // Extract text from text_delta events
-          if (parsed.type === 'stream_event' &&
-              parsed.event?.type === 'content_block_delta' &&
-              parsed.event?.delta?.type === 'text_delta') {
-            const humanText = parsed.event.delta.text;
-
-            console.log(`[Claude Output ${taskId}] ${humanText}`);
-
-            this.emit('output', {
-              taskId,
-              output: humanText,
-              timestamp: new Date(),
-            });
-
-            this.appendTaskOutput(taskId, humanText);
-          }
-        } catch (_e) {
-          // Not JSON or parsing failed, treat as plain text
-          console.log(`[Claude Output ${taskId}] ${line}`);
-
-          this.emit('output', {
-            taskId,
-            output: line,
-            timestamp: new Date(),
-          });
-
-          this.appendTaskOutput(taskId, line);
-        }
+        this.processStdoutLine(taskId, line);
       }
     });
 

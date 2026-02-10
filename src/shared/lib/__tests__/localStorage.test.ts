@@ -142,7 +142,6 @@ describe('localStorage utility', () => {
   describe('SSR handling', () => {
     it('get should return null when window is undefined', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete (globalThis as { window?: typeof window }).window;
 
       const result = storage.get('test-key');
@@ -154,7 +153,6 @@ describe('localStorage utility', () => {
 
     it('set should return false when window is undefined', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete (globalThis as { window?: typeof window }).window;
 
       const result = storage.set('test-key', 'test-value');
@@ -166,7 +164,6 @@ describe('localStorage utility', () => {
 
     it('remove should return false when window is undefined', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete (globalThis as { window?: typeof window }).window;
 
       const result = storage.remove('test-key');
@@ -178,7 +175,6 @@ describe('localStorage utility', () => {
 
     it('clear should return false when window is undefined', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete (globalThis as { window?: typeof window }).window;
 
       const result = storage.clear();

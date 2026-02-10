@@ -233,6 +233,16 @@ export const plansApi = api.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'Plan', id: 'LIST' }],
     }),
+
+    retryPlanTask: builder.mutation<{ task: PlanTask }, string>({
+      query: (id) => ({
+        url: `/plan-tasks/${id}/retry`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_result, _error, _id) => [
+        { type: 'Plan', id: 'LIST' },
+      ],
+    }),
   }),
 });
 
@@ -255,4 +265,5 @@ export const {
   useCreatePlanTaskMutation,
   useUpdatePlanTaskMutation,
   useDeletePlanTaskMutation,
+  useRetryPlanTaskMutation,
 } = plansApi;

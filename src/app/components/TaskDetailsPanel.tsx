@@ -22,7 +22,7 @@ const STATUS_ICONS: Record<string, JSX.Element> = {
 function LoadingState() { return <Card className="h-full"><CardContent className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></CardContent></Card>; }
 function NotFoundState() { return <Card className="h-full"><CardContent className="flex items-center justify-center h-full"><p className="text-muted-foreground">Task not found</p></CardContent></Card>; }
 function OutputTab({ output, status, outputEndRef }: { output: string; status: string; outputEndRef: React.RefObject<HTMLDivElement | null> }) {
-  return <div className="h-full border rounded-lg bg-muted/50 overflow-y-auto"><div className="p-4 font-mono text-xs sm:text-sm">{output ? <><pre className="whitespace-pre-wrap break-words">{output}</pre><div ref={outputEndRef} /></> : <p className="text-muted-foreground italic">{status === 'running' ? 'Waiting for output...' : 'No output available'}</p>}</div></div>;
+  return <div className="h-full border rounded-lg bg-muted/50 overflow-y-auto"><div className="p-4 font-mono text-xs sm:text-sm">{output ? <><pre className="whitespace-pre-wrap break-words" style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>{output}</pre><div ref={outputEndRef} /></> : <p className="text-muted-foreground italic">{status === 'running' ? 'Waiting for output...' : 'No output available'}</p>}</div></div>;
 }
 
 function DiffTab({ taskId, hasDiff }: { taskId: string; hasDiff: boolean }) {

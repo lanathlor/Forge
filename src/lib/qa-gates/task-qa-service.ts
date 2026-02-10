@@ -1,9 +1,11 @@
 import { db } from '@/db';
-import { tasks, qaGateResults } from '@/db/schema';
+import { tasks, qaGateResults, planTasks } from '@/db/schema';
 import type { QAGateStatus } from '@/db/schema/qa-gates';
 import { eq } from 'drizzle-orm';
 import { runQAGates } from '@/lib/qa-gates/runner';
 import { taskEvents } from '@/lib/events/task-events';
+import { generateCommitMessage } from '@/lib/claude/commit-message';
+import { commitTaskChanges } from '@/lib/git/commit';
 
 interface GateResult {
   gateName: string;
@@ -37,6 +39,76 @@ export async function clearOldResults(taskId: string) {
 }
 
 /**
+ * Check if a task belongs to a plan (should be auto-approved)
+ */
+async function isPlanTask(taskId: string): Promise<boolean> {
+  const planTask = await db.query.planTasks.findFirst({
+    where: eq(planTasks.taskId, taskId),
+  });
+  return !!planTask;
+}
+
+/**
+ * Mark task as completed without changes
+ */
+async function markTaskCompleted(taskId: string) {
+  await db
+    .update(tasks)
+    .set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() })
+    .where(eq(tasks.id, taskId));
+}
+
+/**
+ * Handle failed auto-commit by falling back to waiting_approval
+ */
+async function handleCommitFailure(taskId: string, sessionId: string, error: unknown) {
+  console.error(`[AutoApprove] Failed to auto-approve task ${taskId}:`, error);
+  await db
+    .update(tasks)
+    .set({ status: 'waiting_approval', updatedAt: new Date() })
+    .where(eq(tasks.id, taskId));
+  taskEvents.emit('task:update', { sessionId, taskId, status: 'waiting_approval' });
+}
+
+/**
+ * Auto-approve and commit a plan task
+ */
+async function autoApproveAndCommit(taskId: string, sessionId: string) {
+  const task = await getTaskWithRepo(taskId);
+  if (!task || !task.filesChanged || task.filesChanged.length === 0) {
+    console.log(`[AutoApprove] No changes to commit for task ${taskId}`);
+    await markTaskCompleted(taskId);
+    return;
+  }
+
+  const repoPath = task.session.repository.path;
+  console.log(`[AutoApprove] Auto-approving plan task ${taskId}`);
+
+  try {
+    const commitMessage = await generateCommitMessage(
+      task.prompt, task.filesChanged, task.diffContent || '', repoPath
+    );
+    const result = await commitTaskChanges(repoPath, task.filesChanged, commitMessage);
+
+    await db
+      .update(tasks)
+      .set({
+        status: 'completed',
+        committedSha: result.sha,
+        commitMessage: result.message,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId));
+
+    taskEvents.emit('task:update', { sessionId, taskId, status: 'completed' });
+    console.log(`[AutoApprove] Plan task ${taskId} auto-approved and committed: ${result.sha}`);
+  } catch (error) {
+    await handleCommitFailure(taskId, sessionId, error);
+  }
+}
+
+/**
  * Update task status based on QA results
  */
 export async function updateTaskStatus(
@@ -44,23 +116,49 @@ export async function updateTaskStatus(
   allPassed: boolean,
   sessionId?: string
 ) {
-  const status = allPassed ? 'waiting_approval' : 'qa_failed';
+  if (!allPassed) {
+    // QA failed - set status to qa_failed
+    await db
+      .update(tasks)
+      .set({
+        status: 'qa_failed',
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId));
 
-  await db
-    .update(tasks)
-    .set({
-      status,
-      updatedAt: new Date(),
-    })
-    .where(eq(tasks.id, taskId));
+    if (sessionId) {
+      taskEvents.emit('task:update', {
+        sessionId,
+        taskId,
+        status: 'qa_failed',
+      });
+    }
+    return;
+  }
 
-  // Emit status update
-  if (sessionId) {
-    taskEvents.emit('task:update', {
-      sessionId,
-      taskId,
-      status,
-    });
+  // QA passed - check if this is a plan task
+  const isFromPlan = await isPlanTask(taskId);
+
+  if (isFromPlan && sessionId) {
+    // Auto-approve and commit plan tasks
+    await autoApproveAndCommit(taskId, sessionId);
+  } else {
+    // Regular task - wait for manual approval
+    await db
+      .update(tasks)
+      .set({
+        status: 'waiting_approval',
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId));
+
+    if (sessionId) {
+      taskEvents.emit('task:update', {
+        sessionId,
+        taskId,
+        status: 'waiting_approval',
+      });
+    }
   }
 }
 

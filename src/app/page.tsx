@@ -4,11 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks';
 import { setSidebarCollapsed } from '@/features/sessions/store/sessionSlice';
 import { useRepositorySession } from './hooks/useRepositorySession';
-import { PageHeader } from './components/PageHeader';
-import { CollapsibleSidebar } from './components/CollapsibleSidebar';
+import { AppLayout } from './components/AppLayout';
+import { RepositorySelector } from '@/features/repositories/components/RepositorySelector';
 import { RepositoryContent } from './components/RepositoryContent';
 import { EmptyRepositoryState } from './components/EmptyRepositoryState';
 import { DashboardLayout } from './components/DashboardLayout';
+import { cn } from '@/shared/lib/utils';
 
 /* eslint-disable max-lines-per-function */
 export default function HomePage() {
@@ -37,41 +38,46 @@ export default function HomePage() {
   }, [selectedRepo, loadActiveSession]);
 
   return (
-    <main className="h-screen flex flex-col overflow-hidden">
-      <PageHeader />
-
-      <div className="flex-1 overflow-hidden">
-        <div className="container mx-auto px-4 lg:px-8 py-4 lg:py-6 h-full">
-          <div className="flex flex-col lg:flex-row gap-4 h-full">
-            {/* Sidebar - Collapsible on desktop, drawer on mobile */}
-            <CollapsibleSidebar
+    <AppLayout activeNavItem="sessions">
+      <div className="flex-1 overflow-hidden h-full">
+        <div className="flex flex-col lg:flex-row gap-4 h-full p-4 lg:p-6">
+          {/* Repository Selector Panel */}
+          <div
+            className={cn(
+              'flex-shrink-0 transition-all duration-300 ease-in-out',
+              isSidebarCollapsed ? 'w-16' : 'w-80',
+              // Hide on mobile, show as a panel on larger screens
+              'hidden lg:block'
+            )}
+          >
+            <RepositorySelector
+              onSelect={handleSelectRepository}
               isCollapsed={isSidebarCollapsed}
               onToggleCollapse={() => dispatch(setSidebarCollapsed(!isSidebarCollapsed))}
-              onSelectRepository={handleSelectRepository}
             />
+          </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 overflow-hidden">
-              {selectedRepo && activeSession ? (
-                <DashboardLayout
-                  sessionId={activeSession.id}
-                  repositoryId={selectedRepo.id}
-                  repositoryName={selectedRepo.name}
-                  onSessionEnded={() => {
-                    // Clear session and reload to get a new one
-                    setActiveSession(null);
-                    loadActiveSession(selectedRepo.id);
-                  }}
-                />
-              ) : selectedRepo ? (
-                <RepositoryContent repository={selectedRepo} />
-              ) : (
-                <EmptyRepositoryState />
-              )}
-            </div>
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-hidden min-w-0">
+            {selectedRepo && activeSession ? (
+              <DashboardLayout
+                sessionId={activeSession.id}
+                repositoryId={selectedRepo.id}
+                repositoryName={selectedRepo.name}
+                onSessionEnded={() => {
+                  // Clear session and reload to get a new one
+                  setActiveSession(null);
+                  loadActiveSession(selectedRepo.id);
+                }}
+              />
+            ) : selectedRepo ? (
+              <RepositoryContent repository={selectedRepo} />
+            ) : (
+              <EmptyRepositoryState />
+            )}
           </div>
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }

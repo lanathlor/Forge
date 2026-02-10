@@ -14,6 +14,9 @@ vi.mock('@/db', () => ({
       tasks: {
         findFirst: vi.fn(),
       },
+      planTasks: {
+        findFirst: vi.fn(),
+      },
     },
     delete: vi.fn(),
     update: vi.fn(),
@@ -131,6 +134,7 @@ describe('Task QA Service', () => {
       };
 
       vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
 
       await updateTaskStatus('task-1', true);
 
@@ -169,6 +173,7 @@ describe('Task QA Service', () => {
       };
 
       vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
 
       await updateTaskStatus('task-1', true);
 
@@ -189,6 +194,7 @@ describe('Task QA Service', () => {
       };
 
       vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
 
       await expect(updateTaskStatus('task-1', true)).rejects.toThrow(
         'Update failed'
@@ -229,6 +235,7 @@ describe('Task QA Service', () => {
       ];
 
       vi.mocked(db.query.tasks.findFirst).mockResolvedValue(mockTask as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
       vi.mocked(runQAGates).mockResolvedValue(mockResults as any);
 
       const mockDeleteChain = {
@@ -329,6 +336,7 @@ describe('Task QA Service', () => {
       ];
 
       vi.mocked(db.query.tasks.findFirst).mockResolvedValue(mockTask as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
       vi.mocked(runQAGates).mockResolvedValue(mockResults as any);
 
       const mockDeleteChain = {
@@ -367,6 +375,7 @@ describe('Task QA Service', () => {
       ];
 
       vi.mocked(db.query.tasks.findFirst).mockResolvedValue(mockTask as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
       vi.mocked(runQAGates).mockResolvedValue(mockResults as any);
 
       const mockDeleteChain = {
@@ -439,6 +448,7 @@ describe('Task QA Service', () => {
       ];
 
       vi.mocked(db.query.tasks.findFirst).mockResolvedValue(mockTask as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined);
       vi.mocked(runQAGates).mockResolvedValue(mockResults as any);
 
       const mockDeleteChain = {

@@ -549,6 +549,8 @@ export async function handleRetryTask(taskId: string) {
         attempts: 0,
         lastError: null,
         lastQaResults: null,
+        taskId: null, // Clear old session task reference
+        sessionId: null, // Clear old session reference
         updatedAt: new Date(),
       })
       .where(eq(planTasks.id, taskId))
@@ -559,6 +561,31 @@ export async function handleRetryTask(taskId: string) {
         { error: 'Task not found' },
         { status: 404 }
       );
+    }
+
+    // Get the plan and resume it if it's paused or failed
+    const [plan] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, updatedTask.planId))
+      .limit(1);
+
+    if (plan && (plan.status === 'paused' || plan.status === 'failed')) {
+      // Resume the plan execution in the background
+      await db
+        .update(plans)
+        .set({
+          status: 'running',
+          updatedAt: new Date(),
+        })
+        .where(eq(plans.id, plan.id));
+
+      // Trigger plan execution
+      planExecutor.executePlan(plan.id).catch((error) => {
+        console.error(`Background plan execution failed for ${plan.id}:`, error);
+      });
+
+      console.log(`[RetryTask] Resumed plan ${plan.id} for task ${taskId}`);
     }
 
     return NextResponse.json({ task: updatedTask });
