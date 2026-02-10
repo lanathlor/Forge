@@ -1,24 +1,23 @@
 'use client';
 
-import { useMemo } from 'react';
+import * as React from 'react';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { StatCard, ActionCard, ListCard, type ListCardItem } from '@/shared/components/ui/dashboard-cards';
+import { ActionCard, ListCard, type ListCardItem } from '@/shared/components/ui/dashboard-cards';
 import { MultiRepoCommandCenter } from './MultiRepoCommandCenter';
 import {
   Activity,
   CheckCircle2,
-  Clock,
   Plus,
   GitBranch,
   FileCode,
   Zap,
-  BarChart3,
   RefreshCw,
   PlayCircle,
   XCircle,
 } from 'lucide-react';
+import { MetricsGrid, type MetricsData } from './MetricsGrid';
 
 /* ============================================
    TYPES & INTERFACES
@@ -36,6 +35,7 @@ export interface SessionStatus {
   repositoryName: string;
 }
 
+/** @deprecated Use MetricsData from MetricsGrid instead */
 export interface DashboardMetrics {
   tasksCompleted: number;
   tasksCompletedTrend?: {
@@ -50,6 +50,9 @@ export interface DashboardMetrics {
     direction: 'up' | 'down' | 'neutral';
   };
 }
+
+// Re-export the new metrics type
+export type { MetricsData };
 
 export interface QuickAction {
   id: string;
@@ -72,7 +75,10 @@ export interface RecentActivityItem {
 
 export interface DashboardOverviewProps {
   sessionStatus?: SessionStatus;
+  /** @deprecated Use metricsData instead */
   metrics?: DashboardMetrics;
+  /** New metrics data format for the enhanced MetricsGrid */
+  metricsData?: MetricsData;
   quickActions?: QuickAction[];
   recentActivity?: RecentActivityItem[];
   onCreateTask?: () => void;
@@ -88,94 +94,27 @@ export interface DashboardOverviewProps {
 }
 
 /* ============================================
-   METRICS GRID HELPERS
+   LEGACY METRICS CONVERSION HELPER
    ============================================ */
 
-interface MetricCardConfig {
-  icon: React.ReactNode;
-  value: string | number;
-  label: string;
-  trend?: { value: string; direction: 'up' | 'down' | 'neutral'; label?: string };
-  variant: 'default' | 'success' | 'primary' | 'warning' | 'error';
-}
-
-function formatTrend(
-  trend?: { value: number; direction: 'up' | 'down' | 'neutral' },
-  label?: string
-): MetricCardConfig['trend'] {
-  if (!trend) return undefined;
-  return { value: `${trend.value}%`, direction: trend.direction, label };
-}
-
-function getMetricsValues(metrics?: DashboardMetrics) {
+/**
+ * Converts legacy DashboardMetrics to new MetricsData format
+ * for backward compatibility during migration
+ */
+function convertLegacyMetrics(metrics?: DashboardMetrics): MetricsData | undefined {
+  if (!metrics) return undefined;
   return {
-    tasksCompleted: metrics?.tasksCompleted ?? 0,
-    tasksInProgress: metrics?.tasksInProgress ?? 0,
-    tasksPending: metrics?.tasksPending ?? 0,
-    successRate: metrics?.successRate ?? 0,
+    tasksCompletedToday: metrics.tasksCompleted,
+    tasksCompletedThisWeek: metrics.tasksCompleted * 5, // Estimate
+    avgTaskDurationMinutes: 45, // Default estimate
+    successRatePercent: metrics.successRate,
+    pendingApprovals: metrics.tasksPending,
+    qaPassRatePercent: metrics.successRate, // Use success rate as proxy
+    trends: {
+      tasksCompleted: metrics.tasksCompletedTrend,
+      successRate: metrics.successRateTrend,
+    },
   };
-}
-
-function buildMetricCards(metrics?: DashboardMetrics): MetricCardConfig[] {
-  const values = getMetricsValues(metrics);
-
-  return [
-    {
-      icon: <CheckCircle2 className="h-5 w-5" />,
-      value: values.tasksCompleted,
-      label: 'Tasks Completed',
-      trend: formatTrend(metrics?.tasksCompletedTrend, 'vs last week'),
-      variant: 'success',
-    },
-    {
-      icon: <Activity className="h-5 w-5" />,
-      value: values.tasksInProgress,
-      label: 'In Progress',
-      variant: 'primary',
-    },
-    {
-      icon: <Clock className="h-5 w-5" />,
-      value: values.tasksPending,
-      label: 'Pending Tasks',
-      variant: 'warning',
-    },
-    {
-      icon: <BarChart3 className="h-5 w-5" />,
-      value: `${values.successRate}%`,
-      label: 'Success Rate',
-      trend: formatTrend(metrics?.successRateTrend),
-      variant: 'default',
-    },
-  ];
-}
-
-interface MetricsGridProps {
-  metrics?: DashboardMetrics;
-  loading?: boolean;
-}
-
-function MetricsGrid({ metrics, loading }: MetricsGridProps) {
-  const metricCards = buildMetricCards(metrics);
-
-  return (
-    <section aria-labelledby="metrics-heading">
-      <h3 id="metrics-heading" className="sr-only">Dashboard Metrics</h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metricCards.map((card, index) => (
-          <StatCard
-            key={index}
-            icon={card.icon}
-            value={card.value}
-            label={card.label}
-            trend={card.trend}
-            variant={card.variant}
-            loading={loading}
-            size="sm"
-          />
-        ))}
-      </div>
-    </section>
-  );
 }
 
 /* ============================================
@@ -289,7 +228,7 @@ interface RecentActivityProps {
 }
 
 function RecentActivity({ recentActivity, loading }: RecentActivityProps) {
-  const listItems: ListCardItem[] = useMemo(() => {
+  const listItems: ListCardItem[] = React.useMemo(() => {
     if (!recentActivity) return [];
     return recentActivity.map((item) => ({
       id: item.id,
@@ -343,6 +282,7 @@ function SectionDivider() {
 export function DashboardOverview({
   sessionStatus: _sessionStatus,
   metrics,
+  metricsData,
   quickActions,
   recentActivity,
   onCreateTask,
@@ -356,6 +296,9 @@ export function DashboardOverview({
   loading,
   className,
 }: DashboardOverviewProps) {
+  // Support both new metricsData and legacy metrics props
+  const resolvedMetrics = metricsData ?? convertLegacyMetrics(metrics);
+
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
       {/* Multi-Repo Command Center - Primary hero section */}
@@ -367,7 +310,7 @@ export function DashboardOverview({
         maxVisible={8}
       />
 
-      <MetricsGrid metrics={metrics} loading={loading} />
+      <MetricsGrid metrics={resolvedMetrics} loading={loading} />
 
       <SectionDivider />
 

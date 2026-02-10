@@ -40,3 +40,6 @@ export {
   useResponsiveValueWithFallback,
 } from './useResponsiveValue';
 export type { ResponsiveValue, ExtractResponsiveValue } from './useResponsiveValue';
+
+export { useCountUp, easings } from './useCountUp';
+export type { UseCountUpOptions, UseCountUpReturn } from './useCountUp';
