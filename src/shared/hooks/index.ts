@@ -43,3 +43,16 @@ export type { ResponsiveValue, ExtractResponsiveValue } from './useResponsiveVal
 
 export { useCountUp, easings } from './useCountUp';
 export type { UseCountUpOptions, UseCountUpReturn } from './useCountUp';
+
+// SSE hooks (re-export from contexts)
+export {
+  useSSE,
+  useSSEStatus,
+  useSSEConnected,
+  useSSEHealth,
+  useSSESubscription,
+  useSSESubscriptionAll,
+  useSSEData,
+  useConnectionStatus,
+} from '@/shared/contexts/SSEContext';
+export type { SSEContextValue } from '@/shared/contexts/SSEContext';

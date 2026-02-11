@@ -37,6 +37,9 @@ export default defineConfig({
         'src/shared/hooks/useStuckDetection.ts', // Uses EventSource browser API (tested via E2E)
         'src/shared/hooks/useStuckDetectionConfig.ts', // Uses fetch for config (tested via E2E)
         'src/shared/hooks/useMultiRepoStream.ts', // Uses EventSource browser API (tested via E2E)
+        'src/shared/services/GlobalSSEManager.ts', // Uses EventSource browser API (tested via E2E)
+        'src/shared/contexts/SSEContext.tsx', // Uses GlobalSSEManager with EventSource (tested via E2E)
+        'src/shared/components/ConnectionStatusIndicator.tsx', // SSE status UI (tested via E2E)
         'src/shared/components/ui/tabs.tsx', // Simple UI wrapper component
         'src/shared/components/ui/toast.tsx', // Complex toast component (tested via E2E)
         'src/lib/stuck-detection/**', // Stuck detection system (tested via E2E and integration)
