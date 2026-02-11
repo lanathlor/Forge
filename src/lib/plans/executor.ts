@@ -6,8 +6,10 @@ import { tasks as sessionTasks } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { getOrCreateActiveSession } from '@/lib/sessions/manager';
 import { executeTask } from '@/lib/tasks/orchestrator';
+import { getActivityTracker } from './activity-tracker';
 
 const _MAX_RETRIES = 3;
+const POLL_INTERVAL_MS = 5000; // Check every 5 seconds
 
 export class PlanExecutor {
   /**
@@ -431,89 +433,104 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
 
     console.log(`[PlanExecutor] Started async execution of task ${sessionTask.id}`);
 
-    // Poll for task completion
-    const maxPolls = 120; // 10 minutes with 5-second intervals
-    let polls = 0;
+    // Poll for task completion with activity-based timeout
+    // Instead of a fixed 10-minute timeout, we track activity (Claude output, QA gates, etc.)
+    // and only timeout if there's been no activity for the configured threshold
+    const activityTracker = getActivityTracker();
+    activityTracker.startTracking(taskId, sessionTask.id);
 
-    while (polls < maxPolls) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-      polls++;
+    try {
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
 
-      const [completedSessionTask] = await db
-        .select()
-        .from(sessionTasks)
-        .where(eq(sessionTasks.id, sessionTask.id))
-        .limit(1);
+        const [completedSessionTask] = await db
+          .select()
+          .from(sessionTasks)
+          .where(eq(sessionTasks.id, sessionTask.id))
+          .limit(1);
 
-      if (!completedSessionTask) {
-        throw new Error('Session task not found during polling');
+        if (!completedSessionTask) {
+          throw new Error('Session task not found during polling');
+        }
+
+        // Record activity on status changes
+        activityTracker.recordActivity(taskId, 'status_change');
+
+        const timeUntilTimeout = activityTracker.getTimeUntilTimeout(taskId);
+        console.log(`[PlanExecutor] Poll: Task status = ${completedSessionTask.status}, ` +
+          `time until potential timeout: ${timeUntilTimeout?.toFixed(0)}s`);
+
+        // Check if task is in a terminal state
+        if (completedSessionTask.status === 'completed') {
+          await db
+            .update(planTasks)
+            .set({
+              status: 'completed',
+              completedAt: new Date(),
+              commitSha: completedSessionTask.committedSha || undefined,
+              updatedAt: new Date(),
+            })
+            .where(eq(planTasks.id, taskId));
+
+          await this.updatePlanCompletedTasks(task.planId);
+          console.log(`[PlanExecutor] Task completed: ${task.title}`);
+          return;
+        } else if (completedSessionTask.status === 'failed' || completedSessionTask.status === 'qa_failed') {
+          const errorMsg = `Task execution failed with status: ${completedSessionTask.status}`;
+
+          await db
+            .update(planTasks)
+            .set({
+              status: 'failed',
+              lastError: errorMsg,
+              updatedAt: new Date(),
+            })
+            .where(eq(planTasks.id, taskId));
+
+          await this.pausePlan(task.planId, 'task_failed', taskId);
+          throw new Error(errorMsg);
+        } else if (completedSessionTask.status === 'rejected') {
+          await db
+            .update(planTasks)
+            .set({
+              status: 'skipped',
+              updatedAt: new Date(),
+            })
+            .where(eq(planTasks.id, taskId));
+
+          console.log(`[PlanExecutor] Task rejected/skipped: ${task.title}`);
+          return;
+        } else if (completedSessionTask.status === 'waiting_approval') {
+          // Task is waiting for user approval - pause the plan
+          console.log(`[PlanExecutor] Task waiting for approval, pausing plan`);
+          await this.pausePlan(task.planId, 'waiting_approval', taskId);
+          return;
+        }
+
+        // Check for activity-based timeout
+        const timeoutError = activityTracker.checkTimeout(taskId);
+        if (timeoutError) {
+          console.log(`[PlanExecutor] Activity timeout detected: ${timeoutError}`);
+
+          await db
+            .update(planTasks)
+            .set({
+              status: 'failed',
+              lastError: timeoutError,
+              updatedAt: new Date(),
+            })
+            .where(eq(planTasks.id, taskId));
+
+          await this.pausePlan(task.planId, 'task_timeout', taskId);
+          throw new Error(timeoutError);
+        }
+
+        // Continue polling if status is: pending, pre_flight, running, waiting_qa, qa_running
       }
-
-      console.log(`[PlanExecutor] Poll ${polls}: Task status = ${completedSessionTask.status}`);
-
-      // Check if task is in a terminal state
-      if (completedSessionTask.status === 'completed') {
-        await db
-          .update(planTasks)
-          .set({
-            status: 'completed',
-            completedAt: new Date(),
-            commitSha: completedSessionTask.committedSha || undefined,
-            updatedAt: new Date(),
-          })
-          .where(eq(planTasks.id, taskId));
-
-        await this.updatePlanCompletedTasks(task.planId);
-        console.log(`[PlanExecutor] Task completed: ${task.title}`);
-        return;
-      } else if (completedSessionTask.status === 'failed' || completedSessionTask.status === 'qa_failed') {
-        const errorMsg = `Task execution failed with status: ${completedSessionTask.status}`;
-
-        await db
-          .update(planTasks)
-          .set({
-            status: 'failed',
-            lastError: errorMsg,
-            updatedAt: new Date(),
-          })
-          .where(eq(planTasks.id, taskId));
-
-        await this.pausePlan(task.planId, 'task_failed', taskId);
-        throw new Error(errorMsg);
-      } else if (completedSessionTask.status === 'rejected') {
-        await db
-          .update(planTasks)
-          .set({
-            status: 'skipped',
-            updatedAt: new Date(),
-          })
-          .where(eq(planTasks.id, taskId));
-
-        console.log(`[PlanExecutor] Task rejected/skipped: ${task.title}`);
-        return;
-      } else if (completedSessionTask.status === 'waiting_approval') {
-        // Task is waiting for user approval - pause the plan
-        console.log(`[PlanExecutor] Task waiting for approval, pausing plan`);
-        await this.pausePlan(task.planId, 'waiting_approval', taskId);
-        return;
-      }
-
-      // Continue polling if status is: pending, pre_flight, running, waiting_qa, qa_running
+    } finally {
+      // Always cleanup the activity tracker
+      activityTracker.stopTracking(taskId);
     }
-
-    // Timeout reached
-    const errorMsg = 'Task execution timed out after 10 minutes';
-    await db
-      .update(planTasks)
-      .set({
-        status: 'failed',
-        lastError: errorMsg,
-        updatedAt: new Date(),
-      })
-      .where(eq(planTasks.id, taskId));
-
-    await this.pausePlan(task.planId, 'task_timeout', taskId);
-    throw new Error(errorMsg);
   }
 
   /**
