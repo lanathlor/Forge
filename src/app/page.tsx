@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks';
-import { setSidebarCollapsed } from '@/features/sessions/store/sessionSlice';
+import { setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
 import { useRepositorySession } from './hooks/useRepositorySession';
 import { AppLayout } from './components/AppLayout';
 import { RepositorySelector } from '@/features/repositories/components/RepositorySelector';
 import { RepositoryContent } from './components/RepositoryContent';
 import { EmptyRepositoryState } from './components/EmptyRepositoryState';
 import { DashboardLayout } from './components/DashboardLayout';
+import { NeedsAttention } from './components/NeedsAttention';
 import { cn } from '@/shared/lib/utils';
 
 /* eslint-disable max-lines-per-function */
@@ -37,6 +38,16 @@ export default function HomePage() {
     }
   }, [selectedRepo, loadActiveSession]);
 
+  // Handle navigation to stuck repo from NeedsAttention panel
+  const handleSelectStuckRepo = useCallback((repositoryId: string, sessionId?: string | null) => {
+    dispatch(setCurrentRepository(repositoryId));
+    if (sessionId) {
+      dispatch(setCurrentSession(sessionId));
+    }
+    // Trigger reload of selected repo
+    handleSelectRepository({ id: repositoryId } as Parameters<typeof handleSelectRepository>[0]);
+  }, [dispatch, handleSelectRepository]);
+
   return (
     <AppLayout activeNavItem="sessions">
       <div className="flex-1 overflow-hidden h-full">
@@ -44,7 +55,7 @@ export default function HomePage() {
           {/* Repository Selector Panel */}
           <div
             className={cn(
-              'flex-shrink-0 transition-all duration-300 ease-in-out',
+              'flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col gap-4',
               isSidebarCollapsed ? 'w-16' : 'w-80',
               // Hide on mobile, show as a panel on larger screens
               'hidden lg:block'
@@ -55,6 +66,15 @@ export default function HomePage() {
               isCollapsed={isSidebarCollapsed}
               onToggleCollapse={() => dispatch(setSidebarCollapsed(!isSidebarCollapsed))}
             />
+            {/* Needs Attention Panel - shows all stuck repos across the dashboard */}
+            {!isSidebarCollapsed && (
+              <NeedsAttention
+                onSelectRepo={handleSelectStuckRepo}
+                defaultCollapsed={false}
+                maxVisible={3}
+                className="flex-shrink-0"
+              />
+            )}
           </div>
 
           {/* Main Content Area */}

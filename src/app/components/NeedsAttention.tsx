@@ -96,12 +96,16 @@ interface AlertItemProps {
   onAcknowledge: () => void;
 }
 
+/**
+ * Hook to create a live counting stuck duration
+ * Updates every second for real-time feedback - essential for knowing exactly how long stuck
+ */
 function useAlertDuration(initialDuration: number, alertId: string) {
   const [displayDuration, setDisplayDuration] = useState(initialDuration);
   useEffect(() => {
     setDisplayDuration(initialDuration);
-    // Update every 10 seconds to reduce re-render frequency
-    const interval = setInterval(() => setDisplayDuration(d => d + 10), 10000);
+    // Update every second for live counting
+    const interval = setInterval(() => setDisplayDuration(d => d + 1), 1000);
     return () => clearInterval(interval);
   }, [initialDuration, alertId]);
   return displayDuration;
@@ -119,10 +123,22 @@ function AlertItemHeader({ alert, severityConfig }: { alert: StuckAlert; severit
 
 function AlertItemMeta({ alert, displayDuration }: { alert: StuckAlert; displayDuration: number }) {
   const ReasonIcon = REASON_ICONS[alert.reason] || AlertTriangle;
+  const isCritical = alert.severity === 'critical';
+  const isHigh = alert.severity === 'high';
+
   return (
     <div className="flex items-center gap-4 text-xs text-muted-foreground">
       <span className="flex items-center gap-1"><ReasonIcon className="h-3 w-3" />{formatReasonLabel(alert.reason)}</span>
-      <span className="flex items-center gap-1 font-mono text-red-600 dark:text-red-400"><Timer className="h-3 w-3" />{formatStuckDuration(displayDuration)}</span>
+      <span className={cn(
+        'flex items-center gap-1 font-mono',
+        isCritical && 'text-red-600 dark:text-red-400 font-bold animate-pulse',
+        isHigh && 'text-orange-600 dark:text-orange-400 font-semibold',
+        !isCritical && !isHigh && 'text-red-600 dark:text-red-400'
+      )}>
+        <Timer className={cn('h-3 w-3', isCritical && 'animate-pulse')} />
+        {formatStuckDuration(displayDuration)}
+        {isCritical && <span className="ml-1 text-[10px]">(!)</span>}
+      </span>
     </div>
   );
 }
@@ -142,10 +158,26 @@ function AlertItem({ alert, onView, onAcknowledge }: AlertItemProps) {
   const severityConfig = SEVERITY_CONFIG[alert.severity];
   const SeverityIcon = severityConfig.icon;
   const displayDuration = useAlertDuration(alert.stuckDurationSeconds, alert.id);
+  const isCritical = alert.severity === 'critical';
+  const isHigh = alert.severity === 'high';
 
   return (
-    <div className={cn('flex items-start gap-3 p-3 rounded-lg border transition-all', severityConfig.bgColor, severityConfig.borderColor, alert.acknowledged && 'opacity-60')}>
-      <div className={cn('shrink-0 mt-0.5', severityConfig.color)}><SeverityIcon className="h-5 w-5" /></div>
+    <div className={cn(
+      'flex items-start gap-3 p-3 rounded-lg border transition-all',
+      severityConfig.bgColor,
+      severityConfig.borderColor,
+      alert.acknowledged && 'opacity-60',
+      // Enhanced animations for urgent alerts
+      isCritical && !alert.acknowledged && 'animate-pulse ring-2 ring-red-500/50 shadow-lg shadow-red-500/20',
+      isHigh && !alert.acknowledged && 'ring-1 ring-orange-500/30 shadow-md shadow-orange-500/10'
+    )}>
+      <div className={cn(
+        'shrink-0 mt-0.5',
+        severityConfig.color,
+        isCritical && !alert.acknowledged && 'animate-bounce'
+      )}>
+        <SeverityIcon className="h-5 w-5" />
+      </div>
       <div className="flex-1 min-w-0">
         <AlertItemHeader alert={alert} severityConfig={severityConfig} />
         <p className="text-sm text-muted-foreground mb-2">{alert.description}</p>

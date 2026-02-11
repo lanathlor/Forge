@@ -197,25 +197,73 @@ interface RepoPillProps {
   onClick: () => void;
 }
 
+/**
+ * Hook to create a live counting stuck duration
+ * Updates every second for real-time feedback
+ */
+function useLiveStuckDuration(stuckAlert: StuckAlert | null | undefined): number {
+  const alertId = stuckAlert?.id;
+  const initialDuration = stuckAlert?.stuckDurationSeconds ?? 0;
+  const [liveDuration, setLiveDuration] = useState(initialDuration);
+
+  useEffect(() => {
+    if (!alertId) {
+      setLiveDuration(0);
+      return;
+    }
+
+    // Initialize with current duration
+    setLiveDuration(initialDuration);
+
+    // Update every second
+    const interval = setInterval(() => {
+      setLiveDuration(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [alertId, initialDuration]); // Reset when alert changes
+
+  return alertId ? liveDuration : 0;
+}
+
 function RepoPillBadges({ hasStuckAlert, stuckAlert, shortcutNumber }: { hasStuckAlert: boolean; stuckAlert?: StuckAlert | null; shortcutNumber?: number }) {
+  const liveDuration = useLiveStuckDuration(stuckAlert);
+
   return (
     <>
       {hasStuckAlert && <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold animate-bounce">!</span>}
-      {stuckAlert && stuckAlert.stuckDurationSeconds > 0 && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-red-500/90 text-white text-[8px] font-mono whitespace-nowrap">{formatStuckTime(stuckAlert.stuckDurationSeconds)}</span>}
+      {stuckAlert && liveDuration > 0 && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-red-500/90 text-white text-[8px] font-mono whitespace-nowrap">{formatStuckTime(liveDuration)}</span>}
       {shortcutNumber && !hasStuckAlert && <span className="hidden group-hover:flex absolute -top-5 left-1/2 -translate-x-1/2 items-center justify-center px-1.5 py-0.5 rounded bg-foreground/90 text-background text-[10px] font-mono whitespace-nowrap">⌘{shortcutNumber}</span>}
     </>
   );
 }
 
-function getRepoPillClassName(config: StatusConfig, isSelected: boolean, needsAttention: boolean, hasStuckAlert: boolean) {
-  return cn(
+function getStuckAlertClasses(severity?: string): string {
+  if (severity === 'critical') {
+    return 'ring-red-600 bg-red-500/20 border-red-500 animate-pulse shadow-lg shadow-red-500/30';
+  }
+  if (severity === 'high') {
+    return 'ring-orange-500 bg-orange-500/15 border-orange-500 animate-pulse shadow-md shadow-orange-500/20';
+  }
+  return 'ring-red-500 bg-red-500/10 border-red-400 animate-pulse';
+}
+
+function getRepoPillClassName(config: StatusConfig, isSelected: boolean, needsAttention: boolean, hasStuckAlert: boolean, severity?: string) {
+  const baseClasses = cn(
     'group relative flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-200',
     'hover:scale-105 active:scale-95',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    config.bgColor,
+    config.bgColor
+  );
+
+  if (hasStuckAlert) {
+    return cn(baseClasses, 'ring-2 ring-offset-1', getStuckAlertClasses(severity));
+  }
+
+  return cn(
+    baseClasses,
     isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-    needsAttention && 'animate-pulse-border',
-    hasStuckAlert && 'ring-2 ring-red-500 ring-offset-1 animate-pulse'
+    needsAttention && 'animate-pulse-border'
   );
 }
 
@@ -226,9 +274,9 @@ function RepoPill({ repo, isSelected, shortcutNumber, stuckAlert, onClick }: Rep
   const title = `${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}${stuckAlert ? ` - ${stuckAlert.description}` : ''}`;
 
   return (
-    <button onClick={onClick} className={getRepoPillClassName(config, isSelected, repo.needsAttention, hasStuckAlert)} title={title}>
-      <GitBranch className={cn('h-3.5 w-3.5 shrink-0', config.color)} />
-      <span className={cn('text-xs font-medium truncate max-w-[100px]', config.color)}>{shortName}</span>
+    <button onClick={onClick} className={getRepoPillClassName(config, isSelected, repo.needsAttention, hasStuckAlert, stuckAlert?.severity)} title={title}>
+      <GitBranch className={cn('h-3.5 w-3.5 shrink-0', hasStuckAlert ? 'text-red-500' : config.color)} />
+      <span className={cn('text-xs font-medium truncate max-w-[100px]', hasStuckAlert ? 'text-red-600 dark:text-red-400' : config.color)}>{shortName}</span>
       <StatusDot status={repo.claudeStatus} size="sm" />
       <RepoPillBadges hasStuckAlert={hasStuckAlert} stuckAlert={stuckAlert} shortcutNumber={shortcutNumber} />
     </button>

@@ -6,6 +6,7 @@ import { useAppSelector, useAppDispatch } from '@/shared/hooks';
 import { setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
 import { Navigation, useNavigationItems } from '@/shared/components/navigation';
 import { QuickSwitchDock } from './QuickSwitchDock';
+import { StuckAlertToastManager } from './StuckAlertToastManager';
 import { cn } from '@/shared/lib/utils';
 
 export interface AppLayoutProps {
@@ -51,6 +52,14 @@ export function AppLayout({
     }
   }, [dispatch]);
 
+  // Handle stuck alert view action - navigates to the stuck repo
+  const handleViewStuckAlert = useCallback((repositoryId: string, sessionId: string | null) => {
+    dispatch(setCurrentRepository(repositoryId));
+    if (sessionId) {
+      dispatch(setCurrentSession(sessionId));
+    }
+  }, [dispatch]);
+
   // Track active navigation for view switching (future: could route between views)
   const [currentNavItem, setCurrentNavItem] = useState(activeNavItem);
 
@@ -74,6 +83,9 @@ export function AppLayout({
 
   return (
     <div className={cn('flex h-screen w-full overflow-hidden', className)}>
+      {/* Stuck Alert Toast Manager - Instant notifications for stuck repos */}
+      <StuckAlertToastManager onViewAlert={handleViewStuckAlert} />
+
       {/* Navigation Sidebar / Mobile Menu */}
       <Navigation
         items={items}

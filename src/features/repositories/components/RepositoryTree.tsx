@@ -7,8 +7,11 @@ import {
   GitBranch,
   ChevronRight,
   ChevronDown,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
+import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
+import { cn } from '@/shared/lib/utils';
 import type { TreeNode } from '../lib/tree';
 import type { Repository } from '@/db/schema';
 
@@ -207,29 +210,84 @@ interface RepositoryNodeProps {
   onSelect: (repository: Repository) => void;
 }
 
-function RepositoryNode({
-  node,
-  level,
-  isSelected,
-  onSelect,
-}: RepositoryNodeProps) {
+function getStuckNodeClassName(severity: string | undefined): string {
+  if (severity === 'critical') {
+    return 'bg-red-500/20 border-red-500 text-red-700 dark:text-red-300 ring-1 ring-red-500/50';
+  }
+  if (severity === 'high') {
+    return 'bg-orange-500/15 border-orange-500 text-orange-700 dark:text-orange-300';
+  }
+  return 'bg-red-500/10 border-red-400 text-red-600 dark:text-red-400';
+}
+
+function getStuckIconClassName(severity: string | undefined): string {
+  if (severity === 'critical') return 'text-red-500 animate-bounce';
+  if (severity === 'high') return 'text-orange-500';
+  return 'text-red-400';
+}
+
+function RepositoryNodeIcon({ isStuck, severity }: { isStuck: boolean; severity?: string }) {
+  if (isStuck) {
+    return <AlertTriangle className={cn('h-4 w-4 shrink-0', getStuckIconClassName(severity))} />;
+  }
+  return <GitBranch className="h-4 w-4 shrink-0" />;
+}
+
+function getRepoNodeClasses(isSelected: boolean, isStuck: boolean, severity?: string): string {
+  const baseClass = 'w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded transition-colors';
+
+  if (isStuck) {
+    return cn(baseClass, 'border-l-2 animate-pulse', getStuckNodeClassName(severity));
+  }
+  if (isSelected) {
+    return cn(baseClass, 'bg-primary/10 text-primary border-l-2 border-primary');
+  }
+  return cn(baseClass, 'hover:bg-muted/50');
+}
+
+function RepositoryNode({ node, level, isSelected, onSelect }: RepositoryNodeProps) {
   const paddingLeft = level * 16 + 32;
   const repo = node.repository!;
+  const { getAlertForRepo } = useStuckDetection();
+  const stuckAlert = getAlertForRepo(repo.id);
+  const isStuck = Boolean(stuckAlert && !stuckAlert.acknowledged);
 
   return (
     <button
       onClick={() => onSelect(repo)}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded transition-colors ${
-        isSelected
-          ? 'bg-primary/10 text-primary border-l-2 border-primary'
-          : 'hover:bg-muted/50'
-      }`}
+      className={getRepoNodeClasses(isSelected, isStuck, stuckAlert?.severity)}
       style={{ paddingLeft: `${paddingLeft}px` }}
     >
-      <GitBranch className="h-4 w-4 shrink-0" />
+      <RepositoryNodeIcon isStuck={isStuck} severity={stuckAlert?.severity} />
       <span className="truncate flex-1 text-left">{node.name}</span>
-      <RepositoryStatusBadge isClean={repo.isClean ?? false} />
+      {isStuck && stuckAlert ? (
+        <StuckBadge severity={stuckAlert.severity} />
+      ) : (
+        <RepositoryStatusBadge isClean={repo.isClean ?? false} />
+      )}
     </button>
+  );
+}
+
+interface StuckBadgeProps {
+  severity: string;
+}
+
+function StuckBadge({ severity }: StuckBadgeProps) {
+  const isCritical = severity === 'critical';
+  const isHigh = severity === 'high';
+
+  return (
+    <Badge
+      variant="destructive"
+      className={cn(
+        'text-xs shrink-0',
+        isCritical && 'animate-pulse bg-red-600',
+        isHigh && 'bg-orange-500'
+      )}
+    >
+      {isCritical ? '!' : isHigh ? '?' : '•'}
+    </Badge>
   );
 }
 

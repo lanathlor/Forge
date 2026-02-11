@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { AppLayout } from '../AppLayout';
+import { ToastProvider } from '@/shared/components/ui/toast';
 
 // Mock window.matchMedia for breakpoint detection
 const mockMatchMedia = (width: number) => {
@@ -39,10 +40,12 @@ const createMockStore = (sessionState = {}) =>
     },
   });
 
-// Wrapper component that provides Redux store
+// Wrapper component that provides Redux store and ToastProvider
 const createWrapper = (store: ReturnType<typeof createMockStore>) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
+    <Provider store={store}>
+      <ToastProvider>{children}</ToastProvider>
+    </Provider>
   );
   Wrapper.displayName = 'TestWrapper';
   return Wrapper;
@@ -60,9 +63,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div data-testid="test-content">Test Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div data-testid="test-content">Test Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -74,9 +79,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -87,9 +94,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -101,9 +110,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -122,9 +133,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -137,9 +150,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout activeNavItem="plans">
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout activeNavItem="plans">
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -154,9 +169,11 @@ describe('AppLayout', () => {
       const store = createMockStore({ isSidebarCollapsed: false });
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -169,9 +186,11 @@ describe('AppLayout', () => {
       const store = createMockStore({ isSidebarCollapsed: true });
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -199,9 +218,11 @@ describe('AppLayout', () => {
 
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -222,9 +243,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       const { container } = render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -237,9 +260,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -252,9 +277,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       const { container } = render(
         <Provider store={store}>
-          <AppLayout className="custom-class">
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout className="custom-class">
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -268,9 +295,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -284,9 +313,11 @@ describe('AppLayout', () => {
       const store = createMockStore();
       render(
         <Provider store={store}>
-          <AppLayout>
-            <div>Content</div>
-          </AppLayout>
+          <ToastProvider>
+            <AppLayout>
+              <div>Content</div>
+            </AppLayout>
+          </ToastProvider>
         </Provider>
       );
 
@@ -317,9 +348,11 @@ describe('AppLayout with mobile viewport', () => {
     const store = createMockStore();
     render(
       <Provider store={store}>
-        <AppLayout>
-          <div>Content</div>
-        </AppLayout>
+        <ToastProvider>
+          <AppLayout>
+            <div>Content</div>
+          </AppLayout>
+        </ToastProvider>
       </Provider>
     );
 
@@ -331,9 +364,11 @@ describe('AppLayout with mobile viewport', () => {
     const store = createMockStore();
     render(
       <Provider store={store}>
-        <AppLayout>
-          <div>Content</div>
-        </AppLayout>
+        <ToastProvider>
+          <AppLayout>
+            <div>Content</div>
+          </AppLayout>
+        </ToastProvider>
       </Provider>
     );
 
