@@ -11,19 +11,18 @@ import {
 import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
 import type { StuckAlert } from '@/lib/stuck-detection/types';
 import {
-  Brain,
-  Pencil,
+  Zap,
   Clock,
-  AlertTriangle,
+  AlertCircle,
+  Circle,
   Pause,
-  CircleDot,
   GitBranch,
   ChevronUp,
   Wifi,
   WifiOff,
   Loader2,
   X,
-  Bell,
+  Command,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -32,13 +31,9 @@ import {
    ============================================ */
 
 export interface QuickSwitchDockProps {
-  /** Currently selected repository ID */
   selectedRepoId?: string;
-  /** Callback when a repository is selected */
   onSelectRepo?: (repositoryId: string, sessionId?: string | null) => void;
-  /** Position of the dock */
   position?: 'top' | 'bottom';
-  /** Additional class name */
   className?: string;
 }
 
@@ -48,65 +43,73 @@ interface StatusConfig {
   color: string;
   bgColor: string;
   dotColor: string;
+  ringColor: string;
   animate?: 'pulse' | 'slow-pulse' | 'alert';
   priority: number;
 }
 
 /* ============================================
    STATUS CONFIGURATION
+   Mapping: green=active, yellow=waiting, red=stuck, gray=idle
    ============================================ */
 
 const STATUS_CONFIGS: Record<ClaudeStatus, StatusConfig> = {
   writing: {
-    icon: Pencil,
+    icon: Zap,
     label: 'Active',
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/30',
-    dotColor: 'bg-emerald-500',
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800',
+    dotColor: 'bg-green-500',
+    ringColor: 'ring-green-500/50',
     animate: 'pulse',
     priority: 0,
   },
   thinking: {
-    icon: Brain,
-    label: 'Thinking',
-    color: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30',
-    dotColor: 'bg-blue-500',
+    icon: Zap,
+    label: 'Active',
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800',
+    dotColor: 'bg-green-500',
+    ringColor: 'ring-green-500/50',
     animate: 'pulse',
     priority: 1,
   },
   waiting_input: {
     icon: Clock,
     label: 'Waiting',
-    color: 'text-amber-600 dark:text-amber-400',
-    bgColor: 'bg-amber-500/10 dark:bg-amber-500/20 border-amber-500/30',
-    dotColor: 'bg-amber-500',
+    color: 'text-yellow-600 dark:text-yellow-400',
+    bgColor: 'bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-800',
+    dotColor: 'bg-yellow-500',
+    ringColor: 'ring-yellow-500/50',
     animate: 'slow-pulse',
     priority: 2,
   },
   stuck: {
-    icon: AlertTriangle,
+    icon: AlertCircle,
     label: 'Stuck',
     color: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-500/10 dark:bg-red-500/20 border-red-500/30',
+    bgColor: 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800',
     dotColor: 'bg-red-500',
+    ringColor: 'ring-red-500/50',
     animate: 'alert',
     priority: 3,
   },
   paused: {
     icon: Pause,
     label: 'Paused',
-    color: 'text-slate-500 dark:text-slate-400',
-    bgColor: 'bg-slate-500/10 dark:bg-slate-500/20 border-slate-500/30',
-    dotColor: 'bg-slate-400',
+    color: 'text-gray-500 dark:text-gray-400',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700',
+    dotColor: 'bg-gray-400',
+    ringColor: 'ring-gray-400/50',
     priority: 4,
   },
   idle: {
-    icon: CircleDot,
+    icon: Circle,
     label: 'Idle',
-    color: 'text-slate-400 dark:text-slate-500',
-    bgColor: 'bg-slate-500/5 dark:bg-slate-500/10 border-slate-500/20',
-    dotColor: 'bg-slate-400',
+    color: 'text-gray-400 dark:text-gray-500',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800',
+    dotColor: 'bg-gray-300 dark:bg-gray-600',
+    ringColor: 'ring-gray-300/50',
     priority: 5,
   },
 };
@@ -117,26 +120,20 @@ const STATUS_CONFIGS: Record<ClaudeStatus, StatusConfig> = {
 
 function sortByActivityAndPriority(repos: RepoSessionState[]): RepoSessionState[] {
   return [...repos].sort((a, b) => {
-    // First, prioritize repos that need attention
     if (a.needsAttention !== b.needsAttention) return a.needsAttention ? -1 : 1;
-    // Then by status priority (active states first)
     const priorityDiff = STATUS_CONFIGS[a.claudeStatus].priority - STATUS_CONFIGS[b.claudeStatus].priority;
     if (priorityDiff !== 0) return priorityDiff;
-    // Finally by recent activity
     return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
   });
 }
 
 function getShortName(name: string): string {
-  // Truncate long names intelligently
-  if (name.length <= 12) return name;
-  // Try to break at common separators
+  if (name.length <= 14) return name;
   const parts = name.split(/[-_./]/);
   if (parts.length > 1 && parts[0]) {
-    // Return first part if short enough, otherwise truncate
-    return parts[0].length <= 10 ? parts[0] : parts[0].substring(0, 8) + '…';
+    return parts[0].length <= 12 ? parts[0] : parts[0].substring(0, 10) + '…';
   }
-  return name.substring(0, 10) + '…';
+  return name.substring(0, 12) + '…';
 }
 
 function getAnimationClass(animate?: 'pulse' | 'slow-pulse' | 'alert'): string {
@@ -148,48 +145,109 @@ function getAnimationClass(animate?: 'pulse' | 'slow-pulse' | 'alert'): string {
   }
 }
 
+function formatStuckTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  return `${Math.floor(seconds / 3600)}h`;
+}
+
+function getPingDuration(animate?: 'pulse' | 'slow-pulse' | 'alert'): string {
+  if (animate === 'slow-pulse') return '2s';
+  if (animate === 'alert') return '0.8s';
+  return '1.5s';
+}
+
 /* ============================================
-   SUBCOMPONENTS - Status Dot
+   STATUS DOT COMPONENT
    ============================================ */
 
 interface StatusDotProps {
   status: ClaudeStatus;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  showPing?: boolean;
 }
 
-function StatusDot({ status, size = 'md' }: StatusDotProps) {
-  const config = STATUS_CONFIGS[status];
-  const sizeClass = size === 'sm' ? 'h-2 w-2' : 'h-2.5 w-2.5';
+const SIZE_CLASSES = { sm: 'h-1.5 w-1.5', md: 'h-2 w-2', lg: 'h-2.5 w-2.5' };
 
+function StatusDot({ status, size = 'md', showPing = true }: StatusDotProps) {
+  const config = STATUS_CONFIGS[status];
   return (
-    <span className="relative flex">
-      <span
-        className={cn(
-          sizeClass,
-          'rounded-full',
-          config.dotColor,
-          config.animate && getAnimationClass(config.animate)
-        )}
-      />
-      {config.animate && (
-        <span
-          className={cn(
-            'absolute inset-0 rounded-full opacity-75',
-            config.dotColor,
-            'animate-ping'
-          )}
-          style={{ animationDuration: config.animate === 'slow-pulse' ? '2s' : '1s' }}
-        />
+    <span className="relative inline-flex">
+      <span className={cn(SIZE_CLASSES[size], 'rounded-full', config.dotColor, config.animate && getAnimationClass(config.animate))} />
+      {showPing && config.animate && (
+        <span className={cn('absolute inset-0 rounded-full opacity-40', config.dotColor, 'animate-ping')} style={{ animationDuration: getPingDuration(config.animate) }} />
       )}
     </span>
   );
 }
 
 /* ============================================
-   SUBCOMPONENTS - Repo Pill
+   CONNECTION STATUS INDICATOR
    ============================================ */
 
-interface RepoPillProps {
+interface ConnectionIndicatorProps {
+  connected: boolean;
+  error?: string | null;
+  compact?: boolean;
+}
+
+function ConnectionIndicatorConnected({ compact }: { compact: boolean }) {
+  return (
+    <div className={cn('flex items-center gap-1.5', compact ? 'text-[10px]' : 'text-xs', 'text-green-600 dark:text-green-400')}>
+      <Wifi className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+      {!compact && <span className="font-medium">Live</span>}
+    </div>
+  );
+}
+
+function ConnectionIndicatorError({ compact }: { compact: boolean }) {
+  return (
+    <div className={cn('flex items-center gap-1.5', compact ? 'text-[10px]' : 'text-xs', 'text-red-500 dark:text-red-400')}>
+      <WifiOff className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+      {!compact && <span className="font-medium">Offline</span>}
+    </div>
+  );
+}
+
+function ConnectionIndicatorConnecting({ compact }: { compact: boolean }) {
+  return (
+    <div className={cn('flex items-center gap-1.5', compact ? 'text-[10px]' : 'text-xs', 'text-gray-400')}>
+      <Loader2 className={cn(compact ? 'h-3 w-3' : 'h-3.5 w-3.5', 'animate-spin')} />
+      {!compact && <span className="font-medium">Connecting</span>}
+    </div>
+  );
+}
+
+function ConnectionIndicator({ connected, error, compact = false }: ConnectionIndicatorProps) {
+  if (connected) return <ConnectionIndicatorConnected compact={compact} />;
+  if (error) return <ConnectionIndicatorError compact={compact} />;
+  return <ConnectionIndicatorConnecting compact={compact} />;
+}
+
+/* ============================================
+   LIVE STUCK DURATION HOOK
+   ============================================ */
+
+function useLiveStuckDuration(stuckAlert: StuckAlert | null | undefined): number {
+  const alertId = stuckAlert?.id;
+  const initialDuration = stuckAlert?.stuckDurationSeconds ?? 0;
+  const [liveDuration, setLiveDuration] = useState(initialDuration);
+
+  useEffect(() => {
+    if (!alertId) { setLiveDuration(0); return; }
+    setLiveDuration(initialDuration);
+    const interval = setInterval(() => setLiveDuration(prev => prev + 1), 1000);
+    return () => clearInterval(interval);
+  }, [alertId, initialDuration]);
+
+  return alertId ? liveDuration : 0;
+}
+
+/* ============================================
+   REPO CHIP COMPONENT (Desktop)
+   ============================================ */
+
+interface RepoChipProps {
   repo: RepoSessionState;
   isSelected: boolean;
   shortcutNumber?: number;
@@ -197,224 +255,241 @@ interface RepoPillProps {
   onClick: () => void;
 }
 
-/**
- * Hook to create a live counting stuck duration
- * Updates every second for real-time feedback
- */
-function useLiveStuckDuration(stuckAlert: StuckAlert | null | undefined): number {
-  const alertId = stuckAlert?.id;
-  const initialDuration = stuckAlert?.stuckDurationSeconds ?? 0;
-  const [liveDuration, setLiveDuration] = useState(initialDuration);
-
-  useEffect(() => {
-    if (!alertId) {
-      setLiveDuration(0);
-      return;
-    }
-
-    // Initialize with current duration
-    setLiveDuration(initialDuration);
-
-    // Update every second
-    const interval = setInterval(() => {
-      setLiveDuration(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [alertId, initialDuration]); // Reset when alert changes
-
-  return alertId ? liveDuration : 0;
-}
-
-function RepoPillBadges({ hasStuckAlert, stuckAlert, shortcutNumber }: { hasStuckAlert: boolean; stuckAlert?: StuckAlert | null; shortcutNumber?: number }) {
-  const liveDuration = useLiveStuckDuration(stuckAlert);
-
-  return (
-    <>
-      {hasStuckAlert && <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold animate-bounce">!</span>}
-      {stuckAlert && liveDuration > 0 && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-red-500/90 text-white text-[8px] font-mono whitespace-nowrap">{formatStuckTime(liveDuration)}</span>}
-      {shortcutNumber && !hasStuckAlert && <span className="hidden group-hover:flex absolute -top-5 left-1/2 -translate-x-1/2 items-center justify-center px-1.5 py-0.5 rounded bg-foreground/90 text-background text-[10px] font-mono whitespace-nowrap">⌘{shortcutNumber}</span>}
-    </>
-  );
-}
-
-function getStuckAlertClasses(severity?: string): string {
-  if (severity === 'critical') {
-    return 'ring-red-600 bg-red-500/20 border-red-500 animate-pulse shadow-lg shadow-red-500/30';
-  }
-  if (severity === 'high') {
-    return 'ring-orange-500 bg-orange-500/15 border-orange-500 animate-pulse shadow-md shadow-orange-500/20';
-  }
-  return 'ring-red-500 bg-red-500/10 border-red-400 animate-pulse';
-}
-
-function getRepoPillClassName(config: StatusConfig, isSelected: boolean, needsAttention: boolean, hasStuckAlert: boolean, severity?: string) {
-  const baseClasses = cn(
-    'group relative flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-200',
-    'hover:scale-105 active:scale-95',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    config.bgColor
-  );
-
-  if (hasStuckAlert) {
-    return cn(baseClasses, 'ring-2 ring-offset-1', getStuckAlertClasses(severity));
-  }
-
-  return cn(
-    baseClasses,
-    isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-    needsAttention && 'animate-pulse-border'
-  );
-}
-
-function RepoPill({ repo, isSelected, shortcutNumber, stuckAlert, onClick }: RepoPillProps) {
+function RepoChip({ repo, isSelected, shortcutNumber, stuckAlert, onClick }: RepoChipProps) {
   const config = STATUS_CONFIGS[repo.claudeStatus];
   const shortName = getShortName(repo.repositoryName);
   const hasStuckAlert = Boolean(stuckAlert && !stuckAlert.acknowledged);
-  const title = `${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}${stuckAlert ? ` - ${stuckAlert.description}` : ''}`;
+  const liveDuration = useLiveStuckDuration(stuckAlert);
 
   return (
-    <button onClick={onClick} className={getRepoPillClassName(config, isSelected, repo.needsAttention, hasStuckAlert, stuckAlert?.severity)} title={title}>
-      <GitBranch className={cn('h-3.5 w-3.5 shrink-0', hasStuckAlert ? 'text-red-500' : config.color)} />
-      <span className={cn('text-xs font-medium truncate max-w-[100px]', hasStuckAlert ? 'text-red-600 dark:text-red-400' : config.color)}>{shortName}</span>
+    <button
+      onClick={onClick}
+      className={cn(
+        'group relative flex items-center gap-2 px-3 py-1.5 rounded-full border',
+        'transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
+        config.bgColor,
+        isSelected && !hasStuckAlert && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+        hasStuckAlert && 'ring-2 ring-red-500 ring-offset-1 ring-offset-background animate-pulse'
+      )}
+      title={`${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}`}
+    >
+      <GitBranch className={cn('h-3.5 w-3.5 shrink-0', config.color)} />
+      <span className={cn('text-xs font-medium truncate max-w-[100px]', config.color)}>{shortName}</span>
       <StatusDot status={repo.claudeStatus} size="sm" />
-      <RepoPillBadges hasStuckAlert={hasStuckAlert} stuckAlert={stuckAlert} shortcutNumber={shortcutNumber} />
+      {hasStuckAlert && (
+        <>
+          <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold shadow-sm">!</span>
+          {liveDuration > 0 && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-mono shadow-sm">{formatStuckTime(liveDuration)}</span>}
+        </>
+      )}
+      {shortcutNumber && !hasStuckAlert && (
+        <span className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[10px] font-mono shadow-md">
+          <Command className="h-2.5 w-2.5" />{shortcutNumber}
+        </span>
+      )}
     </button>
   );
 }
 
-function formatStuckTime(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  return `${Math.floor(seconds / 3600)}h`;
+/* ============================================
+   DOCK STATS COMPONENT
+   ============================================ */
+
+interface DockStatsProps { repos: RepoSessionState[] }
+
+function DockStats({ repos }: DockStatsProps) {
+  const stats = useMemo(() => ({
+    active: repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length,
+    waiting: repos.filter(r => r.claudeStatus === 'waiting_input').length,
+    stuck: repos.filter(r => r.claudeStatus === 'stuck').length,
+  }), [repos]);
+
+  if (stats.active === 0 && stats.waiting === 0 && stats.stuck === 0) return null;
+
+  return (
+    <div className="flex items-center gap-3 text-[11px] font-medium">
+      {stats.active > 0 && <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400"><StatusDot status="writing" size="sm" /><span>{stats.active}</span></div>}
+      {stats.waiting > 0 && <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400"><StatusDot status="waiting_input" size="sm" /><span>{stats.waiting}</span></div>}
+      {stats.stuck > 0 && <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold"><StatusDot status="stuck" size="sm" /><span>{stats.stuck}</span></div>}
+    </div>
+  );
 }
 
 /* ============================================
-   SUBCOMPONENTS - Mobile Bottom Sheet
+   MOBILE TAB ITEM COMPONENT
+   ============================================ */
+
+interface MobileTabItemProps {
+  repo: RepoSessionState;
+  isSelected: boolean;
+  hasStuckAlert: boolean;
+  onSelect: () => void;
+}
+
+function MobileTabItem({ repo, isSelected, hasStuckAlert, onSelect }: MobileTabItemProps) {
+  const config = STATUS_CONFIGS[repo.claudeStatus];
+  const Icon = config.icon;
+  return (
+    <button onClick={onSelect} className={cn('flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors duration-150 active:bg-gray-100 dark:active:bg-gray-800', isSelected && 'bg-primary/5')}>
+      <div className="relative">
+        <Icon className={cn('h-5 w-5', isSelected ? 'text-primary' : config.color)} />
+        <span className={cn('absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full', config.dotColor, config.animate && getAnimationClass(config.animate))} />
+        {hasStuckAlert && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 flex items-center justify-center"><span className="text-[8px] text-white font-bold">!</span></span>}
+      </div>
+      <span className={cn('text-[10px] truncate max-w-[70px]', isSelected ? 'text-primary font-medium' : 'text-muted-foreground')}>{getShortName(repo.repositoryName)}</span>
+    </button>
+  );
+}
+
+/* ============================================
+   MOBILE TAB BAR COMPONENT
+   ============================================ */
+
+interface MobileTabBarProps {
+  repos: RepoSessionState[];
+  selectedRepoId?: string;
+  stuckAlerts: Map<string, StuckAlert>;
+  onSelectRepo: (repoId: string, sessionId?: string | null) => void;
+  onExpandSheet: () => void;
+  connected: boolean;
+}
+
+function MobileTabBar({ repos, selectedRepoId, stuckAlerts, onSelectRepo, onExpandSheet, connected }: MobileTabBarProps) {
+  const visibleRepos = repos.slice(0, 4);
+  const hasMore = repos.length > 4;
+  const hasStuckRepos = repos.some(r => stuckAlerts.has(r.repositoryId));
+
+  return (
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t safe-bottom">
+      <div className="flex items-stretch">
+        {visibleRepos.map((repo) => (
+          <MobileTabItem key={repo.repositoryId} repo={repo} isSelected={repo.repositoryId === selectedRepoId} hasStuckAlert={stuckAlerts.has(repo.repositoryId)} onSelect={() => onSelectRepo(repo.repositoryId, repo.sessionId)} />
+        ))}
+        <button onClick={onExpandSheet} className="flex flex-col items-center justify-center gap-1 py-2 px-3 transition-colors duration-150 active:bg-gray-100 dark:active:bg-gray-800">
+          <div className="relative">
+            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            {(!connected || hasStuckRepos) && <span className={cn('absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full', hasStuckRepos ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')} />}
+          </div>
+          <span className="text-[10px] text-muted-foreground">{hasMore ? `+${repos.length - 4}` : 'All'}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================
+   MOBILE SHEET REPO ITEM COMPONENT
+   ============================================ */
+
+interface MobileSheetRepoItemProps {
+  repo: RepoSessionState;
+  isSelected: boolean;
+  stuckAlert?: StuckAlert;
+  onSelect: () => void;
+}
+
+function MobileSheetRepoItem({ repo, isSelected, stuckAlert, onSelect }: MobileSheetRepoItemProps) {
+  const config = STATUS_CONFIGS[repo.claudeStatus];
+  const Icon = config.icon;
+  const hasStuckAlert = Boolean(stuckAlert && !stuckAlert.acknowledged);
+
+  return (
+    <button onClick={onSelect} className={cn('flex items-center gap-3 p-3 rounded-xl border transition-all duration-150 active:scale-[0.98]', config.bgColor, isSelected && 'ring-2 ring-primary', hasStuckAlert && 'ring-2 ring-red-500 animate-pulse')}>
+      <div className={cn('flex items-center justify-center h-10 w-10 rounded-lg border', config.bgColor, config.color)}><Icon className="h-5 w-5" /></div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className={cn('text-sm font-medium truncate', config.color)}>{repo.repositoryName}</p>
+        <div className="flex items-center gap-1.5 mt-0.5"><StatusDot status={repo.claudeStatus} size="sm" /><span className="text-[10px] text-muted-foreground">{config.label}</span></div>
+      </div>
+      {hasStuckAlert && <span className="flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold">!</span>}
+    </button>
+  );
+}
+
+/* ============================================
+   MOBILE BOTTOM SHEET COMPONENT
    ============================================ */
 
 interface MobileBottomSheetProps {
   repos: RepoSessionState[];
   selectedRepoId?: string;
+  stuckAlerts: Map<string, StuckAlert>;
   onSelectRepo: (repoId: string, sessionId?: string | null) => void;
   isOpen: boolean;
   onClose: () => void;
   connected: boolean;
 }
 
-/* eslint-disable max-lines-per-function */
-function MobileBottomSheet({ repos, selectedRepoId, onSelectRepo, isOpen, onClose, connected }: MobileBottomSheetProps) {
-  const sheetRef = useRef<HTMLDivElement>(null);
+function useDragToClose(onClose: () => void) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
+  const startTime = useRef(0);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
-    if (touch) {
-      startY.current = touch.clientY;
-      setIsDragging(true);
-    }
-  };
+    if (touch) { startY.current = touch.clientY; startTime.current = Date.now(); setIsDragging(true); }
+  }, []);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
     const touch = e.touches[0];
-    if (!touch) return;
-    const delta = touch.clientY - startY.current;
-    // Only allow dragging down
-    setDragY(Math.max(0, delta));
-  };
+    if (touch) setDragY(Math.max(0, touch.clientY - startY.current));
+  }, [isDragging]);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
-    // If dragged more than 100px, close the sheet
-    if (dragY > 100) {
-      onClose();
-    }
+    const velocity = dragY / (Date.now() - startTime.current);
+    if (dragY > 100 || velocity > 0.5) onClose();
     setDragY(0);
-  };
+  }, [dragY, onClose]);
+
+  return { dragY, isDragging, handleTouchStart, handleTouchMove, handleTouchEnd };
+}
+
+function useSwipeNavigation(repos: RepoSessionState[], selectedRepoId: string | undefined, onSelectRepo: (repoId: string, sessionId?: string | null) => void) {
+  const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
+  const selectedIndex = repos.findIndex(r => r.repositoryId === selectedRepoId);
+
+  const handleSwipeStart = useCallback((e: React.TouchEvent) => { setSwipeStartX(e.touches[0]?.clientX ?? null); }, []);
+
+  const handleSwipeEnd = useCallback((e: React.TouchEvent) => {
+    if (swipeStartX === null) return;
+    const endX = e.changedTouches[0]?.clientX ?? swipeStartX;
+    const diff = endX - swipeStartX;
+    if (Math.abs(diff) > 50) {
+      const newIndex = diff > 0 ? Math.max(0, selectedIndex - 1) : Math.min(repos.length - 1, selectedIndex + 1);
+      if (newIndex !== selectedIndex && repos[newIndex]) onSelectRepo(repos[newIndex].repositoryId, repos[newIndex].sessionId);
+    }
+    setSwipeStartX(null);
+  }, [swipeStartX, selectedIndex, repos, onSelectRepo]);
+
+  return { handleSwipeStart, handleSwipeEnd };
+}
+
+function MobileBottomSheet({ repos, selectedRepoId, stuckAlerts, onSelectRepo, isOpen, onClose, connected }: MobileBottomSheetProps) {
+  const { dragY, isDragging, handleTouchStart, handleTouchMove, handleTouchEnd } = useDragToClose(onClose);
+  const { handleSwipeStart, handleSwipeEnd } = useSwipeNavigation(repos, selectedRepoId, onSelectRepo);
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40 md:hidden"
-        onClick={onClose}
-      />
-
-      {/* Sheet */}
-      <div
-        ref={sheetRef}
-        className={cn(
-          'fixed bottom-0 left-0 right-0 z-50 md:hidden',
-          'bg-background rounded-t-2xl border-t shadow-xl',
-          'transform transition-transform duration-200',
-          isDragging && 'transition-none'
-        )}
-        style={{ transform: `translateY(${dragY}px)` }}
-      >
-        {/* Drag Handle */}
-        <div
-          className="flex justify-center py-3 cursor-grab active:cursor-grabbing"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" onClick={onClose} />
+      <div className={cn('fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background rounded-t-2xl shadow-xl transform transition-transform duration-200 ease-out', isDragging && 'transition-none')} style={{ transform: `translateY(${dragY}px)` }} onTouchStart={handleSwipeStart} onTouchEnd={handleSwipeEnd}>
+        <div className="flex justify-center py-3 cursor-grab active:cursor-grabbing touch-pan-y" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+          <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
         </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Quick Switch</h3>
-            <ConnectionIndicator connected={connected} size="sm" />
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-            <X className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-3"><h3 className="text-sm font-semibold">Switch Repository</h3><ConnectionIndicator connected={connected} compact /></div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 rounded-full"><X className="h-4 w-4" /></Button>
         </div>
-
-        {/* Repo Grid */}
-        <div className="px-4 pb-6 safe-bottom max-h-[50vh] overflow-y-auto">
+        <div className="px-4 py-2 text-[10px] text-center text-muted-foreground">Swipe left/right to switch repos</div>
+        <div className="px-4 pb-6 safe-bottom max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-2">
-            {repos.map((repo) => {
-              const config = STATUS_CONFIGS[repo.claudeStatus];
-              const Icon = config.icon;
-              const isSelected = repo.repositoryId === selectedRepoId;
-
-              return (
-                <button
-                  key={repo.repositoryId}
-                  onClick={() => {
-                    onSelectRepo(repo.repositoryId, repo.sessionId);
-                    onClose();
-                  }}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-xl border transition-all',
-                    'active:scale-95',
-                    config.bgColor,
-                    isSelected && 'ring-2 ring-primary'
-                  )}
-                >
-                  <div className={cn('flex items-center justify-center h-9 w-9 rounded-lg', config.bgColor)}>
-                    <Icon className={cn('h-4 w-4', config.color)} />
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className={cn('text-sm font-medium truncate', config.color)}>
-                      {repo.repositoryName}
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <StatusDot status={repo.claudeStatus} size="sm" />
-                      <span className="text-[10px] text-muted-foreground">{config.label}</span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {repos.map((repo) => <MobileSheetRepoItem key={repo.repositoryId} repo={repo} isSelected={repo.repositoryId === selectedRepoId} stuckAlert={stuckAlerts.get(repo.repositoryId)} onSelect={() => { onSelectRepo(repo.repositoryId, repo.sessionId); onClose(); }} />)}
           </div>
+          {repos.length === 0 && <div className="text-center py-8 text-muted-foreground text-sm">No repositories with active work</div>}
         </div>
       </div>
     </>
@@ -422,114 +497,52 @@ function MobileBottomSheet({ repos, selectedRepoId, onSelectRepo, isOpen, onClos
 }
 
 /* ============================================
-   SUBCOMPONENTS - Connection Indicator
+   KEYBOARD SHORTCUT HOOK
    ============================================ */
 
-interface ConnectionIndicatorProps {
-  connected: boolean;
-  error?: string | null;
-  size?: 'sm' | 'md';
-}
-
-function ConnectionIndicator({ connected, error, size = 'md' }: ConnectionIndicatorProps) {
-  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5';
-
-  if (connected) {
-    return (
-      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-        <Wifi className={iconSize} />
-        {size === 'md' && <span className="text-[10px] font-medium">Live</span>}
-      </span>
-    );
-  }
-
-  if (error) {
-    return (
-      <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-        <WifiOff className={iconSize} />
-        {size === 'md' && <span className="text-[10px] font-medium">Offline</span>}
-      </span>
-    );
-  }
-
-  return (
-    <span className="flex items-center gap-1 text-muted-foreground">
-      <Loader2 className={cn(iconSize, 'animate-spin')} />
-      {size === 'md' && <span className="text-[10px] font-medium">Connecting</span>}
-    </span>
-  );
+function useKeyboardShortcuts(activeRepos: RepoSessionState[], handleSelectRepo: (repoId: string, sessionId?: string | null) => void) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
+        const index = parseInt(e.key, 10) - 1;
+        const repo = activeRepos[index];
+        if (repo) { e.preventDefault(); handleSelectRepo(repo.repositoryId, repo.sessionId); }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeRepos, handleSelectRepo]);
 }
 
 /* ============================================
-   SUBCOMPONENTS - Mobile Tab Bar
+   DESKTOP DOCK COMPONENT
    ============================================ */
 
-interface MobileTabBarProps {
-  repos: RepoSessionState[];
+interface DesktopDockProps {
+  activeRepos: RepoSessionState[];
   selectedRepoId?: string;
-  onSelectRepo: (repoId: string, sessionId?: string | null) => void;
-  onExpandSheet: () => void;
   connected: boolean;
+  error?: string | null;
+  position: 'top' | 'bottom';
+  className?: string;
+  getAlertForRepo: (repoId: string) => StuckAlert | null;
+  onSelectRepo: (repoId: string, sessionId?: string | null) => void;
 }
 
-/* eslint-disable max-lines-per-function */
-function MobileTabBar({ repos, selectedRepoId, onSelectRepo, onExpandSheet, connected }: MobileTabBarProps) {
-  // Show at most 4 repos in the tab bar, prioritized by activity
-  const visibleRepos = repos.slice(0, 4);
-  const hasMore = repos.length > 4;
-
+function DesktopDock({ activeRepos, selectedRepoId, connected, error, position, className, getAlertForRepo, onSelectRepo }: DesktopDockProps) {
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t safe-bottom">
-      <div className="flex items-center justify-around px-2 py-2">
-        {visibleRepos.map((repo) => {
-          const config = STATUS_CONFIGS[repo.claudeStatus];
-          const Icon = config.icon;
-          const isSelected = repo.repositoryId === selectedRepoId;
-
-          return (
-            <button
-              key={repo.repositoryId}
-              onClick={() => onSelectRepo(repo.repositoryId, repo.sessionId)}
-              className={cn(
-                'flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all',
-                'active:scale-95',
-                isSelected && 'bg-primary/10'
-              )}
-            >
-              <div className="relative">
-                <Icon className={cn('h-5 w-5', isSelected ? 'text-primary' : config.color)} />
-                <span className={cn(
-                  'absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full',
-                  config.dotColor,
-                  config.animate && 'animate-pulse'
-                )} />
-              </div>
-              <span className={cn(
-                'text-[10px] truncate max-w-[60px]',
-                isSelected ? 'text-primary font-medium' : 'text-muted-foreground'
-              )}>
-                {getShortName(repo.repositoryName)}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* More button */}
-        {(hasMore || repos.length === 0) && (
-          <button
-            onClick={onExpandSheet}
-            className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all active:scale-95"
-          >
-            <div className="relative flex items-center justify-center h-5 w-5">
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              {!connected && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />}
-            </div>
-            <span className="text-[10px] text-muted-foreground">
-              {hasMore ? `+${repos.length - 4}` : 'Repos'}
-            </span>
-          </button>
-        )}
+    <div className={cn('hidden md:flex items-center gap-3 px-4 py-2 bg-background/80 backdrop-blur-sm', position === 'top' ? 'border-b' : 'border-t', className)}>
+      <ConnectionIndicator connected={connected} error={error} />
+      <div className="h-4 w-px bg-border" />
+      <div className="flex-1 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-2">
+          {activeRepos.map((repo, index) => (
+            <RepoChip key={repo.repositoryId} repo={repo} isSelected={repo.repositoryId === selectedRepoId} shortcutNumber={index < 9 ? index + 1 : undefined} stuckAlert={getAlertForRepo(repo.repositoryId)} onClick={() => onSelectRepo(repo.repositoryId, repo.sessionId)} />
+          ))}
+          {activeRepos.length === 0 && <span className="text-xs text-muted-foreground py-1.5">No active repositories</span>}
+        </div>
       </div>
+      {activeRepos.length > 0 && <><div className="h-4 w-px bg-border" /><DockStats repos={activeRepos} /></>}
     </div>
   );
 }
@@ -538,167 +551,36 @@ function MobileTabBar({ repos, selectedRepoId, onSelectRepo, onExpandSheet, conn
    MAIN COMPONENT
    ============================================ */
 
-/* eslint-disable max-lines-per-function */
-export function QuickSwitchDock({
-  selectedRepoId,
-  onSelectRepo,
-  position = 'top',
-  className,
-}: QuickSwitchDockProps) {
+export function QuickSwitchDock({ selectedRepoId, onSelectRepo, position = 'top', className }: QuickSwitchDockProps) {
   const { repositories, connected, error } = useMultiRepoStream();
-  const { getAlertForRepo } = useStuckDetection();
+  const { status, getAlertForRepo } = useStuckDetection();
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
-  // Sort repos by activity/priority for display
+  const stuckAlertsMap = useMemo(() => {
+    const map = new Map<string, StuckAlert>();
+    status?.alerts.forEach(alert => { if (!alert.acknowledged) map.set(alert.repositoryId, alert); });
+    return map;
+  }, [status?.alerts]);
+
   const sortedRepos = useMemo(() => sortByActivityAndPriority(repositories), [repositories]);
 
-  // Filter to only repos with active work (non-idle status or recent activity)
-  const activeRepos = useMemo(() => {
-    return sortedRepos.filter(repo => {
-      // Show if not idle or has had activity in last hour
-      if (repo.claudeStatus !== 'idle') return true;
-      const hourAgo = Date.now() - 60 * 60 * 1000;
-      return new Date(repo.lastActivity).getTime() > hourAgo;
-    });
-  }, [sortedRepos]);
+  const activeRepos = useMemo(() => sortedRepos.filter(repo => {
+    if (repo.claudeStatus !== 'idle') return true;
+    return new Date(repo.lastActivity).getTime() > Date.now() - 60 * 60 * 1000;
+  }), [sortedRepos]);
 
-  // Handle repo selection with zero reload
-  const handleSelectRepo = useCallback((repoId: string, sessionId?: string | null) => {
-    onSelectRepo?.(repoId, sessionId);
-  }, [onSelectRepo]);
+  const handleSelectRepo = useCallback((repoId: string, sessionId?: string | null) => { onSelectRepo?.(repoId, sessionId); }, [onSelectRepo]);
 
-  // Keyboard shortcuts (Cmd+1-9 for repo switching)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Cmd/Ctrl + number
-      if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
-        const index = parseInt(e.key, 10) - 1;
-        const repo = activeRepos[index];
-        if (repo) {
-          e.preventDefault();
-          handleSelectRepo(repo.repositoryId, repo.sessionId);
-        }
-      }
-    };
+  useKeyboardShortcuts(activeRepos, handleSelectRepo);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeRepos, handleSelectRepo]);
-
-  // Don't render if no repos
-  if (repositories.length === 0 && !error) {
-    return null;
-  }
+  if (repositories.length === 0 && !error) return null;
 
   return (
     <>
-      {/* Desktop Dock */}
-      <div
-        className={cn(
-          'hidden md:flex items-center gap-2 px-4 py-2',
-          'bg-background/80 backdrop-blur-sm border-b',
-          position === 'bottom' && 'border-t border-b-0',
-          className
-        )}
-      >
-        {/* Connection Status */}
-        <ConnectionIndicator connected={connected} error={error} />
-
-        {/* Divider */}
-        <div className="h-4 w-px bg-border" />
-
-        {/* Repo Pills - Horizontal scrollable */}
-        <div className="flex-1 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-2">
-            {activeRepos.map((repo, index) => (
-              <RepoPill
-                key={repo.repositoryId}
-                repo={repo}
-                isSelected={repo.repositoryId === selectedRepoId}
-                shortcutNumber={index < 9 ? index + 1 : undefined}
-                stuckAlert={getAlertForRepo(repo.repositoryId)}
-                onClick={() => handleSelectRepo(repo.repositoryId, repo.sessionId)}
-              />
-            ))}
-
-            {activeRepos.length === 0 && (
-              <span className="text-xs text-muted-foreground py-1">
-                No active repositories
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Summary Stats */}
-        {activeRepos.length > 0 && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <DockStats repos={activeRepos} />
-          </>
-        )}
-      </div>
-
-      {/* Mobile Tab Bar */}
-      <MobileTabBar
-        repos={activeRepos}
-        selectedRepoId={selectedRepoId}
-        onSelectRepo={handleSelectRepo}
-        onExpandSheet={() => setMobileSheetOpen(true)}
-        connected={connected}
-      />
-
-      {/* Mobile Bottom Sheet */}
-      <MobileBottomSheet
-        repos={sortedRepos}
-        selectedRepoId={selectedRepoId}
-        onSelectRepo={handleSelectRepo}
-        isOpen={mobileSheetOpen}
-        onClose={() => setMobileSheetOpen(false)}
-        connected={connected}
-      />
+      <DesktopDock activeRepos={activeRepos} selectedRepoId={selectedRepoId} connected={connected} error={error} position={position} className={className} getAlertForRepo={getAlertForRepo} onSelectRepo={handleSelectRepo} />
+      <MobileTabBar repos={activeRepos} selectedRepoId={selectedRepoId} stuckAlerts={stuckAlertsMap} onSelectRepo={handleSelectRepo} onExpandSheet={() => setMobileSheetOpen(true)} connected={connected} />
+      <MobileBottomSheet repos={sortedRepos} selectedRepoId={selectedRepoId} stuckAlerts={stuckAlertsMap} onSelectRepo={handleSelectRepo} isOpen={mobileSheetOpen} onClose={() => setMobileSheetOpen(false)} connected={connected} />
     </>
-  );
-}
-
-/* ============================================
-   SUBCOMPONENTS - Dock Stats
-   ============================================ */
-
-interface DockStatsProps {
-  repos: RepoSessionState[];
-}
-
-interface DisplayStats {
-  active: number;
-  waiting: number;
-  stuck: number;
-}
-
-function useDisplayStats(repos: RepoSessionState[]): DisplayStats {
-  return useMemo(() => {
-    // Count stats based on each repo's claudeStatus (which reflects the last task)
-    const active = repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length;
-    const waiting = repos.filter(r => r.claudeStatus === 'waiting_input').length;
-    const stuck = repos.filter(r => r.claudeStatus === 'stuck').length;
-
-    return { active, waiting, stuck };
-  }, [repos]);
-}
-
-function StatItem({ show, color, icon, label }: { show: boolean; color: string; icon: React.ReactNode; label: string }) {
-  if (!show) return null;
-  return <span className={cn('flex items-center gap-1', color)}>{icon}{label}</span>;
-}
-
-function DockStats({ repos }: DockStatsProps) {
-  const stats = useDisplayStats(repos);
-
-  return (
-    <div className="flex items-center gap-3 text-[10px]">
-      <StatItem show={stats.active > 0} color="text-emerald-600 dark:text-emerald-400" icon={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />} label={`${stats.active} active`} />
-      <StatItem show={stats.waiting > 0} color="text-amber-600 dark:text-amber-400" icon={<Bell className="h-3 w-3" />} label={`${stats.waiting} waiting`} />
-      <StatItem show={stats.stuck > 0} color="text-red-600 dark:text-red-400 font-semibold" icon={<AlertTriangle className="h-3 w-3 animate-pulse" />} label={`${stats.stuck} stuck`} />
-    </div>
   );
 }
 
