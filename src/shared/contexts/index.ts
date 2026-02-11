@@ -8,6 +8,9 @@ export {
   useSSESubscriptionAll,
   useSSEData,
   useConnectionStatus,
+  useNetworkStatus,
+  usePageVisibility,
+  useConnectionQuality,
 } from './SSEContext';
 
 export type {
@@ -16,4 +19,5 @@ export type {
   SSEConnectionHealth,
   SSEEvent,
   SSEEventCallback,
+  ConnectionQualityMetrics,
 } from './SSEContext';

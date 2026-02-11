@@ -8,10 +8,11 @@ import {
   type SSEConnectionHealth,
   type SSEEvent,
   type SSEEventCallback,
+  type ConnectionQualityMetrics,
 } from '../services/GlobalSSEManager';
 
 // Re-export types that components need
-export type { ConnectionStatus, SSEConnectionHealth, SSEEvent, SSEEventCallback };
+export type { ConnectionStatus, SSEConnectionHealth, SSEEvent, SSEEventCallback, ConnectionQualityMetrics };
 
 /* ============================================
    TYPES
@@ -44,6 +45,14 @@ export interface SSEContextValue {
   hasConnection: (id: string) => boolean;
   /** Get the number of active connections */
   connectionCount: number;
+  /** Whether the browser is online */
+  isOnline: boolean;
+  /** Whether the page is visible */
+  isVisible: boolean;
+  /** Total queued events across all connections */
+  queuedEventCount: number;
+  /** Aggregated quality metrics */
+  quality: ConnectionQualityMetrics;
 }
 
 /* ============================================
@@ -89,6 +98,30 @@ export function useSSEHealth(): Map<string, SSEConnectionHealth> {
   return health;
 }
 
+/**
+ * Hook to check if browser is online
+ */
+export function useNetworkStatus(): boolean {
+  const { isOnline } = useSSE();
+  return isOnline;
+}
+
+/**
+ * Hook to check if page is visible
+ */
+export function usePageVisibility(): boolean {
+  const { isVisible } = useSSE();
+  return isVisible;
+}
+
+/**
+ * Hook to get connection quality metrics
+ */
+export function useConnectionQuality(): ConnectionQualityMetrics {
+  const { quality } = useSSE();
+  return quality;
+}
+
 /* ============================================
    PROVIDER
    ============================================ */
@@ -101,6 +134,12 @@ interface SSEProviderProps {
 function useSSEInit(autoConnect?: Array<{ id: string; url: string }>) {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [health, setHealth] = useState<Map<string, SSEConnectionHealth>>(new Map());
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [isVisible, setIsVisible] = useState(() =>
+    typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
+  );
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -112,14 +151,26 @@ function useSSEInit(autoConnect?: Array<{ id: string; url: string }>) {
       setStatus(GlobalSSEManager.getOverallStatus());
     });
 
+    const unsubNetwork = GlobalSSEManager.onNetworkChange((online) => {
+      setIsOnline(online);
+    });
+
+    const unsubVisibility = GlobalSSEManager.onVisibilityChange((visible) => {
+      setIsVisible(visible);
+    });
+
     autoConnect?.forEach(({ id, url }) => GlobalSSEManager.connect(id, url));
     setStatus(GlobalSSEManager.getOverallStatus());
     setHealth(GlobalSSEManager.getHealth());
 
-    return () => { unsubHealth(); };
+    return () => {
+      unsubHealth();
+      unsubNetwork();
+      unsubVisibility();
+    };
   }, [autoConnect]);
 
-  return { status, health, setStatus, setHealth };
+  return { status, health, setStatus, setHealth, isOnline, isVisible };
 }
 
 function useSSEActions(setStatus: React.Dispatch<React.SetStateAction<ConnectionStatus>>, setHealth: React.Dispatch<React.SetStateAction<Map<string, SSEConnectionHealth>>>) {
@@ -149,12 +200,19 @@ function useSSEActions(setStatus: React.Dispatch<React.SetStateAction<Connection
 }
 
 export function SSEProvider({ children, autoConnect }: SSEProviderProps) {
-  const { status, health, setStatus, setHealth } = useSSEInit(autoConnect);
+  const { status, health, setStatus, setHealth, isOnline, isVisible } = useSSEInit(autoConnect);
   const actions = useSSEActions(setStatus, setHealth);
 
   const value: SSEContextValue = {
-    status, isConnected: status === 'connected', health,
-    ...actions, connectionCount: GlobalSSEManager.connectionCount,
+    status,
+    isConnected: status === 'connected',
+    health,
+    ...actions,
+    connectionCount: GlobalSSEManager.connectionCount,
+    isOnline,
+    isVisible,
+    queuedEventCount: GlobalSSEManager.totalQueuedEvents,
+    quality: GlobalSSEManager.getAggregatedQuality(),
   };
 
   return <SSEContext.Provider value={value}>{children}</SSEContext.Provider>;
@@ -276,12 +334,17 @@ export function useConnectionStatus(): {
   status: ConnectionStatus;
   isConnected: boolean;
   isReconnecting: boolean;
+  isPaused: boolean;
+  isOnline: boolean;
+  isVisible: boolean;
   reconnectAttempts: number;
   totalConnections: number;
   connectedCount: number;
+  queuedEventCount: number;
+  averageLatency: number | null;
   reconnect: () => void;
 } {
-  const { status, health, reconnectAll, connectionCount } = useSSE();
+  const { status, health, reconnectAll, connectionCount, isOnline, isVisible, queuedEventCount, quality } = useSSE();
 
   let totalReconnectAttempts = 0;
   let connectedCount = 0;
@@ -295,9 +358,14 @@ export function useConnectionStatus(): {
     status,
     isConnected: status === 'connected',
     isReconnecting: status === 'reconnecting',
+    isPaused: status === 'paused',
+    isOnline,
+    isVisible,
     reconnectAttempts: totalReconnectAttempts,
     totalConnections: connectionCount,
     connectedCount,
+    queuedEventCount,
+    averageLatency: quality.averageLatency,
     reconnect: reconnectAll,
   };
 }
