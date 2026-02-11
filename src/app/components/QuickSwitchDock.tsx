@@ -255,39 +255,86 @@ interface RepoChipProps {
   onClick: () => void;
 }
 
+const REASON_LABELS: Record<string, string> = {
+  no_output: 'No output', waiting_input: 'Waiting', repeated_failures: 'Failures',
+  qa_gate_blocked: 'QA blocked', timeout: 'Timeout',
+};
+
+function getSeverityBadgeClass(severity?: string): string {
+  if (severity === 'critical') return 'bg-red-600 animate-bounce';
+  if (severity === 'high') return 'bg-orange-500';
+  return 'bg-red-500';
+}
+
+function getSeverityTimerClass(severity?: string): string {
+  if (severity === 'critical') return 'bg-red-600 font-bold';
+  if (severity === 'high') return 'bg-orange-500';
+  return 'bg-red-500';
+}
+
+function getChipRingClass(hasAlert: boolean, isSelected: boolean, severity?: string): string {
+  if (!hasAlert) return isSelected ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : '';
+  const base = 'ring-2 ring-red-500 ring-offset-1 ring-offset-background animate-pulse';
+  if (severity === 'critical') return `${base} shadow-lg shadow-red-500/30`;
+  if (severity === 'high') return `${base} shadow-md shadow-orange-500/20`;
+  return base;
+}
+
+function StuckBadgeIndicator({ severity }: { severity?: string }) {
+  return (
+    <span className={cn('absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full text-white text-[9px] font-bold shadow-sm', getSeverityBadgeClass(severity))}>!</span>
+  );
+}
+
+function StuckDurationBadge({ duration, severity }: { duration: number; severity?: string }) {
+  if (duration <= 0) return null;
+  return (
+    <span className={cn('absolute -bottom-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-white text-[9px] font-mono shadow-sm whitespace-nowrap', getSeverityTimerClass(severity))}>
+      {formatStuckTime(duration)}
+    </span>
+  );
+}
+
+function ShortcutHint({ shortcutNumber }: { shortcutNumber: number }) {
+  return (
+    <span className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[10px] font-mono shadow-md">
+      <Command className="h-2.5 w-2.5" />{shortcutNumber}
+    </span>
+  );
+}
+
+function buildTooltip(repo: RepoSessionState, config: StatusConfig, stuckAlert: StuckAlert | null | undefined, liveDuration: number, shortcutNumber?: number): string {
+  const shortcutSuffix = shortcutNumber ? ` ⌘${shortcutNumber}` : '';
+  if (stuckAlert && !stuckAlert.acknowledged) {
+    return `${repo.repositoryName} - ${REASON_LABELS[stuckAlert.reason] || 'Issue'} (stuck for ${formatStuckTime(liveDuration)})${shortcutSuffix}`;
+  }
+  return `${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}`;
+}
+
 function RepoChip({ repo, isSelected, shortcutNumber, stuckAlert, onClick }: RepoChipProps) {
   const config = STATUS_CONFIGS[repo.claudeStatus];
-  const shortName = getShortName(repo.repositoryName);
   const hasStuckAlert = Boolean(stuckAlert && !stuckAlert.acknowledged);
   const liveDuration = useLiveStuckDuration(stuckAlert);
+  const tooltip = buildTooltip(repo, config, stuckAlert, liveDuration, shortcutNumber);
 
   return (
     <button
       onClick={onClick}
+      title={tooltip}
       className={cn(
         'group relative flex items-center gap-2 px-3 py-1.5 rounded-full border',
         'transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
         config.bgColor,
-        isSelected && !hasStuckAlert && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
-        hasStuckAlert && 'ring-2 ring-red-500 ring-offset-1 ring-offset-background animate-pulse'
+        getChipRingClass(hasStuckAlert, isSelected, stuckAlert?.severity)
       )}
-      title={`${repo.repositoryName} - ${config.label}${shortcutNumber ? ` (⌘${shortcutNumber})` : ''}`}
     >
       <GitBranch className={cn('h-3.5 w-3.5 shrink-0', config.color)} />
-      <span className={cn('text-xs font-medium truncate max-w-[100px]', config.color)}>{shortName}</span>
+      <span className={cn('text-xs font-medium truncate max-w-[100px]', config.color)}>{getShortName(repo.repositoryName)}</span>
       <StatusDot status={repo.claudeStatus} size="sm" />
-      {hasStuckAlert && (
-        <>
-          <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold shadow-sm">!</span>
-          {liveDuration > 0 && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-mono shadow-sm">{formatStuckTime(liveDuration)}</span>}
-        </>
-      )}
-      {shortcutNumber && !hasStuckAlert && (
-        <span className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[10px] font-mono shadow-md">
-          <Command className="h-2.5 w-2.5" />{shortcutNumber}
-        </span>
-      )}
+      {hasStuckAlert && <StuckBadgeIndicator severity={stuckAlert?.severity} />}
+      {hasStuckAlert && <StuckDurationBadge duration={liveDuration} severity={stuckAlert?.severity} />}
+      {shortcutNumber && !hasStuckAlert && <ShortcutHint shortcutNumber={shortcutNumber} />}
     </button>
   );
 }
@@ -296,22 +343,32 @@ function RepoChip({ repo, isSelected, shortcutNumber, stuckAlert, onClick }: Rep
    DOCK STATS COMPONENT
    ============================================ */
 
-interface DockStatsProps { repos: RepoSessionState[] }
+interface DockStatsProps { repos: RepoSessionState[]; stuckAlerts: Map<string, StuckAlert> }
 
-function DockStats({ repos }: DockStatsProps) {
+function DockStats({ repos, stuckAlerts }: DockStatsProps) {
   const stats = useMemo(() => ({
     active: repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length,
     waiting: repos.filter(r => r.claudeStatus === 'waiting_input').length,
     stuck: repos.filter(r => r.claudeStatus === 'stuck').length,
-  }), [repos]);
+    needsAttention: stuckAlerts.size,
+  }), [repos, stuckAlerts]);
 
-  if (stats.active === 0 && stats.waiting === 0 && stats.stuck === 0) return null;
+  if (stats.active === 0 && stats.waiting === 0 && stats.stuck === 0 && stats.needsAttention === 0) return null;
 
   return (
     <div className="flex items-center gap-3 text-[11px] font-medium">
       {stats.active > 0 && <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400"><StatusDot status="writing" size="sm" /><span>{stats.active}</span></div>}
       {stats.waiting > 0 && <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400"><StatusDot status="waiting_input" size="sm" /><span>{stats.waiting}</span></div>}
-      {stats.stuck > 0 && <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold"><StatusDot status="stuck" size="sm" /><span>{stats.stuck}</span></div>}
+      {stats.needsAttention > 0 && (
+        <div className={cn(
+          'flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold px-2 py-0.5 rounded-full',
+          'bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-800',
+          stats.needsAttention > 0 && 'animate-pulse'
+        )}>
+          <AlertCircle className="h-3 w-3" />
+          <span>{stats.needsAttention} stuck</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -525,11 +582,12 @@ interface DesktopDockProps {
   error?: string | null;
   position: 'top' | 'bottom';
   className?: string;
+  stuckAlerts: Map<string, StuckAlert>;
   getAlertForRepo: (repoId: string) => StuckAlert | null;
   onSelectRepo: (repoId: string, sessionId?: string | null) => void;
 }
 
-function DesktopDock({ activeRepos, selectedRepoId, connected, error, position, className, getAlertForRepo, onSelectRepo }: DesktopDockProps) {
+function DesktopDock({ activeRepos, selectedRepoId, connected, error, position, className, stuckAlerts, getAlertForRepo, onSelectRepo }: DesktopDockProps) {
   return (
     <div className={cn('hidden md:flex items-center gap-3 px-4 py-2 bg-background/80 backdrop-blur-sm', position === 'top' ? 'border-b' : 'border-t', className)}>
       <ConnectionIndicator connected={connected} error={error} />
@@ -542,7 +600,7 @@ function DesktopDock({ activeRepos, selectedRepoId, connected, error, position, 
           {activeRepos.length === 0 && <span className="text-xs text-muted-foreground py-1.5">No active repositories</span>}
         </div>
       </div>
-      {activeRepos.length > 0 && <><div className="h-4 w-px bg-border" /><DockStats repos={activeRepos} /></>}
+      {activeRepos.length > 0 && <><div className="h-4 w-px bg-border" /><DockStats repos={activeRepos} stuckAlerts={stuckAlerts} /></>}
     </div>
   );
 }
@@ -577,7 +635,7 @@ export function QuickSwitchDock({ selectedRepoId, onSelectRepo, position = 'top'
 
   return (
     <>
-      <DesktopDock activeRepos={activeRepos} selectedRepoId={selectedRepoId} connected={connected} error={error} position={position} className={className} getAlertForRepo={getAlertForRepo} onSelectRepo={handleSelectRepo} />
+      <DesktopDock activeRepos={activeRepos} selectedRepoId={selectedRepoId} connected={connected} error={error} position={position} className={className} stuckAlerts={stuckAlertsMap} getAlertForRepo={getAlertForRepo} onSelectRepo={handleSelectRepo} />
       <MobileTabBar repos={activeRepos} selectedRepoId={selectedRepoId} stuckAlerts={stuckAlertsMap} onSelectRepo={handleSelectRepo} onExpandSheet={() => setMobileSheetOpen(true)} connected={connected} />
       <MobileBottomSheet repos={sortedRepos} selectedRepoId={selectedRepoId} stuckAlerts={stuckAlertsMap} onSelectRepo={handleSelectRepo} isOpen={mobileSheetOpen} onClose={() => setMobileSheetOpen(false)} connected={connected} />
     </>

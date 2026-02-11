@@ -217,13 +217,46 @@ const VARIANT_ICON_COLORS: Record<ToastVariant, string> = {
   stuck: 'text-red-600 dark:text-red-400',
 };
 
+function useLiveTimeStuck(initialTime: number | undefined, toastId: string): number {
+  const [liveTime, setLiveTime] = useState(initialTime ?? 0);
+
+  useEffect(() => {
+    if (initialTime === undefined) return;
+    setLiveTime(initialTime);
+    const interval = setInterval(() => setLiveTime(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [initialTime, toastId]);
+
+  return initialTime !== undefined ? liveTime : 0;
+}
+
+function getStuckTimeClassName(isCritical: boolean, isHigh: boolean): string {
+  if (isCritical) return 'text-red-600 dark:text-red-400 font-bold animate-pulse';
+  if (isHigh) return 'text-orange-600 dark:text-orange-400 font-semibold';
+  return 'text-red-600 dark:text-red-400';
+}
+
+function StuckTimeDisplay({ liveTimeStuck, isCritical, isHigh }: { liveTimeStuck: number; isCritical: boolean; isHigh: boolean }) {
+  return (
+    <p className={cn('text-xs mt-1 font-mono flex items-center gap-1', getStuckTimeClassName(isCritical, isHigh))}>
+      <Clock className={cn('h-3 w-3', isCritical && 'animate-pulse')} />
+      Stuck for {formatDuration(liveTimeStuck)}
+      {isCritical && <span className="ml-1 text-[10px]">(!)</span>}
+    </p>
+  );
+}
+
 function ToastContent({ toast }: { toast: Toast }) {
+  const liveTimeStuck = useLiveTimeStuck(toast.timeStuck, toast.id);
+  const isCritical = toast.variant === 'stuck' && liveTimeStuck > 300;
+  const isHigh = toast.variant === 'stuck' && liveTimeStuck > 120;
+
   return (
     <div className="flex-1">
       {toast.repositoryName && <p className="text-xs font-medium text-muted-foreground mb-0.5">{toast.repositoryName}</p>}
       <p className="text-sm font-semibold">{toast.title}</p>
       {toast.description && <p className="text-sm text-muted-foreground mt-1">{toast.description}</p>}
-      {toast.timeStuck !== undefined && <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-mono">Stuck for {formatDuration(toast.timeStuck)}</p>}
+      {toast.timeStuck !== undefined && <StuckTimeDisplay liveTimeStuck={liveTimeStuck} isCritical={isCritical} isHigh={isHigh} />}
     </div>
   );
 }

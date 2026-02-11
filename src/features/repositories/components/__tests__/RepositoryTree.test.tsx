@@ -3,8 +3,13 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RepositoryTree } from '../RepositoryTree';
+import { SSEProvider } from '@/shared/contexts/SSEContext';
 import type { Repository } from '@/db/schema';
 import type { TreeNode } from '../../lib/tree';
+
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(<SSEProvider>{ui}</SSEProvider>);
+};
 
 describe('RepositoryTree', () => {
   const mockOnSelect = vi.fn();
@@ -62,7 +67,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -94,7 +99,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -134,7 +139,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -165,7 +170,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -197,7 +202,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -238,7 +243,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -262,7 +267,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -289,7 +294,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree
           node={tree}
           selectedId="repo-1"
@@ -317,7 +322,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree
           node={tree}
           selectedId="different-id"
@@ -345,7 +350,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -368,7 +373,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -407,7 +412,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -440,7 +445,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -466,7 +471,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -493,7 +498,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -517,7 +522,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
@@ -542,7 +547,7 @@ describe('RepositoryTree', () => {
         ],
       };
 
-      render(
+      renderWithProviders(
         <RepositoryTree node={tree} selectedId={null} onSelect={mockOnSelect} />
       );
 
