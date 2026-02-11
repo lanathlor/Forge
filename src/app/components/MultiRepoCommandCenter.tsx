@@ -11,6 +11,8 @@ import {
   type RepoSessionState,
   type ClaudeStatus,
 } from '@/shared/hooks/useMultiRepoStream';
+import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
+import type { StuckAlert, AlertSeverity } from '@/lib/stuck-detection/types';
 import {
   Brain,
   Pencil,
@@ -31,6 +33,7 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  Timer,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -176,6 +179,57 @@ function getAnimationClass(animate?: 'pulse' | 'spin' | 'bounce'): string {
   if (animate === 'spin') return 'animate-spin';
   if (animate === 'bounce') return 'animate-bounce';
   return '';
+}
+
+/* ============================================
+   STUCK ALERT SEVERITY STYLES
+   ============================================ */
+
+const SEVERITY_RING_STYLES: Record<AlertSeverity, { ring: string; glow: string; badge: string }> = {
+  critical: {
+    ring: 'ring-2 ring-red-500 ring-offset-2 ring-offset-background',
+    glow: 'shadow-lg shadow-red-500/40',
+    badge: 'bg-red-600 text-white',
+  },
+  high: {
+    ring: 'ring-2 ring-orange-500 ring-offset-1 ring-offset-background',
+    glow: 'shadow-md shadow-orange-500/30',
+    badge: 'bg-orange-500 text-white',
+  },
+  medium: {
+    ring: 'ring-1 ring-amber-500 ring-offset-1 ring-offset-background',
+    glow: 'shadow-sm shadow-amber-500/20',
+    badge: 'bg-amber-500 text-white',
+  },
+  low: {
+    ring: 'ring-1 ring-yellow-500',
+    glow: '',
+    badge: 'bg-yellow-500 text-black',
+  },
+};
+
+function formatStuckDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60);
+  return m > 0 ? `${h}h${m}m` : `${h}h`;
+}
+
+function useLiveStuckDuration(alert: StuckAlert | null): number {
+  const [duration, setDuration] = useState(alert?.stuckDurationSeconds ?? 0);
+  const alertId = alert?.id;
+
+  useEffect(() => {
+    if (!alertId) {
+      setDuration(0);
+      return;
+    }
+    setDuration(alert?.stuckDurationSeconds ?? 0);
+    const interval = setInterval(() => setDuration(d => d + 1), 1000);
+    return () => clearInterval(interval);
+  }, [alertId, alert?.stuckDurationSeconds]);
+
+  return alertId ? duration : 0;
 }
 
 function getProgressBarColor(status: ClaudeStatus): string {
@@ -390,6 +444,7 @@ function RepoCardFooter({ config, canPause, canResume, onPause, onResume, onSele
 interface RepoCardProps {
   repo: RepoSessionState;
   isSelected?: boolean;
+  alert?: StuckAlert | null;
   onSelect?: () => void;
   onPause?: () => void;
   onResume?: () => void;
@@ -403,14 +458,26 @@ function getSessionPermissions(repo: RepoSessionState) {
   };
 }
 
-function getCardClass(config: StatusConfig, isSelected: boolean, needsAttention: boolean) {
+function getAlertStyles(alert?: StuckAlert | null): { hasAlert: boolean; ring?: string; glow?: string } {
+  const hasAlert = Boolean(alert && !alert.acknowledged);
+  if (!hasAlert || !alert?.severity) return { hasAlert: false };
+  const styles = SEVERITY_RING_STYLES[alert.severity];
+  return { hasAlert: true, ring: styles.ring, glow: styles.glow };
+}
+
+function getCardClass(config: StatusConfig, isSelected: boolean, needsAttention: boolean, alert?: StuckAlert | null) {
+  const alertStyles = getAlertStyles(alert);
+
   return cn(
     'group relative rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer',
     'hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
     config.bgColor, config.borderColor,
-    isSelected && 'ring-2 ring-blue-500 ring-offset-2',
-    needsAttention && 'animate-pulse-border shadow-lg',
-    needsAttention && config.glowColor
+    isSelected && !alertStyles.hasAlert && 'ring-2 ring-blue-500 ring-offset-2',
+    alertStyles.hasAlert && alertStyles.ring,
+    alertStyles.hasAlert && alertStyles.glow,
+    alertStyles.hasAlert && 'animate-pulse-border',
+    !alertStyles.hasAlert && needsAttention && 'animate-pulse-border shadow-lg',
+    !alertStyles.hasAlert && needsAttention && config.glowColor
   );
 }
 
@@ -418,16 +485,75 @@ function handleCardKeyDown(e: React.KeyboardEvent, onSelect?: () => void) {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(); }
 }
 
-function RepoCard({ repo, isSelected, onSelect, onPause, onResume }: RepoCardProps) {
+function StuckDurationBadge({ alert }: { alert: StuckAlert }) {
+  const duration = useLiveStuckDuration(alert);
+  const isCritical = alert.severity === 'critical';
+  const severityStyles = SEVERITY_RING_STYLES[alert.severity];
+
+  return (
+    <div className={cn(
+      'absolute -top-2 -right-2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shadow-md z-10',
+      severityStyles.badge,
+      isCritical && 'animate-bounce'
+    )}>
+      <Timer className={cn('h-3 w-3', isCritical && 'animate-pulse')} />
+      <span>{formatStuckDuration(duration)}</span>
+      {isCritical && <span className="text-[8px]">!</span>}
+    </div>
+  );
+}
+
+function StuckReasonIndicator({ alert }: { alert: StuckAlert }) {
+  const duration = useLiveStuckDuration(alert);
+  const isCritical = alert.severity === 'critical';
+  const isHigh = alert.severity === 'high';
+
+  return (
+    <div className={cn(
+      'flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md text-xs',
+      isCritical && 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300',
+      isHigh && !isCritical && 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300',
+      !isCritical && !isHigh && 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+    )}>
+      <AlertTriangle className={cn('h-3 w-3 shrink-0', isCritical && 'animate-pulse')} />
+      <span className="truncate">{alert.description}</span>
+      <span className={cn('font-mono font-semibold shrink-0', isCritical && 'animate-pulse')}>
+        {formatStuckDuration(duration)}
+      </span>
+    </div>
+  );
+}
+
+const SEVERITY_BORDER_COLORS: Record<AlertSeverity, string> = {
+  critical: 'border-red-500',
+  high: 'border-orange-500',
+  medium: 'border-amber-500',
+  low: 'border-yellow-500',
+};
+
+function CardPulsingBorder({ hasAlert, severity, needsAttention, fallbackBorder }: { hasAlert: boolean; severity?: AlertSeverity; needsAttention: boolean; fallbackBorder: string }) {
+  if (hasAlert && severity) {
+    return <div className={cn('absolute inset-0 rounded-xl border-2 animate-ping opacity-30 pointer-events-none', SEVERITY_BORDER_COLORS[severity])} />;
+  }
+  if (needsAttention) {
+    return <div className={cn('absolute inset-0 rounded-xl border-2 animate-ping opacity-20 pointer-events-none', fallbackBorder)} />;
+  }
+  return null;
+}
+
+function RepoCard({ repo, isSelected, alert, onSelect, onPause, onResume }: RepoCardProps) {
   const config = CLAUDE_STATUS_CONFIGS[repo.claudeStatus];
   const { canPause, canResume } = getSessionPermissions(repo);
-  const cardClass = getCardClass(config, !!isSelected, repo.needsAttention);
+  const cardClass = getCardClass(config, !!isSelected, repo.needsAttention, alert);
+  const hasAlert = Boolean(alert && !alert.acknowledged);
 
   return (
     <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(e) => handleCardKeyDown(e, onSelect)} className={cardClass}>
-      {repo.needsAttention && <div className={cn('absolute inset-0 rounded-xl border-2 animate-ping opacity-20 pointer-events-none', config.borderColor)} />}
+      {hasAlert && alert && <StuckDurationBadge alert={alert} />}
+      <CardPulsingBorder hasAlert={hasAlert} severity={alert?.severity} needsAttention={repo.needsAttention} fallbackBorder={config.borderColor} />
       <RepoCardHeader repo={repo} config={config} />
       <RepoCardTask repo={repo} />
+      {hasAlert && alert && <StuckReasonIndicator alert={alert} />}
       {repo.currentTask?.progress !== undefined && <ProgressBar progress={repo.currentTask.progress} status={repo.claudeStatus} />}
       <RepoCardFooter config={config} canPause={canPause} canResume={canResume} onPause={onPause} onResume={onResume} onSelect={onSelect} />
     </div>
@@ -478,14 +604,19 @@ function RepoRowActions({ canPause, canResume, onPause, onResume, onSelect }: { 
    SUBCOMPONENTS - Repo Row (List View)
    ============================================ */
 
-function getRowClass(config: StatusConfig, isSelected: boolean, needsAttention: boolean) {
+function getRowClass(config: StatusConfig, isSelected: boolean, needsAttention: boolean, alert?: StuckAlert | null) {
+  const alertStyles = getAlertStyles(alert);
+
   return cn(
     'group flex items-center gap-4 px-4 py-3 rounded-lg border-2 transition-all duration-200 cursor-pointer',
     'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
     config.bgColor, config.borderColor,
-    isSelected && 'ring-2 ring-blue-500 ring-offset-2',
-    needsAttention && 'animate-pulse-border shadow-md',
-    needsAttention && config.glowColor
+    isSelected && !alertStyles.hasAlert && 'ring-2 ring-blue-500 ring-offset-2',
+    alertStyles.hasAlert && alertStyles.ring,
+    alertStyles.hasAlert && alertStyles.glow,
+    alertStyles.hasAlert && 'animate-pulse-border',
+    !alertStyles.hasAlert && needsAttention && 'animate-pulse-border shadow-md',
+    !alertStyles.hasAlert && needsAttention && config.glowColor
   );
 }
 
@@ -502,19 +633,56 @@ function RepoRowProgress({ progress, status }: { progress: number; status: Claud
   );
 }
 
-function RepoRow({ repo, isSelected, onSelect, onPause, onResume }: RepoCardProps) {
+function StuckDurationCell({ alert }: { alert: StuckAlert }) {
+  const duration = useLiveStuckDuration(alert);
+  const isCritical = alert.severity === 'critical';
+  const severityStyles = SEVERITY_RING_STYLES[alert.severity];
+
+  return (
+    <div className={cn(
+      'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold shrink-0',
+      severityStyles.badge,
+      isCritical && 'animate-pulse'
+    )}>
+      <Timer className="h-3 w-3" />
+      <span>{formatStuckDuration(duration)}</span>
+    </div>
+  );
+}
+
+const SEVERITY_BG_COLORS: Record<AlertSeverity, string> = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-amber-500',
+  low: 'bg-yellow-500',
+};
+
+function AlertIndicatorDot({ severity }: { severity: AlertSeverity }) {
+  return <span className={cn('absolute -top-1 -right-1 h-3 w-3 rounded-full animate-pulse', SEVERITY_BG_COLORS[severity])} />;
+}
+
+function RepoRowIconBox({ config, claudeStatus, alert }: { config: StatusConfig; claudeStatus: ClaudeStatus; alert?: StuckAlert | null }) {
+  const hasAlert = Boolean(alert && !alert.acknowledged);
+  return (
+    <div className={cn('relative flex items-center justify-center h-10 w-10 rounded-lg shrink-0 border', config.bgColor, config.borderColor)}>
+      <LiveIndicator status={claudeStatus} size="md" showLabel={false} />
+      {hasAlert && alert?.severity && <AlertIndicatorDot severity={alert.severity} />}
+    </div>
+  );
+}
+
+function RepoRow({ repo, isSelected, alert, onSelect, onPause, onResume }: RepoCardProps) {
   const config = CLAUDE_STATUS_CONFIGS[repo.claudeStatus];
   const { canPause, canResume } = getSessionPermissions(repo);
-  const rowClass = getRowClass(config, !!isSelected, repo.needsAttention);
+  const rowClass = getRowClass(config, !!isSelected, repo.needsAttention, alert);
   const showProgress = repo.currentTask?.progress !== undefined && repo.currentTask.progress > 0;
+  const hasAlert = Boolean(alert && !alert.acknowledged);
 
   return (
     <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(e) => handleCardKeyDown(e, onSelect)} className={rowClass}>
-      <div className={cn('flex items-center justify-center h-10 w-10 rounded-lg shrink-0 border', config.bgColor, config.borderColor)}>
-        <LiveIndicator status={repo.claudeStatus} size="md" showLabel={false} />
-      </div>
+      <RepoRowIconBox config={config} claudeStatus={repo.claudeStatus} alert={alert} />
       <RepoRowInfo repo={repo} config={config} />
-      {showProgress && <RepoRowProgress progress={repo.currentTask!.progress!} status={repo.claudeStatus} />}
+      {hasAlert && alert ? <StuckDurationCell alert={alert} /> : showProgress && <RepoRowProgress progress={repo.currentTask!.progress!} status={repo.claudeStatus} />}
       <div className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block">{formatElapsedTime(repo.timeElapsed)}</div>
       <RepoRowActions canPause={canPause} canResume={canResume} onPause={onPause} onResume={onResume} onSelect={onSelect} />
       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
@@ -627,7 +795,7 @@ function ShowMoreButton({ hiddenCount, isExpanded, setIsExpanded }: { hiddenCoun
    SUBCOMPONENTS - Content Renderers
    ============================================ */
 
-function RepoGrid({ repos, selectedRepoId, onSelect, onPause, onResume }: { repos: RepoSessionState[]; selectedRepoId?: string; onSelect: (id: string) => void; onPause: (repoId: string, sessionId: string) => void; onResume: (repoId: string, sessionId: string) => void }) {
+function RepoGrid({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }: { repos: RepoSessionState[]; selectedRepoId?: string; alerts: Map<string, StuckAlert>; onSelect: (id: string) => void; onPause: (repoId: string, sessionId: string) => void; onResume: (repoId: string, sessionId: string) => void }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {repos.map((repo) => (
@@ -635,6 +803,7 @@ function RepoGrid({ repos, selectedRepoId, onSelect, onPause, onResume }: { repo
           key={repo.repositoryId}
           repo={repo}
           isSelected={repo.repositoryId === selectedRepoId}
+          alert={alerts.get(repo.repositoryId)}
           onSelect={() => onSelect(repo.repositoryId)}
           onPause={repo.sessionId ? () => onPause(repo.repositoryId, repo.sessionId!) : undefined}
           onResume={repo.sessionId ? () => onResume(repo.repositoryId, repo.sessionId!) : undefined}
@@ -644,7 +813,7 @@ function RepoGrid({ repos, selectedRepoId, onSelect, onPause, onResume }: { repo
   );
 }
 
-function RepoList({ repos, selectedRepoId, onSelect, onPause, onResume }: { repos: RepoSessionState[]; selectedRepoId?: string; onSelect: (id: string) => void; onPause: (repoId: string, sessionId: string) => void; onResume: (repoId: string, sessionId: string) => void }) {
+function RepoList({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }: { repos: RepoSessionState[]; selectedRepoId?: string; alerts: Map<string, StuckAlert>; onSelect: (id: string) => void; onPause: (repoId: string, sessionId: string) => void; onResume: (repoId: string, sessionId: string) => void }) {
   return (
     <div className="space-y-2">
       {repos.map((repo) => (
@@ -652,6 +821,7 @@ function RepoList({ repos, selectedRepoId, onSelect, onPause, onResume }: { repo
           key={repo.repositoryId}
           repo={repo}
           isSelected={repo.repositoryId === selectedRepoId}
+          alert={alerts.get(repo.repositoryId)}
           onSelect={() => onSelect(repo.repositoryId)}
           onPause={repo.sessionId ? () => onPause(repo.repositoryId, repo.sessionId!) : undefined}
           onResume={repo.sessionId ? () => onResume(repo.repositoryId, repo.sessionId!) : undefined}
@@ -667,8 +837,20 @@ function RepoList({ repos, selectedRepoId, onSelect, onPause, onResume }: { repo
 
 export function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo, selectedRepoId, maxVisible = 8, className }: MultiRepoCommandCenterProps) {
   const { repositories, connected, error, reconnect, lastUpdated } = useMultiRepoStream();
+  const { status: stuckStatus } = useStuckDetection();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Create alerts map for quick lookup
+  const alertsMap = useMemo(() => {
+    const map = new Map<string, StuckAlert>();
+    stuckStatus?.alerts.forEach(alert => {
+      if (!alert.acknowledged) {
+        map.set(alert.repositoryId, alert);
+      }
+    });
+    return map;
+  }, [stuckStatus?.alerts]);
 
   const sortedRepos = useMemo(() => sortByPriority(repositories), [repositories]);
   const visibleRepos = useMemo(() => isExpanded ? sortedRepos : sortedRepos.slice(0, maxVisible), [sortedRepos, maxVisible, isExpanded]);
@@ -682,8 +864,8 @@ export function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo
   const renderContent = () => {
     if (isLoading) return viewMode === 'grid' ? <GridSkeleton /> : <ListSkeleton />;
     if (repositories.length === 0) return <EmptyState />;
-    if (viewMode === 'grid') return <RepoGrid repos={visibleRepos} selectedRepoId={selectedRepoId} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
-    return <RepoList repos={visibleRepos} selectedRepoId={selectedRepoId} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
+    if (viewMode === 'grid') return <RepoGrid repos={visibleRepos} selectedRepoId={selectedRepoId} alerts={alertsMap} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
+    return <RepoList repos={visibleRepos} selectedRepoId={selectedRepoId} alerts={alertsMap} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
   };
 
   return (

@@ -210,32 +210,56 @@ interface SummaryHeaderProps {
   onToggle: () => void;
 }
 
-function SummaryHeaderIcon({ hasAlerts, severityConfig }: { hasAlerts: boolean; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] | null }) {
+function SummaryHeaderIcon({ hasAlerts, severityConfig, isCritical }: { hasAlerts: boolean; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] | null; isCritical: boolean }) {
   if (hasAlerts) {
     return (
-      <div className={cn('flex items-center justify-center h-8 w-8 rounded-full', severityConfig?.bgColor || 'bg-muted')}>
-        <AlertTriangle className={cn('h-4 w-4', severityConfig?.color || 'text-muted-foreground')} />
+      <div className={cn(
+        'flex items-center justify-center h-10 w-10 rounded-full transition-all',
+        severityConfig?.bgColor || 'bg-muted',
+        isCritical && 'ring-2 ring-red-500 ring-offset-2 ring-offset-background animate-pulse'
+      )}>
+        <AlertTriangle className={cn(
+          'h-5 w-5',
+          severityConfig?.color || 'text-muted-foreground',
+          isCritical && 'animate-bounce'
+        )} />
       </div>
     );
   }
   return (
-    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-      <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+      <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
     </div>
   );
 }
 
-function SummaryHeaderTitle({ hasAlerts, count }: { hasAlerts: boolean; count: number }) {
+function SummaryHeaderTitle({ hasAlerts, count, isCritical, isHigh }: { hasAlerts: boolean; count: number; isCritical: boolean; isHigh: boolean }) {
   const message = hasAlerts
     ? `${count} repo${count > 1 ? 's' : ''} need${count === 1 ? 's' : ''} your help`
     : 'All repos running smoothly';
   return (
     <div>
-      <h3 className="text-sm font-semibold flex items-center gap-2">
+      <h3 className="text-base font-semibold flex items-center gap-2">
         Needs Attention
-        {hasAlerts && <Badge variant="destructive" className="text-[10px] h-5 px-1.5">{count}</Badge>}
+        {hasAlerts && (
+          <Badge
+            variant="destructive"
+            className={cn(
+              'text-xs h-6 px-2 font-bold',
+              isCritical && 'animate-bounce bg-red-600',
+              isHigh && !isCritical && 'bg-orange-500'
+            )}
+          >
+            {count}
+          </Badge>
+        )}
       </h3>
-      <p className="text-xs text-muted-foreground">{message}</p>
+      <p className={cn(
+        'text-sm',
+        hasAlerts ? 'text-foreground font-medium' : 'text-muted-foreground'
+      )}>
+        {message}
+      </p>
     </div>
   );
 }
@@ -243,12 +267,22 @@ function SummaryHeaderTitle({ hasAlerts, count }: { hasAlerts: boolean; count: n
 function SummaryHeader({ status, isCollapsed, onToggle }: SummaryHeaderProps) {
   const hasAlerts = status.totalStuckCount > 0;
   const severityConfig = status.highestSeverity ? SEVERITY_CONFIG[status.highestSeverity] : null;
+  const isCritical = status.highestSeverity === 'critical';
+  const isHigh = status.highestSeverity === 'high';
 
   return (
-    <div className={cn('flex items-center justify-between cursor-pointer select-none', 'hover:bg-muted/50 rounded-lg -mx-2 px-2 py-1 transition-colors')} onClick={onToggle}>
+    <div
+      className={cn(
+        'flex items-center justify-between cursor-pointer select-none rounded-lg -mx-2 px-3 py-2 transition-all',
+        'hover:bg-muted/50',
+        hasAlerts && isCritical && 'bg-red-50/50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/30',
+        hasAlerts && isHigh && !isCritical && 'bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-50 dark:hover:bg-orange-950/30'
+      )}
+      onClick={onToggle}
+    >
       <div className="flex items-center gap-3">
-        <SummaryHeaderIcon hasAlerts={hasAlerts} severityConfig={severityConfig} />
-        <SummaryHeaderTitle hasAlerts={hasAlerts} count={status.totalStuckCount} />
+        <SummaryHeaderIcon hasAlerts={hasAlerts} severityConfig={severityConfig} isCritical={isCritical} />
+        <SummaryHeaderTitle hasAlerts={hasAlerts} count={status.totalStuckCount} isCritical={isCritical} isHigh={isHigh} />
       </div>
       {hasAlerts && (
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -263,29 +297,46 @@ function SummaryHeader({ status, isCollapsed, onToggle }: SummaryHeaderProps) {
    STATS BAR
    ============================================ */
 
+function getSeverityTimeStyles(severity: AlertSeverity | null) {
+  if (severity === 'critical') return 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 animate-pulse';
+  if (severity === 'high') return 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300';
+  if (severity === 'medium') return 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300';
+  return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300';
+}
+
+function TotalStuckTimeBadge({ totalSeconds, severity }: { totalSeconds: number; severity: AlertSeverity | null }) {
+  return (
+    <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold', getSeverityTimeStyles(severity))}>
+      <Timer className={cn('h-4 w-4', severity === 'critical' && 'animate-pulse')} />
+      <span className="text-sm font-mono">{formatStuckDuration(totalSeconds)}</span>
+      <span className="text-xs opacity-80">total wait</span>
+    </div>
+  );
+}
+
+function StatBadge({ count, label, icon: Icon, colorClass }: { count: number; label: string; icon: typeof Clock; colorClass: string }) {
+  if (count === 0) return null;
+  return (
+    <span className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full font-medium', colorClass)}>
+      <Icon className="h-3 w-3" />
+      <span className="font-bold">{count}</span> {label}
+    </span>
+  );
+}
+
 function StatsBar({ status }: { status: StuckStatus }) {
   if (status.totalStuckCount === 0) return null;
+  const totalStuckSeconds = status.alerts.reduce((sum, alert) => sum + alert.stuckDurationSeconds, 0);
 
   return (
-    <div className="flex items-center gap-4 py-2 border-y text-xs">
-      {status.waitingInputCount > 0 && (
-        <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-          <Clock className="h-3 w-3" />
-          {status.waitingInputCount} waiting
-        </span>
-      )}
-      {status.failedCount > 0 && (
-        <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-          <XCircle className="h-3 w-3" />
-          {status.failedCount} failed
-        </span>
-      )}
-      {status.qaBlockedCount > 0 && (
-        <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-          <ShieldAlert className="h-3 w-3" />
-          {status.qaBlockedCount} blocked
-        </span>
-      )}
+    <div className="flex flex-wrap items-center gap-3 py-3 px-3 border-y bg-muted/30 rounded-lg">
+      <TotalStuckTimeBadge totalSeconds={totalStuckSeconds} severity={status.highestSeverity} />
+      <div className="h-4 w-px bg-border" />
+      <div className="flex items-center gap-3 text-xs">
+        <StatBadge count={status.waitingInputCount} label="waiting" icon={Clock} colorClass="bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400" />
+        <StatBadge count={status.failedCount} label="failed" icon={XCircle} colorClass="bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400" />
+        <StatBadge count={status.qaBlockedCount} label="blocked" icon={ShieldAlert} colorClass="bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400" />
+      </div>
     </div>
   );
 }
