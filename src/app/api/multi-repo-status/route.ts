@@ -36,23 +36,24 @@ function formatTaskPrompt(prompt: string): string {
 }
 
 /**
- * Fetch the current task for a session
+ * Fetch the last task for a session (chronologically, by creation time)
+ * Returns the most recent task regardless of its status, so the UI reflects
+ * the actual last task in the timeline rather than an older stuck task.
  */
-async function fetchCurrentTask(sessionId: string) {
-  const latestTask = await db.query.tasks.findFirst({
+async function fetchLastTask(sessionId: string) {
+  const lastTask = await db.query.tasks.findFirst({
     where: eq(tasks.sessionId, sessionId),
-    orderBy: [desc(tasks.updatedAt)],
+    orderBy: [desc(tasks.createdAt)],
   });
 
-  const terminalStatuses = ['completed', 'rejected', 'cancelled'];
-  if (!latestTask || terminalStatuses.includes(latestTask.status)) {
+  if (!lastTask) {
     return null;
   }
 
   return {
-    id: latestTask.id,
-    prompt: formatTaskPrompt(latestTask.prompt),
-    status: latestTask.status,
+    id: lastTask.id,
+    prompt: formatTaskPrompt(lastTask.prompt),
+    status: lastTask.status,
     progress: undefined,
   };
 }
@@ -81,9 +82,9 @@ async function buildRepoSessionState(repo: { id: string; name: string }): Promis
     orderBy: [desc(sessions.lastActivity)],
   });
 
-  const currentTask = session ? await fetchCurrentTask(session.id) : null;
+  const lastTask = session ? await fetchLastTask(session.id) : null;
   const sessionStatus = session?.status ?? null;
-  const claudeStatus = getClaudeStatus(currentTask?.status ?? null, sessionStatus);
+  const claudeStatus = getClaudeStatus(lastTask?.status ?? null, sessionStatus);
 
   return {
     repositoryId: repo.id,
@@ -91,7 +92,7 @@ async function buildRepoSessionState(repo: { id: string; name: string }): Promis
     sessionId: session?.id ?? null,
     sessionStatus,
     claudeStatus,
-    currentTask,
+    currentTask: lastTask,
     timeElapsed: calcTimeElapsed(session?.startedAt),
     lastActivity: getLastActivity(session?.lastActivity),
     needsAttention: checkNeedsAttention(claudeStatus),
