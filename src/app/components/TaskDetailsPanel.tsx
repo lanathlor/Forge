@@ -59,9 +59,9 @@ export function TaskDetailsPanel({ taskId, updates }: TaskDetailsPanelProps) {
   const processedOutputCount = useRef(0);
 
   const loadTask = async () => { try { setLoading(true); const res = await fetch(`/api/tasks/${taskId}`); if (res.ok) { const data = await res.json(); setTask(data.task); if (data.task.claudeOutput) setOutput(data.task.claudeOutput); } } catch (e) { console.error(e); } finally { setLoading(false); } };
-  useEffect(() => { loadTask(); processedOutputCount.current = 0; setOutput(''); }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadTask(); processedOutputCount.current = 0; setOutput(''); }, [taskId]);
   useEffect(() => { const outputUpdates = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId); const newUpdates = outputUpdates.slice(processedOutputCount.current); if (newUpdates.length > 0) { const newOutput = newUpdates.map((x) => x.output || '').join(''); setOutput(prev => prev + newOutput); processedOutputCount.current = outputUpdates.length; outputEndRef.current?.scrollIntoView({ behavior: 'smooth' }); } }, [updates, taskId]);
-  useEffect(() => { const statusUpdates = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId); const last = statusUpdates[statusUpdates.length - 1]; if (last?.status) { const newStatus = last.status; setTask(prev => prev ? { ...prev, status: newStatus } : null); if (newStatus === 'waiting_qa' || newStatus === 'waiting_approval' || newStatus === 'qa_failed') { loadTask(); } } }, [updates, taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const statusUpdates = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId); const last = statusUpdates[statusUpdates.length - 1]; if (last?.status) { const newStatus = last.status; setTask(prev => prev ? { ...prev, status: newStatus } : null); if (newStatus === 'waiting_qa' || newStatus === 'waiting_approval' || newStatus === 'qa_failed') { loadTask(); } } }, [updates, taskId]);
 
   if (loading) return <LoadingState />;
   if (!task) return <NotFoundState />;

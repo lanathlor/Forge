@@ -87,15 +87,45 @@ export async function commitTaskChanges(repoPath: string, filesChanged: FileChan
     let commitMessage: string;
 
     if (hasUncommittedChanges) {
-      // There are uncommitted changes, stage and commit them
-      await stageFiles(containerPath, filesChanged);
-      console.log(`[commitTaskChanges] Files staged successfully`);
+      // Parse git status to get actual uncommitted files
+      const uncommittedFiles = statusOutput
+        .trim()
+        .split('\n')
+        .map(line => {
+          // Format: "XY path" or "XY path -> newpath" for renames
+          const match = line.match(/^..\s+(.+?)(?:\s+->\s+.+)?$/);
+          return match ? match[1] : null;
+        })
+        .filter((f): f is string => f !== null);
 
-      sha = await createCommit(containerPath, message);
-      commitMessage = message;
-      console.log(`[commitTaskChanges] Created new commit: ${sha}`);
+      console.log(`[commitTaskChanges] Uncommitted files from git status: ${uncommittedFiles.join(', ')}`);
+
+      // Filter filesChanged to only include files that actually have uncommitted changes
+      const filesToCommit = filesChanged.filter(f => uncommittedFiles.includes(f.path));
+
+      if (filesToCommit.length === 0) {
+        // Files from task were already committed, use existing HEAD commit
+        console.log(`[commitTaskChanges] All task files already committed, using existing HEAD`);
+        const { stdout: headSha } = await execAsync('git rev-parse HEAD', { cwd: containerPath, timeout: 5000 });
+        sha = headSha.trim();
+
+        const { stdout: existingMessage } = await execAsync('git log -1 --format=%B', { cwd: containerPath, timeout: 5000 });
+        commitMessage = existingMessage.trim();
+
+        console.log(`[commitTaskChanges] Using existing commit: ${sha}`);
+        console.log(`[commitTaskChanges] Existing commit message: ${commitMessage.substring(0, 100)}...`);
+      } else {
+        // There are uncommitted changes from the task, stage and commit them
+        console.log(`[commitTaskChanges] Committing ${filesToCommit.length} uncommitted files`);
+        await stageFiles(containerPath, filesToCommit);
+        console.log(`[commitTaskChanges] Files staged successfully`);
+
+        sha = await createCommit(containerPath, message);
+        commitMessage = message;
+        console.log(`[commitTaskChanges] Created new commit: ${sha}`);
+      }
     } else {
-      // No uncommitted changes, Claude Code likely already committed during execution
+      // No uncommitted changes at all, Claude Code likely already committed during execution
       // Use the current HEAD commit SHA and message
       const { stdout: headSha } = await execAsync('git rev-parse HEAD', { cwd: containerPath, timeout: 5000 });
       sha = headSha.trim();
