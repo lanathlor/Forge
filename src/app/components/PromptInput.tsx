@@ -1,30 +1,172 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/shared/components/ui/card';
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'react';
 import { Button } from '@/shared/components/ui/button';
-import { Loader2, Send, Sparkles } from 'lucide-react';
+import { cn } from '@/shared/lib/utils';
+import {
+  Loader2,
+  Send,
+  ChevronDown,
+  Clock,
+  FileText,
+  Paperclip,
+  X,
+  Upload,
+  Hash,
+  Sparkles,
+  Zap,
+  Bug,
+  RefreshCw,
+  TestTube,
+  BookOpen,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/shared/components/ui/dropdown-menu';
 
 interface PromptInputProps {
   sessionId: string;
   onTaskCreated?: (taskId: string) => void;
 }
 
-/**
- * Prompt Input Component
- * Allows users to submit prompts to Claude for execution
- * Features:
- * - Large textarea for prompt input
- * - Submit button with loading state
- * - Keyboard shortcuts (Cmd/Ctrl + Enter to submit)
- * - Auto-focus on mount
- * - Mobile-responsive
- */
- 
+interface Attachment {
+  name: string;
+  size: number;
+  type: string;
+}
+
+interface PromptTemplate {
+  label: string;
+  description: string;
+  template: string;
+  icon: React.ReactNode;
+}
+
+const PROMPT_TEMPLATES: PromptTemplate[] = [
+  {
+    label: 'Add feature',
+    description: 'Implement a new feature',
+    template: 'Add a new feature: ',
+    icon: <Sparkles className="h-4 w-4" />,
+  },
+  {
+    label: 'Fix bug',
+    description: 'Debug and fix an issue',
+    template: 'Fix the bug where ',
+    icon: <Bug className="h-4 w-4" />,
+  },
+  {
+    label: 'Refactor',
+    description: 'Improve existing code',
+    template: 'Refactor the following to improve ',
+    icon: <RefreshCw className="h-4 w-4" />,
+  },
+  {
+    label: 'Add tests',
+    description: 'Write tests for existing code',
+    template: 'Write tests for ',
+    icon: <TestTube className="h-4 w-4" />,
+  },
+  {
+    label: 'Documentation',
+    description: 'Add or update docs',
+    template: 'Add documentation for ',
+    icon: <BookOpen className="h-4 w-4" />,
+  },
+];
+
+const RECENT_PROMPTS_KEY = 'autobot-recent-prompts';
+const MAX_RECENT_PROMPTS = 5;
+const MAX_TEXTAREA_HEIGHT = 300;
+const MIN_TEXTAREA_HEIGHT = 56;
+
+function getRecentPrompts(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(RECENT_PROMPTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentPrompt(prompt: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const prompts = getRecentPrompts();
+    const filtered = prompts.filter((p) => p !== prompt);
+    filtered.unshift(prompt);
+    localStorage.setItem(
+      RECENT_PROMPTS_KEY,
+      JSON.stringify(filtered.slice(0, MAX_RECENT_PROMPTS))
+    );
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function estimateTokens(text: string): number {
+  // Rough estimate: ~4 chars per token for English text
+  return Math.ceil(text.length / 4);
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [recentPrompts, setRecentPrompts] = useState<string[]>([]);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Load recent prompts on mount
+  useEffect(() => {
+    setRecentPrompts(getRecentPrompts());
+  }, []);
+
+  // Auto-resize textarea as content grows
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    textarea.style.height = `${Math.min(Math.max(scrollHeight, MIN_TEXTAREA_HEIGHT), MAX_TEXTAREA_HEIGHT)}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [prompt, adjustTextareaHeight]);
+
+  const charCount = prompt.length;
+  const tokenEstimate = useMemo(() => estimateTokens(prompt), [prompt]);
+
+  const isMac = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    return navigator.platform.includes('Mac');
+  }, []);
+
+  const modKey = isMac ? '⌘' : 'Ctrl';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,8 +196,13 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
 
       const data = await res.json();
 
-      // Clear prompt on success
+      // Save to recent prompts
+      saveRecentPrompt(prompt.trim());
+      setRecentPrompts(getRecentPrompts());
+
+      // Clear state
       setPrompt('');
+      setAttachments([]);
 
       // Notify parent
       if (onTaskCreated) {
@@ -70,79 +217,315 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Submit on Cmd/Ctrl + Enter
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
       handleSubmit(e);
     }
   }
 
+  function insertTemplate(template: string) {
+    setPrompt(template);
+    textareaRef.current?.focus();
+    // Place cursor at end
+    setTimeout(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.selectionStart = textarea.selectionEnd = template.length;
+      }
+    }, 0);
+  }
+
+  function selectRecentPrompt(recentPrompt: string) {
+    setPrompt(recentPrompt);
+    textareaRef.current?.focus();
+  }
+
+  // Drag and drop handlers
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      addFiles(Array.from(e.target.files));
+      e.target.value = '';
+    }
+  }
+
+  function addFiles(files: File[]) {
+    const newAttachments: Attachment[] = files.map((f) => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  const hasContent = prompt.trim().length > 0;
+
   return (
-    <Card className="border-2 border-primary/20 shadow-lg">
-      <CardContent className="p-4 sm:p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h3 className="text-base sm:text-lg font-semibold">
-              What would you like Claude to do?
-            </h3>
-          </div>
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="relative"
+    >
+      <div
+        className={cn(
+          'relative rounded-xl border-2 bg-card transition-all duration-200',
+          isFocused
+            ? 'border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.1)]'
+            : 'border-border hover:border-primary/40',
+          isDragOver && 'border-primary border-dashed bg-primary/5',
+          isSubmitting && 'opacity-80',
+          error && 'border-destructive shadow-[0_0_0_3px_hsl(var(--destructive)/0.1)]'
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Floating label */}
+        <div
+          className={cn(
+            'absolute left-4 transition-all duration-200 pointer-events-none z-10',
+            hasContent || isFocused
+              ? '-top-2.5 text-xs px-1.5 bg-card'
+              : 'top-4 text-sm'
+          )}
+        >
+          <span
+            className={cn(
+              'transition-colors duration-200',
+              isFocused ? 'text-primary font-medium' : 'text-muted-foreground'
+            )}
+          >
+            What should Claude do?
+          </span>
+        </div>
 
-          {/* Textarea */}
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Example: Add a new API endpoint for user authentication with JWT tokens..."
-            className="w-full min-h-[120px] sm:min-h-[150px] p-3 sm:p-4 border rounded-lg bg-background text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
-            disabled={isSubmitting}
-            autoFocus
-          />
-
-          {/* Error Message */}
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-              {error}
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-primary/5 z-20">
+            <div className="flex flex-col items-center gap-2 text-primary">
+              <Upload className="h-8 w-8" />
+              <span className="text-sm font-medium">Drop files to attach</span>
             </div>
+          </div>
+        )}
+
+        {/* Toolbar row */}
+        <div className="flex items-center gap-1 px-2 pt-2 pb-0">
+          {/* Templates dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Templates</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              <DropdownMenuLabel>Quick templates</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {PROMPT_TEMPLATES.map((t) => (
+                <DropdownMenuItem
+                  key={t.label}
+                  onClick={() => insertTemplate(t.template)}
+                  className="gap-2 cursor-pointer"
+                >
+                  {t.icon}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{t.label}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t.description}
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Recent prompts dropdown */}
+          {recentPrompts.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Recent</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-80">
+                <DropdownMenuLabel>Recent prompts</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {recentPrompts.map((rp, i) => (
+                  <DropdownMenuItem
+                    key={i}
+                    onClick={() => selectRecentPrompt(rp)}
+                    className="cursor-pointer"
+                  >
+                    <span className="truncate text-sm">{rp}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
-          {/* Footer */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Tip: Press{' '}
-              <kbd className="px-1.5 py-0.5 bg-muted border rounded text-xs">
-                {typeof navigator !== 'undefined' && navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}
-              </kbd>{' '}
-              +{' '}
-              <kbd className="px-1.5 py-0.5 bg-muted border rounded text-xs">
-                Enter
-              </kbd>{' '}
-              to submit
-            </p>
+          {/* File attachment button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Attach</span>
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
 
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Markdown hint */}
+          <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground/60 mr-1" title="Markdown formatting is supported">
+            <Hash className="h-3 w-3" />
+            <span>Markdown</span>
+          </div>
+        </div>
+
+        {/* Expandable textarea */}
+        <textarea
+          ref={textareaRef}
+          value={prompt}
+          onChange={(e) => {
+            setPrompt(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder="Describe the task, feature, or bug fix..."
+          className={cn(
+            'w-full px-4 py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50',
+            'resize-none focus:outline-none text-sm leading-relaxed',
+            'scrollbar-hide'
+          )}
+          style={{
+            minHeight: `${MIN_TEXTAREA_HEIGHT}px`,
+            maxHeight: `${MAX_TEXTAREA_HEIGHT}px`,
+          }}
+          disabled={isSubmitting}
+          autoFocus
+        />
+
+        {/* Attachments list */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 pb-2">
+            {attachments.map((att, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-xs text-secondary-foreground"
+              >
+                <FileText className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate max-w-[120px]">{att.name}</span>
+                <span className="text-muted-foreground">
+                  {formatFileSize(att.size)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(i)}
+                  className="ml-0.5 hover:text-destructive transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="mx-4 mb-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
+            {error}
+          </div>
+        )}
+
+        {/* Bottom bar: counts + submit */}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-border/50">
+          {/* Character / token count */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
+            <span>{charCount} chars</span>
+            <span className="hidden sm:inline">~{tokenEstimate} tokens</span>
+          </div>
+
+          {/* Submit area */}
+          <div className="flex items-center gap-2">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/60 border border-border/50 text-[10px] text-muted-foreground">
+              {modKey} + ↵
+            </kbd>
             <Button
               type="submit"
-              disabled={isSubmitting || !prompt.trim()}
-              className="gap-2"
-              size="lg"
+              disabled={isSubmitting || !hasContent}
+              size="sm"
+              className={cn(
+                'gap-1.5 h-8 px-4 transition-all duration-200',
+                hasContent && !isSubmitting
+                  ? 'bg-primary hover:bg-primary/90 shadow-sm'
+                  : ''
+              )}
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="hidden sm:inline">Sending to Claude...</span>
-                  <span className="sm:hidden">Sending...</span>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span className="hidden sm:inline">Sending...</span>
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" />
-                  <span>Send to Claude</span>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Send</span>
                 </>
               )}
             </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </form>
   );
 }
