@@ -8,6 +8,8 @@ import {
 import { db } from '@/db';
 import { runQAGates } from '../runner';
 
+const mockTaskEventsEmit = vi.fn();
+
 vi.mock('@/db', () => ({
   db: {
     query: {
@@ -25,6 +27,20 @@ vi.mock('@/db', () => ({
 
 vi.mock('../runner', () => ({
   runQAGates: vi.fn(),
+}));
+
+vi.mock('@/lib/events/task-events', () => ({
+  taskEvents: {
+    emit: (...args: unknown[]) => mockTaskEventsEmit(...args),
+  },
+}));
+
+vi.mock('@/lib/claude/commit-message', () => ({
+  generateCommitMessage: vi.fn().mockResolvedValue('feat: auto commit'),
+}));
+
+vi.mock('@/lib/git/commit', () => ({
+  commitTaskChanges: vi.fn().mockResolvedValue({ sha: 'abc123', message: 'feat: auto commit' }),
 }));
 
 describe('Task QA Service', () => {
@@ -199,6 +215,150 @@ describe('Task QA Service', () => {
       await expect(updateTaskStatus('task-1', true)).rejects.toThrow(
         'Update failed'
       );
+    });
+
+    it('should emit qa_failed event when sessionId is provided and QA failed', async () => {
+      const mockUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+
+      await updateTaskStatus('task-1', false, 'session-1');
+
+      expect(mockTaskEventsEmit).toHaveBeenCalledWith('task:update', {
+        sessionId: 'session-1',
+        taskId: 'task-1',
+        status: 'qa_failed',
+      });
+    });
+
+    it('should not emit event when QA failed and no sessionId', async () => {
+      const mockUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+
+      await updateTaskStatus('task-1', false);
+
+      expect(mockTaskEventsEmit).not.toHaveBeenCalled();
+    });
+
+    it('should auto-approve plan task when QA passed', async () => {
+      const mockUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      // First call: isPlanTask check, second call: getTaskWithRepo in autoApproveAndCommit
+      vi.mocked(db.query.planTasks.findFirst)
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any)  // isPlanTask
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any); // commitAndRecord planTask lookup
+
+      // getTaskWithRepo in autoApproveAndCommit
+      vi.mocked(db.query.tasks.findFirst).mockResolvedValue({
+        id: 'task-1',
+        filesChanged: ['file.ts'],
+        prompt: 'test prompt',
+        diffContent: 'some diff',
+        session: {
+          repository: { path: '/repo' },
+        },
+      } as any);
+
+      await updateTaskStatus('task-1', true, 'session-1');
+
+      expect(mockTaskEventsEmit).toHaveBeenCalledWith('task:update', {
+        sessionId: 'session-1',
+        taskId: 'task-1',
+        status: 'completed',
+      });
+    });
+
+    it('should mark plan task completed with no changes when filesChanged is empty', async () => {
+      const mockUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      vi.mocked(db.query.planTasks.findFirst)
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any)  // isPlanTask
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any); // markTaskCompleted planTask lookup
+
+      // getTaskWithRepo returns task with no files
+      vi.mocked(db.query.tasks.findFirst).mockResolvedValue({
+        id: 'task-1',
+        filesChanged: [],
+        session: {
+          repository: { path: '/repo' },
+        },
+      } as any);
+
+      await updateTaskStatus('task-1', true, 'session-1');
+
+      // Should have called update for marking completed
+      expect(mockUpdateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'completed' })
+      );
+    });
+
+    it('should handle auto-approve commit failure by falling back to waiting_approval', async () => {
+      const mockUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      vi.mocked(db.query.planTasks.findFirst)
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any); // isPlanTask
+
+      // getTaskWithRepo in autoApproveAndCommit
+      vi.mocked(db.query.tasks.findFirst).mockResolvedValue({
+        id: 'task-1',
+        filesChanged: ['file.ts'],
+        prompt: 'test prompt',
+        diffContent: 'some diff',
+        session: {
+          repository: { path: '/repo' },
+        },
+        sessionId: 'session-1',
+      } as any);
+
+      // Make commitTaskChanges throw
+      const { commitTaskChanges } = await import('@/lib/git/commit');
+      vi.mocked(commitTaskChanges).mockRejectedValueOnce(new Error('Commit failed'));
+
+      await updateTaskStatus('task-1', true, 'session-1');
+
+      // Should fall back to waiting_approval
+      expect(mockTaskEventsEmit).toHaveBeenCalledWith('task:update', {
+        sessionId: 'session-1',
+        taskId: 'task-1',
+        status: 'waiting_approval',
+      });
+    });
+
+    it('should emit waiting_approval event when non-plan task passes with sessionId', async () => {
+      const mockUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValue(undefined); // not a plan task
+
+      await updateTaskStatus('task-1', true, 'session-1');
+
+      expect(mockTaskEventsEmit).toHaveBeenCalledWith('task:update', {
+        sessionId: 'session-1',
+        taskId: 'task-1',
+        status: 'waiting_approval',
+      });
     });
   });
 

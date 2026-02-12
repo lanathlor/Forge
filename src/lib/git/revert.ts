@@ -1,6 +1,6 @@
 import { execAsync, getContainerPath } from '@/lib/qa-gates/command-executor';
 import { db } from '@/db';
-import { tasks } from '@/db/schema/tasks';
+import { tasks, planTasks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { FileChange } from '@/db/schema/tasks';
 import fs from 'fs/promises';
@@ -99,6 +99,23 @@ export async function rejectAndRevertTask(taskId: string, reason?: string): Prom
     .update(tasks)
     .set({ status: 'rejected', rejectedAt: new Date(), rejectionReason: reason, updatedAt: new Date() })
     .where(eq(tasks.id, taskId));
+
+  // Sync plan task status
+  const planTask = await db.query.planTasks.findFirst({
+    where: eq(planTasks.taskId, taskId),
+  });
+
+  if (planTask) {
+    await db
+      .update(planTasks)
+      .set({
+        status: 'failed',
+        updatedAt: new Date(),
+      })
+      .where(eq(planTasks.id, planTask.id));
+
+    console.log(`[Reject] Plan task ${planTask.id} synced to 'failed' status`);
+  }
 
   console.log(`[rejectAndRevertTask] Task rejected successfully`);
   return result;

@@ -56,6 +56,24 @@ async function markTaskCompleted(taskId: string) {
     .update(tasks)
     .set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() })
     .where(eq(tasks.id, taskId));
+
+  // Sync plan task status
+  const planTask = await db.query.planTasks.findFirst({
+    where: eq(planTasks.taskId, taskId),
+  });
+
+  if (planTask) {
+    await db
+      .update(planTasks)
+      .set({
+        status: 'completed',
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(planTasks.id, planTask.id));
+
+    console.log(`[TaskComplete] Plan task ${planTask.id} synced to 'completed' status`);
+  }
 }
 
 /**
@@ -68,6 +86,46 @@ async function handleCommitFailure(taskId: string, sessionId: string, error: unk
     .set({ status: 'waiting_approval', updatedAt: new Date() })
     .where(eq(tasks.id, taskId));
   taskEvents.emit('task:update', { sessionId, taskId, status: 'waiting_approval' });
+}
+
+/**
+ * Commit changes and update task/plan records
+ */
+async function commitAndRecord(task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepo>>>, taskId: string, repoPath: string) {
+  const commitMessage = await generateCommitMessage(
+    task.prompt, task.filesChanged!, task.diffContent || '', repoPath
+  );
+  const result = await commitTaskChanges(repoPath, task.filesChanged!, commitMessage);
+
+  await db
+    .update(tasks)
+    .set({
+      status: 'completed',
+      committedSha: result.sha,
+      commitMessage: result.message,
+      completedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(tasks.id, taskId));
+
+  const planTask = await db.query.planTasks.findFirst({
+    where: eq(planTasks.taskId, taskId),
+  });
+
+  if (planTask) {
+    await db
+      .update(planTasks)
+      .set({
+        status: 'completed',
+        commitSha: result.sha,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(planTasks.id, planTask.id));
+    console.log(`[AutoApprove] Plan task ${planTask.id} synced to 'completed' status`);
+  }
+
+  return result;
 }
 
 /**
@@ -85,22 +143,7 @@ async function autoApproveAndCommit(taskId: string, sessionId: string) {
   console.log(`[AutoApprove] Auto-approving plan task ${taskId}`);
 
   try {
-    const commitMessage = await generateCommitMessage(
-      task.prompt, task.filesChanged, task.diffContent || '', repoPath
-    );
-    const result = await commitTaskChanges(repoPath, task.filesChanged, commitMessage);
-
-    await db
-      .update(tasks)
-      .set({
-        status: 'completed',
-        committedSha: result.sha,
-        commitMessage: result.message,
-        completedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(tasks.id, taskId));
-
+    const result = await commitAndRecord(task, taskId, repoPath);
     taskEvents.emit('task:update', { sessionId, taskId, status: 'completed' });
     console.log(`[AutoApprove] Plan task ${taskId} auto-approved and committed: ${result.sha}`);
   } catch (error) {

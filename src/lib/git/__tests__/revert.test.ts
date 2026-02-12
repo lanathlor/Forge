@@ -25,6 +25,9 @@ const mockDb = vi.hoisted(() => ({
     tasks: {
       findFirst: vi.fn(),
     },
+    planTasks: {
+      findFirst: vi.fn(),
+    },
   },
   update: vi.fn(() => ({
     set: vi.fn(() => ({
@@ -41,8 +44,14 @@ vi.mock('@/db/schema/tasks', () => ({
   tasks: { id: 'id' },
 }));
 
+vi.mock('@/db/schema', () => ({
+  tasks: { id: 'id' },
+  planTasks: { id: 'id', taskId: 'task_id' },
+}));
+
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((a, b) => ({ field: a, value: b })),
+  relations: vi.fn(() => ({})),
 }));
 
 describe('git/revert', () => {

@@ -475,7 +475,23 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
           await this.updatePlanCompletedTasks(task.planId);
           console.log(`[PlanExecutor] Task completed: ${task.title}`);
           return;
-        } else if (completedSessionTask.status === 'failed' || completedSessionTask.status === 'qa_failed') {
+        } else if (completedSessionTask.status === 'approved') {
+          // Task was manually approved and committed - mark as completed
+          await db
+            .update(planTasks)
+            .set({
+              status: 'completed',
+              completedAt: new Date(),
+              commitSha: completedSessionTask.committedSha || undefined,
+              updatedAt: new Date(),
+            })
+            .where(eq(planTasks.id, taskId));
+
+          await this.updatePlanCompletedTasks(task.planId);
+          console.log(`[PlanExecutor] Task manually approved and completed: ${task.title}`);
+          return;
+        } else if (completedSessionTask.status === 'failed') {
+          // Permanent failure (pre-flight, Claude crash, etc.)
           const errorMsg = `Task execution failed with status: ${completedSessionTask.status}`;
 
           await db
@@ -489,6 +505,30 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
 
           await this.pausePlan(task.planId, 'task_failed', taskId);
           throw new Error(errorMsg);
+        } else if (completedSessionTask.status === 'qa_failed') {
+          // QA failed but user can manually fix and re-run
+          // Don't throw error - pause plan and continue polling
+          // If user fixes it, task will transition to waiting_approval/completed
+          const currentPlanTask = await db.query.planTasks.findFirst({
+            where: eq(planTasks.id, taskId),
+          });
+
+          if (currentPlanTask?.status !== 'failed') {
+            console.log(`[PlanExecutor] QA failed - marking plan task as failed, pausing plan`);
+            await db
+              .update(planTasks)
+              .set({
+                status: 'failed',
+                lastError: 'QA gates failed',
+                updatedAt: new Date(),
+              })
+              .where(eq(planTasks.id, taskId));
+
+            await this.pausePlan(task.planId, 'task_failed', taskId);
+          }
+
+          // Continue polling - don't throw error or return
+          // User might click "Fix & Re-run" which could make task succeed
         } else if (completedSessionTask.status === 'rejected') {
           await db
             .update(planTasks)

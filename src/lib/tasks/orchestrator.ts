@@ -193,6 +193,90 @@ Focus on:
 The QA gates will run again automatically after you make your changes.`;
 }
 
+/**
+ * Manually re-run QA gates and invoke Claude to fix failures
+ * This is called from the "Fix & Re-run" button
+ */
+export async function manualQARetry(taskId: string): Promise<void> {
+  const task = await db.query.tasks.findFirst({
+    where: eq(tasks.id, taskId),
+    with: {
+      session: {
+        with: {
+          repository: true,
+        },
+      },
+    },
+  });
+
+  if (!task) {
+    throw new Error('Task not found');
+  }
+
+  const repoPath = task.session.repository.path;
+  const sessionId = task.sessionId;
+  const containerPath = getContainerPath(repoPath);
+
+  console.log(`[Task ${taskId}] Manual QA retry initiated`);
+
+  // Run QA gates
+  const { results, passed } = await runTaskQAGates(taskId);
+
+  if (passed) {
+    console.log(`[Task ${taskId}] QA gates passed on manual retry`);
+    return; // Success!
+  }
+
+  console.log(`[Task ${taskId}] QA gates failed, invoking Claude to fix`);
+
+  // Build retry prompt with failure details
+  const failedGates = results.filter((r) => r.status === 'failed');
+  const currentAttempt = task.currentQAAttempt || 1;
+  const retryPrompt = buildRetryPrompt(task.prompt, failedGates, currentAttempt);
+
+  const retryStartMessage = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔄 MANUAL FIX & RE-RUN\nInvoking Claude to fix QA failures...\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  await emitAndAppendOutput(taskId, sessionId, retryStartMessage);
+
+  // Update status to show we're retrying
+  await db
+    .update(tasks)
+    .set({
+      status: 'running',
+      currentQAAttempt: currentAttempt + 1,
+      updatedAt: new Date()
+    })
+    .where(eq(tasks.id, taskId));
+
+  taskEvents.emit('task:update', { sessionId, taskId, status: 'running' });
+
+  await invokeClaudeForRetry(taskId, sessionId, containerPath, retryPrompt);
+
+  // Capture new diff
+  const updatedTask = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+
+  if (!updatedTask) {
+    throw new Error('Task not found after retry');
+  }
+
+  const diff = await captureDiff(repoPath, updatedTask.startingCommit!);
+
+  await db
+    .update(tasks)
+    .set({
+      diffContent: diff.fullDiff,
+      filesChanged: diff.changedFiles,
+      status: 'waiting_qa',
+      updatedAt: new Date(),
+    })
+    .where(eq(tasks.id, taskId));
+
+  taskEvents.emit('task:update', { sessionId, taskId, status: 'waiting_qa' });
+
+  // Re-run QA gates automatically
+  await runTaskQAGates(taskId);
+}
+
 /* eslint-disable max-lines-per-function */
 export async function executeTask(taskId: string): Promise<void> {
   try {
