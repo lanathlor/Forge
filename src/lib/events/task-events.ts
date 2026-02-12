@@ -16,3 +16,21 @@ if (!globalForEvents.taskEvents) {
 } else {
   console.log('[taskEvents] Reusing existing singleton EventEmitter');
 }
+
+// Plan execution event types
+export interface PlanExecutionEvent {
+  planId: string;
+  type: 'plan_started' | 'plan_completed' | 'plan_failed' | 'plan_paused' |
+        'phase_started' | 'phase_completed' | 'phase_failed' |
+        'task_started' | 'task_completed' | 'task_failed' | 'task_progress';
+  phaseId?: string;
+  taskId?: string;
+  sessionTaskId?: string;
+  status?: string;
+  error?: string;
+  timestamp: string;
+}
+
+export function emitPlanEvent(event: PlanExecutionEvent) {
+  taskEvents.emit('plan:execution', event);
+}

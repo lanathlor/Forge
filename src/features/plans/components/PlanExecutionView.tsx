@@ -1,77 +1,505 @@
-/* eslint-disable max-lines-per-function */
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Textarea } from '@/shared/components/ui/textarea';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { cn } from '@/shared/lib/utils';
 import {
   useGetPlanQuery,
   useExecutePlanMutation,
   usePausePlanMutation,
   useResumePlanMutation,
   useCancelPlanMutation,
-  useUpdatePlanMutation,
-  useCreatePhaseMutation,
-  useUpdatePhaseMutation,
-  useDeletePhaseMutation,
-  useCreatePlanTaskMutation,
-  useUpdatePlanTaskMutation,
-  useDeletePlanTaskMutation,
   useRetryPlanTaskMutation,
 } from '../store/plansApi';
+import { usePlanStream } from '@/shared/hooks/usePlanStream';
 import type { Phase, PlanTask } from '@/db/schema';
-import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import {
+  Play, Pause, Square, RotateCcw, Eye, EyeOff, Clock,
+  CheckCircle2, XCircle, Circle, Loader2, ChevronRight,
+  AlertTriangle, ArrowRight, Zap, X,
+} from 'lucide-react';
 
 interface PlanExecutionViewProps {
   planId: string;
   onReview?: (planId: string) => void;
 }
 
+// Status helpers
+type TaskStatusType = PlanTask['status'];
+type PhaseStatusType = Phase['status'];
+
+function getTaskStatusIcon(status: TaskStatusType) {
+  switch (status) {
+    case 'completed': return <CheckCircle2 className="h-4 w-4 text-success" />;
+    case 'running': return <Loader2 className="h-4 w-4 text-accent-primary animate-spin" />;
+    case 'failed': return <XCircle className="h-4 w-4 text-error" />;
+    case 'skipped': return <Circle className="h-4 w-4 text-muted-foreground" />;
+    default: return <Circle className="h-4 w-4 text-border-muted" />;
+  }
+}
+
+function getPhaseStatusColor(status: PhaseStatusType): string {
+  switch (status) {
+    case 'completed': return 'bg-success';
+    case 'running': return 'bg-accent-primary';
+    case 'failed': return 'bg-error';
+    case 'paused': return 'bg-warning';
+    default: return 'bg-border-muted';
+  }
+}
+
+function getSessionTaskLabel(status: string | undefined): string {
+  switch (status) {
+    case 'pre_flight': return 'Pre-flight checks';
+    case 'running': return 'Claude is coding';
+    case 'waiting_qa': return 'Preparing QA';
+    case 'qa_running': return 'Running QA gates';
+    case 'waiting_approval': return 'Waiting for approval';
+    case 'approved': return 'Approved, committing';
+    default: return '';
+  }
+}
+
+function formatTimeEstimate(ms: number): string {
+  if (ms <= 0) return '--';
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours > 0) return `~${hours}h ${minutes % 60}m`;
+  if (minutes > 0) return `~${minutes}m`;
+  return `~${seconds}s`;
+}
+
+// ── Phase Dot/Icon ──
+function PhaseIcon({ status, index }: { status: PhaseStatusType; index: number; size?: 'sm' | 'md' }) {
+  if (status === 'completed') return <CheckCircle2 className="h-3 w-3" />;
+  if (status === 'failed') return <XCircle className="h-3 w-3" />;
+  return <>{index + 1}</>;
+}
+
+// ── Desktop Phase Item ──
+function DesktopPhaseItem({ phase, index, phases, phaseTasks, currentPhaseId, onClickTask }: {
+  phase: Phase; index: number; phases: Phase[]; phaseTasks: PlanTask[];
+  currentPhaseId: string | null; onClickTask: (id: string) => void;
+}) {
+  const completedCount = phaseTasks.filter(t => t.status === 'completed').length;
+  const progress = phaseTasks.length > 0 ? (completedCount / phaseTasks.length) * 100 : 0;
+  const isCurrent = phase.id === currentPhaseId;
+
+  return (
+    <div className="flex items-center">
+      {index > 0 && (
+        <div className={cn(
+          'w-6 h-0.5 mx-0.5 flex-shrink-0',
+          phase.status === 'completed' || phases[index - 1]?.status === 'completed'
+            ? 'bg-success' : 'bg-border-muted'
+        )} />
+      )}
+      <button
+        onClick={() => {
+          const firstTask = phaseTasks.sort((a, b) => a.order - b.order)[0];
+          if (firstTask) onClickTask(firstTask.id);
+        }}
+        className={cn(
+          'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0',
+          'border hover:bg-surface-interactive',
+          isCurrent && 'ring-2 ring-accent-primary/50 border-accent-primary bg-accent-primary-subtle',
+          phase.status === 'completed' && 'border-success/30 bg-success-subtle',
+          phase.status === 'failed' && 'border-error/30 bg-error-subtle',
+          phase.status === 'pending' && 'border-border-muted opacity-60',
+        )}
+      >
+        <div className={cn(
+          'h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold',
+          getPhaseStatusColor(phase.status),
+          phase.status === 'completed' ? 'text-success-foreground' : 'text-white',
+          phase.status === 'running' && 'animate-pulse-subtle',
+        )}>
+          <PhaseIcon status={phase.status} index={index} />
+        </div>
+        <div className="text-left min-w-0">
+          <div className="font-medium truncate max-w-[120px]">{phase.title}</div>
+          <div className="text-muted-foreground">{completedCount}/{phaseTasks.length}</div>
+        </div>
+        {phaseTasks.length > 0 && (
+          <div className="w-12 h-1 bg-secondary rounded-full overflow-hidden flex-shrink-0">
+            <div
+              className={cn('h-full rounded-full transition-all duration-300', phase.status === 'failed' ? 'bg-error' : 'bg-success')}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ── Mobile Phase Item ──
+function MobilePhaseItem({ phase, index, totalPhases, phaseTasks, currentPhaseId, onClickTask }: {
+  phase: Phase; index: number; totalPhases: number; phaseTasks: PlanTask[];
+  currentPhaseId: string | null; onClickTask: (id: string) => void;
+}) {
+  const completedCount = phaseTasks.filter(t => t.status === 'completed').length;
+  const progress = phaseTasks.length > 0 ? (completedCount / phaseTasks.length) * 100 : 0;
+  const isCurrent = phase.id === currentPhaseId;
+
+  return (
+    <div className="flex items-start gap-2">
+      <div className="flex flex-col items-center flex-shrink-0 pt-0.5">
+        <div className={cn(
+          'h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-bold',
+          getPhaseStatusColor(phase.status),
+          phase.status === 'completed' ? 'text-success-foreground' : 'text-white',
+          phase.status === 'running' && 'animate-pulse-subtle',
+        )}>
+          <PhaseIcon status={phase.status} index={index} />
+        </div>
+        {index < totalPhases - 1 && (
+          <div className={cn('w-0.5 h-3 mt-0.5', phase.status === 'completed' ? 'bg-success' : 'bg-border-muted')} />
+        )}
+      </div>
+      <button
+        onClick={() => {
+          const firstTask = phaseTasks.sort((a, b) => a.order - b.order)[0];
+          if (firstTask) onClickTask(firstTask.id);
+        }}
+        className={cn('flex-1 flex items-center justify-between text-xs py-0.5', isCurrent && 'font-semibold text-accent-primary')}
+      >
+        <span className="truncate">{phase.title}</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+          <span className="text-muted-foreground">{completedCount}/{phaseTasks.length}</span>
+          <div className="w-8 h-1 bg-secondary rounded-full overflow-hidden">
+            <div
+              className={cn('h-full rounded-full', phase.status === 'failed' ? 'bg-error' : 'bg-success')}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+// ── Task Row ──
+function TaskRow({ task, isSelected, isActive, currentSessionTaskStatus, activeTaskRef, onTaskClick, onRetry }: {
+  task: PlanTask; isSelected: boolean; isActive: boolean;
+  currentSessionTaskStatus: string | undefined;
+  activeTaskRef: React.RefObject<HTMLDivElement | null>;
+  onTaskClick: (id: string) => void; onRetry: (id: string) => void;
+}) {
+  const hasDeps = task.dependsOn && task.dependsOn.length > 0;
+
+  return (
+    <div
+      ref={isActive ? activeTaskRef : undefined}
+      onClick={() => onTaskClick(task.id)}
+      className={cn(
+        'px-4 py-2.5 flex items-center gap-3 cursor-pointer transition-colors border-l-2',
+        'hover:bg-surface-interactive/50',
+        isActive && 'bg-accent-primary-subtle/20 border-l-accent-primary',
+        isSelected && !isActive && 'bg-surface-interactive border-l-accent-secondary',
+        !isActive && !isSelected && 'border-l-transparent',
+        task.status === 'failed' && 'border-l-error',
+      )}
+    >
+      <div className="flex-shrink-0">{getTaskStatusIcon(task.status)}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={cn('text-sm font-medium truncate', task.status === 'completed' && 'text-muted-foreground line-through')}>
+            {task.title}
+          </span>
+          {hasDeps && <span className="text-[10px] text-muted-foreground flex-shrink-0">deps</span>}
+        </div>
+        {isActive && currentSessionTaskStatus && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="text-xs text-accent-primary">{getSessionTaskLabel(currentSessionTaskStatus)}</span>
+          </div>
+        )}
+        {task.status === 'failed' && task.lastError && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <AlertTriangle className="h-3 w-3 text-error flex-shrink-0" />
+            <span className="text-xs text-error truncate">{task.lastError}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {task.attempts > 1 && <span className="text-[10px] text-muted-foreground">Attempt {task.attempts}</span>}
+        {task.status === 'failed' && (
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={(e) => { e.stopPropagation(); onRetry(task.id); }}>
+            <RotateCcw className="h-3 w-3 mr-1" />Retry
+          </Button>
+        )}
+        <ChevronRight className={cn('h-4 w-4 text-muted-foreground transition-transform', isSelected && 'rotate-90')} />
+      </div>
+    </div>
+  );
+}
+
+// ── Task Detail Panel ──
+function TaskDetailPanel({ task, taskOutput, outputEndRef, onClose }: {
+  task: PlanTask; taskOutput: string | null; outputEndRef: React.RefObject<HTMLDivElement | null>; onClose: () => void;
+}) {
+  return (
+    <div className="md:w-1/2 flex flex-col border-t md:border-t-0 bg-surface-sunken">
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-surface-raised">
+        <div className="flex items-center gap-2 min-w-0">
+          {getTaskStatusIcon(task.status)}
+          <span className="font-medium text-sm truncate">{task.title}</span>
+        </div>
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="px-4 py-3 border-b text-sm text-muted-foreground bg-surface-base">
+        <p className="whitespace-pre-wrap text-xs leading-relaxed">{task.description}</p>
+        <div className="flex items-center gap-4 mt-2 text-[10px]">
+          {task.startedAt && <span>Started: {new Date(task.startedAt).toLocaleTimeString()}</span>}
+          {task.completedAt && <span>Completed: {new Date(task.completedAt).toLocaleTimeString()}</span>}
+          {task.commitSha && <span className="font-mono">SHA: {task.commitSha.slice(0, 7)}</span>}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        {taskOutput ? (
+          <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground leading-relaxed">
+            {taskOutput}
+            <div ref={outputEndRef} />
+          </pre>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
+            {task.status === 'running' ? (
+              <><Loader2 className="h-5 w-5 animate-spin mb-2" /><span>Waiting for output...</span></>
+            ) : task.status === 'pending' ? (
+              <span>Task hasn&apos;t started yet</span>
+            ) : (
+              <span>No output captured</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Header Controls ──
+function HeaderControls({ plan, planId, isRunning, watchMode, setWatchMode, onReview, executePlan, pausePlan, resumePlan, cancelPlan, isExecuting, isPausing, isResuming, isCancelling }: {
+  plan: { status: string }; planId: string; isRunning: boolean; watchMode: boolean;
+  setWatchMode: (v: boolean) => void; onReview?: (id: string) => void;
+  executePlan: (id: string) => void; pausePlan: (id: string) => void;
+  resumePlan: (id: string) => void; cancelPlan: (id: string) => void;
+  isExecuting: boolean; isPausing: boolean; isResuming: boolean; isCancelling: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 flex-shrink-0">
+      {isRunning && (
+        <Button size="sm" variant={watchMode ? 'default' : 'outline'} onClick={() => setWatchMode(!watchMode)} className="gap-1.5">
+          {watchMode ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">Watch</span>
+        </Button>
+      )}
+      {plan.status === 'draft' && onReview && (
+        <Button size="sm" variant="outline" onClick={() => onReview(planId)}>Iterate</Button>
+      )}
+      {plan.status === 'ready' && (
+        <Button size="sm" onClick={() => executePlan(planId)} disabled={isExecuting} className="gap-1.5">
+          <Play className="h-3.5 w-3.5" />{isExecuting ? 'Starting...' : 'Execute'}
+        </Button>
+      )}
+      {isRunning && (
+        <Button size="sm" variant="outline" onClick={() => pausePlan(planId)} disabled={isPausing} className="gap-1.5">
+          <Pause className="h-3.5 w-3.5" />{isPausing ? 'Pausing...' : 'Pause'}
+        </Button>
+      )}
+      {plan.status === 'paused' && (
+        <Button size="sm" onClick={() => resumePlan(planId)} disabled={isResuming} className="gap-1.5">
+          <Play className="h-3.5 w-3.5" />{isResuming ? 'Resuming...' : 'Resume'}
+        </Button>
+      )}
+      {(isRunning || plan.status === 'paused') && (
+        <Button
+          size="sm" variant="destructive"
+          onClick={() => { if (confirm('Cancel this plan execution?')) cancelPlan(planId); }}
+          disabled={isCancelling} className="gap-1.5"
+        >
+          <Square className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{isCancelling ? 'Cancelling...' : 'Cancel'}</span>
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// ── Progress Section ──
+function ProgressSection({ plan, overallProgress, estimatedRemaining, isRunning }: {
+  plan: { completedTasks: number; totalTasks: number; completedPhases: number; totalPhases: number; status: string };
+  overallProgress: number; estimatedRemaining: number; isRunning: boolean;
+}) {
+  return (
+    <div className="mt-3">
+      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+        <div className="flex items-center gap-3">
+          <span>{plan.completedTasks}/{plan.totalTasks} tasks</span>
+          <span>{plan.completedPhases}/{plan.totalPhases} phases</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {estimatedRemaining > 0 && isRunning && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />{formatTimeEstimate(estimatedRemaining)} remaining
+            </span>
+          )}
+          <span className="font-medium">{Math.round(overallProgress)}%</span>
+        </div>
+      </div>
+      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-500',
+            plan.status === 'failed' ? 'bg-error' : 'bg-accent-primary',
+            isRunning && 'animate-pulse-subtle'
+          )}
+          style={{ width: `${overallProgress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── Activity Indicator ──
+function ActivityIndicator({ runningTask, sessionStatus }: {
+  runningTask: PlanTask; sessionStatus: string | undefined;
+}) {
+  return (
+    <div className="mt-2 flex items-center gap-2 text-xs">
+      <Zap className="h-3 w-3 text-accent-primary animate-pulse" />
+      <span className="text-muted-foreground">Now:</span>
+      <span className="font-medium truncate">{runningTask.title}</span>
+      {sessionStatus && (
+        <>
+          <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+          <span className="text-accent-primary flex-shrink-0">{getSessionTaskLabel(sessionStatus)}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Plan Header Bar ──
+function PlanHeaderBar({ plan, planId, isRunning, connected, overallProgress, estimatedRemaining, runningTask, currentSessionTaskStatus, watchMode, setWatchMode, onReview, executePlan, pausePlan, resumePlan, cancelPlan, isExecuting, isPausing, isResuming, isCancelling }: {
+  plan: { title: string; description: string | null; status: string; completedTasks: number; totalTasks: number; completedPhases: number; totalPhases: number };
+  planId: string; isRunning: boolean; connected: boolean; overallProgress: number; estimatedRemaining: number;
+  runningTask: PlanTask | undefined; currentSessionTaskStatus: string | undefined;
+  watchMode: boolean; setWatchMode: (v: boolean) => void; onReview?: (id: string) => void;
+  executePlan: (id: string) => void; pausePlan: (id: string) => void;
+  resumePlan: (id: string) => void; cancelPlan: (id: string) => void;
+  isExecuting: boolean; isPausing: boolean; isResuming: boolean; isCancelling: boolean;
+}) {
+  return (
+    <div className="flex-shrink-0 border-b bg-surface-raised px-4 py-3">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold truncate">{plan.title}</h2>
+            <PlanStatusBadge status={plan.status} />
+            {connected && isRunning && (
+              <span className="flex items-center gap-1 text-xs text-success">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-live-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+          {plan.description && (
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">{plan.description}</p>
+          )}
+        </div>
+        <HeaderControls
+          plan={plan} planId={planId} isRunning={isRunning} watchMode={watchMode}
+          setWatchMode={setWatchMode} onReview={onReview}
+          executePlan={executePlan} pausePlan={pausePlan} resumePlan={resumePlan} cancelPlan={cancelPlan}
+          isExecuting={isExecuting} isPausing={isPausing} isResuming={isResuming} isCancelling={isCancelling}
+        />
+      </div>
+      <ProgressSection plan={plan} overallProgress={overallProgress} estimatedRemaining={estimatedRemaining} isRunning={isRunning} />
+      {isRunning && runningTask && (
+        <ActivityIndicator runningTask={runningTask} sessionStatus={currentSessionTaskStatus} />
+      )}
+    </div>
+  );
+}
+
+function computeEstimatedRemaining(tasks: PlanTask[]): number {
+  const completedTasks = tasks.filter(t => t.status === 'completed' && t.startedAt && t.completedAt);
+  if (completedTasks.length === 0) return 0;
+  const avgDuration = completedTasks.reduce((sum, t) => {
+    return sum + (new Date(t.completedAt!).getTime() - new Date(t.startedAt!).getTime());
+  }, 0) / completedTasks.length;
+  return avgDuration * tasks.filter(t => t.status === 'pending' || t.status === 'running').length;
+}
+
+function buildPhaseTasksMap(tasks: PlanTask[]): Map<string, PlanTask[]> {
+  const map = new Map<string, PlanTask[]>();
+  tasks.forEach((task) => {
+    if (!map.has(task.phaseId)) map.set(task.phaseId, []);
+    map.get(task.phaseId)!.push(task);
+  });
+  return map;
+}
+
 export function PlanExecutionView({ planId, onReview }: PlanExecutionViewProps) {
   const { data, isLoading, error } = useGetPlanQuery(planId, {
-    pollingInterval: 2000,
+    pollingInterval: 3000,
     skipPollingIfUnfocused: true,
   });
   const [executePlan, { isLoading: isExecuting }] = useExecutePlanMutation();
   const [pausePlan, { isLoading: isPausing }] = usePausePlanMutation();
   const [resumePlan, { isLoading: isResuming }] = useResumePlanMutation();
   const [cancelPlan, { isLoading: isCancelling }] = useCancelPlanMutation();
-  const [updatePlan] = useUpdatePlanMutation();
-  const [createPhase] = useCreatePhaseMutation();
-  const [updatePhase] = useUpdatePhaseMutation();
-  const [deletePhase] = useDeletePhaseMutation();
-  const [createTask] = useCreatePlanTaskMutation();
-  const [updateTask] = useUpdatePlanTaskMutation();
-  const [deleteTask] = useDeletePlanTaskMutation();
   const [retryTask] = useRetryPlanTaskMutation();
 
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
-  const [taskEdits, setTaskEdits] = useState<{ title: string; description: string }>({
-    title: '',
-    description: '',
-  });
-  const [phaseEdits, setPhaseEdits] = useState<{ title: string; description: string }>({
-    title: '',
-    description: '',
-  });
+  const isRunning = data?.plan?.status === 'running';
+  const streamEnabled = isRunning || data?.plan?.status === 'paused';
+  const { latestEvent, connected, taskOutputs } = usePlanStream(planId, { enabled: streamEnabled });
+
+  const [watchMode, setWatchMode] = useState(true);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const activeTaskRef = useRef<HTMLDivElement>(null);
+  const outputEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (watchMode && activeTaskRef.current) {
+      activeTaskRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [latestEvent, watchMode]);
+
+  useEffect(() => {
+    if (outputEndRef.current && selectedTaskId) {
+      outputEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [taskOutputs, selectedTaskId]);
+
+  const estimatedRemaining = useMemo(() => {
+    return data ? computeEstimatedRemaining(data.tasks) : 0;
+  }, [data]);
+
+  const currentSessionTaskStatus = useMemo(() => {
+    return latestEvent?.type === 'task_progress' ? latestEvent.status : undefined;
+  }, [latestEvent]);
+
+  const handleTaskClick = useCallback((taskId: string) => {
+    setSelectedTaskId(prev => prev === taskId ? null : taskId);
+  }, []);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <p className="text-muted-foreground">Loading plan...</p>
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (error || !data) {
+  if (!data) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <p className="text-destructive">Error loading plan</p>
+      <div className="flex items-center justify-center p-12">
+        <p className="text-error">{error ? 'Error loading plan' : 'No data'}</p>
       </div>
     );
   }
@@ -79,414 +507,137 @@ export function PlanExecutionView({ planId, onReview }: PlanExecutionViewProps) 
   const plan = data.plan;
   const phases = [...data.phases].sort((a, b) => a.order - b.order);
   const tasks = data.tasks;
+  const phaseTasksMap = buildPhaseTasksMap(tasks);
 
-  const phaseTasksMap = new Map<string, PlanTask[]>();
-  tasks.forEach((task) => {
-    if (!phaseTasksMap.has(task.phaseId)) {
-      phaseTasksMap.set(task.phaseId, []);
-    }
-    phaseTasksMap.get(task.phaseId)!.push(task);
-  });
-
-  const startEditingTask = (task: PlanTask) => {
-    setEditingTaskId(task.id);
-    setTaskEdits({ title: task.title, description: task.description });
-  };
-
-  const saveTask = async () => {
-    if (!editingTaskId) return;
-    await updateTask({
-      id: editingTaskId,
-      data: { ...taskEdits, planId },
-    });
-    setEditingTaskId(null);
-  };
-
-  const cancelTaskEdit = () => {
-    setEditingTaskId(null);
-    setTaskEdits({ title: '', description: '' });
-  };
-
-  const startEditingPhase = (phase: Phase) => {
-    setEditingPhaseId(phase.id);
-    setPhaseEdits({ title: phase.title, description: phase.description || '' });
-  };
-
-  const savePhase = async () => {
-    if (!editingPhaseId) return;
-    await updatePhase({
-      id: editingPhaseId,
-      data: { ...phaseEdits, planId },
-    });
-    setEditingPhaseId(null);
-  };
-
-  const cancelPhaseEdit = () => {
-    setEditingPhaseId(null);
-    setPhaseEdits({ title: '', description: '' });
-  };
-
-  const handleAddPhase = async () => {
-    const maxOrder = Math.max(...phases.map((p) => p.order), 0);
-    await createPhase({
-      planId,
-      order: maxOrder + 1,
-      title: 'New Phase',
-      description: '',
-      executionMode: 'sequential',
-      pauseAfter: false,
-    });
-  };
-
-  const handleDeletePhase = async (phaseId: string) => {
-    if (confirm('Delete this phase and all its tasks?')) {
-      await deletePhase(phaseId);
-    }
-  };
-
-  const handleAddTask = async (phaseId: string) => {
-    const phaseTasks = (phaseTasksMap.get(phaseId) || []).sort((a, b) => a.order - b.order);
-    const maxOrder = Math.max(...phaseTasks.map((t) => t.order), 0);
-    await createTask({
-      phaseId,
-      planId,
-      order: maxOrder + 1,
-      title: 'New Task',
-      description: 'Task description',
-      canRunInParallel: false,
-    });
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (confirm('Delete this task?')) {
-      await deleteTask(taskId);
-    }
-  };
+  const overallProgress = plan.totalTasks > 0 ? (plan.completedTasks / plan.totalTasks) * 100 : 0;
+  const runningTask = tasks.find(t => t.status === 'running');
+  const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : undefined;
+  const selectedTaskOutput = selectedTask?.taskId ? taskOutputs.get(selectedTask.taskId) ?? null : null;
 
   return (
-    <div className="space-y-6">
-      {/* Plan Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle>{plan.title}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
-            </div>
-            <Badge>{plan.status}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold">{plan.totalPhases}</div>
-              <div className="text-xs text-muted-foreground">Phases</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{plan.completedPhases}</div>
-              <div className="text-xs text-muted-foreground">Completed Phases</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{plan.totalTasks}</div>
-              <div className="text-xs text-muted-foreground">Tasks</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{plan.completedTasks}</div>
-              <div className="text-xs text-muted-foreground">Completed Tasks</div>
-            </div>
-          </div>
+    <div className="flex flex-col h-full">
+      <PlanHeaderBar
+        plan={plan} planId={planId} isRunning={isRunning} connected={connected}
+        overallProgress={overallProgress} estimatedRemaining={estimatedRemaining}
+        runningTask={runningTask} currentSessionTaskStatus={currentSessionTaskStatus}
+        watchMode={watchMode} setWatchMode={setWatchMode} onReview={onReview}
+        executePlan={executePlan} pausePlan={pausePlan} resumePlan={resumePlan} cancelPlan={cancelPlan}
+        isExecuting={isExecuting} isPausing={isPausing} isResuming={isResuming} isCancelling={isCancelling}
+      />
 
-          {plan.totalTasks > 0 && (
-            <div className="mt-4">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>Overall Progress</span>
-                <span>{Math.round((plan.completedTasks / plan.totalTasks) * 100)}%</span>
+      {/* ── Phase Timeline ── */}
+      <div className="flex-shrink-0 border-b bg-surface-base px-4 py-3 overflow-x-auto">
+        <div className="hidden md:flex items-center gap-1 min-w-0">
+          {phases.map((phase, idx) => (
+            <DesktopPhaseItem
+              key={phase.id} phase={phase} index={idx} phases={phases}
+              phaseTasks={phaseTasksMap.get(phase.id) || []}
+              currentPhaseId={plan.currentPhaseId} onClickTask={handleTaskClick}
+            />
+          ))}
+        </div>
+        <div className="md:hidden space-y-1">
+          {phases.map((phase, idx) => (
+            <MobilePhaseItem
+              key={phase.id} phase={phase} index={idx} totalPhases={phases.length}
+              phaseTasks={phaseTasksMap.get(phase.id) || []}
+              currentPhaseId={plan.currentPhaseId} onClickTask={handleTaskClick}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Main Content: Task List + Detail Panel ── */}
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+        <div className={cn('overflow-y-auto', selectedTask ? 'md:w-1/2 border-r' : 'w-full')}>
+          {phases.map((phase) => {
+            const phaseTasks = (phaseTasksMap.get(phase.id) || []).sort((a, b) => a.order - b.order);
+            const completedCount = phaseTasks.filter(t => t.status === 'completed').length;
+            const progress = phaseTasks.length > 0 ? (completedCount / phaseTasks.length) * 100 : 0;
+
+            return (
+              <div key={phase.id} className="border-b last:border-b-0">
+                <PhaseHeader phase={phase} completedCount={completedCount} totalCount={phaseTasks.length} progress={progress} />
+                <div>
+                  {phaseTasks.map((task) => (
+                    <TaskRow
+                      key={task.id} task={task}
+                      isSelected={selectedTaskId === task.id}
+                      isActive={task.status === 'running'}
+                      currentSessionTaskStatus={currentSessionTaskStatus}
+                      activeTaskRef={activeTaskRef}
+                      onTaskClick={handleTaskClick}
+                      onRetry={(id) => retryTask(id)}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${(plan.completedTasks / plan.totalTasks) * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between gap-2">
-          <div className="flex gap-2">
-            {plan.status === 'draft' && (
-              <>
-                {onReview && (
-                  <Button size="sm" variant="outline" onClick={() => onReview(planId)}>
-                    Iterate with Claude
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant={isEditMode ? 'default' : 'outline'}
-                  onClick={() => setIsEditMode(!isEditMode)}
-                >
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  {isEditMode ? 'Done Editing' : 'Edit'}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => updatePlan({ id: planId, data: { status: 'ready' } })}
-                >
-                  Mark as Ready
-                </Button>
-              </>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {plan.status === 'ready' && (
-              <Button size="sm" onClick={() => executePlan(planId)} disabled={isExecuting}>
-                {isExecuting ? 'Starting...' : 'Execute Plan'}
-              </Button>
-            )}
-            {plan.status === 'running' && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => pausePlan(planId)}
-                disabled={isPausing}
-              >
-                {isPausing ? 'Pausing...' : 'Pause'}
-              </Button>
-            )}
-            {plan.status === 'paused' && (
-              <Button size="sm" onClick={() => resumePlan(planId)} disabled={isResuming}>
-                {isResuming ? 'Resuming...' : 'Resume'}
-              </Button>
-            )}
-            {(plan.status === 'running' || plan.status === 'paused') && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => {
-                  if (confirm('Are you sure you want to cancel this plan execution?')) {
-                    cancelPlan(planId);
-                  }
-                }}
-                disabled={isCancelling}
-              >
-                {isCancelling ? 'Cancelling...' : 'Cancel'}
-              </Button>
-            )}
-          </div>
-        </CardFooter>
-      </Card>
+            );
+          })}
+        </div>
 
-      {/* Add Phase Button */}
-      {isEditMode && (
-        <Button onClick={handleAddPhase} className="w-full" variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Phase
-        </Button>
-      )}
-
-      {/* Phases */}
-      <div className="space-y-4">
-        {phases.map((phase, idx) => {
-          const phaseTasks = (phaseTasksMap.get(phase.id) || []).sort(
-            (a, b) => a.order - b.order
-          );
-          const completedCount = phaseTasks.filter((t) => t.status === 'completed').length;
-          const isEditingThisPhase = editingPhaseId === phase.id;
-
-          return (
-            <Card key={phase.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    {isEditingThisPhase ? (
-                      <div className="space-y-2">
-                        <Input
-                          value={phaseEdits.title}
-                          onChange={(e) =>
-                            setPhaseEdits({ ...phaseEdits, title: e.target.value })
-                          }
-                          className="font-semibold"
-                        />
-                        <Textarea
-                          value={phaseEdits.description}
-                          onChange={(e) =>
-                            setPhaseEdits({ ...phaseEdits, description: e.target.value })
-                          }
-                          rows={2}
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={savePhase}>
-                            <Check className="h-4 w-4 mr-1" />
-                            Save
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={cancelPhaseEdit}>
-                            <X className="h-4 w-4 mr-1" />
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={isEditMode ? 'cursor-pointer hover:bg-accent/50 p-2 rounded' : ''}
-                        onClick={() => isEditMode && startEditingPhase(phase)}
-                      >
-                        <CardTitle className="text-lg">
-                          Phase {idx + 1}: {phase.title}
-                        </CardTitle>
-                        <CardDescription>{phase.description}</CardDescription>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isEditMode && !isEditingThisPhase && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeletePhase(phase.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                    <Badge variant={phase.status === 'completed' ? 'default' : 'secondary'}>
-                      {phase.status}
-                    </Badge>
-                    <Badge variant="outline">{phase.executionMode}</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {phaseTasks.map((task, taskIdx) => {
-                    const isEditingThisTask = editingTaskId === task.id;
-
-                    return (
-                      <div
-                        key={task.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border ${
-                          isEditMode && !isEditingThisTask
-                            ? 'cursor-pointer hover:bg-accent/50'
-                            : ''
-                        }`}
-                        onClick={() => isEditMode && !isEditingThisTask && startEditingTask(task)}
-                      >
-                        {isEditingThisTask ? (
-                          <div className="flex-1 space-y-2">
-                            <Input
-                              value={taskEdits.title}
-                              onChange={(e) =>
-                                setTaskEdits({ ...taskEdits, title: e.target.value })
-                              }
-                              placeholder="Task title"
-                            />
-                            <Textarea
-                              value={taskEdits.description}
-                              onChange={(e) =>
-                                setTaskEdits({ ...taskEdits, description: e.target.value })
-                              }
-                              placeholder="Task description"
-                              rows={3}
-                            />
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={saveTask}>
-                                <Check className="h-4 w-4 mr-1" />
-                                Save
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={cancelTaskEdit}>
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex-1">
-                              <div className="font-medium">
-                                {taskIdx + 1}. {task.title}
-                              </div>
-                              <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                {task.description}
-                              </div>
-                              {task.lastError && (
-                                <div className="text-xs text-destructive mt-1">
-                                  Error: {task.lastError}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {isEditMode && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTask(task.id);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              )}
-                              {task.status === 'failed' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    retryTask(task.id);
-                                  }}
-                                >
-                                  Retry
-                                </Button>
-                              )}
-                              {task.attempts > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  Attempt {task.attempts}
-                                </span>
-                              )}
-                              <Badge
-                                variant={
-                                  task.status === 'completed'
-                                    ? 'default'
-                                    : task.status === 'failed'
-                                    ? 'destructive'
-                                    : task.status === 'running'
-                                    ? 'default'
-                                    : 'secondary'
-                                }
-                              >
-                                {task.status}
-                              </Badge>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Add Task Button */}
-                {isEditMode && (
-                  <Button
-                    onClick={() => handleAddTask(phase.id)}
-                    className="w-full mt-3"
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Task
-                  </Button>
-                )}
-
-                <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-                  <span>
-                    {completedCount} / {phaseTasks.length} tasks completed
-                  </span>
-                  {phase.pauseAfter && <span>⏸️ Pause after this phase</span>}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {selectedTask && (
+          <TaskDetailPanel
+            task={selectedTask}
+            taskOutput={selectedTaskOutput}
+            outputEndRef={outputEndRef}
+            onClose={() => setSelectedTaskId(null)}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+// ── Phase Header ──
+function PhaseHeader({ phase, completedCount, totalCount, progress }: {
+  phase: Phase; completedCount: number; totalCount: number; progress: number;
+}) {
+  return (
+    <div className={cn(
+      'px-4 py-2.5 flex items-center justify-between bg-surface-sunken/50 sticky top-0 z-10',
+      phase.status === 'running' && 'bg-accent-primary-subtle/30',
+    )}>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className={cn('text-sm font-semibold', phase.status === 'running' && 'text-accent-primary')}>
+          {phase.title}
+        </span>
+        <Badge
+          variant={phase.status === 'completed' ? 'default' : phase.status === 'failed' ? 'destructive' : 'secondary'}
+          className="text-[10px] px-1.5 py-0"
+        >
+          {phase.status}
+        </Badge>
+        {phase.executionMode !== 'sequential' && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{phase.executionMode}</Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{completedCount}/{totalCount}</span>
+        <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
+          <div
+            className={cn('h-full rounded-full transition-all duration-500', phase.status === 'failed' ? 'bg-error' : 'bg-success')}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Plan Status Badge ──
+function PlanStatusBadge({ status }: { status: string }) {
+  const variant = status === 'completed' ? 'default'
+    : status === 'failed' ? 'destructive'
+    : status === 'running' ? 'default'
+    : 'secondary';
+
+  return (
+    <Badge variant={variant} className={cn(
+      'text-[10px]',
+      status === 'running' && 'bg-accent-primary text-accent-primary-foreground',
+    )}>
+      {status}
+    </Badge>
   );
 }

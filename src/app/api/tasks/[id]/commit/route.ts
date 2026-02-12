@@ -1,7 +1,7 @@
 import { commitTaskChanges } from '@/lib/git/commit';
 import { taskEvents } from '@/lib/events/task-events';
 import { db } from '@/db';
-import { tasks } from '@/db/schema/tasks';
+import { tasks, planTasks, plans } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 async function getTaskWithRepository(id: string) {
@@ -37,6 +37,36 @@ function validateTaskForCommit(
   return null;
 }
 
+async function syncPlanTaskStatus(taskId: string, sha: string) {
+  const planTask = await db.query.planTasks.findFirst({
+    where: eq(planTasks.taskId, taskId),
+    with: { plan: true },
+  });
+
+  if (!planTask) return;
+
+  await db
+    .update(planTasks)
+    .set({ status: 'completed', commitSha: sha, completedAt: new Date(), updatedAt: new Date() })
+    .where(eq(planTasks.id, planTask.id));
+
+  console.log(`[Commit] Plan task ${planTask.id} synced to 'completed' status`);
+
+  const shouldResume = planTask.plan
+    && (planTask.plan.status === 'paused' || planTask.plan.status === 'failed')
+    && planTask.plan.currentTaskId === planTask.id;
+
+  if (shouldResume) {
+    console.log(`[Commit] Plan ${planTask.plan!.id} was ${planTask.plan!.status}, auto-resuming after task completion`);
+    await db.update(plans).set({ status: 'running', updatedAt: new Date() }).where(eq(plans.id, planTask.plan!.id));
+    console.log(`[Commit] Changed plan ${planTask.plan!.id} status to 'running'`);
+
+    const { PlanExecutor } = await import('@/lib/plans/executor');
+    const executor = new PlanExecutor();
+    await executor.resumePlan(planTask.plan!.id);
+  }
+}
+
 async function updateTaskStatus(id: string, sha: string, commitMessage: string, sessionId: string) {
   await db
     .update(tasks)
@@ -49,6 +79,7 @@ async function updateTaskStatus(id: string, sha: string, commitMessage: string, 
     })
     .where(eq(tasks.id, id));
 
+  await syncPlanTaskStatus(id, sha);
   taskEvents.emit('task:update', { sessionId, taskId: id, status: 'approved' });
 }
 
