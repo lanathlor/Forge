@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { FileTree } from '../FileTree';
 import type { FileChange } from '@/lib/git/diff';
 
@@ -38,8 +39,12 @@ describe('FileTree', () => {
 
   const mockOnSelectFile = vi.fn();
 
+  beforeEach(() => {
+    mockOnSelectFile.mockClear();
+  });
+
   describe('Rendering', () => {
-    it('should render file tree with all files', () => {
+    it('should render file tree with header and file count', () => {
       render(
         <FileTree
           files={mockFiles}
@@ -48,11 +53,24 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('Changed Files (4)')).toBeInTheDocument();
-      expect(screen.getByText('src/components/Button.tsx')).toBeInTheDocument();
-      expect(screen.getByText('src/utils/helpers.ts')).toBeInTheDocument();
-      expect(screen.getByText('src/old-file.ts')).toBeInTheDocument();
-      expect(screen.getByText('src/renamed-file.ts')).toBeInTheDocument();
+      expect(screen.getByText('Files')).toBeInTheDocument();
+      expect(screen.getByText('4 changed')).toBeInTheDocument();
+    });
+
+    it('should render all files in the tree structure', () => {
+      render(
+        <FileTree
+          files={mockFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      // Files are shown by their basename in the tree
+      expect(screen.getByText('Button.tsx')).toBeInTheDocument();
+      expect(screen.getByText('helpers.ts')).toBeInTheDocument();
+      expect(screen.getByText('old-file.ts')).toBeInTheDocument();
+      expect(screen.getByText('renamed-file.ts')).toBeInTheDocument();
     });
 
     it('should display correct file count', () => {
@@ -64,7 +82,7 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('Changed Files (4)')).toBeInTheDocument();
+      expect(screen.getByText('4 changed')).toBeInTheDocument();
     });
 
     it('should render empty state with zero files', () => {
@@ -76,12 +94,28 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('Changed Files (0)')).toBeInTheDocument();
+      expect(screen.getByText('Files')).toBeInTheDocument();
+      expect(screen.getByText('0 changed')).toBeInTheDocument();
+    });
+
+    it('should render directory nodes in the tree', () => {
+      render(
+        <FileTree
+          files={mockFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      // Directories are shown as folder nodes
+      expect(screen.getByText('src')).toBeInTheDocument();
+      expect(screen.getByText('components')).toBeInTheDocument();
+      expect(screen.getByText('utils')).toBeInTheDocument();
     });
   });
 
   describe('File Status Icons', () => {
-    it('should show correct icon for added files', () => {
+    it('should render SVG icons for file statuses (not emojis)', () => {
       render(
         <FileTree
           files={mockFiles}
@@ -90,60 +124,24 @@ describe('FileTree', () => {
         />
       );
 
-      const addedFileButton = screen
-        .getByText('src/utils/helpers.ts')
-        .closest('button');
-      expect(addedFileButton?.textContent).toContain('✨');
-    });
+      // The component uses Lucide SVG icons, not emoji characters.
+      // Each file button should contain an SVG element for the status icon.
+      const fileButton = screen.getByText('Button.tsx').closest('button');
+      expect(fileButton?.querySelector('svg')).toBeTruthy();
 
-    it('should show correct icon for modified files', () => {
-      render(
-        <FileTree
-          files={mockFiles}
-          selectedFile={null}
-          onSelectFile={mockOnSelectFile}
-        />
-      );
+      const addedButton = screen.getByText('helpers.ts').closest('button');
+      expect(addedButton?.querySelector('svg')).toBeTruthy();
 
-      const modifiedFileButton = screen
-        .getByText('src/components/Button.tsx')
-        .closest('button');
-      expect(modifiedFileButton?.textContent).toContain('✏️');
-    });
+      const deletedButton = screen.getByText('old-file.ts').closest('button');
+      expect(deletedButton?.querySelector('svg')).toBeTruthy();
 
-    it('should show correct icon for deleted files', () => {
-      render(
-        <FileTree
-          files={mockFiles}
-          selectedFile={null}
-          onSelectFile={mockOnSelectFile}
-        />
-      );
-
-      const deletedFileButton = screen
-        .getByText('src/old-file.ts')
-        .closest('button');
-      expect(deletedFileButton?.textContent).toContain('🗑️');
-    });
-
-    it('should show correct icon for renamed files', () => {
-      render(
-        <FileTree
-          files={mockFiles}
-          selectedFile={null}
-          onSelectFile={mockOnSelectFile}
-        />
-      );
-
-      const renamedFileButton = screen
-        .getByText('src/renamed-file.ts')
-        .closest('button');
-      expect(renamedFileButton?.textContent).toContain('📝');
+      const renamedButton = screen.getByText('renamed-file.ts').closest('button');
+      expect(renamedButton?.querySelector('svg')).toBeTruthy();
     });
   });
 
   describe('File Stats Display', () => {
-    it('should display additions and deletions', () => {
+    it('should display additions and deletions for files', () => {
       render(
         <FileTree
           files={mockFiles}
@@ -152,11 +150,13 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('+10')).toBeInTheDocument();
-      expect(screen.getByText('-5')).toBeInTheDocument();
+      // Button.tsx has +10 / -5
+      const buttonFile = screen.getByText('Button.tsx').closest('button');
+      expect(buttonFile?.textContent).toContain('+10');
+      expect(buttonFile?.textContent).toContain('-5');
     });
 
-    it('should show zero deletions for added files', () => {
+    it('should not show zero deletions for added files', () => {
       render(
         <FileTree
           files={mockFiles}
@@ -165,14 +165,15 @@ describe('FileTree', () => {
         />
       );
 
-      const addedFileButton = screen
-        .getByText('src/utils/helpers.ts')
-        .closest('button');
+      // helpers.ts: added file with +20, 0 deletions
+      // The component only renders stats > 0, so -0 should NOT appear
+      const addedFileButton = screen.getByText('helpers.ts').closest('button');
       expect(addedFileButton?.textContent).toContain('+20');
-      expect(addedFileButton?.textContent).toContain('-0');
+      // -0 is not rendered because deletions === 0
+      expect(addedFileButton?.textContent).not.toContain('-0');
     });
 
-    it('should show zero additions for deleted files', () => {
+    it('should not show zero additions for deleted files', () => {
       render(
         <FileTree
           files={mockFiles}
@@ -181,10 +182,10 @@ describe('FileTree', () => {
         />
       );
 
-      const deletedFileButton = screen
-        .getByText('src/old-file.ts')
-        .closest('button');
-      expect(deletedFileButton?.textContent).toContain('+0');
+      // old-file.ts: deleted file with 0 additions, -15
+      const deletedFileButton = screen.getByText('old-file.ts').closest('button');
+      // +0 is not rendered because additions === 0
+      expect(deletedFileButton?.textContent).not.toContain('+0');
       expect(deletedFileButton?.textContent).toContain('-15');
     });
   });
@@ -199,7 +200,7 @@ describe('FileTree', () => {
         />
       );
 
-      const fileButton = screen.getByText('src/components/Button.tsx');
+      const fileButton = screen.getByText('Button.tsx');
       fireEvent.click(fileButton);
 
       expect(mockOnSelectFile).toHaveBeenCalledWith(mockFiles[0]);
@@ -215,10 +216,10 @@ describe('FileTree', () => {
       );
 
       const selectedButton = screen
-        .getByText('src/components/Button.tsx')
+        .getByText('Button.tsx')
         .closest('button');
-      expect(selectedButton).toHaveClass('bg-blue-100');
-      expect(selectedButton).toHaveClass('text-blue-900');
+      // The new component uses bg-accent-primary/15 for selected state
+      expect(selectedButton?.className).toContain('bg-accent-primary');
     });
 
     it('should not highlight non-selected files', () => {
@@ -231,15 +232,14 @@ describe('FileTree', () => {
       );
 
       const nonSelectedButton = screen
-        .getByText('src/utils/helpers.ts')
+        .getByText('helpers.ts')
         .closest('button');
-      expect(nonSelectedButton).not.toHaveClass('bg-blue-100');
-      expect(nonSelectedButton).toHaveClass('hover:bg-gray-100');
+      expect(nonSelectedButton?.className).not.toContain('bg-accent-primary');
     });
   });
 
-  describe('Legend', () => {
-    it('should display status legend', () => {
+  describe('Tree Structure', () => {
+    it('should group files by directory', () => {
       render(
         <FileTree
           files={mockFiles}
@@ -248,15 +248,54 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('New file')).toBeInTheDocument();
-      expect(screen.getByText('Modified')).toBeInTheDocument();
-      expect(screen.getByText('Deleted')).toBeInTheDocument();
-      expect(screen.getByText('Renamed')).toBeInTheDocument();
+      // Directories are rendered as folder nodes with toggle buttons
+      expect(screen.getByText('src')).toBeInTheDocument();
+      expect(screen.getByText('components')).toBeInTheDocument();
+      expect(screen.getByText('utils')).toBeInTheDocument();
+    });
+
+    it('should show aggregated stats on folder nodes', () => {
+      render(
+        <FileTree
+          files={mockFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      // The src folder button should show aggregated stats
+      const srcButton = screen.getByText('src').closest('button');
+      expect(srcButton?.textContent).toContain('+32');
+      expect(srcButton?.textContent).toContain('-21');
+    });
+
+    it('should be able to collapse and expand directories', () => {
+      render(
+        <FileTree
+          files={mockFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      // Initially the src folder is expanded (totalFiles <= 8)
+      expect(screen.getByText('Button.tsx')).toBeInTheDocument();
+
+      // Click the components folder to collapse it
+      const componentsFolder = screen.getByText('components').closest('button');
+      fireEvent.click(componentsFolder!);
+
+      // Button.tsx should be hidden now
+      expect(screen.queryByText('Button.tsx')).not.toBeInTheDocument();
+
+      // Click again to expand
+      fireEvent.click(componentsFolder!);
+      expect(screen.getByText('Button.tsx')).toBeInTheDocument();
     });
   });
 
   describe('Styling', () => {
-    it('should have proper sidebar styling', () => {
+    it('should use div-based layout (not aside)', () => {
       const { container } = render(
         <FileTree
           files={mockFiles}
@@ -265,12 +304,12 @@ describe('FileTree', () => {
         />
       );
 
-      const aside = container.querySelector('aside');
-      expect(aside).toHaveClass('w-80');
-      expect(aside).toHaveClass('border-r');
-      expect(aside).toHaveClass('border-gray-200');
-      expect(aside).toHaveClass('bg-gray-50');
-      expect(aside).toHaveClass('overflow-y-auto');
+      // The component uses div, not aside
+      expect(container.querySelector('aside')).toBeNull();
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.tagName).toBe('DIV');
+      expect(wrapper).toHaveClass('flex');
+      expect(wrapper).toHaveClass('flex-col');
     });
 
     it('should style file buttons correctly', () => {
@@ -283,13 +322,11 @@ describe('FileTree', () => {
       );
 
       const fileButton = screen
-        .getByText('src/components/Button.tsx')
+        .getByText('Button.tsx')
         .closest('button');
       expect(fileButton).toHaveClass('w-full');
-      expect(fileButton).toHaveClass('text-left');
-      expect(fileButton).toHaveClass('px-3');
-      expect(fileButton).toHaveClass('py-2');
-      expect(fileButton).toHaveClass('rounded');
+      expect(fileButton).toHaveClass('text-xs');
+      expect(fileButton).toHaveClass('rounded-md');
     });
   });
 
@@ -313,7 +350,8 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('Changed Files (1)')).toBeInTheDocument();
+      expect(screen.getByText('1 changed')).toBeInTheDocument();
+      expect(screen.getByText('test.ts')).toBeInTheDocument();
     });
 
     it('should handle many files', () => {
@@ -333,13 +371,13 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByText('Changed Files (50)')).toBeInTheDocument();
+      expect(screen.getByText('50 changed')).toBeInTheDocument();
     });
   });
 
   describe('Accessibility', () => {
-    it('should have proper semantic HTML', () => {
-      const { container } = render(
+    it('should have proper heading structure', () => {
+      render(
         <FileTree
           files={mockFiles}
           selectedFile={null}
@@ -347,9 +385,7 @@ describe('FileTree', () => {
         />
       );
 
-      expect(container.querySelector('aside')).toBeInTheDocument();
-      expect(container.querySelector('ul')).toBeInTheDocument();
-      const heading = screen.getByText('Changed Files (4)');
+      const heading = screen.getByText('Files');
       expect(heading.tagName).toBe('H3');
     });
 
@@ -363,17 +399,32 @@ describe('FileTree', () => {
       );
 
       const buttons = screen.getAllByRole('button');
-      expect(buttons.length).toBe(mockFiles.length);
+      // Includes both folder toggle buttons and file buttons
+      // src folder + components folder + utils folder = 3 dir buttons
+      // Button.tsx + helpers.ts + old-file.ts + renamed-file.ts = 4 file buttons
+      // Total = 7 buttons
+      expect(buttons.length).toBe(7);
+    });
+
+    it('should have file path in title attribute for full path access', () => {
+      render(
+        <FileTree
+          files={mockFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      const fileButton = screen.getByText('Button.tsx').closest('button');
+      expect(fileButton).toHaveAttribute('title', 'src/components/Button.tsx');
     });
   });
 
-  describe('Long File Paths', () => {
-    it('should handle long file paths with truncation', () => {
-      const longPath =
-        'src/very/deeply/nested/path/with/many/directories/and/a/very/long/filename.tsx';
+  describe('Path Collapsing', () => {
+    it('should collapse single-child directories into combined paths', () => {
       const files: FileChange[] = [
         {
-          path: longPath,
+          path: 'src/very/deeply/nested/file.tsx',
           status: 'modified',
           additions: 5,
           deletions: 2,
@@ -389,8 +440,176 @@ describe('FileTree', () => {
         />
       );
 
-      const pathElement = screen.getByText(longPath);
-      expect(pathElement).toHaveClass('truncate');
+      // Single-child directories get collapsed:
+      // src/very/deeply/nested is collapsed into one folder node
+      expect(screen.getByText('src/very/deeply/nested')).toBeInTheDocument();
+      expect(screen.getByText('file.tsx')).toBeInTheDocument();
+    });
+
+    it('should handle truncation via CSS class', () => {
+      const files: FileChange[] = [
+        {
+          path: 'src/components/very-long-filename-that-might-overflow.tsx',
+          status: 'modified',
+          additions: 5,
+          deletions: 2,
+          patch: 'mock patch',
+        },
+      ];
+
+      render(
+        <FileTree
+          files={files}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      const fileNameSpan = screen.getByText('very-long-filename-that-might-overflow.tsx');
+      expect(fileNameSpan).toHaveClass('truncate');
+    });
+  });
+
+  describe('Search Filter', () => {
+    it('should not show filter for 5 or fewer files', () => {
+      render(
+        <FileTree
+          files={mockFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      // 4 files should not show filter
+      expect(screen.queryByPlaceholderText('Filter files...')).not.toBeInTheDocument();
+    });
+
+    it('should show filter for more than 5 files', () => {
+      const manyFiles: FileChange[] = Array.from({ length: 6 }, (_, i) => ({
+        path: `src/file-${i}.ts`,
+        status: 'modified' as const,
+        additions: i,
+        deletions: i,
+        patch: 'mock patch',
+      }));
+
+      render(
+        <FileTree
+          files={manyFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      expect(screen.getByPlaceholderText('Filter files...')).toBeInTheDocument();
+    });
+
+    it('should filter files by path when typing in search', async () => {
+      const user = userEvent.setup();
+      const manyFiles: FileChange[] = [
+        { path: 'src/components/Button.tsx', status: 'modified', additions: 5, deletions: 2, patch: '' },
+        { path: 'src/utils/helpers.ts', status: 'added', additions: 10, deletions: 0, patch: '' },
+        { path: 'src/hooks/useAuth.ts', status: 'modified', additions: 3, deletions: 1, patch: '' },
+        { path: 'src/hooks/useTheme.ts', status: 'modified', additions: 7, deletions: 4, patch: '' },
+        { path: 'src/types/index.ts', status: 'modified', additions: 2, deletions: 1, patch: '' },
+        { path: 'README.md', status: 'modified', additions: 1, deletions: 0, patch: '' },
+      ];
+
+      render(
+        <FileTree
+          files={manyFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      const filterInput = screen.getByPlaceholderText('Filter files...');
+      await user.type(filterInput, 'hook');
+
+      // Should show only hook-related files in flat view
+      expect(screen.getByText('useAuth.ts')).toBeInTheDocument();
+      expect(screen.getByText('useTheme.ts')).toBeInTheDocument();
+      // Should not show non-matching files
+      expect(screen.queryByText('Button.tsx')).not.toBeInTheDocument();
+      expect(screen.queryByText('helpers.ts')).not.toBeInTheDocument();
+    });
+
+    it('should show no results message when filter matches nothing', async () => {
+      const user = userEvent.setup();
+      const manyFiles: FileChange[] = Array.from({ length: 6 }, (_, i) => ({
+        path: `src/file-${i}.ts`,
+        status: 'modified' as const,
+        additions: i,
+        deletions: i,
+        patch: 'mock patch',
+      }));
+
+      render(
+        <FileTree
+          files={manyFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      const filterInput = screen.getByPlaceholderText('Filter files...');
+      await user.type(filterInput, 'nonexistent');
+
+      expect(screen.getByText(/No files match/)).toBeInTheDocument();
+    });
+
+    it('should show clear button when filter has text', async () => {
+      const user = userEvent.setup();
+      const manyFiles: FileChange[] = Array.from({ length: 6 }, (_, i) => ({
+        path: `src/file-${i}.ts`,
+        status: 'modified' as const,
+        additions: i,
+        deletions: i,
+        patch: 'mock patch',
+      }));
+
+      render(
+        <FileTree
+          files={manyFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      const filterInput = screen.getByPlaceholderText('Filter files...');
+      await user.type(filterInput, 'test');
+
+      // Clear button should be visible (it's the X icon button)
+      const clearButtons = screen.getAllByRole('button');
+      const clearButton = clearButtons.find((btn) => btn.querySelector('svg'));
+      expect(clearButton).toBeTruthy();
+    });
+
+    it('should show directory path in flat filtered results', async () => {
+      const user = userEvent.setup();
+      const manyFiles: FileChange[] = [
+        { path: 'src/components/Button.tsx', status: 'modified', additions: 5, deletions: 2, patch: '' },
+        { path: 'src/utils/helpers.ts', status: 'added', additions: 10, deletions: 0, patch: '' },
+        { path: 'src/hooks/useAuth.ts', status: 'modified', additions: 3, deletions: 1, patch: '' },
+        { path: 'src/hooks/useTheme.ts', status: 'modified', additions: 7, deletions: 4, patch: '' },
+        { path: 'src/types/index.ts', status: 'modified', additions: 2, deletions: 1, patch: '' },
+        { path: 'README.md', status: 'modified', additions: 1, deletions: 0, patch: '' },
+      ];
+
+      render(
+        <FileTree
+          files={manyFiles}
+          selectedFile={null}
+          onSelectFile={mockOnSelectFile}
+        />
+      );
+
+      const filterInput = screen.getByPlaceholderText('Filter files...');
+      await user.type(filterInput, 'Button');
+
+      // Should show directory path in flat view
+      expect(screen.getByText('src/components')).toBeInTheDocument();
+      expect(screen.getByText('Button.tsx')).toBeInTheDocument();
     });
   });
 });

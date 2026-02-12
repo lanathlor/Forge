@@ -14,10 +14,10 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('Changes Summary')).toBeInTheDocument();
-      expect(screen.getByText('1 file changed')).toBeInTheDocument();
-      expect(screen.getByText('+10 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-5 deletions')).toBeInTheDocument();
+      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('file')).toBeInTheDocument();
+      expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.getByText('5')).toBeInTheDocument();
     });
 
     it('should render stats with plural "files" label', () => {
@@ -29,9 +29,10 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('3 files changed')).toBeInTheDocument();
-      expect(screen.getByText('+42 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-15 deletions')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByText('files')).toBeInTheDocument();
+      expect(screen.getByText('42')).toBeInTheDocument();
+      expect(screen.getByText('15')).toBeInTheDocument();
     });
 
     it('should render zero stats', () => {
@@ -43,9 +44,11 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('0 files changed')).toBeInTheDocument();
-      expect(screen.getByText('+0 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-0 deletions')).toBeInTheDocument();
+      // filesChanged=0 renders "files" (plural)
+      expect(screen.getByText('files')).toBeInTheDocument();
+      // All three spans contain "0" – file count, insertions, deletions
+      const zeros = screen.getAllByText('0');
+      expect(zeros.length).toBeGreaterThanOrEqual(3);
     });
   });
 
@@ -57,11 +60,11 @@ describe('DiffStats', () => {
         deletions: 5,
       };
 
-      const { container } = render(<DiffStats stats={stats} />);
+      render(<DiffStats stats={stats} />);
 
-      const insertionText = screen.getByText('+10 insertions');
-      expect(insertionText).toHaveClass('text-green-600');
-      expect(insertionText).toHaveClass('font-medium');
+      const insertionSpan = screen.getByText('10').closest('span');
+      expect(insertionSpan).toHaveClass('text-emerald-500');
+      expect(insertionSpan).toHaveClass('font-mono');
     });
 
     it('should apply correct CSS classes for deletions', () => {
@@ -73,9 +76,9 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      const deletionText = screen.getByText('-5 deletions');
-      expect(deletionText).toHaveClass('text-red-600');
-      expect(deletionText).toHaveClass('font-medium');
+      const deletionSpan = screen.getByText('5').closest('span');
+      expect(deletionSpan).toHaveClass('text-red-400');
+      expect(deletionSpan).toHaveClass('font-mono');
     });
 
     it('should have proper container styling', () => {
@@ -88,11 +91,10 @@ describe('DiffStats', () => {
       const { container } = render(<DiffStats stats={stats} />);
 
       const wrapper = container.firstChild as HTMLElement;
-      expect(wrapper).toHaveClass('px-4');
-      expect(wrapper).toHaveClass('py-3');
-      expect(wrapper).toHaveClass('bg-gray-100');
-      expect(wrapper).toHaveClass('border-b');
-      expect(wrapper).toHaveClass('border-gray-200');
+      expect(wrapper).toHaveClass('px-3');
+      expect(wrapper).toHaveClass('py-2');
+      expect(wrapper).toHaveClass('text-xs');
+      expect(wrapper).toHaveClass('flex');
     });
   });
 
@@ -106,9 +108,10 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('999 files changed')).toBeInTheDocument();
-      expect(screen.getByText('+10000 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-5000 deletions')).toBeInTheDocument();
+      expect(screen.getByText('999')).toBeInTheDocument();
+      expect(screen.getByText('files')).toBeInTheDocument();
+      expect(screen.getByText('10000')).toBeInTheDocument();
+      expect(screen.getByText('5000')).toBeInTheDocument();
     });
   });
 
@@ -122,8 +125,8 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('+100 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-0 deletions')).toBeInTheDocument();
+      expect(screen.getByText('100')).toBeInTheDocument();
+      expect(screen.getByText('0')).toBeInTheDocument();
     });
 
     it('should handle only deletions', () => {
@@ -135,8 +138,7 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('+0 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-50 deletions')).toBeInTheDocument();
+      expect(screen.getByText('50')).toBeInTheDocument();
     });
 
     it('should handle equal insertions and deletions', () => {
@@ -148,13 +150,14 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('+25 insertions')).toBeInTheDocument();
-      expect(screen.getByText('-25 deletions')).toBeInTheDocument();
+      // Both insertions and deletions are 25, so two elements with "25"
+      const twentyFives = screen.getAllByText('25');
+      expect(twentyFives.length).toBe(2);
     });
   });
 
   describe('Accessibility', () => {
-    it('should have semantic HTML structure', () => {
+    it('should use a flat div structure (no heading)', () => {
       const stats: DiffStatsType = {
         filesChanged: 1,
         insertions: 10,
@@ -163,8 +166,10 @@ describe('DiffStats', () => {
 
       const { container } = render(<DiffStats stats={stats} />);
 
-      const heading = screen.getByText('Changes Summary');
-      expect(heading.tagName).toBe('H3');
+      // The component is a flat div with spans - no heading
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.tagName).toBe('DIV');
+      expect(container.querySelector('h3')).toBeNull();
     });
 
     it('should have readable text for screen readers', () => {
@@ -176,9 +181,38 @@ describe('DiffStats', () => {
 
       render(<DiffStats stats={stats} />);
 
-      expect(screen.getByText('1 file changed')).toBeVisible();
-      expect(screen.getByText('+10 insertions')).toBeVisible();
-      expect(screen.getByText('-5 deletions')).toBeVisible();
+      expect(screen.getByText('1')).toBeVisible();
+      expect(screen.getByText('file')).toBeVisible();
+      expect(screen.getByText('10')).toBeVisible();
+      expect(screen.getByText('5')).toBeVisible();
+    });
+  });
+
+  describe('Change Bar', () => {
+    it('should render the mini change bar when total > 0', () => {
+      const stats: DiffStatsType = {
+        filesChanged: 1,
+        insertions: 10,
+        deletions: 5,
+      };
+
+      const { container } = render(<DiffStats stats={stats} />);
+
+      const bar = container.querySelector('.bg-emerald-500.rounded-l-full');
+      expect(bar).toBeInTheDocument();
+    });
+
+    it('should not render the mini change bar when total is 0', () => {
+      const stats: DiffStatsType = {
+        filesChanged: 0,
+        insertions: 0,
+        deletions: 0,
+      };
+
+      const { container } = render(<DiffStats stats={stats} />);
+
+      const bar = container.querySelector('.bg-emerald-500.rounded-l-full');
+      expect(bar).toBeNull();
     });
   });
 });

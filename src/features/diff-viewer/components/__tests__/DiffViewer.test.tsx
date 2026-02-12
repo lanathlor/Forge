@@ -1,16 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DiffViewer } from '../DiffViewer';
 import type { DiffResult, FileChange } from '@/lib/git/diff';
 
 // Mock Monaco Editor
 vi.mock('@monaco-editor/react', () => ({
-  DiffEditor: ({ original, modified, language }: any) => (
+  DiffEditor: ({ original, modified, language, options }: any) => (
     <div data-testid="monaco-diff-editor">
       <div data-testid="original-content">{original}</div>
       <div data-testid="modified-content">{modified}</div>
       <div data-testid="language">{language}</div>
+      <div data-testid="render-side-by-side">
+        {options?.renderSideBySide ? 'true' : 'false'}
+      </div>
+      <div data-testid="minimap-enabled">
+        {options?.minimap?.enabled ? 'true' : 'false'}
+      </div>
+      <div data-testid="hide-unchanged">
+        {options?.hideUnchangedRegions?.enabled ? 'true' : 'false'}
+      </div>
     </div>
   ),
 }));
@@ -41,6 +50,11 @@ vi.mock('../DiffStats', () => ({
       {stats.filesChanged} files, +{stats.insertions}, -{stats.deletions}
     </div>
   ),
+}));
+
+// Mock useMediaQuery hook
+vi.mock('@/shared/hooks', () => ({
+  useMediaQuery: () => false, // Default to desktop
 }));
 
 describe('DiffViewer', () => {
@@ -319,10 +333,8 @@ describe('DiffViewer', () => {
         expect(screen.getByTestId('language')).toHaveTextContent('typescript');
       });
     });
-  });
 
-  describe('File Header', () => {
-    it('should display selected file path', async () => {
+    it('should render in side-by-side mode by default', async () => {
       (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
@@ -336,12 +348,94 @@ describe('DiffViewer', () => {
       render(<DiffViewer taskId="test-task-1" />);
 
       await waitFor(() => {
-        const headers = screen.getAllByText('src/file1.ts');
-        // Should find the header element (h3 with class "font-medium text-sm")
-        const header = headers.find((el) =>
-          el.classList.contains('font-medium')
+        expect(screen.getByTestId('render-side-by-side')).toHaveTextContent(
+          'true'
         );
+      });
+    });
+
+    it('should have minimap disabled by default', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('minimap-enabled')).toHaveTextContent(
+          'false'
+        );
+      });
+    });
+
+    it('should have hideUnchangedRegions enabled', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('hide-unchanged')).toHaveTextContent(
+          'true'
+        );
+      });
+    });
+  });
+
+  describe('File Header', () => {
+    it('should display selected file path with breadcrumb style', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        // The file header now shows dir path and filename separately
+        const headers = screen.getAllByText('file1.ts');
+        const header = headers.find((el) => {
+          const h3 = el.closest('h3');
+          return h3 !== null;
+        });
         expect(header).toBeInTheDocument();
+      });
+    });
+
+    it('should display directory path in muted color', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        const dirSpan = screen.getByText('src/');
+        expect(dirSpan).toHaveClass('text-text-muted');
       });
     });
 
@@ -359,7 +453,209 @@ describe('DiffViewer', () => {
       render(<DiffViewer taskId="test-task-1" />);
 
       await waitFor(() => {
-        expect(screen.getByText('modified')).toBeInTheDocument();
+        expect(screen.getByText('Modified')).toBeInTheDocument();
+      });
+    });
+
+    it('should display file navigation with index', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('1/2')).toBeInTheDocument();
+      });
+    });
+
+    it('should display inline file stats', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        // The header now shows file-level +/- stats
+        expect(screen.getByText('+10')).toBeInTheDocument();
+        expect(screen.getByText('-5')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('View Mode Toggle', () => {
+    it('should show view mode toggle buttons', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTitle('Side by side')).toBeInTheDocument();
+        expect(screen.getByTitle('Unified')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Toolbar Controls', () => {
+    it('should show sidebar toggle button', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTitle('Hide file tree')).toBeInTheDocument();
+      });
+    });
+
+    it('should show minimap toggle button', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTitle('Show minimap')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Keyboard Shortcuts', () => {
+    it('should navigate to next file with j key', async () => {
+      const fetchMock = vi.fn();
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ before: 'b2', after: 'a2' }),
+        });
+
+      global.fetch = fetchMock;
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('selected-file')).toHaveTextContent(
+          'src/file1.ts'
+        );
+      });
+
+      fireEvent.keyDown(document, { key: 'j' });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('selected-file')).toHaveTextContent(
+          'src/file2.tsx'
+        );
+      });
+    });
+
+    it('should navigate to previous file with k key', async () => {
+      const user = userEvent.setup();
+
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ before: 'b2', after: 'a2' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      // Wait for initial load
+      await waitFor(() => {
+        expect(screen.getByTestId('selected-file')).toHaveTextContent(
+          'src/file1.ts'
+        );
+      });
+
+      // Navigate to second file
+      const file2Button = screen.getByTestId('file-src/file2.tsx');
+      await user.click(file2Button);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('selected-file')).toHaveTextContent(
+          'src/file2.tsx'
+        );
+      });
+
+      // Press k to go back
+      fireEvent.keyDown(document, { key: 'k' });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('selected-file')).toHaveTextContent(
+          'src/file1.ts'
+        );
+      });
+    });
+
+    it('should show keyboard hint in sidebar', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('navigate')).toBeInTheDocument();
       });
     });
   });
@@ -424,6 +720,37 @@ describe('DiffViewer', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('language')).toHaveTextContent('javascript');
+      });
+    });
+
+    it('should detect Python for .py files', async () => {
+      const pyFile: DiffResult = {
+        ...mockDiffResult,
+        changedFiles: [
+          {
+            path: 'test.py',
+            status: 'modified',
+            additions: 1,
+            deletions: 1,
+            patch: 'mock',
+          },
+        ],
+      };
+
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => pyFile,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('language')).toHaveTextContent('python');
       });
     });
 
@@ -497,6 +824,27 @@ describe('DiffViewer', () => {
       await waitFor(() => {
         expect(screen.getByTestId('file-src/file1.ts')).toBeInTheDocument();
         expect(screen.getByTestId('file-src/file2.tsx')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Comment Anchor', () => {
+    it('should render hidden comment anchor for selected file', async () => {
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockDiffResult,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockFileContent,
+        });
+
+      const { container } = render(<DiffViewer taskId="test-task-1" />);
+
+      await waitFor(() => {
+        const anchor = container.querySelector('[data-comment-anchor="src/file1.ts"]');
+        expect(anchor).toBeInTheDocument();
       });
     });
   });
