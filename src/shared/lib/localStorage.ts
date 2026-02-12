@@ -83,4 +83,5 @@ export const storage = {
 // Storage keys used in the app
 export const STORAGE_KEYS = {
   SESSION: 'autobot_session',
+  REPO_SNAPSHOTS: 'autobot_repo_snapshots',
 } as const;

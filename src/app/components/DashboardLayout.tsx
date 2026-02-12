@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTaskStream } from '@/shared/hooks';
 import { TaskList } from './TaskList';
 import { TaskDetailPanel } from './TaskDetailPanel';
@@ -20,6 +20,10 @@ interface DashboardLayoutProps {
   sessionId: string;
   repositoryId: string;
   repositoryName: string;
+  initialTaskId?: string | null;
+  onInitialTaskConsumed?: () => void;
+  onTaskSelected?: (taskId: string | null) => void;
+  onTabChanged?: (tab: 'tasks' | 'plans') => void;
   onSessionEnded?: () => void;
 }
 
@@ -37,11 +41,15 @@ interface DashboardLayoutProps {
  * - Session management (pause, resume, end)
  * - Session history and summary modals
  */
- 
+
 export function DashboardLayout({
   sessionId,
   repositoryId,
   repositoryName,
+  initialTaskId,
+  onInitialTaskConsumed,
+  onTaskSelected,
+  onTabChanged,
   onSessionEnded,
 }: DashboardLayoutProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -58,12 +66,33 @@ export function DashboardLayout({
 
   const session = sessionData?.session;
 
+  // Navigate to initial task from snapshot resume
+  useEffect(() => {
+    if (initialTaskId) {
+      setSelectedTaskId(initialTaskId);
+      onInitialTaskConsumed?.();
+    }
+  }, [initialTaskId, onInitialTaskConsumed]);
+
+  // Report task selection to parent for snapshot tracking
+  const handleSelectTask = useCallback((taskId: string | null) => {
+    setSelectedTaskId(taskId);
+    onTaskSelected?.(taskId);
+  }, [onTaskSelected]);
+
+  // Report tab changes to parent for snapshot tracking
+  const handleTabChange = useCallback((tab: string) => {
+    const typedTab = tab as 'tasks' | 'plans';
+    setActiveTab(typedTab);
+    onTabChanged?.(typedTab);
+  }, [onTabChanged]);
+
   const handleTaskCreated = useCallback((taskId: string) => {
     // Auto-select the newly created task
-    setSelectedTaskId(taskId);
+    handleSelectTask(taskId);
     // Trigger refresh in TaskTimeline
     setRefreshTrigger((prev) => prev + 1);
-  }, []);
+  }, [handleSelectTask]);
 
   const handleSessionEnded = useCallback(() => {
     setShowSummaryModal(true);
@@ -105,7 +134,7 @@ export function DashboardLayout({
       )}
 
       {/* Tabs for switching between Tasks and Plans */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'tasks' | 'plans')} className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mb-3">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
@@ -158,7 +187,7 @@ export function DashboardLayout({
               <TaskList
                 sessionId={sessionId}
                 selectedTaskId={selectedTaskId}
-                onSelectTask={setSelectedTaskId}
+                onSelectTask={handleSelectTask}
                 updates={updates}
                 refreshTrigger={refreshTrigger}
               />
@@ -171,7 +200,7 @@ export function DashboardLayout({
               taskId={selectedTaskId || ''}
               updates={updates}
               open={!!selectedTaskId}
-              onClose={() => setSelectedTaskId(null)}
+              onClose={() => handleSelectTask(null)}
             />
           </div>
         </TabsContent>

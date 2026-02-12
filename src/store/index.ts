@@ -7,12 +7,14 @@ import '@/features/repositories/store/repositoriesApi';
 // Import slices
 import sessionReducer from '@/features/sessions/store/sessionSlice';
 import uiReducer from '@/shared/store/uiSlice';
+import repoSnapshotReducer from '@/features/sessions/store/repoSnapshotSlice';
 
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
     session: sessionReducer,
     ui: uiReducer,
+    repoSnapshot: repoSnapshotReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(api.middleware),
