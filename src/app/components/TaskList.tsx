@@ -528,9 +528,23 @@ export function TaskList({
 
   // ---- Data loading ----
 
+  const loadSessionTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/sessions/${sessionId}`);
+      if (!res.ok) throw new Error('Failed to load session');
+      const data = await res.json();
+      setTasks(data.session.tasks || []);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId]);
+
   useEffect(() => {
     loadSessionTasks();
-  }, [sessionId, refreshTrigger]);
+  }, [sessionId, refreshTrigger, loadSessionTasks]);
 
   useLayoutEffect(() => {
     function updateHeight() {
@@ -553,29 +567,25 @@ export function TaskList({
       latestUpdate.taskId &&
       typeof latestUpdate.status === 'string'
     ) {
-      setTasks((prev) =>
-        prev.map((task) =>
+      setTasks((prev) => {
+        const taskExists = prev.some((t) => t.id === latestUpdate.taskId);
+
+        // If task doesn't exist in our list (e.g., new plan task), refetch
+        if (!taskExists) {
+          console.log('[TaskList] Received update for unknown task, refetching:', latestUpdate.taskId);
+          loadSessionTasks();
+          return prev;
+        }
+
+        // Update existing task status
+        return prev.map((task) =>
           task.id === latestUpdate.taskId
             ? { ...task, status: latestUpdate.status as TaskStatus }
             : task,
-        ),
-      );
+        );
+      });
     }
-  }, [updates]);
-
-  async function loadSessionTasks() {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/sessions/${sessionId}`);
-      if (!res.ok) throw new Error('Failed to load session');
-      const data = await res.json();
-      setTasks(data.session.tasks || []);
-    } catch (error) {
-      console.error('Error loading tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [updates, loadSessionTasks]);
 
   // ---- Filtering & sorting ----
 
@@ -601,21 +611,29 @@ export function TaskList({
       filtered = filtered.filter((t) => STATUS_GROUPS.failed.includes(t.status));
     }
 
-    // Sort: always pin running tasks to top, then by chosen field
+    // Sort based on user's selection
     filtered.sort((a, b) => {
-      const pA = STATUS_PRIORITY[a.status] ?? 100;
-      const pB = STATUS_PRIORITY[b.status] ?? 100;
-      if (pA !== pB) return pA - pB;
+      // Only pin actively running tasks to top when NOT filtering by status
+      if (sortField !== 'status' && statusFilter === 'all') {
+        const aIsActive = ['running', 'qa_running', 'pre_flight'].includes(a.status);
+        const bIsActive = ['running', 'qa_running', 'pre_flight'].includes(b.status);
+        if (aIsActive && !bIsActive) return -1;
+        if (!aIsActive && bIsActive) return 1;
+      }
 
+      // Apply user's chosen sort
       if (sortField === 'createdAt') {
         const dA = new Date(a.createdAt).getTime();
         const dB = new Date(b.createdAt).getTime();
         return sortDirection === 'desc' ? dB - dA : dA - dB;
       }
       if (sortField === 'status') {
-        return sortDirection === 'desc'
-          ? b.status.localeCompare(a.status)
-          : a.status.localeCompare(b.status);
+        const pA = STATUS_PRIORITY[a.status] ?? 100;
+        const pB = STATUS_PRIORITY[b.status] ?? 100;
+        if (pA !== pB) {
+          return sortDirection === 'desc' ? pB - pA : pA - pB;
+        }
+        return 0;
       }
       if (sortField === 'prompt') {
         return sortDirection === 'desc'

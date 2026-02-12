@@ -167,10 +167,25 @@ const config: Config = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.85' },
         },
+        'stream-glow': {
+          '0%, 100%': { boxShadow: '0 0 0 1px hsl(var(--accent-primary) / 0.3), 0 0 8px 0 hsl(var(--accent-primary) / 0.1)' },
+          '50%': { boxShadow: '0 0 0 1px hsl(var(--accent-primary) / 0.6), 0 0 16px 2px hsl(var(--accent-primary) / 0.2)' },
+        },
+        'cursor-blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
+        'live-pulse': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(1.2)' },
+        },
       },
 
       animation: {
         'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+        'stream-glow': 'stream-glow 2s ease-in-out infinite',
+        'cursor-blink': 'cursor-blink 1s step-end infinite',
+        'live-pulse': 'live-pulse 1.5s ease-in-out infinite',
       },
 
       transitionTimingFunction: {

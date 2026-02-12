@@ -28,6 +28,7 @@ import {
 import { DiffViewer } from '@/features/diff-viewer/components/DiffViewer';
 import { QAGateResults } from '@/features/qa-gates/components/QAGateResults';
 import { ApprovalPanel } from './ApprovalPanel';
+import { TaskOutput } from './TaskOutput';
 import { cn } from '@/shared/lib/utils';
 import { formatDuration } from '@/shared/lib/utils';
 import { useMediaQuery } from '@/shared/hooks';
@@ -404,57 +405,6 @@ function OverviewTab({ task }: { task: Task }) {
 }
 
 // ---------------------------------------------------------------------------
-// Output Tab
-// ---------------------------------------------------------------------------
-
-function OutputTab({
-  output,
-  status,
-  outputEndRef,
-}: {
-  output: string;
-  status: string;
-  outputEndRef: React.RefObject<HTMLDivElement | null>;
-}) {
-  const isRunning = ['running', 'qa_running', 'pre_flight'].includes(status);
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto bg-muted/30 rounded-lg border">
-        <div className="p-4 font-mono text-xs sm:text-sm">
-          {output ? (
-            <>
-              <pre className="whitespace-pre-wrap break-words leading-relaxed">{output}</pre>
-              <div ref={outputEndRef} />
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              {isRunning ? (
-                <>
-                  <Loader2 className="h-6 w-6 animate-spin mb-3" />
-                  <p className="text-sm">Waiting for output...</p>
-                </>
-              ) : (
-                <>
-                  <Terminal className="h-6 w-6 mb-3" />
-                  <p className="text-sm">No output available</p>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      {isRunning && output && (
-        <div className="flex-shrink-0 pt-2 flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Streaming...</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Changes Tab
 // ---------------------------------------------------------------------------
 
@@ -538,7 +488,6 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
   const [loading, setLoading] = useState(true);
   const [output, setOutput] = useState('');
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
-  const outputEndRef = useRef<HTMLDivElement>(null);
   const processedOutputCount = useRef(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -584,7 +533,6 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
       const newOutput = newUpdates.map((x) => x.output || '').join('');
       setOutput((prev) => prev + newOutput);
       processedOutputCount.current = outputUpdates.length;
-      outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [updates, taskId]);
 
@@ -704,8 +652,8 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
               <OverviewTab task={task} />
             </TabsContent>
 
-            <TabsContent value="output" className="flex-1 mt-0 overflow-hidden p-4">
-              <OutputTab output={output} status={task.status} outputEndRef={outputEndRef} />
+            <TabsContent value="output" className="flex-1 mt-0 overflow-hidden p-3 sm:p-4">
+              <TaskOutput output={output} status={task.status} />
             </TabsContent>
 
             <TabsContent value="changes" className="flex-1 mt-0 overflow-hidden">
