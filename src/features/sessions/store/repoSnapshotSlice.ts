@@ -15,6 +15,14 @@ export interface SnapshotTask {
   id: string;
   prompt: string;
   status: TaskStatus;
+  progress?: number;
+}
+
+export interface SessionStats {
+  totalTasks: number;
+  completedTasks: number;
+  failedTasks: number;
+  runningTasks: number;
 }
 
 export interface RepoSnapshot {
@@ -30,6 +38,9 @@ export interface RepoSnapshot {
   stuckItems: number;
   lastVisited: string;
   lastUpdated: string;
+  sessionStats: SessionStats | null;
+  /** Brief description of what Claude is doing right now */
+  currentActivity: string | null;
 }
 
 interface RepoSnapshotState {
@@ -53,6 +64,22 @@ function persistSnapshots(snapshots: Record<string, RepoSnapshot>) {
   storage.set(STORAGE_KEYS.REPO_SNAPSHOTS, snapshots);
 }
 
+const DEFAULT_SNAPSHOT: Omit<RepoSnapshot, 'repositoryId'> = {
+  repositoryName: '',
+  sessionId: null,
+  lastViewedTaskId: null,
+  lastViewedTab: 'tasks',
+  claudeStatus: 'idle' as ClaudeStatus,
+  currentTask: null,
+  recentEvents: [],
+  pendingApprovals: 0,
+  stuckItems: 0,
+  lastVisited: new Date().toISOString(),
+  lastUpdated: new Date().toISOString(),
+  sessionStats: null,
+  currentActivity: null,
+};
+
 export const repoSnapshotSlice = createSlice({
   name: 'repoSnapshot',
   initialState,
@@ -61,20 +88,7 @@ export const repoSnapshotSlice = createSlice({
       const { repositoryId, ...updates } = action.payload;
       const existing = state.snapshots[repositoryId];
       state.snapshots[repositoryId] = {
-        ...(existing || {
-          repositoryId,
-          repositoryName: '',
-          sessionId: null,
-          lastViewedTaskId: null,
-          lastViewedTab: 'tasks',
-          claudeStatus: 'idle' as ClaudeStatus,
-          currentTask: null,
-          recentEvents: [],
-          pendingApprovals: 0,
-          stuckItems: 0,
-          lastVisited: new Date().toISOString(),
-          lastUpdated: new Date().toISOString(),
-        }),
+        ...(existing || { ...DEFAULT_SNAPSHOT, repositoryId }),
         ...updates,
         lastUpdated: new Date().toISOString(),
       };

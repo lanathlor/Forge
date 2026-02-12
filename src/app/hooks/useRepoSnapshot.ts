@@ -11,6 +11,7 @@ import {
   clearDismissed,
   type RepoSnapshot,
   type RepoEvent,
+  type SessionStats,
 } from '@/features/sessions/store/repoSnapshotSlice';
 import type { RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
 import type { AppDispatch } from '@/store';
@@ -48,6 +49,13 @@ const STATUS_EVENT_MAP: Record<string, { type: RepoEvent['type']; label: string 
   qa_failed: { type: 'qa_failed', label: 'QA failed' },
 };
 
+const ACTIVITY_LABELS: Record<string, string> = {
+  thinking: 'Analyzing...',
+  writing: 'Writing code...',
+  waiting_input: 'Needs your input',
+  stuck: 'Needs help',
+};
+
 function mapRepoToSnapshot(repo: RepoSessionState): Partial<RepoSnapshot> & { repositoryId: string } {
   return {
     repositoryId: repo.repositoryId,
@@ -58,9 +66,11 @@ function mapRepoToSnapshot(repo: RepoSessionState): Partial<RepoSnapshot> & { re
       id: repo.currentTask.id,
       prompt: repo.currentTask.prompt,
       status: repo.currentTask.status as TaskStatus,
+      progress: repo.currentTask.progress,
     } : null,
     pendingApprovals: repo.claudeStatus === 'waiting_input' ? 1 : 0,
     stuckItems: repo.needsAttention ? 1 : 0,
+    currentActivity: ACTIVITY_LABELS[repo.claudeStatus] || null,
   };
 }
 
@@ -91,6 +101,47 @@ function useSyncRepos(repositories: RepoSessionState[], dispatch: AppDispatch) {
       dispatch(updateSnapshot(mapRepoToSnapshot(repo)));
     }
   }, [repositories, dispatch]);
+}
+
+function useSessionStatsFetcher(currentRepoId: string | null, dispatch: AppDispatch) {
+  const fetchedForRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!currentRepoId || fetchedForRef.current === currentRepoId) return;
+    fetchedForRef.current = currentRepoId;
+
+    async function fetchStats() {
+      try {
+        const res = await fetch(`/api/sessions?repositoryId=${currentRepoId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const session = data.session;
+        if (!session?.id) return;
+
+        const detailRes = await fetch(`/api/sessions/${session.id}?summary=true`);
+        if (!detailRes.ok) return;
+        const detail = await detailRes.json();
+        const tasks = detail.session?.tasks;
+        if (!Array.isArray(tasks)) return;
+
+        const stats: SessionStats = {
+          totalTasks: tasks.length,
+          completedTasks: tasks.filter((t: { status: string }) => t.status === 'completed').length,
+          failedTasks: tasks.filter((t: { status: string }) => t.status === 'failed' || t.status === 'rejected').length,
+          runningTasks: tasks.filter((t: { status: string }) => t.status === 'running' || t.status === 'pre_flight').length,
+        };
+
+        dispatch(updateSnapshot({
+          repositoryId: currentRepoId!,
+          sessionStats: stats,
+        }));
+      } catch {
+        // Stats are best-effort, don't block snapshot display
+      }
+    }
+
+    fetchStats();
+  }, [currentRepoId, dispatch]);
 }
 
 function useTaskUpdateListener(dispatch: AppDispatch) {
@@ -155,6 +206,7 @@ export function useRepoSnapshot({ repositories, currentRepoId }: UseRepoSnapshot
   useTaskUpdateListener(dispatch);
   useStuckListener(dispatch);
   useRepoDismissReset(currentRepoId, dispatch);
+  useSessionStatsFetcher(currentRepoId, dispatch);
 
   const snapshot = currentRepoId ? snapshots[currentRepoId] || null : null;
   const isDismissed = dismissedRepoId === currentRepoId;
