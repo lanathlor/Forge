@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { tasks, qaGateResults, planTasks } from '@/db/schema';
+import { tasks, qaGateResults, planTasks, plans } from '@/db/schema';
 import type { QAGateStatus } from '@/db/schema/qa-gates';
 import { eq } from 'drizzle-orm';
 import { runQAGates } from '@/lib/qa-gates/runner';
@@ -49,6 +49,47 @@ async function isPlanTask(taskId: string): Promise<boolean> {
 }
 
 /**
+ * Auto-resume a plan if it was paused/failed due to this task
+ */
+async function autoResumePlanIfNeeded(planTaskId: string) {
+  const planTask = await db.query.planTasks.findFirst({
+    where: eq(planTasks.id, planTaskId),
+    with: {
+      plan: true,
+    },
+  });
+
+  if (!planTask || !planTask.plan) {
+    return;
+  }
+
+  const plan = planTask.plan;
+
+  // Check if plan is paused/failed and this was the blocking task
+  if ((plan.status === 'paused' || plan.status === 'failed') && plan.currentTaskId === planTaskId) {
+    console.log(`[AutoResume] Plan ${plan.id} was ${plan.status} on task ${planTaskId}, resuming...`);
+
+    // IMPORTANT: Change plan status from failed → running BEFORE resuming
+    await db
+      .update(plans)
+      .set({
+        status: 'running',
+        updatedAt: new Date(),
+      })
+      .where(eq(plans.id, plan.id));
+
+    console.log(`[AutoResume] Changed plan ${plan.id} status from '${plan.status}' to 'running'`);
+
+    // Import dynamically to avoid circular dependency
+    const { PlanExecutor } = await import('@/lib/plans/executor');
+    const executor = new PlanExecutor();
+
+    // Resume the plan (will continue from next task)
+    await executor.resumePlan(plan.id);
+  }
+}
+
+/**
  * Mark task as completed without changes
  */
 async function markTaskCompleted(taskId: string) {
@@ -73,6 +114,9 @@ async function markTaskCompleted(taskId: string) {
       .where(eq(planTasks.id, planTask.id));
 
     console.log(`[TaskComplete] Plan task ${planTask.id} synced to 'completed' status`);
+
+    // Auto-resume plan if it was paused on this task
+    await autoResumePlanIfNeeded(planTask.id);
   }
 }
 
@@ -123,6 +167,9 @@ async function commitAndRecord(task: NonNullable<Awaited<ReturnType<typeof getTa
       })
       .where(eq(planTasks.id, planTask.id));
     console.log(`[AutoApprove] Plan task ${planTask.id} synced to 'completed' status`);
+
+    // Auto-resume plan if it was paused on this task
+    await autoResumePlanIfNeeded(planTask.id);
   }
 
   return result;

@@ -15,7 +15,7 @@ import {
   SessionSummaryModal,
   SessionSummary,
 } from '@/features/sessions/components';
-import { PlanList, PlanExecutionView, PlanIterationChat } from '@/features/plans/components';
+import { PlanList, PlanDetailView, PlanIterationChat } from '@/features/plans/components';
 
 interface DashboardLayoutProps {
   sessionId: string;
@@ -216,18 +216,11 @@ export function DashboardLayout({
               onViewPlan={handleViewPlan}
             />
           ) : selectedPlanId ? (
-            <div className="space-y-4">
-              <button
-                onClick={handleBackToList}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                ← Back to Plans
-              </button>
-              <PlanExecutionView
-                planId={selectedPlanId}
-                onReview={(planId) => setReviewPlanId(planId)}
-              />
-            </div>
+            <PlanDetailView
+              planId={selectedPlanId}
+              onBack={handleBackToList}
+              onReview={(planId) => setReviewPlanId(planId)}
+            />
           ) : null}
         </TabsContent>
 

@@ -47,6 +47,7 @@ export default defineConfig({
         'src/features/repositories/store/**', // Redux store (tested via integration)
         'src/features/sessions/store/**', // Redux store (tested via integration)
         'src/features/plans/store/**', // RTK Query store (tested via integration)
+        'src/features/plans/components/PlanDetailView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanExecutionView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanIterationChat.tsx', // Complex component (tested via E2E)
         'src/shared/store/**', // Redux store (tested via integration)
