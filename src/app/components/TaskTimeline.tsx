@@ -36,7 +36,7 @@ interface TaskTimelineProps {
  * Displays all tasks in a session with their current status
  * Mobile-responsive: Stacks vertically on small screens
  */
-/* eslint-disable max-lines-per-function */
+ 
 export function TaskTimeline({
   sessionId,
   selectedTaskId,
@@ -50,7 +50,6 @@ export function TaskTimeline({
 
   useEffect(() => {
     loadSessionTasks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, refreshTrigger]);
 
   // Update task statuses based on SSE updates

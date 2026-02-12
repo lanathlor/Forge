@@ -10,7 +10,7 @@ interface DiffViewerProps {
   taskId: string;
 }
 
-/* eslint-disable max-lines-per-function */
+ 
 export function DiffViewer({ taskId }: DiffViewerProps) {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [selectedFile, setSelectedFile] = useState<FileChange | null>(null);

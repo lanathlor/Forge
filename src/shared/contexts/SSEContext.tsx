@@ -251,7 +251,6 @@ export function useSSESubscription<T = unknown>(
 
     const unsub = subscribe(connectionId, eventType, handler);
     return unsub;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionId, eventType, subscribe, ...deps]);
 }
 
@@ -277,7 +276,6 @@ export function useSSESubscriptionAll(
 
     const unsub = subscribeAll(connectionId, handler);
     return unsub;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionId, subscribeAll, ...deps]);
 }
 

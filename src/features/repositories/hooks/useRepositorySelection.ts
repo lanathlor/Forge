@@ -30,7 +30,6 @@ export function useRepositorySelection(
       onSelect(repoToSelect);
     }
     setHasInitialized(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repositories.length, hasInitialized]);
 
   const handleSelect = (repo: Repository) => {

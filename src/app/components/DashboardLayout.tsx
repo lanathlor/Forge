@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useTaskStream } from '@/shared/hooks';
-import { TaskTimeline } from './TaskTimeline';
+import { TaskList } from './TaskList';
 import { TaskDetailsPanel } from './TaskDetailsPanel';
 import { PromptInput } from './PromptInput';
 import { Card, CardContent } from '@/shared/components/ui/card';
@@ -38,7 +38,7 @@ interface DashboardLayoutProps {
  * - Session management (pause, resume, end)
  * - Session history and summary modals
  */
-/* eslint-disable max-lines-per-function */
+ 
 export function DashboardLayout({
   sessionId,
   repositoryId,
@@ -154,9 +154,9 @@ export function DashboardLayout({
 
           {/* Main Layout - Responsive Grid */}
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
-            {/* Task Timeline - Full width on mobile, left column on desktop */}
+            {/* Task List - Full width on mobile, left column on desktop */}
             <div className="lg:col-span-4 xl:col-span-3 h-[40vh] lg:h-full overflow-hidden">
-              <TaskTimeline
+              <TaskList
                 sessionId={sessionId}
                 selectedTaskId={selectedTaskId}
                 onSelectTask={setSelectedTaskId}

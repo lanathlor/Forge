@@ -20,7 +20,7 @@ interface PromptInputProps {
  * - Auto-focus on mount
  * - Mobile-responsive
  */
-/* eslint-disable max-lines-per-function */
+ 
 export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

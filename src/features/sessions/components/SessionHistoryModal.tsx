@@ -80,7 +80,7 @@ function formatDuration(start: Date, end: Date | null): string {
   return `${seconds}s`;
 }
 
-/* eslint-disable max-lines-per-function, complexity */
+ 
 export function SessionHistoryModal({
   repositoryId,
   repositoryName,

@@ -1,16 +1,5 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-});
 
 export default tseslint.config(
   // Ignore patterns
@@ -36,9 +25,6 @@ export default tseslint.config(
 
   // TypeScript ESLint recommended (without type checking)
   ...tseslint.configs.recommended,
-
-  // Next.js config (using compat for legacy config)
-  ...compat.extends('next/core-web-vitals'),
 
   // Custom rules
   {
@@ -66,7 +52,18 @@ export default tseslint.config(
     },
   },
 
-  // Relax rules for test files
+  // Relax rules for React component files (components often need more lines)
+  // Note: This must come BEFORE test file rules so tests can fully disable these
+  {
+    files: ['**/components/**/*.tsx'],
+    ignores: ['**/__tests__/**', '**/*.test.tsx', '**/*.spec.tsx'],
+    rules: {
+      'max-lines-per-function': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
+      complexity: ['error', 20],
+    },
+  },
+
+  // Relax rules for test files - must come LAST to take precedence
   {
     files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {

@@ -70,7 +70,7 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-/* eslint-disable max-lines-per-function, complexity */
+ 
 export function SessionHeader({
   session,
   repositoryName,

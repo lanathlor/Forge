@@ -118,7 +118,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M src/index.ts\nA src/new.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  src/index.ts\n?? src/new.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add for first file
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add for second file
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
@@ -138,7 +138,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'D deleted-file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'D  deleted-file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git rm
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha123\n', stderr: '' }); // git rev-parse HEAD
@@ -157,7 +157,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M modified-file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  modified-file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha456\n', stderr: '' }); // git rev-parse HEAD
@@ -176,7 +176,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockRejectedValueOnce(new Error('Failed to stage file')); // git add fails
 
       await expect(commitModule.commitTaskChanges('/repo', filesChanged, 'Test'))
@@ -189,7 +189,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockRejectedValueOnce(new Error('Nothing to commit')); // git commit fails
 
@@ -203,7 +203,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha789\n', stderr: '' }); // git rev-parse HEAD
@@ -223,7 +223,7 @@ describe('git/commit', () => {
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M file.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha\n', stderr: '' }); // git rev-parse HEAD
@@ -258,7 +258,7 @@ describe('git/commit', () => {
     it('should approve and commit task successfully', async () => {
       mockDb.query.tasks.findFirst.mockResolvedValueOnce(mockTask);
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M src/auth.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({ stdout: 'M  src/auth.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'commit-sha\n', stderr: '' }); // git rev-parse HEAD

@@ -10,6 +10,7 @@ export { MetricsGrid, CompactMetricsGrid } from './MetricsGrid';
 export { NeedsAttention } from './NeedsAttention';
 export { StuckDetectionSettings } from './StuckDetectionSettings';
 export { QuickSwitchDock } from './QuickSwitchDock';
+export { TaskList } from './TaskList';
 export type {
   SessionStatus,
   DashboardMetrics,

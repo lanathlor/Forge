@@ -45,7 +45,7 @@ function formatDuration(ms: number): string {
   return `${seconds} second${seconds !== 1 ? 's' : ''}`;
 }
 
-/* eslint-disable max-lines-per-function, complexity */
+ 
 export function SessionSummaryModal({
   sessionId,
   isOpen,

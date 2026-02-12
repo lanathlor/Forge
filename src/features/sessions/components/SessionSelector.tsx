@@ -31,7 +31,7 @@ const statusIcons: Record<SessionStatus, React.ReactNode> = {
   abandoned: <XCircle className="h-3 w-3 text-red-600" />,
 };
 
-/* eslint-disable max-lines-per-function */
+ 
 export function SessionSelector({
   currentSession,
   repositoryId,

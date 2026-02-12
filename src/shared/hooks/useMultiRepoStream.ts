@@ -133,8 +133,8 @@ export function useMultiRepoStream(options?: UseMultiRepoStreamOptions): UseMult
     refs.connect.current = connect;
     connect();
     return () => { cleanup(); polling.stop(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
-  const reconnect = useCallback(() => { refs.reconnectAttempt.current = 0; refs.connect.current(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const reconnect = useCallback(() => { refs.reconnectAttempt.current = 0; refs.connect.current(); }, []);
   return { repositories, connected, error, reconnect, lastUpdated };
 }

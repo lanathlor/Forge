@@ -8,7 +8,7 @@ interface FileTreeProps {
   onSelectFile: (file: FileChange) => void;
 }
 
-/* eslint-disable max-lines-per-function */
+ 
 export function FileTree({ files, selectedFile, onSelectFile }: FileTreeProps) {
   // Group files by directory (future enhancement)
   buildFileTree(files);

@@ -162,6 +162,17 @@ const config: Config = {
         slowest: 'var(--duration-slowest)',
       },
 
+      keyframes: {
+        'pulse-subtle': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.85' },
+        },
+      },
+
+      animation: {
+        'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+      },
+
       transitionTimingFunction: {
         linear: 'var(--ease-linear)',
         in: 'var(--ease-in)',
