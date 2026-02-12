@@ -55,6 +55,9 @@ const {
       tasks: {
         findMany: vi.fn(),
       },
+      qaGateResults: {
+        findMany: vi.fn(),
+      },
     },
     update: mockUpdate,
     insert: mockInsert,
@@ -96,11 +99,17 @@ vi.mock('@/db/schema/repositories', () => ({
   repositories: { id: 'id' },
 }));
 
+vi.mock('@/db/schema/qa-gates', () => ({
+  qaGateResults: { taskId: 'task_id' },
+}));
+
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((a, b) => ({ field: a, value: b })),
   and: vi.fn((...args) => ({ type: 'and', conditions: args })),
   desc: vi.fn((a) => ({ type: 'desc', field: a })),
   lt: vi.fn((a, b) => ({ type: 'lt', field: a, value: b })),
+  inArray: vi.fn((a, b) => ({ type: 'inArray', field: a, values: b })),
+  relations: vi.fn(() => ({})),
 }));
 
 describe('sessions/manager', () => {

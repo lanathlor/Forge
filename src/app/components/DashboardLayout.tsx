@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { useGetSessionQuery } from '@/features/sessions/store/sessionsApi';
 import {
-  SessionHeader,
+  SessionControlsBar,
   SessionHistoryModal,
   SessionSummaryModal,
+  SessionSummary,
 } from '@/features/sessions/components';
 import { PlanList, PlanExecutionView, PlanIterationChat } from '@/features/plans/components';
 
@@ -56,7 +57,7 @@ export function DashboardLayout({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'plans'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'plans' | 'summary'>('tasks');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [planView, setPlanView] = useState<'list' | 'execution'>('list');
   const [reviewPlanId, setReviewPlanId] = useState<string | null>(null);
@@ -82,9 +83,11 @@ export function DashboardLayout({
 
   // Report tab changes to parent for snapshot tracking
   const handleTabChange = useCallback((tab: string) => {
-    const typedTab = tab as 'tasks' | 'plans';
+    const typedTab = tab as 'tasks' | 'plans' | 'summary';
     setActiveTab(typedTab);
-    onTabChanged?.(typedTab);
+    if (typedTab === 'tasks' || typedTab === 'plans') {
+      onTabChanged?.(typedTab);
+    }
   }, [onTabChanged]);
 
   const handleTaskCreated = useCallback((taskId: string) => {
@@ -122,13 +125,12 @@ export function DashboardLayout({
 
   return (
     <div className="h-full flex flex-col gap-3">
-      {/* Session Header with controls */}
+      {/* Session Controls Bar - sticky floating bar */}
       {session && (
-        <SessionHeader
+        <SessionControlsBar
           session={session}
           repositoryName={repositoryName}
           onOpenHistory={() => setShowHistoryModal(true)}
-          onOpenSummary={() => setShowSummaryModal(true)}
           onSessionEnded={handleSessionEnded}
         />
       )}
@@ -138,6 +140,7 @@ export function DashboardLayout({
         <TabsList className="mb-3">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsTrigger value="summary">Summary</TabsTrigger>
         </TabsList>
 
         {/* Tasks Tab Content */}
@@ -226,6 +229,17 @@ export function DashboardLayout({
               />
             </div>
           ) : null}
+        </TabsContent>
+
+        {/* Summary Tab Content */}
+        <TabsContent value="summary" className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden">
+          <SessionSummary
+            sessionId={sessionId}
+            onTaskClick={(taskId) => {
+              handleSelectTask(taskId);
+              handleTabChange('tasks');
+            }}
+          />
         </TabsContent>
       </Tabs>
 

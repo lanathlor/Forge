@@ -6,6 +6,7 @@ export {
   pauseSession,
   resumeSession,
   getSessionSummary,
+  getEnhancedSessionSummary,
   listSessions,
   listSessionsWithStats,
   abandonInactiveSessions,
@@ -14,6 +15,8 @@ export {
   type SessionWithTasks,
   type SessionWithRepository,
   type SessionSummary,
+  type EnhancedSessionSummary,
+  type EnhancedTaskSummary,
   type ListSessionsOptions,
 } from './manager';
 

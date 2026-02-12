@@ -1,9 +1,9 @@
  
 'use client';
 
-import { type ReactNode, useState, useCallback } from 'react';
+import { type ReactNode, useState, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks';
-import { setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
+import { hydrateFromStorage, setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
 import { Navigation, useNavigationItems } from '@/shared/components/navigation';
 import { QuickSwitchDock } from './QuickSwitchDock';
 import { StuckAlertToastManager } from './StuckAlertToastManager';
@@ -43,6 +43,11 @@ export function AppLayout({
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(state => state.session.isSidebarCollapsed);
   const currentRepositoryId = useAppSelector(state => state.session.currentRepositoryId);
+
+  // Hydrate state from localStorage on mount (client-side only)
+  useEffect(() => {
+    dispatch(hydrateFromStorage());
+  }, [dispatch]);
 
   // Handle repo selection from QuickSwitchDock with zero page reload
   const handleDockSelectRepo = useCallback((repositoryId: string, sessionId?: string | null) => {

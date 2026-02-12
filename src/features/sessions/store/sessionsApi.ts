@@ -1,6 +1,6 @@
 import { api } from '@/store/api';
 import type { Session, SessionStatus } from '@/db/schema/sessions';
-import type { Task } from '@/db/schema/tasks';
+import type { Task, FileChange } from '@/db/schema/tasks';
 
 export interface SessionWithTasks extends Session {
   tasks: Task[];
@@ -36,6 +36,41 @@ export interface SessionSummary {
   };
 }
 
+export interface EnhancedTaskSummary {
+  id: string;
+  prompt: string;
+  status: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  filesChanged: FileChange[];
+  committedSha: string | null;
+  commitMessage: string | null;
+  qaResults: Array<{
+    gateName: string;
+    status: string;
+    duration: number | null;
+  }>;
+}
+
+export interface EnhancedSessionSummary extends SessionSummary {
+  tasks: EnhancedTaskSummary[];
+  qaStats: {
+    totalRuns: number;
+    passed: number;
+    failed: number;
+    passRate: number;
+  };
+  timeline: Array<{
+    timestamp: string;
+    type: 'session_start' | 'task_start' | 'task_complete' | 'task_fail' | 'session_end';
+    label: string;
+    taskId?: string;
+  }>;
+  totalAdditions: number;
+  totalDeletions: number;
+}
+
 export interface ListSessionsParams {
   repositoryId: string;
   limit?: number;
@@ -62,6 +97,12 @@ export const sessionsApi = api.injectEndpoints({
     // Get session summary with stats
     getSessionSummary: builder.query<SessionSummary, string>({
       query: (id) => `/sessions/${id}?summary=true`,
+      providesTags: (result, error, id) => [{ type: 'Session', id }],
+    }),
+
+    // Get enhanced session summary with tasks, QA stats, and timeline
+    getEnhancedSessionSummary: builder.query<EnhancedSessionSummary, string>({
+      query: (id) => `/sessions/${id}?summary=true&enhanced=true`,
       providesTags: (result, error, id) => [{ type: 'Session', id }],
     }),
 
@@ -134,6 +175,7 @@ export const {
   useGetActiveSessionQuery,
   useGetSessionQuery,
   useGetSessionSummaryQuery,
+  useGetEnhancedSessionSummaryQuery,
   useListSessionsQuery,
   useEndSessionMutation,
   usePauseSessionMutation,

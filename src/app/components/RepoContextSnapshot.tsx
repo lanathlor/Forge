@@ -300,7 +300,7 @@ export function RepoContextSnapshot({
   const hasAttention = snapshot.pendingApprovals > 0 || snapshot.stuckItems > 0;
   const hasCurrentTask = snapshot.currentTask !== null;
   const hasEvents = snapshot.recentEvents.length > 0;
-  const hasStats = snapshot.sessionStats !== null && snapshot.sessionStats.totalTasks > 0;
+  const hasStats = snapshot.sessionStats && snapshot.sessionStats.totalTasks > 0;
   const isActive = snapshot.claudeStatus !== 'idle' && snapshot.claudeStatus !== 'paused';
 
   const urgencyLevel = useMemo(() => {

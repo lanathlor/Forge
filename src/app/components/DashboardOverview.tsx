@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { cn } from '@/shared/lib/utils';
 import { MultiRepoCommandCenter } from './MultiRepoCommandCenter';
+import { MultiSessionOverviewCard } from './MultiSessionOverviewCard';
 import { QuickActions } from './QuickActions';
 import { RecentActivity as RecentActivityFeed, type ActivityItem } from './RecentActivity';
 import { useGetActivityQuery } from '@/features/activity/store/activityApi';
@@ -231,6 +232,7 @@ export function DashboardOverview(props: DashboardOverviewProps) {
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
       <NeedsAttention onSelectRepo={handleNeedsAttentionSelect} maxVisible={3} />
+      <MultiSessionOverviewCard onSelectRepo={onSelectRepo} />
       <MultiRepoCommandCenter onSelectRepo={onSelectRepo} onPauseRepo={onPauseRepo} onResumeRepo={onResumeRepo} selectedRepoId={selectedRepoId} maxVisible={8} />
       <MetricsGrid metrics={resolvedMetrics} loading={loading} />
       <SectionDivider />

@@ -5,11 +5,37 @@ import { sessions, tasks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import {
   getSessionSummary,
+  getEnhancedSessionSummary,
   endSession,
   pauseSession,
   resumeSession,
   deleteSession,
 } from '@/lib/sessions';
+
+async function handleSummaryRequest(id: string, enhanced: boolean) {
+  if (enhanced) {
+    return NextResponse.json(await getEnhancedSessionSummary(id));
+  }
+  return NextResponse.json(await getSessionSummary(id));
+}
+
+async function handleDetailRequest(id: string) {
+  const session = await db.query.sessions.findFirst({
+    where: eq(sessions.id, id),
+    with: { repository: true },
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+  }
+
+  const sessionTasks = await db.query.tasks.findMany({
+    where: eq(tasks.sessionId, id),
+    orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
+  });
+
+  return NextResponse.json({ session: { ...session, tasks: sessionTasks } });
+}
 
 /**
  * GET /api/sessions/:id
@@ -26,38 +52,13 @@ export async function GET(
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const includeSummary = searchParams.get('summary') === 'true';
+    const enhanced = searchParams.get('enhanced') === 'true';
 
     if (includeSummary) {
-      const summary = await getSessionSummary(id);
-      return NextResponse.json(summary);
+      return handleSummaryRequest(id, enhanced);
     }
 
-    const session = await db.query.sessions.findFirst({
-      where: eq(sessions.id, id),
-      with: {
-        repository: true,
-      },
-    });
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get tasks directly from database
-    const sessionTasks = await db.query.tasks.findMany({
-      where: eq(tasks.sessionId, id),
-      orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
-    });
-
-    return NextResponse.json({
-      session: {
-        ...session,
-        tasks: sessionTasks,
-      },
-    });
+    return handleDetailRequest(id);
   } catch (error) {
     console.error('Error in session detail API:', error);
     return NextResponse.json(

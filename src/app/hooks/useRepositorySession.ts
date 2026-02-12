@@ -7,7 +7,9 @@ import type { Repository } from '@/db/schema';
 export function useRepositorySession() {
   const dispatch = useAppDispatch();
   const currentRepositoryId = useAppSelector(state => state.session.currentRepositoryId);
+  const currentSessionId = useAppSelector(state => state.session.currentSessionId);
   const isSidebarCollapsed = useAppSelector(state => state.session.isSidebarCollapsed);
+  const isHydrated = useAppSelector(state => state.session.isHydrated);
   const { data } = useGetRepositoriesQuery(undefined);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
 
@@ -21,9 +23,12 @@ export function useRepositorySession() {
     }
   }, [data, currentRepositoryId]);
 
-  // Persist session state to localStorage whenever it changes
+  // Persist session state to localStorage whenever it changes (only after hydration)
   useEffect(() => {
+    if (!isHydrated) return;
+
     const sessionState = {
+      currentSessionId,
       currentRepositoryId,
       isSidebarCollapsed,
     };
@@ -31,7 +36,7 @@ export function useRepositorySession() {
     import('@/shared/lib/localStorage').then(({ storage, STORAGE_KEYS }) => {
       storage.set(STORAGE_KEYS.SESSION, sessionState);
     });
-  }, [currentRepositoryId, isSidebarCollapsed]);
+  }, [currentSessionId, currentRepositoryId, isSidebarCollapsed, isHydrated]);
 
   const handleSelectRepository = (repo: Repository) => {
     setSelectedRepo(repo);

@@ -1,8 +1,9 @@
 import { db } from '@/db';
 import { sessions, type Session, type SessionStatus } from '@/db/schema/sessions';
-import { tasks, type Task } from '@/db/schema/tasks';
+import { tasks, type Task, type FileChange } from '@/db/schema/tasks';
 import { repositories } from '@/db/schema/repositories';
-import { eq, and, desc, lt } from 'drizzle-orm';
+import { qaGateResults, type QAGateResult } from '@/db/schema/qa-gates';
+import { eq, and, desc, lt, inArray } from 'drizzle-orm';
 import { execAsync, getContainerPath } from '@/lib/qa-gates/command-executor';
 
 export interface SessionWithTasks extends Session {
@@ -266,6 +267,174 @@ export async function getSessionSummary(
       commits,
       duration,
     },
+  };
+}
+
+export interface EnhancedTaskSummary {
+  id: string;
+  prompt: string;
+  status: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  filesChanged: FileChange[];
+  committedSha: string | null;
+  commitMessage: string | null;
+  qaResults: Array<{
+    gateName: string;
+    status: string;
+    duration: number | null;
+  }>;
+}
+
+export interface EnhancedSessionSummary extends SessionSummary {
+  tasks: EnhancedTaskSummary[];
+  qaStats: {
+    totalRuns: number;
+    passed: number;
+    failed: number;
+    passRate: number;
+  };
+  timeline: Array<{
+    timestamp: string;
+    type: 'session_start' | 'task_start' | 'task_complete' | 'task_fail' | 'session_end';
+    label: string;
+    taskId?: string;
+  }>;
+  totalAdditions: number;
+  totalDeletions: number;
+}
+
+function groupQaByTask(allQaResults: QAGateResult[]): Map<string, QAGateResult[]> {
+  const qaByTask = new Map<string, QAGateResult[]>();
+  for (const result of allQaResults) {
+    const existing = qaByTask.get(result.taskId) ?? [];
+    existing.push(result);
+    qaByTask.set(result.taskId, existing);
+  }
+  return qaByTask;
+}
+
+function buildEnhancedTasks(
+  sessionTasks: Task[],
+  qaByTask: Map<string, QAGateResult[]>
+): EnhancedTaskSummary[] {
+  return sessionTasks.map((t) => ({
+    id: t.id,
+    prompt: t.prompt,
+    status: t.status,
+    startedAt: t.startedAt?.toISOString() ?? null,
+    completedAt: t.completedAt?.toISOString() ?? null,
+    createdAt: t.createdAt.toISOString(),
+    filesChanged: t.filesChanged ?? [],
+    committedSha: t.committedSha,
+    commitMessage: t.commitMessage,
+    qaResults: (qaByTask.get(t.id) ?? []).map((qr) => ({
+      gateName: qr.gateName,
+      status: qr.status,
+      duration: qr.duration,
+    })),
+  }));
+}
+
+function truncatePrompt(prompt: string): string {
+  return prompt.length > 60 ? prompt.slice(0, 57) + '...' : prompt;
+}
+
+function buildTimeline(
+  session: SessionWithRepository,
+  sessionTasks: Task[]
+): EnhancedSessionSummary['timeline'] {
+  const timeline: EnhancedSessionSummary['timeline'] = [];
+
+  timeline.push({
+    timestamp: session.startedAt.toISOString(),
+    type: 'session_start',
+    label: 'Session started',
+  });
+
+  for (const t of sessionTasks) {
+    if (t.startedAt) {
+      timeline.push({
+        timestamp: t.startedAt.toISOString(),
+        type: 'task_start',
+        label: truncatePrompt(t.prompt),
+        taskId: t.id,
+      });
+    }
+    if (t.completedAt) {
+      const isFailed = t.status === 'failed' || t.status === 'qa_failed' || t.status === 'rejected';
+      timeline.push({
+        timestamp: t.completedAt.toISOString(),
+        type: isFailed ? 'task_fail' : 'task_complete',
+        label: truncatePrompt(t.prompt),
+        taskId: t.id,
+      });
+    }
+  }
+
+  if (session.endedAt) {
+    timeline.push({
+      timestamp: session.endedAt.toISOString(),
+      type: 'session_end',
+      label: 'Session ended',
+    });
+  }
+
+  timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  return timeline;
+}
+
+function computeCodeChangeStats(sessionTasks: Task[]): { totalAdditions: number; totalDeletions: number } {
+  let totalAdditions = 0;
+  let totalDeletions = 0;
+  for (const t of sessionTasks) {
+    for (const f of t.filesChanged ?? []) {
+      totalAdditions += f.additions;
+      totalDeletions += f.deletions;
+    }
+  }
+  return { totalAdditions, totalDeletions };
+}
+
+/**
+ * Get an enhanced summary with full task details, QA stats, and timeline.
+ */
+export async function getEnhancedSessionSummary(
+  sessionId: string
+): Promise<EnhancedSessionSummary> {
+  const baseSummary = await getSessionSummary(sessionId);
+
+  const sessionTasks = await db.query.tasks.findMany({
+    where: eq(tasks.sessionId, sessionId),
+    orderBy: [desc(tasks.createdAt)],
+  });
+
+  const taskIds = sessionTasks.map((t) => t.id);
+  const allQaResults: QAGateResult[] = taskIds.length > 0
+    ? await db.query.qaGateResults.findMany({
+        where: inArray(qaGateResults.taskId, taskIds),
+      })
+    : [];
+
+  const qaByTask = groupQaByTask(allQaResults);
+  const enhancedTasks = buildEnhancedTasks(sessionTasks, qaByTask);
+
+  const totalRuns = allQaResults.length;
+  const passed = allQaResults.filter((r) => r.status === 'passed').length;
+  const failed = allQaResults.filter((r) => r.status === 'failed').length;
+  const passRate = totalRuns > 0 ? Math.round((passed / totalRuns) * 100) : 0;
+
+  const timeline = buildTimeline(baseSummary.session, sessionTasks);
+  const { totalAdditions, totalDeletions } = computeCodeChangeStats(sessionTasks);
+
+  return {
+    ...baseSummary,
+    tasks: enhancedTasks,
+    qaStats: { totalRuns, passed, failed, passRate },
+    timeline,
+    totalAdditions,
+    totalDeletions,
   };
 }
 

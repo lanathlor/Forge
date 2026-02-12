@@ -5,34 +5,32 @@ interface SessionState {
   currentSessionId: string | null;
   currentRepositoryId: string | null;
   isSidebarCollapsed: boolean;
+  isHydrated: boolean;
 }
 
-// Load persisted state from localStorage
-const loadPersistedState = (): SessionState => {
-  const defaultState: SessionState = {
-    currentSessionId: null,
-    currentRepositoryId: null,
-    isSidebarCollapsed: false,
-  };
-
-  const persisted = storage.get<SessionState>(STORAGE_KEYS.SESSION);
-  if (persisted) {
-    return {
-      currentSessionId: persisted.currentSessionId || null,
-      currentRepositoryId: persisted.currentRepositoryId || null,
-      isSidebarCollapsed: persisted.isSidebarCollapsed || false,
-    };
-  }
-
-  return defaultState;
+// Always use default state for initialization to avoid hydration mismatch
+// Persisted state will be loaded via the hydrateFromStorage action after mount
+const initialState: SessionState = {
+  currentSessionId: null,
+  currentRepositoryId: null,
+  isSidebarCollapsed: false,
+  isHydrated: false,
 };
-
-const initialState: SessionState = loadPersistedState();
 
 export const sessionSlice = createSlice({
   name: 'session',
   initialState,
   reducers: {
+    hydrateFromStorage: (state) => {
+      // Load persisted state from localStorage (client-side only)
+      const persisted = storage.get<Partial<SessionState>>(STORAGE_KEYS.SESSION);
+      if (persisted) {
+        state.currentSessionId = persisted.currentSessionId ?? state.currentSessionId;
+        state.currentRepositoryId = persisted.currentRepositoryId ?? state.currentRepositoryId;
+        state.isSidebarCollapsed = persisted.isSidebarCollapsed ?? state.isSidebarCollapsed;
+      }
+      state.isHydrated = true;
+    },
     setCurrentSession: (state, action: PayloadAction<string | null>) => {
       state.currentSessionId = action.payload;
     },
@@ -50,6 +48,7 @@ export const sessionSlice = createSlice({
 });
 
 export const {
+  hydrateFromStorage,
   setCurrentSession,
   setCurrentRepository,
   setSidebarCollapsed,

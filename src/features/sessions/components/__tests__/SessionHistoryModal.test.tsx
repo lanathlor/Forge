@@ -16,6 +16,7 @@ vi.mock('@/features/sessions/store/sessionsApi', () => ({
   useListSessionsQuery: (...args: unknown[]) => mockUseListSessionsQuery(...args),
   useDeleteSessionMutation: () => mockUseDeleteSessionMutation(),
   useResumeSessionMutation: () => mockUseResumeSessionMutation(),
+  useGetSessionSummaryQuery: () => ({ data: null, isLoading: false }),
 }));
 
 // Mock Dialog from shadcn
@@ -36,9 +37,17 @@ vi.mock('@/shared/components/ui/dialog', () => ({
   ),
 }));
 
-// Mock window.confirm
-const mockConfirm = vi.fn();
-global.confirm = mockConfirm;
+// Mock DropdownMenu to always render children
+vi.mock('@/shared/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuItem: ({ children, onClick, className, disabled }: { children: React.ReactNode; onClick?: () => void; className?: string; disabled?: boolean }) => (
+    <button onClick={onClick} className={className} disabled={disabled}>{children}</button>
+  ),
+  DropdownMenuSeparator: () => <hr />,
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
 
 describe('SessionHistoryModal', () => {
   const mockSessions = [
@@ -92,7 +101,6 @@ describe('SessionHistoryModal', () => {
     });
     mockUseDeleteSessionMutation.mockReturnValue([mockDeleteSession, { isLoading: false }]);
     mockUseResumeSessionMutation.mockReturnValue([mockResumeSession]);
-    mockConfirm.mockReturnValue(true);
   });
 
   describe('Basic Rendering', () => {
@@ -136,7 +144,10 @@ describe('SessionHistoryModal', () => {
       );
 
       expect(screen.getByText('Session History')).toBeInTheDocument();
-      expect(screen.getByText('Sessions for test-repo')).toBeInTheDocument();
+      // Description now shows "repoName · N sessions" format
+      const description = screen.getByTestId('dialog-description');
+      expect(description).toHaveTextContent('test-repo');
+      expect(description).toHaveTextContent('session');
     });
   });
 
@@ -152,10 +163,11 @@ describe('SessionHistoryModal', () => {
         />
       );
 
-      expect(screen.getByText('Active')).toBeInTheDocument();
-      expect(screen.getByText('Paused')).toBeInTheDocument();
-      expect(screen.getByText('Completed')).toBeInTheDocument();
-      expect(screen.getByText('Abandoned')).toBeInTheDocument();
+      // Status labels appear both in filter dropdown and session cards
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Paused').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Completed').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Abandoned').length).toBeGreaterThanOrEqual(1);
     });
 
     it('displays task count for each session', () => {
@@ -249,7 +261,7 @@ describe('SessionHistoryModal', () => {
       );
 
       expect(screen.getByText('No sessions yet')).toBeInTheDocument();
-      expect(screen.getByText('Sessions will appear here as you work')).toBeInTheDocument();
+      expect(screen.getByText('Sessions will appear here as you work with this repository.')).toBeInTheDocument();
     });
   });
 
@@ -266,8 +278,11 @@ describe('SessionHistoryModal', () => {
         />
       );
 
-      // Find and click the active session
-      const activeSessionRow = screen.getByText('Active').closest('div[class*="border"]');
+      // Find and click the active session card (not the filter dropdown item)
+      const activeElements = screen.getAllByText('Active');
+      const activeSessionRow = activeElements
+        .map((el) => el.closest('div[class*="group relative border"]'))
+        .find((el) => el !== null);
       if (activeSessionRow) {
         await user.click(activeSessionRow);
       }
@@ -288,8 +303,11 @@ describe('SessionHistoryModal', () => {
         />
       );
 
-      // Find and click the paused session
-      const pausedSessionRow = screen.getByText('Paused').closest('div[class*="border"]');
+      // Find and click the paused session card (not the filter dropdown item)
+      const pausedElements = screen.getAllByText('Paused');
+      const pausedSessionRow = pausedElements
+        .map((el) => el.closest('div[class*="group relative border"]'))
+        .find((el) => el !== null);
       if (pausedSessionRow) {
         await user.click(pausedSessionRow);
       }
@@ -310,8 +328,11 @@ describe('SessionHistoryModal', () => {
         />
       );
 
-      // Find and click the completed session - should not be clickable
-      const completedSessionRow = screen.getByText('Completed').closest('div[class*="border"]');
+      // Find and click the completed session card (not the filter dropdown item)
+      const completedElements = screen.getAllByText('Completed');
+      const completedSessionRow = completedElements
+        .map((el) => el.closest('div[class*="group relative border"]'))
+        .find((el) => el !== null);
       if (completedSessionRow) {
         await user.click(completedSessionRow);
       }
@@ -334,9 +355,9 @@ describe('SessionHistoryModal', () => {
         />
       );
 
-      // Find a delete button (should be on non-active, non-current sessions)
-      const deleteButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.querySelector('.text-destructive')
+      // Find and click a Delete menu item (rendered as button via dropdown mock)
+      const deleteButtons = screen.getAllByText('Delete').filter(
+        (el) => el.tagName === 'BUTTON'
       );
 
       const firstDeleteButton = deleteButtons[0];
@@ -344,15 +365,26 @@ describe('SessionHistoryModal', () => {
         await user.click(firstDeleteButton);
       }
 
+      // New flow: confirm delete in the overlay
       await waitFor(() => {
-        expect(mockConfirm).toHaveBeenCalled();
+        expect(screen.getByText('Delete Session')).toBeInTheDocument();
+      });
+
+      // Click the confirm Delete button in the overlay
+      const confirmButton = screen.getAllByText('Delete').filter(
+        (el) => el.tagName === 'BUTTON'
+      ).pop();
+      if (confirmButton) {
+        await user.click(confirmButton);
+      }
+
+      await waitFor(() => {
         expect(mockDeleteSession).toHaveBeenCalled();
         expect(mockRefetch).toHaveBeenCalled();
       });
     });
 
     it('does not delete session when cancelled', async () => {
-      mockConfirm.mockReturnValue(false);
       const user = userEvent.setup();
       render(
         <SessionHistoryModal
@@ -364,14 +396,24 @@ describe('SessionHistoryModal', () => {
         />
       );
 
-      const deleteButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.querySelector('.text-destructive')
+      // Find and click a Delete menu item
+      const deleteButtons = screen.getAllByText('Delete').filter(
+        (el) => el.tagName === 'BUTTON'
       );
 
       const firstDeleteButton = deleteButtons[0];
       if (firstDeleteButton) {
         await user.click(firstDeleteButton);
       }
+
+      // Confirmation overlay should appear
+      await waitFor(() => {
+        expect(screen.getByText('Delete Session')).toBeInTheDocument();
+      });
+
+      // Click Cancel in the overlay
+      const cancelButton = screen.getByText('Cancel');
+      await user.click(cancelButton);
 
       expect(mockDeleteSession).not.toHaveBeenCalled();
     });
@@ -410,7 +452,7 @@ describe('SessionHistoryModal', () => {
       );
 
       // Session 3 has 2 hour duration
-      expect(screen.getByText('Duration: 2h 0m')).toBeInTheDocument();
+      expect(screen.getByText('2h 0m')).toBeInTheDocument();
     });
   });
 });
