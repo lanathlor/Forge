@@ -3,9 +3,8 @@
 import { useState, useCallback } from 'react';
 import { useTaskStream } from '@/shared/hooks';
 import { TaskList } from './TaskList';
-import { TaskDetailsPanel } from './TaskDetailsPanel';
+import { TaskDetailPanel } from './TaskDetailPanel';
 import { PromptInput } from './PromptInput';
-import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
@@ -152,10 +151,10 @@ export function DashboardLayout({
           {/* Prompt Input - Full Width */}
           <PromptInput sessionId={sessionId} onTaskCreated={handleTaskCreated} />
 
-          {/* Main Layout - Responsive Grid */}
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
-            {/* Task List - Full width on mobile, left column on desktop */}
-            <div className="lg:col-span-4 xl:col-span-3 h-[40vh] lg:h-full overflow-hidden">
+          {/* Main Layout - Task list with slide-in detail panel */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Task List */}
+            <div className="flex-1 min-w-0 overflow-hidden">
               <TaskList
                 sessionId={sessionId}
                 selectedTaskId={selectedTaskId}
@@ -165,28 +164,15 @@ export function DashboardLayout({
               />
             </div>
 
-            {/* Task Details Panel - Full width on mobile, main area on desktop */}
-            <div className="lg:col-span-8 xl:col-span-9 h-[60vh] lg:h-full overflow-hidden">
-              {selectedTaskId ? (
-                <TaskDetailsPanel
-                  taskId={selectedTaskId}
-                  updates={updates}
-                />
-              ) : (
-                <Card className="h-full">
-                  <CardContent className="flex flex-col items-center justify-center h-full text-center p-6">
-                    <div className="space-y-3">
-                      <div className="text-4xl">👈</div>
-                      <h3 className="text-lg font-semibold">Select a Task</h3>
-                      <p className="text-sm text-muted-foreground max-w-md">
-                        Choose a task from the timeline to view its details,
-                        output, diff, and QA gate results
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            {/* Task Detail Panel
+                Desktop (lg+): inline slide-in from right
+                Mobile (<lg): full-screen overlay with backdrop (rendered via portal-like fixed positioning) */}
+            <TaskDetailPanel
+              taskId={selectedTaskId || ''}
+              updates={updates}
+              open={!!selectedTaskId}
+              onClose={() => setSelectedTaskId(null)}
+            />
           </div>
         </TabsContent>
 
