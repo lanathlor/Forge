@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function */
+ 
 'use client';
 
 import { Button } from '@/shared/components/ui/button';

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function, complexity */
+ 
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/shared/components/ui/card';

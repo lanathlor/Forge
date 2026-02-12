@@ -1,4 +1,4 @@
-/* eslint-disable max-lines-per-function, complexity */
+ 
 'use client';
 
 import {
@@ -659,7 +659,6 @@ export function DashboardShell({
     if (rightPanel && !rightPanelOpen) {
       setRightPanelOpen(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rightPanel]);
 
   const contextValue: DashboardShellContextValue = {
