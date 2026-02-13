@@ -234,11 +234,18 @@ describe('PlanLaunchDialog', () => {
       />,
     );
 
+    // Wait for auto-transition from preflight to ready (600ms delay)
+    await waitFor(() => {
+      const launchButton = screen.getByText('Launch & Monitor');
+      expect(launchButton.closest('button')).not.toBeDisabled();
+    }, { timeout: 2000 });
+
     fireEvent.click(screen.getByText('Launch & Monitor'));
 
+    // After launch, callbacks fire with a 400ms delay
     await waitFor(() => {
       expect(mockOnLaunched).toHaveBeenCalledWith('plan-1');
-    });
+    }, { timeout: 2000 });
   });
 
   it('should call onLaunchAndSwitch when Launch & Switch clicked', async () => {
@@ -253,10 +260,17 @@ describe('PlanLaunchDialog', () => {
       />,
     );
 
+    // Wait for auto-transition from preflight to ready (600ms delay)
+    await waitFor(() => {
+      const switchButton = screen.getByText('Launch & Switch');
+      expect(switchButton.closest('button')).not.toBeDisabled();
+    }, { timeout: 2000 });
+
     fireEvent.click(screen.getByText('Launch & Switch'));
 
+    // After launch, callbacks fire with a 400ms delay
     await waitFor(() => {
       expect(mockOnLaunchAndSwitch).toHaveBeenCalledWith('plan-1');
-    });
+    }, { timeout: 2000 });
   });
 });

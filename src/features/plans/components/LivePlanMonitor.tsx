@@ -23,7 +23,24 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getSessionTaskLabel(status: string | undefined): string {
+  switch (status) {
+    case 'pre_flight': return 'Pre-flight checks';
+    case 'running': return 'Claude is coding';
+    case 'waiting_qa': return 'Preparing QA';
+    case 'qa_running': return 'Running QA gates';
+    case 'waiting_approval': return 'Waiting for approval';
+    case 'approved': return 'Committing';
+    default: return '';
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Single running plan card
@@ -58,7 +75,7 @@ function RunningPlanCard({
       case 'task_started':
         return 'Starting task...';
       case 'task_progress':
-        return latestEvent.status || 'Working...';
+        return getSessionTaskLabel(latestEvent.status) || 'Working...';
       case 'phase_started':
         return 'Starting new phase...';
       case 'task_completed':
@@ -167,6 +184,16 @@ function RunningPlanCard({
         <div className="flex items-center gap-1.5 mt-1.5">
           <Zap className="h-3 w-3 text-blue-500 animate-pulse flex-shrink-0" />
           <span className="text-xs text-muted-foreground truncate">{currentActivity}</span>
+          <ArrowRight className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
+          <span className="text-[10px] text-blue-600 font-medium flex-shrink-0">View</span>
+        </div>
+      )}
+
+      {/* Paused message */}
+      {isPaused && (
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <Pause className="h-3 w-3 text-amber-500 flex-shrink-0" />
+          <span className="text-xs text-amber-600">Paused - click to resume</span>
         </div>
       )}
     </div>
@@ -254,7 +281,11 @@ export function LivePlanMonitor({
   }
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn(
+      'overflow-hidden transition-all',
+      activePlans.length > 0 && 'border-blue-200 dark:border-blue-900 shadow-sm',
+      className,
+    )}>
       {/* Header */}
       <button
         className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"

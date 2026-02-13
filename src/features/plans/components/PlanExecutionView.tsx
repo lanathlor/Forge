@@ -240,8 +240,9 @@ function TaskRow({ task, isSelected, isActive, currentSessionTaskStatus, activeT
 }
 
 // ── Task Detail Panel ──
-function TaskDetailPanel({ task, taskOutput, outputEndRef, onClose }: {
-  task: PlanTask; taskOutput: string | null; outputEndRef: React.RefObject<HTMLDivElement | null>; onClose: () => void;
+function TaskDetailPanel({ task, taskOutput, sessionTaskStatus, outputEndRef, onClose }: {
+  task: PlanTask; taskOutput: string | null; sessionTaskStatus: string | undefined;
+  outputEndRef: React.RefObject<HTMLDivElement | null>; onClose: () => void;
 }) {
   return (
     <div className="md:w-1/2 flex flex-col border-t md:border-t-0 bg-surface-sunken">
@@ -249,6 +250,11 @@ function TaskDetailPanel({ task, taskOutput, outputEndRef, onClose }: {
         <div className="flex items-center gap-2 min-w-0">
           {getTaskStatusIcon(task.status)}
           <span className="font-medium text-sm truncate">{task.title}</span>
+          {task.status === 'running' && sessionTaskStatus && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 animate-pulse-subtle">
+              {getSessionTaskLabel(sessionTaskStatus)}
+            </Badge>
+          )}
         </div>
         <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -256,18 +262,27 @@ function TaskDetailPanel({ task, taskOutput, outputEndRef, onClose }: {
       </div>
       <div className="px-4 py-3 border-b text-sm text-muted-foreground bg-surface-base">
         <p className="whitespace-pre-wrap text-xs leading-relaxed">{task.description}</p>
-        <div className="flex items-center gap-4 mt-2 text-[10px]">
+        <div className="flex flex-wrap items-center gap-4 mt-2 text-[10px]">
           {task.startedAt && <span>Started: {new Date(task.startedAt).toLocaleTimeString()}</span>}
           {task.completedAt && <span>Completed: {new Date(task.completedAt).toLocaleTimeString()}</span>}
           {task.commitSha && <span className="font-mono">SHA: {task.commitSha.slice(0, 7)}</span>}
+          {task.attempts > 1 && <span>Attempt {task.attempts}</span>}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         {taskOutput ? (
-          <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground leading-relaxed">
-            {taskOutput}
-            <div ref={outputEndRef} />
-          </pre>
+          <div className="relative">
+            {task.status === 'running' && (
+              <div className="sticky top-0 z-10 flex items-center gap-1.5 pb-2 mb-2 border-b bg-surface-sunken/80 backdrop-blur-sm -mt-1 pt-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent-primary animate-live-pulse" />
+                <span className="text-[10px] text-accent-primary font-medium">Streaming live output</span>
+              </div>
+            )}
+            <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground leading-relaxed">
+              {taskOutput}
+              <div ref={outputEndRef} />
+            </pre>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
             {task.status === 'running' ? (
@@ -518,6 +533,15 @@ export function PlanExecutionView({ planId, onBack, onReview, justLaunched }: Pl
     return () => clearTimeout(timeout);
   }, [showLaunchAnimation, connected, isRunning]);
 
+  // Auto-select running task when in watch mode
+  useEffect(() => {
+    if (!watchMode || !data?.tasks) return;
+    const runTask = data.tasks.find(t => t.status === 'running');
+    if (runTask && runTask.id !== selectedTaskId) {
+      setSelectedTaskId(runTask.id);
+    }
+  }, [watchMode, data?.tasks, selectedTaskId]);
+
   useEffect(() => {
     if (watchMode && activeTaskRef.current) {
       activeTaskRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -630,6 +654,7 @@ export function PlanExecutionView({ planId, onBack, onReview, justLaunched }: Pl
           <TaskDetailPanel
             task={selectedTask}
             taskOutput={selectedTaskOutput}
+            sessionTaskStatus={selectedTask.status === 'running' ? currentSessionTaskStatus : undefined}
             outputEndRef={outputEndRef}
             onClose={() => setSelectedTaskId(null)}
           />
