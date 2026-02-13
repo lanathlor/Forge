@@ -1,4 +1,35 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock dependencies to prevent DB/module initialization from hanging
+vi.mock('@/db', () => ({
+  db: {
+    insert: vi.fn(() => ({ values: vi.fn() })),
+    update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+    select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn() })) })),
+  },
+}));
+
+vi.mock('@/db/schema', () => ({
+  qaGateResults: {},
+  tasks: { id: 'id' },
+}));
+
+vi.mock('@/db/schema/qa-gates', () => ({
+  qaGateResults: {},
+}));
+
+vi.mock('drizzle-orm', () => ({
+  eq: vi.fn(),
+}));
+
+vi.mock('../config-loader', () => ({
+  loadRepositoryConfig: vi.fn(),
+}));
+
+vi.mock('../command-executor', () => ({
+  execAsync: vi.fn(),
+  getContainerPath: vi.fn((p: string) => p),
+}));
 
 describe('QA Gate Runner', () => {
   describe('Type Definitions and Structure', () => {
@@ -10,7 +41,7 @@ describe('QA Gate Runner', () => {
       expect(runnerModule.runQAGatesWithRetry).toBeDefined();
       expect(typeof runnerModule.runQAGates).toBe('function');
       expect(typeof runnerModule.runQAGatesWithRetry).toBe('function');
-    });
+    }, 15000);
 
     it('should define proper gate result structure', () => {
       // Test the expected structure of gate results

@@ -1,6 +1,7 @@
 export { PageHeader } from './PageHeader';
 export { CollapsibleSidebar } from './CollapsibleSidebar';
 export { RepositoryContent } from './RepositoryContent';
+export { RepositoryDetailView } from './RepositoryDetailView';
 export { EmptyRepositoryState } from './EmptyRepositoryState';
 export { RepositoryInfoCard } from './RepositoryInfoCard';
 export { RepositoryStatusBadge } from './RepositoryStatusBadge';
@@ -24,3 +25,4 @@ export type { MultiRepoCommandCenterProps } from './MultiRepoCommandCenter';
 export type { NeedsAttentionProps } from './NeedsAttention';
 export type { StuckDetectionSettingsProps } from './StuckDetectionSettings';
 export type { QuickSwitchDockProps } from './QuickSwitchDock';
+export type { RepositoryDetailViewProps } from './RepositoryDetailView';

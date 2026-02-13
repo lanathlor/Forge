@@ -11,9 +11,13 @@ vi.mock('../useQAGatesData', () => ({
 }));
 
 // Mock child components
-vi.mock('../QAGateCard', () => ({
-  QAGateCard: ({ gate }: { gate: { name: string } }) => (
-    <div data-testid={`qa-gate-${gate.name}`}>{gate.name}</div>
+vi.mock('../DraggableGatesList', () => ({
+  DraggableGatesList: ({ gates }: { gates: Array<{ name: string }> }) => (
+    <div data-testid="gates-list">
+      {gates.map((g) => (
+        <div key={g.name} data-testid={`qa-gate-${g.name}`}>{g.name}</div>
+      ))}
+    </div>
   ),
 }));
 
@@ -25,10 +29,31 @@ vi.mock('../QARunControls', () => ({
   ),
 }));
 
+vi.mock('../AddGateForm', () => ({
+  AddGateForm: () => <div data-testid="add-gate-form">Add Gate Form</div>,
+}));
+
+vi.mock('../GatePresets', () => ({
+  GatePresets: () => <button data-testid="gate-presets">Presets</button>,
+}));
+
+vi.mock('../ImportExportConfig', () => ({
+  ImportExportConfig: () => <div data-testid="import-export">Import/Export</div>,
+}));
+
 import { useQAGatesData } from '../useQAGatesData';
 
 describe('QAGatesConfig', () => {
-  const mockRunQAGates = vi.fn();
+  const mockFns = {
+    runQAGates: vi.fn(),
+    updateGates: vi.fn(),
+    saveConfig: vi.fn(),
+    toggleGate: vi.fn(),
+    deleteGate: vi.fn(),
+    addGate: vi.fn(),
+    reorderGates: vi.fn(),
+    fetchStatus: vi.fn(),
+  };
 
   const mockConfigData: QAGatesConfigData = {
     repository: {
@@ -69,21 +94,31 @@ describe('QAGatesConfig', () => {
     },
   };
 
+  function mockHookReturn(overrides = {}) {
+    return {
+      config: mockConfigData,
+      gates: mockConfigData.config.qaGates,
+      isLoading: false,
+      isSaving: false,
+      error: null,
+      runStatus: null,
+      isRunning: false,
+      ...mockFns,
+      ...overrides,
+    };
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Loading State', () => {
     it('shows loading state when data is loading', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
         config: null,
+        gates: [],
         isLoading: true,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      }));
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
@@ -93,15 +128,11 @@ describe('QAGatesConfig', () => {
     });
 
     it('shows loading spinner when loading', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
         config: null,
+        gates: [],
         isLoading: true,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      }));
 
       const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 
@@ -112,15 +143,11 @@ describe('QAGatesConfig', () => {
 
   describe('Error State', () => {
     it('shows error state when there is an error', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
         config: null,
-        isLoading: false,
+        gates: [],
         error: 'Failed to load configuration',
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      }));
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
@@ -131,15 +158,11 @@ describe('QAGatesConfig', () => {
     });
 
     it('applies destructive styling to error state', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
         config: null,
-        isLoading: false,
+        gates: [],
         error: 'Failed to load configuration',
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      }));
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
@@ -148,292 +171,70 @@ describe('QAGatesConfig', () => {
     });
   });
 
-  describe('Empty State', () => {
-    it('shows empty state when no gates are configured', () => {
-      const emptyConfig = {
-        ...mockConfigData,
-        config: { ...mockConfigData.config, qaGates: [] },
-      };
-
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: emptyConfig,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.getByText('No QA Gates Configured')).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          'This repository does not have any quality assurance gates set up yet.'
-        )
-      ).toBeInTheDocument();
-    });
-
-    it('shows .autobot.json hint in empty state', () => {
-      const emptyConfig = {
-        ...mockConfigData,
-        config: { ...mockConfigData.config, qaGates: [] },
-      };
-
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: emptyConfig,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.getByText('.autobot.json')).toBeInTheDocument();
-    });
-  });
-
   describe('Pipeline Header', () => {
     it('displays repository name', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText('test-repo')).toBeInTheDocument();
+      expect(screen.getByText(/test-repo/)).toBeInTheDocument();
     });
 
     it('displays config version', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText('v1.0.0')).toBeInTheDocument();
-    });
-
-    it('displays max retries', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.getByText('Max retries: 2')).toBeInTheDocument();
+      expect(screen.getByText(/v1\.0\.0/)).toBeInTheDocument();
     });
   });
 
   describe('Pipeline Statistics', () => {
-    it('displays total gates count', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.getByText('Total:')).toBeInTheDocument();
-      expect(screen.getByText('3')).toBeInTheDocument();
-    });
-
     it('displays enabled gates count', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      const enabledLabel = screen.getByText('Enabled:');
-      expect(enabledLabel).toBeInTheDocument();
-      // Check that the enabled count is displayed near the label
-      const enabledSection = enabledLabel.parentElement;
-      expect(enabledSection?.textContent).toContain('2');
+      expect(screen.getByText('2')).toBeInTheDocument();
+      expect(screen.getByText('enabled')).toBeInTheDocument();
     });
 
     it('displays disabled gates count', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText('Disabled:')).toBeInTheDocument();
-      // The count "1" appears twice: once for total and once for disabled
-      const disabledSection = screen.getByText('Disabled:').parentElement;
-      expect(disabledSection?.textContent).toContain('1');
+      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('disabled')).toBeInTheDocument();
     });
   });
 
-  describe('Gates Lists', () => {
-    it('displays Active Pipeline section for enabled gates', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.getByText('Active Pipeline')).toBeInTheDocument();
-    });
-
-    it('displays Disabled Gates section for disabled gates', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.getByText('Disabled Gates')).toBeInTheDocument();
-    });
-
-    it('renders enabled gates', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+  describe('Gates List', () => {
+    it('renders all gates', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
       expect(screen.getByTestId('qa-gate-TypeScript Check')).toBeInTheDocument();
       expect(screen.getByTestId('qa-gate-ESLint')).toBeInTheDocument();
-    });
-
-    it('renders disabled gates', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
       expect(screen.getByTestId('qa-gate-Disabled Gate')).toBeInTheDocument();
     });
 
-    it('does not show Active Pipeline section when no enabled gates', () => {
-      const allDisabledConfig = {
-        ...mockConfigData,
-        config: {
-          ...mockConfigData.config,
-          qaGates: mockConfigData.config.qaGates.map((gate) => ({
-            ...gate,
-            enabled: false,
-          })),
-        },
-      };
-
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: allDisabledConfig,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+    it('renders empty list when no gates', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        config: { ...mockConfigData, config: { ...mockConfigData.config, qaGates: [] } },
+        gates: [],
+      }));
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.queryByText('Active Pipeline')).not.toBeInTheDocument();
-    });
-
-    it('does not show Disabled Gates section when no disabled gates', () => {
-      const allEnabledConfig = {
-        ...mockConfigData,
-        config: {
-          ...mockConfigData.config,
-          qaGates: mockConfigData.config.qaGates.filter((gate) => gate.enabled),
-        },
-      };
-
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: allEnabledConfig,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
-
-      render(<QAGatesConfig repositoryId="repo-1" />);
-
-      expect(screen.queryByText('Disabled Gates')).not.toBeInTheDocument();
+      expect(screen.getByTestId('gates-list')).toBeInTheDocument();
     });
   });
 
   describe('Run Controls', () => {
     it('renders QARunControls component', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
@@ -443,68 +244,49 @@ describe('QAGatesConfig', () => {
     it('calls runQAGates when run button is clicked', async () => {
       const user = userEvent.setup();
 
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
       const runButton = screen.getByTestId('run-controls');
       await user.click(runButton);
 
-      expect(mockRunQAGates).toHaveBeenCalledTimes(1);
+      expect(mockFns.runQAGates).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('Run Status', () => {
-    it('passes run status to components', () => {
-      const mockRunStatus: QARunStatusData = {
-        run: {
-          id: 'run-1',
-          repositoryId: 'repo-1',
-          status: 'running',
-          startedAt: new Date(),
-          completedAt: null,
-          duration: null,
-        },
-        gates: [],
-        hasRun: true,
-      };
-
-      vi.mocked(useQAGatesData).mockReturnValue({
-        config: mockConfigData,
-        isLoading: false,
-        error: null,
-        runStatus: mockRunStatus,
-        isRunning: true,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+  describe('Toolbar', () => {
+    it('renders Add Gate button', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      // Component should render without errors
-      expect(screen.getByText('QA Gates Pipeline')).toBeInTheDocument();
+      expect(screen.getByText('Add Gate')).toBeInTheDocument();
+    });
+
+    it('renders Presets button', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByTestId('gate-presets')).toBeInTheDocument();
+    });
+
+    it('renders Import/Export controls', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByTestId('import-export')).toBeInTheDocument();
     });
   });
 
   describe('Null Config Handling', () => {
     it('returns null when config is null but not loading and no error', () => {
-      vi.mocked(useQAGatesData).mockReturnValue({
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
         config: null,
-        isLoading: false,
-        error: null,
-        runStatus: null,
-        isRunning: false,
-        fetchStatus: vi.fn(),
-        runQAGates: mockRunQAGates,
-      });
+        gates: [],
+      }));
 
       const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 

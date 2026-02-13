@@ -8,6 +8,10 @@ import {
   CardTitle,
 } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { Switch } from '@/shared/components/ui/switch';
+import { GripVertical, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { TestGateButton } from './TestGateButton';
 import type {
   QAGate,
   QAGateExecutionResult,
@@ -17,190 +21,63 @@ interface QAGateCardProps {
   gate: QAGate;
   index: number;
   execution?: QAGateExecutionResult;
-  variant?: 'active' | 'disabled';
+  repositoryId: string;
+  onToggle: (name: string, enabled: boolean) => void;
+  onDelete: (name: string) => void;
+  dragHandleProps?: Record<string, unknown>;
+  isDragging?: boolean;
 }
 
 function ExecutionStatusBadge({ status }: { status: string }) {
-  const badges: Record<string, React.ReactElement | null> = {
-    running: (
-      <Badge className="h-7 border border-blue-500/30 bg-blue-500/15 px-4 text-sm font-semibold text-blue-700 dark:text-blue-400">
-        Running
-      </Badge>
-    ),
-    passed: (
-      <Badge className="h-7 border border-green-500/30 bg-green-500/15 px-4 text-sm font-semibold text-green-700 dark:text-green-400">
-        Passed
-      </Badge>
-    ),
-    failed: (
-      <Badge className="h-7 border border-red-500/30 bg-red-500/15 px-4 text-sm font-semibold text-red-700 dark:text-red-400">
-        Failed
-      </Badge>
-    ),
-    skipped: (
-      <Badge variant="outline" className="h-7 px-4 text-sm font-semibold">
-        Skipped
-      </Badge>
-    ),
+  const config: Record<string, { label: string; className: string }> = {
+    running: {
+      label: 'Running',
+      className: 'h-6 border border-blue-500/30 bg-blue-500/15 px-3 text-xs font-semibold text-blue-700 dark:text-blue-400',
+    },
+    passed: {
+      label: 'Passed',
+      className: 'h-6 border border-green-500/30 bg-green-500/15 px-3 text-xs font-semibold text-green-700 dark:text-green-400',
+    },
+    failed: {
+      label: 'Failed',
+      className: 'h-6 border border-red-500/30 bg-red-500/15 px-3 text-xs font-semibold text-red-700 dark:text-red-400',
+    },
+    skipped: {
+      label: 'Skipped',
+      className: 'h-6 px-3 text-xs font-semibold',
+    },
   };
 
-  return badges[status] || null;
+  const info = config[status];
+  if (!info) return null;
+
+  return (
+    <Badge variant={status === 'skipped' ? 'outline' : undefined} className={info.className}>
+      {info.label}
+    </Badge>
+  );
 }
 
-function OutputSection({
-  output,
-  label,
-  isError = false,
-}: {
-  output: string;
-  label: string;
-  isError?: boolean;
-}) {
-  const containerClass = isError
-    ? 'overflow-x-auto rounded-lg border border-red-200 bg-red-50/50 px-6 py-5 font-mono text-sm dark:border-red-900/30 dark:bg-red-950/20'
-    : 'overflow-x-auto rounded-lg border bg-muted/50 px-6 py-5 font-mono text-sm';
-
-  const textClass = isError
-    ? 'whitespace-pre-wrap break-words text-red-900 dark:text-red-400'
-    : 'whitespace-pre-wrap break-words text-muted-foreground';
-
-  const labelClass = isError
-    ? 'mb-3 text-base font-bold text-red-600'
-    : 'mb-3 text-base font-bold text-muted-foreground';
-
+function OutputSection({ output, label, isError = false }: { output: string; label: string; isError?: boolean }) {
   return (
     <div>
-      <div className={labelClass}>{label}</div>
-      <div className={containerClass}>
-        <pre className={textClass}>{output}</pre>
+      <div className={`mb-2 text-xs font-semibold ${isError ? 'text-red-600' : 'text-muted-foreground'}`}>
+        {label}
       </div>
-    </div>
-  );
-}
-
-function ExecutionOutput({
-  execution,
-  expanded,
-  onToggle,
-}: {
-  execution: QAGateExecutionResult;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  if (!execution.output && !execution.error) return null;
-
-  return (
-    <div className="space-y-3">
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between rounded-lg border-2 bg-muted/30 px-4 py-3 text-left font-semibold transition-colors hover:bg-muted/50"
+      <div
+        className={`max-h-48 overflow-auto rounded-lg border px-4 py-3 font-mono text-xs ${
+          isError
+            ? 'border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-950/20'
+            : 'bg-muted/50'
+        }`}
       >
-        <span className="text-sm text-muted-foreground">
-          {expanded ? 'Hide Output' : 'Show Output'}
-        </span>
-        <span className="text-muted-foreground">{expanded ? '▼' : '▶'}</span>
-      </button>
-
-      {expanded && (
-        <div className="space-y-5 animate-in fade-in slide-in-from-top-2">
-          {execution.output && (
-            <OutputSection output={execution.output} label="Output:" />
-          )}
-          {execution.error && (
-            <OutputSection output={execution.error} label="Error:" isError />
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GateStatusBadges({
-  execution,
-  isDisabled,
-  failOnError,
-}: {
-  execution?: QAGateExecutionResult;
-  isDisabled: boolean;
-  failOnError: boolean;
-}) {
-  if (execution) {
-    return (
-      <>
-        <ExecutionStatusBadge status={execution.status} />
-        {execution.duration && (
-          <span className="text-base font-semibold text-muted-foreground">
-            {(execution.duration / 1000).toFixed(2)}s
-          </span>
-        )}
-      </>
-    );
-  }
-
-  if (isDisabled) {
-    return (
-      <Badge variant="outline" className="h-7 px-4 text-sm">
-        Disabled
-      </Badge>
-    );
-  }
-
-  return (
-    <>
-      <Badge variant="secondary" className="h-7 px-4 text-sm font-semibold">
-        Active
-      </Badge>
-      {failOnError && (
-        <Badge className="h-7 border-2 border-primary/50 bg-primary/20 px-4 text-sm font-bold text-primary">
-          Blocks
-        </Badge>
-      )}
-    </>
-  );
-}
-
-function GateHeader({
-  gate,
-  index,
-  isDisabled,
-  execution,
-}: {
-  gate: QAGate;
-  index: number;
-  isDisabled: boolean;
-  execution?: QAGateExecutionResult;
-}) {
-  const numberClass = isDisabled
-    ? 'flex h-10 w-10 items-center justify-center rounded-full bg-muted text-base font-semibold text-muted-foreground'
-    : 'flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm text-base font-bold';
-
-  const titleClass = isDisabled ? 'text-lg font-medium' : 'text-xl font-semibold';
-
-  return (
-    <div className="flex items-center gap-6">
-      <div className="relative flex-shrink-0">
-        <div className={numberClass}>
-          <span>{gate.order ?? index + 1}</span>
-        </div>
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-8">
-          <div className="flex items-center gap-6">
-            <CardTitle className={titleClass}>{gate.name}</CardTitle>
-            <span className="text-base text-muted-foreground">
-              {(gate.timeout / 1000).toFixed(0)}s timeout
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <GateStatusBadges
-              execution={execution}
-              isDisabled={isDisabled}
-              failOnError={gate.failOnError}
-            />
-          </div>
-        </div>
+        <pre
+          className={`whitespace-pre-wrap break-words ${
+            isError ? 'text-red-900 dark:text-red-400' : 'text-muted-foreground'
+          }`}
+        >
+          {output}
+        </pre>
       </div>
     </div>
   );
@@ -210,38 +87,126 @@ export function QAGateCard({
   gate,
   index,
   execution,
-  variant = 'active',
+  repositoryId,
+  onToggle,
+  onDelete,
+  dragHandleProps,
+  isDragging = false,
 }: QAGateCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const isDisabled = variant === 'disabled';
-
-  const cardClassName = isDisabled
-    ? 'border-dashed opacity-60 transition-opacity hover:opacity-80'
-    : 'relative border-l-4 border-l-primary transition-all hover:shadow-lg';
+  const hasOutput = execution && (execution.output || execution.error);
 
   return (
-    <Card className={cardClassName}>
-      <CardHeader className="px-6 pb-5 pt-6">
-        <GateHeader
-          gate={gate}
-          index={index}
-          isDisabled={isDisabled}
-          execution={execution}
-        />
-      </CardHeader>
-      <CardContent className="space-y-5 px-6 pb-6 pt-0">
-        <div className="rounded-lg border-2 bg-muted/60 px-6 py-5 font-mono text-base shadow-sm">
-          <code className="font-medium text-foreground">{gate.command}</code>
-        </div>
+    <Card
+      className={`transition-all ${
+        isDragging ? 'rotate-1 scale-[1.02] shadow-xl ring-2 ring-primary/20' : ''
+      } ${
+        gate.enabled
+          ? 'border-l-4 border-l-primary hover:shadow-md'
+          : 'border-dashed opacity-60 hover:opacity-80'
+      }`}
+    >
+      <CardHeader className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Drag handle */}
+          <div
+            {...dragHandleProps}
+            className="flex cursor-grab items-center text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
 
-        {execution && (
-          <ExecutionOutput
-            execution={execution}
-            expanded={expanded}
-            onToggle={() => setExpanded(!expanded)}
-          />
-        )}
-      </CardContent>
+          {/* Order number */}
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+              gate.enabled
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {gate.order ?? index + 1}
+          </div>
+
+          {/* Name & command */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold">{gate.name}</CardTitle>
+              {gate.failOnError ? (
+                <Badge className="h-5 border border-primary/50 bg-primary/15 px-2 text-[10px] font-bold text-primary">
+                  Required
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="h-5 px-2 text-[10px]">
+                  Optional
+                </Badge>
+              )}
+            </div>
+            <code className="text-xs text-muted-foreground">{gate.command}</code>
+          </div>
+
+          {/* Execution status badges */}
+          {execution && (
+            <div className="flex items-center gap-2">
+              <ExecutionStatusBadge status={execution.status} />
+              {execution.duration != null && (
+                <span className="text-xs text-muted-foreground">
+                  {(execution.duration / 1000).toFixed(1)}s
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Timeout */}
+          <span className="whitespace-nowrap text-xs text-muted-foreground">
+            {(gate.timeout / 1000).toFixed(0)}s
+          </span>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1">
+            <TestGateButton
+              repositoryId={repositoryId}
+              gateName={gate.name}
+              command={gate.command}
+            />
+            <Switch
+              checked={gate.enabled}
+              onCheckedChange={(enabled) => onToggle(gate.name, enabled)}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(gate.name)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      {/* Expandable output */}
+      {hasOutput && (
+        <CardContent className="px-4 pb-3 pt-0">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex w-full items-center gap-1.5 rounded-md bg-muted/30 px-3 py-1.5 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
+          >
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            {expanded ? 'Hide output' : 'Show output'}
+          </button>
+
+          {expanded && execution && (
+            <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-1">
+              {execution.output && (
+                <OutputSection output={execution.output} label="Output:" />
+              )}
+              {execution.error && (
+                <OutputSection output={execution.error} label="Error:" isError />
+              )}
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }

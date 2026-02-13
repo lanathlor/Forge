@@ -64,6 +64,11 @@ export default defineConfig({
         'src/features/sessions/components/SessionHistoryModal.tsx', // Complex modal with many UI branches (tested via E2E)
         'src/features/activity/store/**', // RTK Query store (tested via integration)
         'src/shared/components/ui/dropdown-menu.tsx', // Simple UI wrapper component
+        'src/shared/components/ui/select.tsx', // Simple UI wrapper component (Radix Select)
+        'src/features/settings/**', // Settings feature (tested via E2E)
+        'src/features/repositories/components/TestGateButton.tsx', // Complex fetch + dialog component (tested via E2E)
+        'src/features/repositories/components/DraggableGatesList.tsx', // Drag-and-drop component (tested via E2E)
+        'src/features/repositories/components/RepositoryDetailView.tsx', // Complex detail view (tested via E2E)
         'src/instrumentation.ts', // Next.js instrumentation (tested via integration)
         'src/lib/hello.ts', // Trivial utility
       ],

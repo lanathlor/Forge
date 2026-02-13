@@ -118,7 +118,9 @@ describe('plans/api/handlers', () => {
     mockDelete.mockReturnValue({ where: mockDeleteWhere });
     mockSelect.mockReturnValue({ from: mockSelectFrom });
     mockSelectFrom.mockReturnValue({ where: mockSelectWhere, orderBy: mockSelectOrderBy });
-    mockSelectWhere.mockReturnValue({ orderBy: mockSelectOrderBy, limit: mockSelectLimit });
+    // Make mockSelectWhere both chainable and thenable (for enrichPlanWithCalculatedMetadata which awaits .where() directly)
+    const selectWhereResult = Object.assign(Promise.resolve([]), { orderBy: mockSelectOrderBy, limit: mockSelectLimit });
+    mockSelectWhere.mockReturnValue(selectWhereResult);
     mockSelectOrderBy.mockReturnValue({ limit: mockSelectLimit });
     mockSelectLimit.mockResolvedValue([]);
   });
@@ -131,7 +133,9 @@ describe('plans/api/handlers', () => {
       const { handleGetPlans } = await import('../handlers');
       const result = await handleGetPlans();
 
-      expect((result as any).data).toEqual({ plans: mockPlans });
+      // Plans are enriched with calculated metadata (0 counts since mock DB returns empty arrays)
+      const enrichedPlans = mockPlans.map(p => ({ ...p, totalPhases: 0, completedPhases: 0, totalTasks: 0, completedTasks: 0 }));
+      expect((result as any).data).toEqual({ plans: enrichedPlans });
     });
 
     it('should return filtered plans when repositoryId provided', async () => {
@@ -141,7 +145,8 @@ describe('plans/api/handlers', () => {
       const { handleGetPlans } = await import('../handlers');
       const result = await handleGetPlans('repo-1');
 
-      expect((result as any).data).toEqual({ plans: mockPlans });
+      const enrichedPlans = mockPlans.map(p => ({ ...p, totalPhases: 0, completedPhases: 0, totalTasks: 0, completedTasks: 0 }));
+      expect((result as any).data).toEqual({ plans: enrichedPlans });
     });
 
     it('should return error on failure', async () => {
@@ -172,8 +177,9 @@ describe('plans/api/handlers', () => {
       const { handleGetPlan } = await import('../handlers');
       const result = await handleGetPlan('plan-1');
 
+      // Plan is enriched with calculated metadata (0 counts since mock DB returns empty arrays for enrichment queries)
       expect((result as any).data).toEqual({
-        plan: mockPlan,
+        plan: { ...mockPlan, totalPhases: 0, completedPhases: 0, totalTasks: 0, completedTasks: 0 },
         phases: mockPhases,
         tasks: mockTasks,
         iterations: mockIterations,

@@ -8,6 +8,7 @@ import '@/features/repositories/store/repositoriesApi';
 import sessionReducer from '@/features/sessions/store/sessionSlice';
 import uiReducer from '@/shared/store/uiSlice';
 import repoSnapshotReducer from '@/features/sessions/store/repoSnapshotSlice';
+import settingsReducer from '@/features/settings/store/settingsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     session: sessionReducer,
     ui: uiReducer,
     repoSnapshot: repoSnapshotReducer,
+    settings: settingsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(api.middleware),

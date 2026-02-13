@@ -16,30 +16,43 @@ import { planExecutor } from '@/lib/plans/executor';
  * This ensures the counts are always accurate even if DB fields get out of sync.
  */
 async function enrichPlanWithCalculatedMetadata(plan: typeof plans.$inferSelect) {
-  // Get actual phases count
-  const allPhases = await db
-    .select()
-    .from(phases)
-    .where(eq(phases.planId, plan.id));
+  try {
+    // Get actual phases count
+    const allPhases = await db
+      .select()
+      .from(phases)
+      .where(eq(phases.planId, plan.id));
 
-  const completedPhasesCount = allPhases.filter(p => p.status === 'completed').length;
+    // Get actual tasks count
+    const allTasks = await db
+      .select()
+      .from(planTasks)
+      .where(eq(planTasks.planId, plan.id));
 
-  // Get actual tasks count
-  const allTasks = await db
-    .select()
-    .from(planTasks)
-    .where(eq(planTasks.planId, plan.id));
+    const phasesArray = Array.isArray(allPhases) ? allPhases : [];
+    const tasksArray = Array.isArray(allTasks) ? allTasks : [];
 
-  const completedTasksCount = allTasks.filter(t => t.status === 'completed').length;
+    const completedPhasesCount = phasesArray.filter(p => p.status === 'completed').length;
+    const completedTasksCount = tasksArray.filter(t => t.status === 'completed').length;
 
-  // Return plan with calculated metadata
-  return {
-    ...plan,
-    totalPhases: allPhases.length,
-    completedPhases: completedPhasesCount,
-    totalTasks: allTasks.length,
-    completedTasks: completedTasksCount,
-  };
+    // Return plan with calculated metadata
+    return {
+      ...plan,
+      totalPhases: phasesArray.length,
+      completedPhases: completedPhasesCount,
+      totalTasks: tasksArray.length,
+      completedTasks: completedTasksCount,
+    };
+  } catch {
+    // If enrichment fails, return plan with zero counts
+    return {
+      ...plan,
+      totalPhases: 0,
+      completedPhases: 0,
+      totalTasks: 0,
+      completedTasks: 0,
+    };
+  }
 }
 
 export async function handleGetPlans(repositoryId?: string) {
