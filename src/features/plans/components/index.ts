@@ -9,4 +9,6 @@ export { PlanRefinementChat } from './PlanRefinementChat';
 export { PlanEditor } from './PlanEditor';
 export { PlanLaunchDialog } from './PlanLaunchDialog';
 export { PlanLaunchCard } from './PlanLaunchCard';
+export { PlanLaunchButton } from './PlanLaunchButton';
+export { PlanPreflightBanner } from './PlanPreflightBanner';
 export { LivePlanMonitor } from './LivePlanMonitor';

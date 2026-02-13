@@ -24,6 +24,7 @@ import {
 } from '../store/plansApi';
 import { GeneratePlanDialog } from './GeneratePlanDialog';
 import type { PlanStatus } from '@/db/schema';
+import { PlanLaunchCard } from './PlanLaunchCard';
 import {
   Search,
   X,
@@ -33,6 +34,7 @@ import {
   Sparkles,
   FileText,
   Plus,
+  Rocket,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -105,6 +107,11 @@ export function PlanList({ repositoryId, onViewPlan, onLaunchPlan }: PlanListPro
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const plans = data?.plans || [];
+
+  // Plans ready to launch (shown prominently at top)
+  const launchablePlans = useMemo(() => {
+    return plans.filter(p => p.status === 'ready' || p.status === 'draft');
+  }, [plans]);
 
   // ---------------------------------------------------------------------------
   // Filtering & sorting
@@ -396,6 +403,30 @@ export function PlanList({ repositoryId, onViewPlan, onLaunchPlan }: PlanListPro
           })}
         </div>
       </div>
+
+      {/* Ready to Launch section */}
+      {statusFilter === 'all' && !searchQuery && launchablePlans.length > 0 && onLaunchPlan && (
+        <div className="flex-shrink-0 pb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Rocket className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              Ready to Launch
+            </span>
+          </div>
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {launchablePlans.slice(0, 3).map((plan) => (
+              <PlanLaunchCard
+                key={plan.id}
+                plan={plan}
+                onLaunch={onLaunchPlan}
+                onView={onViewPlan}
+                onPause={(id) => pausePlan(id)}
+                onResume={(id) => resumePlan(id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Plan list/grid */}
       <div className="flex-1 overflow-auto">

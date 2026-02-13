@@ -72,6 +72,7 @@ export function DashboardLayout({
   // Launch dialog state
   const [launchPlan, setLaunchPlan] = useState<Plan | null>(null);
   const [showLaunchDialog, setShowLaunchDialog] = useState(false);
+  const [justLaunchedPlanId, setJustLaunchedPlanId] = useState<string | null>(null);
 
   const { data: sessionData } = useGetSessionQuery(sessionId);
   const { updates, connected, error, reconnect } = useTaskStream(sessionId);
@@ -159,17 +160,24 @@ export function DashboardLayout({
   }, [plansData]);
 
   const handleLaunched = useCallback((planId: string) => {
-    // Navigate to execution view after launch
+    // Navigate to execution view after launch with animation
+    setJustLaunchedPlanId(planId);
     setSelectedPlanId(planId);
     setPlanView('execution');
     handleTabChange('plans');
+    // Clear justLaunched flag after transition
+    setTimeout(() => setJustLaunchedPlanId(null), 5000);
   }, [handleTabChange]);
 
   const handleLaunchAndSwitch = useCallback((_planId: string) => {
     // Stay on current tab (tasks) - plan runs in background
     // The LivePlanMonitor will show the running plan
     setShowLaunchDialog(false);
-  }, []);
+    // Switch to tasks tab if not already there
+    if (activeTab !== 'tasks') {
+      handleTabChange('tasks');
+    }
+  }, [activeTab, handleTabChange]);
 
   return (
     <div className="h-full flex flex-col gap-3">
@@ -274,6 +282,7 @@ export function DashboardLayout({
                 planId={selectedPlanId}
                 onBack={handleBackToList}
                 onReview={(planId) => setReviewPlanId(planId)}
+                justLaunched={justLaunchedPlanId === selectedPlanId}
               />
             </div>
           ) : planView === 'detail' && selectedPlanId ? (

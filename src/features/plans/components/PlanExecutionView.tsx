@@ -17,13 +17,15 @@ import type { Phase, PlanTask } from '@/db/schema';
 import {
   Play, Pause, Square, RotateCcw, Eye, EyeOff, Clock,
   CheckCircle2, XCircle, Circle, Loader2, ChevronRight, ChevronLeft,
-  AlertTriangle, ArrowRight, Zap, X,
+  AlertTriangle, ArrowRight, Zap, X, Rocket,
 } from 'lucide-react';
 
 interface PlanExecutionViewProps {
   planId: string;
   onBack?: () => void;
   onReview?: (planId: string) => void;
+  /** When true, shows a brief launch animation before transitioning to live view */
+  justLaunched?: boolean;
 }
 
 // Status helpers
@@ -432,6 +434,40 @@ function PlanHeaderBar({ plan, planId, isRunning, connected, overallProgress, es
   );
 }
 
+// ── Loading / Launch Animation ──
+function LoadingState({ showLaunchAnimation, connected }: { showLaunchAnimation: boolean; connected: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-12 gap-4 animate-in fade-in duration-300">
+      <div className="relative">
+        <div className={cn(
+          'h-16 w-16 rounded-2xl flex items-center justify-center',
+          showLaunchAnimation ? 'bg-primary/10 animate-pulse' : 'bg-muted',
+        )}>
+          {showLaunchAnimation ? (
+            <Rocket className="h-8 w-8 text-primary animate-bounce" />
+          ) : (
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          )}
+        </div>
+        {showLaunchAnimation && connected && (
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+          </span>
+        )}
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-medium">
+          {showLaunchAnimation ? 'Launching plan...' : 'Loading execution view...'}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {showLaunchAnimation ? 'Connecting to live execution stream' : 'Fetching plan data'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function computeEstimatedRemaining(tasks: PlanTask[]): number {
   const completedTasks = tasks.filter(t => t.status === 'completed' && t.startedAt && t.completedAt);
   if (completedTasks.length === 0) return 0;
@@ -450,7 +486,7 @@ function buildPhaseTasksMap(tasks: PlanTask[]): Map<string, PlanTask[]> {
   return map;
 }
 
-export function PlanExecutionView({ planId, onBack, onReview }: PlanExecutionViewProps) {
+export function PlanExecutionView({ planId, onBack, onReview, justLaunched }: PlanExecutionViewProps) {
   const { data, isLoading, error } = useGetPlanQuery(planId, {
     pollingInterval: 3000,
     skipPollingIfUnfocused: true,
@@ -467,8 +503,20 @@ export function PlanExecutionView({ planId, onBack, onReview }: PlanExecutionVie
 
   const [watchMode, setWatchMode] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showLaunchAnimation, setShowLaunchAnimation] = useState(!!justLaunched);
   const activeTaskRef = useRef<HTMLDivElement>(null);
   const outputEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-dismiss launch animation once SSE connects or after timeout
+  useEffect(() => {
+    if (!showLaunchAnimation) return;
+    if (connected || isRunning) {
+      const timer = setTimeout(() => setShowLaunchAnimation(false), 800);
+      return () => clearTimeout(timer);
+    }
+    const timeout = setTimeout(() => setShowLaunchAnimation(false), 4000);
+    return () => clearTimeout(timeout);
+  }, [showLaunchAnimation, connected, isRunning]);
 
   useEffect(() => {
     if (watchMode && activeTaskRef.current) {
@@ -494,12 +542,8 @@ export function PlanExecutionView({ planId, onBack, onReview }: PlanExecutionVie
     setSelectedTaskId(prev => prev === taskId ? null : taskId);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (isLoading || showLaunchAnimation) {
+    return <LoadingState showLaunchAnimation={showLaunchAnimation} connected={connected} />;
   }
 
   if (!data) {
