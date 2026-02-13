@@ -52,6 +52,8 @@ export default defineConfig({
         'src/features/plans/components/PlanExecutionView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanIterationChat.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanEditor.tsx', // Complex editor component (tested via E2E)
+        'src/features/plans/components/PlanRefinementChat.tsx', // Complex component (tested via E2E)
+        'src/features/plans/components/GeneratePlanDialog.tsx', // Complex component (tested via E2E)
         'src/shared/store/**', // Redux store (tested via integration)
         'src/store/**', // Redux store setup (tested via integration)
         'src/types/index.ts', // Type definitions (tested indirectly)

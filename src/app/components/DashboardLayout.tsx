@@ -15,7 +15,7 @@ import {
   SessionSummaryModal,
   SessionSummary,
 } from '@/features/sessions/components';
-import { PlanList, PlanDetailView, PlanIterationChat } from '@/features/plans/components';
+import { PlanList, PlanDetailView, PlanRefinementChat } from '@/features/plans/components';
 import { QAGatesConfig } from '@/features/repositories/components';
 
 interface DashboardLayoutProps {
@@ -211,18 +211,31 @@ export function DashboardLayout({
         </TabsContent>
 
         {/* Plans Tab Content */}
-        <TabsContent value="plans" className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden">
+        <TabsContent value="plans" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
           {planView === 'list' ? (
-            <PlanList
-              repositoryId={repositoryId}
-              onViewPlan={handleViewPlan}
-            />
+            <div className="h-full overflow-auto">
+              <PlanList
+                repositoryId={repositoryId}
+                onViewPlan={handleViewPlan}
+              />
+            </div>
           ) : selectedPlanId ? (
-            <PlanDetailView
-              planId={selectedPlanId}
-              onBack={handleBackToList}
-              onReview={(planId) => setReviewPlanId(planId)}
-            />
+            <div className="h-full flex overflow-hidden">
+              <div className="flex-1 overflow-auto min-w-0">
+                <PlanDetailView
+                  planId={selectedPlanId}
+                  onBack={handleBackToList}
+                  onReview={(planId) => setReviewPlanId(planId)}
+                />
+              </div>
+              {reviewPlanId && (
+                <PlanRefinementChat
+                  planId={reviewPlanId}
+                  open={!!reviewPlanId}
+                  onClose={() => setReviewPlanId(null)}
+                />
+              )}
+            </div>
           ) : null}
         </TabsContent>
 
@@ -261,12 +274,6 @@ export function DashboardLayout({
         onNewSession={handleNewSession}
       />
 
-      {/* Plan Iteration Chat */}
-      <PlanIterationChat
-        planId={reviewPlanId}
-        open={!!reviewPlanId}
-        onOpenChange={(open) => !open && setReviewPlanId(null)}
-      />
     </div>
   );
 }
