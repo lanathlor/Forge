@@ -11,6 +11,37 @@ import { planExecutor } from '@/lib/plans/executor';
 // Plans
 // ============================================================================
 
+/**
+ * Enriches a plan with dynamically calculated metadata from actual tasks and phases.
+ * This ensures the counts are always accurate even if DB fields get out of sync.
+ */
+async function enrichPlanWithCalculatedMetadata(plan: typeof plans.$inferSelect) {
+  // Get actual phases count
+  const allPhases = await db
+    .select()
+    .from(phases)
+    .where(eq(phases.planId, plan.id));
+
+  const completedPhasesCount = allPhases.filter(p => p.status === 'completed').length;
+
+  // Get actual tasks count
+  const allTasks = await db
+    .select()
+    .from(planTasks)
+    .where(eq(planTasks.planId, plan.id));
+
+  const completedTasksCount = allTasks.filter(t => t.status === 'completed').length;
+
+  // Return plan with calculated metadata
+  return {
+    ...plan,
+    totalPhases: allPhases.length,
+    completedPhases: completedPhasesCount,
+    totalTasks: allTasks.length,
+    completedTasks: completedTasksCount,
+  };
+}
+
 export async function handleGetPlans(repositoryId?: string) {
   try {
     const query = repositoryId
@@ -19,7 +50,12 @@ export async function handleGetPlans(repositoryId?: string) {
 
     const allPlans = await query;
 
-    return NextResponse.json({ plans: allPlans });
+    // Enrich each plan with calculated metadata
+    const enrichedPlans = await Promise.all(
+      allPlans.map(plan => enrichPlanWithCalculatedMetadata(plan))
+    );
+
+    return NextResponse.json({ plans: enrichedPlans });
   } catch (error) {
     console.error('Error fetching plans:', error);
     return NextResponse.json(
@@ -63,8 +99,11 @@ export async function handleGetPlan(planId: string) {
       .where(eq(planIterations.planId, planId))
       .orderBy(desc(planIterations.createdAt));
 
+    // Enrich plan with calculated metadata from actual tasks and phases
+    const enrichedPlan = await enrichPlanWithCalculatedMetadata(plan);
+
     return NextResponse.json({
-      plan,
+      plan: enrichedPlan,
       phases: planPhases,
       tasks,
       iterations,
