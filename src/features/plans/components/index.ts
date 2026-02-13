@@ -5,3 +5,4 @@ export { PlanExecutionView } from './PlanExecutionView';
 export { PlanDetailView } from './PlanDetailView';
 export { GeneratePlanDialog } from './GeneratePlanDialog';
 export { PlanIterationChat } from './PlanIterationChat';
+export { PlanEditor } from './PlanEditor';

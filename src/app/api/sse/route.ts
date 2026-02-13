@@ -4,7 +4,7 @@ import { repositories } from '@/db/schema/repositories';
 import { sessions } from '@/db/schema/sessions';
 import { tasks } from '@/db/schema/tasks';
 import { eq, desc } from 'drizzle-orm';
-import { taskEvents } from '@/lib/events/task-events';
+import { taskEvents, type PlanExecutionEvent } from '@/lib/events/task-events';
 import { getStuckDetector, stuckEvents, type StuckEvent, type StuckStatus } from '@/lib/stuck-detection';
 import type { ClaudeStatus, RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
 
@@ -275,6 +275,12 @@ function createTaskOutputHandler(ctx: StreamContext) {
   };
 }
 
+function createPlanExecutionHandler(ctx: StreamContext) {
+  return (event: PlanExecutionEvent) => {
+    sendEvent(ctx, 'plan_execution', event);
+  };
+}
+
 /* ============================================
    INTERVALS
    ============================================ */
@@ -322,6 +328,7 @@ interface TaskHandlers {
   onTaskUpdate: (data: { sessionId: string; taskId: string }) => Promise<void>;
   onTaskOutput: (data: { sessionId: string; taskId: string; output: string }) => void;
   onQAGateUpdate: (data: { sessionId: string; taskId: string; gateName: string; status: string }) => void;
+  onPlanExecution: (event: PlanExecutionEvent) => void;
 }
 
 interface StuckHandlers {
@@ -336,6 +343,7 @@ function setupTaskHandlers(ctx: StreamContext): TaskHandlers {
     onTaskUpdate: createTaskUpdateHandler(ctx),
     onTaskOutput: createTaskOutputHandler(ctx),
     onQAGateUpdate: createQAGateHandler(ctx),
+    onPlanExecution: createPlanExecutionHandler(ctx),
   };
 }
 
@@ -352,6 +360,7 @@ function attachTaskListeners(handlers: TaskHandlers) {
   taskEvents.on('task:update', handlers.onTaskUpdate);
   taskEvents.on('task:output', handlers.onTaskOutput);
   taskEvents.on('qa:update', handlers.onQAGateUpdate);
+  taskEvents.on('plan:execution', handlers.onPlanExecution);
 }
 
 function attachStuckListeners(handlers: StuckHandlers) {
@@ -376,6 +385,7 @@ function createCleanupHandler(
     taskEvents.off('task:update', taskHandlers.onTaskUpdate);
     taskEvents.off('task:output', taskHandlers.onTaskOutput);
     taskEvents.off('qa:update', taskHandlers.onQAGateUpdate);
+    taskEvents.off('plan:execution', taskHandlers.onPlanExecution);
 
     stuckEvents.off('stuck:detected', stuckHandlers.onStuckDetected);
     stuckEvents.off('stuck:resolved', stuckHandlers.onStuckResolved);

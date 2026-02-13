@@ -286,11 +286,27 @@ function useQAGateResults(taskId: string) {
 
   const loadResults = useCallback(async () => {
     try {
-      const res = await fetch(`/api/tasks/${taskId}/qa-gates/results`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const res = await fetch(`/api/tasks/${taskId}/qa-gates/results`, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const data = await res.json();
       setResults(data.results || []);
     } catch (error) {
-      console.error('Failed to load QA gate results:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('Request timeout: QA gate results took too long to load');
+      } else {
+        console.error('Failed to load QA gate results:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -303,16 +319,25 @@ function useQAGateResults(taskId: string) {
   async function rerunGates() {
     setLoading(true);
     try {
+      // Start the QA retry in the background
       const res = await fetch(`/api/tasks/${taskId}/qa-gates/run`, {
         method: 'POST',
       });
-      const data = await res.json();
-      setResults(data.results || []);
+
+      if (!res.ok) {
+        throw new Error('Failed to start QA retry');
+      }
+
+      // Don't wait for results - the POST returns immediately
+      // Instead, reload results after a short delay to show progress
+      setTimeout(() => {
+        loadResults();
+      }, 1000);
     } catch (error) {
       console.error('Failed to re-run QA gates:', error);
-    } finally {
       setLoading(false);
     }
+    // Keep loading state true - it will be cleared by loadResults()
   }
 
   return { results, loading, rerunGates };

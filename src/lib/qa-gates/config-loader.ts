@@ -73,52 +73,47 @@ const DEFAULT_CONFIG: AutobotConfig = {
   ],
 };
 
+async function loadConfigFromFile(configPath: string): Promise<AutobotConfig> {
+  await fs.access(configPath);
+  const configContent = await fs.readFile(configPath, 'utf-8');
+  const config = AutobotConfigSchema.parse(JSON.parse(configContent));
+  config.qaGates.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  return config;
+}
+
+function handleConfigError(error: unknown, configPath: string, containerPath: string): AutobotConfig {
+  if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+    console.log(`ℹ️ No .autobot.json found in ${containerPath}, using default config`);
+    return DEFAULT_CONFIG;
+  }
+  if (error instanceof Error && error.message === 'Config load timeout') {
+    console.error(`⏱️ Timeout loading config from ${configPath}, using default config`);
+    return DEFAULT_CONFIG;
+  }
+  console.error(`❌ Error loading config from ${configPath}:`, error);
+  return DEFAULT_CONFIG;
+}
+
 /**
- * Load QA gate configuration from repository's .autobot.json file
+ * Load QA gate configuration from repository's .autobot.json file with timeout
  */
 export async function loadRepositoryConfig(
   repoPath: string
 ): Promise<AutobotConfig> {
-  // Convert host path to container path if running in Docker
   const containerPath = getContainerPath(repoPath);
   const configPath = path.join(containerPath, '.autobot.json');
 
   try {
-    // Check if config file exists
-    await fs.access(configPath);
-
-    // Read and parse config file
-    const configContent = await fs.readFile(configPath, 'utf-8');
-    const configData = JSON.parse(configContent);
-
-    // Validate against schema
-    const config = AutobotConfigSchema.parse(configData);
-
-    // Sort gates by order
-    config.qaGates.sort((a, b) => {
-      const orderA = a.order ?? 999;
-      const orderB = b.order ?? 999;
-      return orderA - orderB;
-    });
-
+    const result = await Promise.race([
+      loadConfigFromFile(configPath),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Config load timeout')), 5000)
+      ),
+    ]);
     console.log(`✅ Loaded config from ${configPath}`);
-    return config;
+    return result;
   } catch (error) {
-    if (
-      error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      error.code === 'ENOENT'
-    ) {
-      console.log(
-        `ℹ️ No .autobot.json found in ${containerPath}, using default config`
-      );
-      return DEFAULT_CONFIG;
-    }
-
-    console.error(`❌ Error loading config from ${configPath}:`, error);
-    console.log('Using default config as fallback');
-    return DEFAULT_CONFIG;
+    return handleConfigError(error, configPath, containerPath);
   }
 }
 

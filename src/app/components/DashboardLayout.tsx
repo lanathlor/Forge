@@ -16,6 +16,7 @@ import {
   SessionSummary,
 } from '@/features/sessions/components';
 import { PlanList, PlanDetailView, PlanIterationChat } from '@/features/plans/components';
+import { QAGatesConfig } from '@/features/repositories/components';
 
 interface DashboardLayoutProps {
   sessionId: string;
@@ -24,7 +25,7 @@ interface DashboardLayoutProps {
   initialTaskId?: string | null;
   onInitialTaskConsumed?: () => void;
   onTaskSelected?: (taskId: string | null) => void;
-  onTabChanged?: (tab: 'tasks' | 'plans') => void;
+  onTabChanged?: (tab: 'tasks' | 'plans' | 'qa-gates') => void;
   onSessionEnded?: () => void;
 }
 
@@ -57,7 +58,7 @@ export function DashboardLayout({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'plans' | 'summary'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'plans' | 'summary' | 'qa-gates'>('tasks');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [planView, setPlanView] = useState<'list' | 'execution'>('list');
   const [reviewPlanId, setReviewPlanId] = useState<string | null>(null);
@@ -83,9 +84,9 @@ export function DashboardLayout({
 
   // Report tab changes to parent for snapshot tracking
   const handleTabChange = useCallback((tab: string) => {
-    const typedTab = tab as 'tasks' | 'plans' | 'summary';
+    const typedTab = tab as 'tasks' | 'plans' | 'summary' | 'qa-gates';
     setActiveTab(typedTab);
-    if (typedTab === 'tasks' || typedTab === 'plans') {
+    if (typedTab === 'tasks' || typedTab === 'plans' || typedTab === 'qa-gates') {
       onTabChanged?.(typedTab);
     }
   }, [onTabChanged]);
@@ -140,6 +141,7 @@ export function DashboardLayout({
         <TabsList className="mb-3">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsTrigger value="qa-gates">QA Gates</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
         </TabsList>
 
@@ -222,6 +224,11 @@ export function DashboardLayout({
               onReview={(planId) => setReviewPlanId(planId)}
             />
           ) : null}
+        </TabsContent>
+
+        {/* QA Gates Tab Content */}
+        <TabsContent value="qa-gates" className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden">
+          <QAGatesConfig repositoryId={repositoryId} />
         </TabsContent>
 
         {/* Summary Tab Content */}

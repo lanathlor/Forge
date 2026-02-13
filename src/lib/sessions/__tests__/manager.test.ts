@@ -581,6 +581,139 @@ describe('sessions/manager', () => {
     });
   });
 
+  describe('getEnhancedSessionSummary', () => {
+    it('should return enhanced summary with tasks, QA stats, timeline and code stats', async () => {
+      const startedAt = new Date('2024-01-01T10:00:00Z');
+      const endedAt = new Date('2024-01-01T12:00:00Z');
+
+      const mockSession = {
+        id: 'session-1',
+        repositoryId: 'repo-1',
+        status: 'completed',
+        startedAt,
+        endedAt,
+        repository: {
+          id: 'repo-1',
+          name: 'test-repo',
+          path: '/path/to/repo',
+          currentBranch: 'main',
+        },
+      };
+
+      const task1StartedAt = new Date('2024-01-01T10:05:00Z');
+      const task1CompletedAt = new Date('2024-01-01T10:30:00Z');
+      const task2StartedAt = new Date('2024-01-01T10:35:00Z');
+      const task2CompletedAt = new Date('2024-01-01T11:00:00Z');
+
+      const mockTasks = [
+        {
+          id: 'task-1',
+          sessionId: 'session-1',
+          prompt: 'Fix the authentication bug in login flow',
+          status: 'completed',
+          startedAt: task1StartedAt,
+          completedAt: task1CompletedAt,
+          createdAt: new Date('2024-01-01T10:04:00Z'),
+          filesChanged: [
+            { path: 'auth.ts', additions: 10, deletions: 3 },
+            { path: 'login.ts', additions: 5, deletions: 2 },
+          ],
+          committedSha: 'sha1',
+          commitMessage: 'fix: auth bug',
+        },
+        {
+          id: 'task-2',
+          sessionId: 'session-1',
+          prompt: 'This is a very long prompt that exceeds sixty characters so it should be truncated properly',
+          status: 'failed',
+          startedAt: task2StartedAt,
+          completedAt: task2CompletedAt,
+          createdAt: new Date('2024-01-01T10:34:00Z'),
+          filesChanged: [
+            { path: 'api.ts', additions: 20, deletions: 8 },
+          ],
+          committedSha: null,
+          commitMessage: null,
+        },
+      ];
+
+      const mockQaResults = [
+        { id: 'qa-1', taskId: 'task-1', gateName: 'tests', status: 'passed', duration: 5000 },
+        { id: 'qa-2', taskId: 'task-1', gateName: 'lint', status: 'passed', duration: 2000 },
+        { id: 'qa-3', taskId: 'task-2', gateName: 'tests', status: 'failed', duration: 3000 },
+      ];
+
+      // Mock for getSessionSummary (called internally)
+      mockDb.query.sessions.findFirst.mockResolvedValueOnce(mockSession);
+      mockDb.query.tasks.findMany
+        .mockResolvedValueOnce(mockTasks) // for getSessionSummary
+        .mockResolvedValueOnce(mockTasks); // for getEnhancedSessionSummary
+
+      mockDb.query.qaGateResults.findMany.mockResolvedValueOnce(mockQaResults);
+
+      const { getEnhancedSessionSummary } = await import('../manager');
+      const result = await getEnhancedSessionSummary('session-1');
+
+      // Verify enhanced tasks
+      expect(result.tasks).toHaveLength(2);
+      expect(result.tasks[0]!.id).toBe('task-1');
+      expect(result.tasks[0]!.qaResults).toHaveLength(2);
+      expect(result.tasks[0]!.qaResults[0]!.gateName).toBe('tests');
+      expect(result.tasks[1]!.qaResults).toHaveLength(1);
+
+      // Verify QA stats
+      expect(result.qaStats.totalRuns).toBe(3);
+      expect(result.qaStats.passed).toBe(2);
+      expect(result.qaStats.failed).toBe(1);
+      expect(result.qaStats.passRate).toBe(67);
+
+      // Verify timeline has session_start, task events, and session_end
+      expect(result.timeline.length).toBeGreaterThanOrEqual(5);
+      expect(result.timeline[0]!.type).toBe('session_start');
+      expect(result.timeline[result.timeline.length - 1]!.type).toBe('session_end');
+      // Failed task should have task_fail type
+      const failEvent = result.timeline.find(
+        (e) => e.type === 'task_fail' && e.taskId === 'task-2'
+      );
+      expect(failEvent).toBeDefined();
+
+      // Verify code change stats
+      expect(result.totalAdditions).toBe(35);
+      expect(result.totalDeletions).toBe(13);
+    });
+
+    it('should handle empty tasks and QA results', async () => {
+      const mockSession = {
+        id: 'session-1',
+        repositoryId: 'repo-1',
+        status: 'active',
+        startedAt: new Date('2024-01-01T10:00:00Z'),
+        endedAt: null,
+        repository: {
+          id: 'repo-1',
+          name: 'test-repo',
+          path: '/path/to/repo',
+          currentBranch: 'main',
+        },
+      };
+
+      mockDb.query.sessions.findFirst.mockResolvedValueOnce(mockSession);
+      mockDb.query.tasks.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      const { getEnhancedSessionSummary } = await import('../manager');
+      const result = await getEnhancedSessionSummary('session-1');
+
+      expect(result.tasks).toHaveLength(0);
+      expect(result.qaStats.totalRuns).toBe(0);
+      expect(result.qaStats.passRate).toBe(0);
+      expect(result.timeline).toHaveLength(1); // Only session_start
+      expect(result.totalAdditions).toBe(0);
+      expect(result.totalDeletions).toBe(0);
+    });
+  });
+
   describe('deleteSession', () => {
     it('should delete session and its tasks', async () => {
       mockDeleteWhere.mockResolvedValue(undefined);

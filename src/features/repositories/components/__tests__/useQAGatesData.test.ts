@@ -159,7 +159,8 @@ describe('useQAGatesData', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/repositories/repo-1/qa-gates/status'
+        '/api/repositories/repo-1/qa-gates/status',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
       );
       expect(result.current.runStatus).toEqual(mockStatus);
     });
@@ -222,7 +223,7 @@ describe('useQAGatesData', () => {
 
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          'Error fetching status:',
+          '[QAGatesStatus] Error fetching status:',
           expect.any(Error)
         );
       });
@@ -396,7 +397,7 @@ describe('useQAGatesData', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
           '/api/repositories/repo-1/qa-gates/run',
-          { method: 'POST' }
+          expect.objectContaining({ method: 'POST' })
         );
       });
     });
@@ -568,7 +569,8 @@ describe('useQAGatesData', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/repositories/repo-1/qa-gates/status'
+        '/api/repositories/repo-1/qa-gates/status',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
       );
     });
   });

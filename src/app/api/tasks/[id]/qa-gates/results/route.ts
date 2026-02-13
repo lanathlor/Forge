@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { qaGateResults } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 
 /**
  * GET /api/tasks/:id/qa-gates/results
@@ -17,8 +17,7 @@ export async function GET(
       .select()
       .from(qaGateResults)
       .where(eq(qaGateResults.taskId, id))
-      .orderBy(qaGateResults.createdAt)
-      .all();
+      .orderBy(asc(qaGateResults.createdAt));
 
     return NextResponse.json({ results });
   } catch (error) {

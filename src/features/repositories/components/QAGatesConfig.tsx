@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -248,12 +249,32 @@ function GatesList({
 }
 
 export function QAGatesConfig({ repositoryId }: QAGatesConfigProps) {
+  console.log(`[QAGatesConfig Component] Rendering with repositoryId: ${repositoryId}`);
+
+  useEffect(() => {
+    console.log(`[QAGatesConfig Component] Mounted with repositoryId: ${repositoryId}`);
+    return () => {
+      console.log(`[QAGatesConfig Component] Unmounting for repositoryId: ${repositoryId}`);
+    };
+  }, [repositoryId]);
+
   const { config, isLoading, error, runStatus, isRunning, runQAGates } =
     useQAGatesData(repositoryId);
 
-  if (isLoading) return <LoadingState />;
-  if (error) return <ErrorState error={error} />;
-  if (!config) return null;
+  console.log(`[QAGatesConfig Component] State - isLoading: ${isLoading}, error: ${error}, hasConfig: ${!!config}`);
+
+  if (isLoading) {
+    console.log(`[QAGatesConfig Component] Showing loading state for repositoryId: ${repositoryId}`);
+    return <LoadingState />;
+  }
+  if (error) {
+    console.log(`[QAGatesConfig Component] Showing error state for repositoryId: ${repositoryId}:`, error);
+    return <ErrorState error={error} />;
+  }
+  if (!config) {
+    console.log(`[QAGatesConfig Component] No config, returning null for repositoryId: ${repositoryId}`);
+    return null;
+  }
 
   const enabledGates = config.config.qaGates.filter((gate) => gate.enabled);
   const disabledGates = config.config.qaGates.filter((gate) => !gate.enabled);

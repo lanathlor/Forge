@@ -31,6 +31,7 @@ export default defineConfig({
         'src/lib/claude/wrapper.ts', // Complex integration with Claude SDK
         'src/lib/tasks/orchestrator.ts', // Complex orchestration (tested via integration)
         'src/lib/plans/activity-tracker.ts', // Activity tracking (tested via integration)
+        'src/lib/plans/executor.ts', // Complex plan execution with polling (tested via integration)
         'src/features/repositories/lib/scanner.ts', // File system scanning (tested via E2E)
         'src/features/repositories/components/RepositoryTree.tsx', // Tree with stuck detection (tested via E2E)
         'src/shared/hooks/useTaskStream.ts', // Uses EventSource browser API (tested via E2E)
@@ -50,6 +51,7 @@ export default defineConfig({
         'src/features/plans/components/PlanDetailView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanExecutionView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanIterationChat.tsx', // Complex component (tested via E2E)
+        'src/features/plans/components/PlanEditor.tsx', // Complex editor component (tested via E2E)
         'src/shared/store/**', // Redux store (tested via integration)
         'src/store/**', // Redux store setup (tested via integration)
         'src/types/index.ts', // Type definitions (tested indirectly)

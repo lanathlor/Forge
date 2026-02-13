@@ -62,8 +62,8 @@ export default function HomePage() {
   }, [selectedRepo, dispatch]);
 
   // Track active tab in snapshot
-  const handleTabChanged = useCallback((tab: 'tasks' | 'plans') => {
-    if (selectedRepo) {
+  const handleTabChanged = useCallback((tab: 'tasks' | 'plans' | 'qa-gates') => {
+    if (selectedRepo && tab !== 'qa-gates') {
       dispatch(updateSnapshot({
         repositoryId: selectedRepo.id,
         lastViewedTab: tab,
