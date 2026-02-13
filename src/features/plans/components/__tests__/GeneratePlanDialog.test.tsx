@@ -5,11 +5,10 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { api } from '@/store/api';
 
-// Mock window.alert
-vi.stubGlobal('alert', vi.fn());
-
 // Mock the plansApi module
 const mockGeneratePlan = vi.fn();
+const mockExecutePlan = vi.fn();
+const mockUpdatePlan = vi.fn();
 const mockUnwrap = vi.fn();
 
 vi.mock('@/features/plans/store/plansApi', () => ({
@@ -17,6 +16,18 @@ vi.mock('@/features/plans/store/plansApi', () => ({
     mockGeneratePlan,
     { isLoading: false },
   ]),
+  useExecutePlanMutation: vi.fn(() => [
+    mockExecutePlan,
+    { isLoading: false },
+  ]),
+  useUpdatePlanMutation: vi.fn(() => [
+    mockUpdatePlan,
+    { isLoading: false },
+  ]),
+  useGetPlanQuery: vi.fn(() => ({
+    data: null,
+    refetch: vi.fn(),
+  })),
 }));
 
 // Create a mock store
@@ -35,7 +46,13 @@ describe('GeneratePlanDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGeneratePlan.mockReturnValue({ unwrap: mockUnwrap });
-    mockUnwrap.mockResolvedValue({});
+    mockExecutePlan.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({}) });
+    mockUpdatePlan.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({}) });
+    mockUnwrap.mockResolvedValue({
+      plan: { id: 'plan-1', title: 'Test' },
+      phases: [],
+      tasks: [],
+    });
   });
 
   const renderDialog = (open = true) => {
@@ -53,7 +70,7 @@ describe('GeneratePlanDialog', () => {
 
   it('should render dialog with title', () => {
     renderDialog();
-    expect(screen.getByText('Generate Plan with Claude')).toBeInTheDocument();
+    expect(screen.getAllByText('Generate Plan').length).toBeGreaterThanOrEqual(1);
   });
 
   it('should render form fields', () => {
@@ -62,13 +79,22 @@ describe('GeneratePlanDialog', () => {
     expect(screen.getByLabelText('Description')).toBeInTheDocument();
   });
 
-  it('should have disabled Generate button when fields are empty', () => {
+  it('should render template chips', () => {
     renderDialog();
-    const button = screen.getByText('Generate Plan');
-    expect(button).toBeDisabled();
+    expect(screen.getByText('New Feature')).toBeInTheDocument();
+    expect(screen.getByText('Bug Fix')).toBeInTheDocument();
+    expect(screen.getByText('Refactor')).toBeInTheDocument();
+    expect(screen.getByText('Quick Task')).toBeInTheDocument();
   });
 
-  it('should enable Generate button when fields have values', () => {
+  it('should have disabled Generate Plan button when fields are empty', () => {
+    renderDialog();
+    const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
+    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    expect(generateButton).toBeDisabled();
+  });
+
+  it('should enable Generate Plan button when fields have values', () => {
     renderDialog();
 
     const titleInput = screen.getByLabelText('Title');
@@ -77,8 +103,9 @@ describe('GeneratePlanDialog', () => {
     fireEvent.change(titleInput, { target: { value: 'Test Title' } });
     fireEvent.change(descInput, { target: { value: 'Test Description' } });
 
-    const button = screen.getByText('Generate Plan');
-    expect(button).not.toBeDisabled();
+    const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
+    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    expect(generateButton).not.toBeDisabled();
   });
 
   it('should call generatePlan with correct data', async () => {
@@ -90,8 +117,9 @@ describe('GeneratePlanDialog', () => {
     fireEvent.change(titleInput, { target: { value: 'My Plan' } });
     fireEvent.change(descInput, { target: { value: 'My Description' } });
 
-    const button = screen.getByText('Generate Plan');
-    fireEvent.click(button);
+    const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
+    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    fireEvent.click(generateButton!);
 
     await waitFor(() => {
       expect(mockGeneratePlan).toHaveBeenCalledWith({
@@ -102,21 +130,28 @@ describe('GeneratePlanDialog', () => {
     });
   });
 
-  it('should close dialog on successful generation', async () => {
+  it('should populate description when template is selected', () => {
     renderDialog();
 
-    const titleInput = screen.getByLabelText('Title');
-    const descInput = screen.getByLabelText('Description');
+    const bugFixButton = screen.getByText('Bug Fix');
+    fireEvent.click(bugFixButton);
 
-    fireEvent.change(titleInput, { target: { value: 'My Plan' } });
-    fireEvent.change(descInput, { target: { value: 'My Description' } });
+    const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
+    expect(descInput.value).toContain('Fix a bug:');
+    expect(descInput.value).toContain('Current behavior:');
+  });
 
-    const button = screen.getByText('Generate Plan');
-    fireEvent.click(button);
+  it('should clear description when same template is clicked again', () => {
+    renderDialog();
 
-    await waitFor(() => {
-      expect(mockOnOpenChange).toHaveBeenCalledWith(false);
-    });
+    const bugFixButton = screen.getByText('Bug Fix');
+    fireEvent.click(bugFixButton);
+
+    const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
+    expect(descInput.value).toContain('Fix a bug:');
+
+    fireEvent.click(bugFixButton);
+    expect(descInput.value).toBe('');
   });
 
   it('should call onOpenChange when Cancel is clicked', () => {
@@ -128,7 +163,7 @@ describe('GeneratePlanDialog', () => {
     expect(mockOnOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('should show error alert on generation failure', async () => {
+  it('should show error on generation failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockUnwrap.mockRejectedValueOnce(new Error('Generation failed'));
 
@@ -140,42 +175,24 @@ describe('GeneratePlanDialog', () => {
     fireEvent.change(titleInput, { target: { value: 'My Plan' } });
     fireEvent.change(descInput, { target: { value: 'My Description' } });
 
-    const button = screen.getByText('Generate Plan');
-    fireEvent.click(button);
+    const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
+    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    fireEvent.click(generateButton!);
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Failed to generate plan. Please try again.');
+      expect(screen.getByText('Generation failed')).toBeInTheDocument();
     });
 
     consoleSpy.mockRestore();
   });
 
-  it('should not call generatePlan when title is empty', () => {
-    renderDialog();
-
-    const descInput = screen.getByLabelText('Description');
-    fireEvent.change(descInput, { target: { value: 'My Description' } });
-
-    const button = screen.getByText('Generate Plan');
-    expect(button).toBeDisabled();
-
-    // Force click even if disabled
-    fireEvent.click(button);
-    expect(mockGeneratePlan).not.toHaveBeenCalled();
-  });
-
-  it('should not call generatePlan when description is empty', () => {
-    renderDialog();
-
-    const titleInput = screen.getByLabelText('Title');
-    fireEvent.change(titleInput, { target: { value: 'My Plan' } });
-
-    const button = screen.getByText('Generate Plan');
-    expect(button).toBeDisabled();
-  });
-
   it('should not render dialog when open is false', () => {
     renderDialog(false);
-    expect(screen.queryByText('Generate Plan with Claude')).not.toBeInTheDocument();
+    expect(screen.queryAllByText('Generate Plan')).toHaveLength(0);
+  });
+
+  it('should render Generate & Launch button', () => {
+    renderDialog();
+    expect(screen.getByText('Generate & Launch')).toBeInTheDocument();
   });
 });

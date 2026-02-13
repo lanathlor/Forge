@@ -19,6 +19,10 @@ vi.mock('@/features/plans/store/plansApi', () => ({
     isLoading: false,
     error: null,
   })),
+  useGetPlanQuery: vi.fn(() => ({
+    data: null,
+    refetch: vi.fn(),
+  })),
   useExecutePlanMutation: vi.fn(() => [mockExecutePlan]),
   usePausePlanMutation: vi.fn(() => [mockPausePlan]),
   useResumePlanMutation: vi.fn(() => [mockResumePlan]),

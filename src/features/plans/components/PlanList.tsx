@@ -258,6 +258,7 @@ export function PlanList({ repositoryId, onViewPlan }: PlanListProps) {
             open={showGenerateDialog}
             onOpenChange={setShowGenerateDialog}
             repositoryId={repositoryId}
+            onPlanCreated={onViewPlan}
           />
         )}
       </div>
@@ -450,6 +451,7 @@ export function PlanList({ repositoryId, onViewPlan }: PlanListProps) {
           open={showGenerateDialog}
           onOpenChange={setShowGenerateDialog}
           repositoryId={repositoryId}
+          onPlanCreated={onViewPlan}
         />
       )}
     </div>
