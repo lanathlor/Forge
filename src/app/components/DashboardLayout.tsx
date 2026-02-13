@@ -292,6 +292,10 @@ export function DashboardLayout({
                   planId={reviewPlanId}
                   open={!!reviewPlanId}
                   onClose={() => setReviewPlanId(null)}
+                  onLaunch={() => {
+                    setReviewPlanId(null);
+                    handleOpenLaunch(reviewPlanId);
+                  }}
                 />
               )}
             </div>
