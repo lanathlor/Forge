@@ -2,7 +2,7 @@ import type { FileChange } from '@/db/schema/tasks';
 import { claudeWrapper } from './wrapper';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
-const COMMIT_MESSAGE_GENERATION_TIMEOUT = 30000; // 30 seconds
+const COMMIT_MESSAGE_GENERATION_TIMEOUT = 120000; // 2 minutes
 
 // Common preamble patterns Claude uses before commit messages
 const PREAMBLE_PATTERNS = [

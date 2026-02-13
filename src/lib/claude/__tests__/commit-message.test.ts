@@ -59,7 +59,7 @@ describe('claude/commit-message', () => {
       expect(mockClaudeWrapper.executeOneShot).toHaveBeenCalledWith(
         expect.any(String),
         '/container/repo',
-        30000
+        120000
       );
     });
 
@@ -110,7 +110,7 @@ describe('claude/commit-message', () => {
       expect(prompt.length).toBeLessThan(longDiff.length + 2000); // Some extra for prompt text
     });
 
-    it('should use 30 second timeout for Claude wrapper', async () => {
+    it('should use 2 minute timeout for Claude wrapper', async () => {
       mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('chore: message');
 
       await generateCommitMessage('Update', defaultFilesChanged, defaultDiffContent, '/repo');
@@ -118,7 +118,7 @@ describe('claude/commit-message', () => {
       expect(mockClaudeWrapper.executeOneShot).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
-        30000
+        120000
       );
     });
 
