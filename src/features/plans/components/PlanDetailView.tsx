@@ -47,6 +47,8 @@ import {
   Zap,
   Shield,
   ChevronLeft,
+  Rocket,
+  Eye,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -57,13 +59,15 @@ interface PlanDetailViewProps {
   planId: string;
   onBack: () => void;
   onReview?: (planId: string) => void;
+  onLaunch?: (planId: string) => void;
+  onViewExecution?: (planId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function PlanDetailView({ planId, onBack, onReview }: PlanDetailViewProps) {
+export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecution }: PlanDetailViewProps) {
   const { data, isLoading, error } = useGetPlanQuery(planId, {
     pollingInterval: 2000,
     skipPollingIfUnfocused: true,
@@ -261,6 +265,8 @@ export function PlanDetailView({ planId, onBack, onReview }: PlanDetailViewProps
         isEditMode={isEditMode}
         onToggleEdit={() => setIsEditMode(!isEditMode)}
         onExecute={() => executePlan(planId)}
+        onLaunch={onLaunch ? () => onLaunch(planId) : undefined}
+        onViewExecution={onViewExecution ? () => onViewExecution(planId) : undefined}
         onPause={() => pausePlan(planId)}
         onResume={() => resumePlan(planId)}
         onCancel={() => {
@@ -335,6 +341,8 @@ function PlanHeaderCard({
   isEditMode,
   onToggleEdit,
   onExecute,
+  onLaunch,
+  onViewExecution,
   onPause,
   onResume,
   onCancel,
@@ -350,6 +358,8 @@ function PlanHeaderCard({
   isEditMode: boolean;
   onToggleEdit: () => void;
   onExecute: () => void;
+  onLaunch?: () => void;
+  onViewExecution?: () => void;
   onPause: () => void;
   onResume: () => void;
   onCancel: () => void;
@@ -398,6 +408,8 @@ function PlanHeaderCard({
           isEditMode={isEditMode}
           onEdit={onToggleEdit}
           onExecute={onExecute}
+          onLaunch={onLaunch}
+          onViewExecution={onViewExecution}
           onPause={onPause}
           onResume={onResume}
           onCancel={onCancel}
@@ -534,6 +546,8 @@ function ExecutionControls({
   isEditMode,
   onEdit,
   onExecute,
+  onLaunch,
+  onViewExecution,
   onPause,
   onResume,
   onCancel,
@@ -548,6 +562,8 @@ function ExecutionControls({
   isEditMode: boolean;
   onEdit: () => void;
   onExecute: () => void;
+  onLaunch?: () => void;
+  onViewExecution?: () => void;
   onPause: () => void;
   onResume: () => void;
   onCancel: () => void;
@@ -583,10 +599,17 @@ function ExecutionControls({
             <Edit2 className="h-3.5 w-3.5 mr-1.5" />
             {isEditMode ? 'Done' : 'Edit'}
           </Button>
-          <Button size="sm" onClick={onMarkReady} className="h-8">
-            <Shield className="h-3.5 w-3.5 mr-1.5" />
-            <span className="hidden sm:inline">Mark</span> Ready
-          </Button>
+          {onLaunch ? (
+            <Button size="sm" onClick={onLaunch} className="h-8 gap-1.5">
+              <Rocket className="h-3.5 w-3.5" />
+              Launch
+            </Button>
+          ) : (
+            <Button size="sm" onClick={onMarkReady} className="h-8">
+              <Shield className="h-3.5 w-3.5 mr-1.5" />
+              <span className="hidden sm:inline">Mark</span> Ready
+            </Button>
+          )}
         </>
       )}
 
@@ -604,21 +627,38 @@ function ExecutionControls({
               <span className="hidden sm:inline">Iterate</span>
             </Button>
           )}
-          <Button
-            size="sm"
-            onClick={onExecute}
-            disabled={isExecuting}
-            className="h-8"
-          >
-            <Play className="h-3.5 w-3.5 mr-1.5" />
-            {isExecuting ? 'Starting...' : 'Execute'}
-          </Button>
+          {onLaunch ? (
+            <Button size="sm" onClick={onLaunch} className="h-8 gap-1.5">
+              <Rocket className="h-3.5 w-3.5" />
+              Launch
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={onExecute}
+              disabled={isExecuting}
+              className="h-8"
+            >
+              <Play className="h-3.5 w-3.5 mr-1.5" />
+              {isExecuting ? 'Starting...' : 'Execute'}
+            </Button>
+          )}
         </>
       )}
 
       {/* Running actions */}
       {status === 'running' && (
         <>
+          {onViewExecution && (
+            <Button
+              size="sm"
+              onClick={onViewExecution}
+              className="h-8 gap-1.5"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Live View
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"

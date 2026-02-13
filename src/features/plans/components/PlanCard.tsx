@@ -25,12 +25,14 @@ import {
   Layers,
   ListChecks,
   Clock,
+  Rocket,
 } from 'lucide-react';
 
 interface PlanCardProps {
   plan: Plan;
   onView: (planId: string) => void;
   onExecute?: (planId: string) => void;
+  onLaunch?: (planId: string) => void;
   onPause?: (planId: string) => void;
   onResume?: (planId: string) => void;
   onDuplicate?: (planId: string) => void;
@@ -43,6 +45,7 @@ export const PlanCard = React.memo(function PlanCard({
   plan,
   onView,
   onExecute,
+  onLaunch,
   onPause,
   onResume,
   onDuplicate,
@@ -56,7 +59,7 @@ export const PlanCard = React.memo(function PlanCard({
 
   const isActive = plan.status === 'running' || plan.status === 'paused';
 
-  const primaryAction = getPrimaryAction(plan, { onExecute, onPause, onResume, onMarkReady });
+  const primaryAction = getPrimaryAction(plan, { onExecute, onLaunch, onPause, onResume, onMarkReady });
 
   if (variant === 'list') {
     return (
@@ -130,6 +133,7 @@ export const PlanCard = React.memo(function PlanCard({
             plan={plan}
             onView={onView}
             onExecute={onExecute}
+            onLaunch={onLaunch}
             onPause={onPause}
             onResume={onResume}
             onDuplicate={onDuplicate}
@@ -168,6 +172,7 @@ export const PlanCard = React.memo(function PlanCard({
             plan={plan}
             onView={onView}
             onExecute={onExecute}
+            onLaunch={onLaunch}
             onPause={onPause}
             onResume={onResume}
             onDuplicate={onDuplicate}
@@ -241,6 +246,7 @@ function QuickActionsMenu({
   plan,
   onView,
   onExecute,
+  onLaunch,
   onPause,
   onResume,
   onDuplicate,
@@ -267,6 +273,13 @@ function QuickActionsMenu({
           View Details
         </DropdownMenuItem>
 
+        {(plan.status === 'ready' || plan.status === 'draft') && onLaunch && (
+          <DropdownMenuItem onClick={() => onLaunch(plan.id)}>
+            <Rocket className="h-4 w-4 mr-2" />
+            Launch Plan
+          </DropdownMenuItem>
+        )}
+
         {plan.status === 'draft' && onMarkReady && (
           <DropdownMenuItem onClick={() => onMarkReady(plan.id)}>
             <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -274,7 +287,7 @@ function QuickActionsMenu({
           </DropdownMenuItem>
         )}
 
-        {plan.status === 'ready' && onExecute && (
+        {plan.status === 'ready' && onExecute && !onLaunch && (
           <DropdownMenuItem onClick={() => onExecute(plan.id)}>
             <Play className="h-4 w-4 mr-2" />
             Execute Plan
@@ -330,6 +343,7 @@ function getPrimaryAction(
   plan: Plan,
   handlers: {
     onExecute?: (id: string) => void;
+    onLaunch?: (id: string) => void;
     onPause?: (id: string) => void;
     onResume?: (id: string) => void;
     onMarkReady?: (id: string) => void;
@@ -337,6 +351,12 @@ function getPrimaryAction(
 ): { label: string; icon: React.ReactNode; onClick: () => void } | null {
   switch (plan.status) {
     case 'draft':
+      if (handlers.onLaunch)
+        return {
+          label: 'Launch',
+          icon: <Rocket className="h-3.5 w-3.5" />,
+          onClick: () => handlers.onLaunch!(plan.id),
+        };
       if (handlers.onMarkReady)
         return {
           label: 'Ready',
@@ -345,6 +365,12 @@ function getPrimaryAction(
         };
       break;
     case 'ready':
+      if (handlers.onLaunch)
+        return {
+          label: 'Launch',
+          icon: <Rocket className="h-3.5 w-3.5" />,
+          onClick: () => handlers.onLaunch!(plan.id),
+        };
       if (handlers.onExecute)
         return {
           label: 'Execute',

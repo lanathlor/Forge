@@ -16,12 +16,13 @@ import { usePlanStream } from '@/shared/hooks/usePlanStream';
 import type { Phase, PlanTask } from '@/db/schema';
 import {
   Play, Pause, Square, RotateCcw, Eye, EyeOff, Clock,
-  CheckCircle2, XCircle, Circle, Loader2, ChevronRight,
+  CheckCircle2, XCircle, Circle, Loader2, ChevronRight, ChevronLeft,
   AlertTriangle, ArrowRight, Zap, X,
 } from 'lucide-react';
 
 interface PlanExecutionViewProps {
   planId: string;
+  onBack?: () => void;
   onReview?: (planId: string) => void;
 }
 
@@ -384,11 +385,11 @@ function ActivityIndicator({ runningTask, sessionStatus }: {
 }
 
 // ── Plan Header Bar ──
-function PlanHeaderBar({ plan, planId, isRunning, connected, overallProgress, estimatedRemaining, runningTask, currentSessionTaskStatus, watchMode, setWatchMode, onReview, executePlan, pausePlan, resumePlan, cancelPlan, isExecuting, isPausing, isResuming, isCancelling }: {
+function PlanHeaderBar({ plan, planId, isRunning, connected, overallProgress, estimatedRemaining, runningTask, currentSessionTaskStatus, watchMode, setWatchMode, onReview, onBack, executePlan, pausePlan, resumePlan, cancelPlan, isExecuting, isPausing, isResuming, isCancelling }: {
   plan: { title: string; description: string | null; status: string; completedTasks: number; totalTasks: number; completedPhases: number; totalPhases: number };
   planId: string; isRunning: boolean; connected: boolean; overallProgress: number; estimatedRemaining: number;
   runningTask: PlanTask | undefined; currentSessionTaskStatus: string | undefined;
-  watchMode: boolean; setWatchMode: (v: boolean) => void; onReview?: (id: string) => void;
+  watchMode: boolean; setWatchMode: (v: boolean) => void; onReview?: (id: string) => void; onBack?: () => void;
   executePlan: (id: string) => void; pausePlan: (id: string) => void;
   resumePlan: (id: string) => void; cancelPlan: (id: string) => void;
   isExecuting: boolean; isPausing: boolean; isResuming: boolean; isCancelling: boolean;
@@ -398,6 +399,11 @@ function PlanHeaderBar({ plan, planId, isRunning, connected, overallProgress, es
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            {onBack && (
+              <button onClick={onBack} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
             <h2 className="text-lg font-semibold truncate">{plan.title}</h2>
             <PlanStatusBadge status={plan.status} />
             {connected && isRunning && (
@@ -444,7 +450,7 @@ function buildPhaseTasksMap(tasks: PlanTask[]): Map<string, PlanTask[]> {
   return map;
 }
 
-export function PlanExecutionView({ planId, onReview }: PlanExecutionViewProps) {
+export function PlanExecutionView({ planId, onBack, onReview }: PlanExecutionViewProps) {
   const { data, isLoading, error } = useGetPlanQuery(planId, {
     pollingInterval: 3000,
     skipPollingIfUnfocused: true,
@@ -520,7 +526,7 @@ export function PlanExecutionView({ planId, onReview }: PlanExecutionViewProps) 
         plan={plan} planId={planId} isRunning={isRunning} connected={connected}
         overallProgress={overallProgress} estimatedRemaining={estimatedRemaining}
         runningTask={runningTask} currentSessionTaskStatus={currentSessionTaskStatus}
-        watchMode={watchMode} setWatchMode={setWatchMode} onReview={onReview}
+        watchMode={watchMode} setWatchMode={setWatchMode} onReview={onReview} onBack={onBack}
         executePlan={executePlan} pausePlan={pausePlan} resumePlan={resumePlan} cancelPlan={cancelPlan}
         isExecuting={isExecuting} isPausing={isPausing} isResuming={isResuming} isCancelling={isCancelling}
       />

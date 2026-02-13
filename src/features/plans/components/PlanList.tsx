@@ -42,6 +42,7 @@ import {
 interface PlanListProps {
   repositoryId?: string;
   onViewPlan: (planId: string) => void;
+  onLaunchPlan?: (planId: string) => void;
 }
 
 type StatusFilter = 'all' | PlanStatus;
@@ -83,7 +84,7 @@ const SORT_OPTIONS: { value: SortField; label: string }[] = [
 // Component
 // ---------------------------------------------------------------------------
 
-export function PlanList({ repositoryId, onViewPlan }: PlanListProps) {
+export function PlanList({ repositoryId, onViewPlan, onLaunchPlan }: PlanListProps) {
   // Data
   const { data, isLoading, error } = useGetPlansQuery(repositoryId, {
     pollingInterval: 5000,
@@ -418,6 +419,7 @@ export function PlanList({ repositoryId, onViewPlan }: PlanListProps) {
                 plan={plan}
                 variant="grid"
                 onView={onViewPlan}
+                onLaunch={onLaunchPlan}
                 onExecute={(id) => executePlan(id)}
                 onPause={(id) => pausePlan(id)}
                 onResume={(id) => resumePlan(id)}
@@ -434,6 +436,7 @@ export function PlanList({ repositoryId, onViewPlan }: PlanListProps) {
                 plan={plan}
                 variant="list"
                 onView={onViewPlan}
+                onLaunch={onLaunchPlan}
                 onExecute={(id) => executePlan(id)}
                 onPause={(id) => pausePlan(id)}
                 onResume={(id) => resumePlan(id)}
