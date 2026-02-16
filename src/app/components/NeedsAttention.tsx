@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useMemo, useCallback, useState, useEffect } from 'react';
+import { useMemo, useCallback, useState, useEffect, memo } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
@@ -111,7 +111,7 @@ function useAlertDuration(initialDuration: number, alertId: string) {
   return displayDuration;
 }
 
-function AlertItemHeader({ alert, severityConfig }: { alert: StuckAlert; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] }) {
+const AlertItemHeader = memo(function AlertItemHeader({ alert, severityConfig }: { alert: StuckAlert; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] }) {
   return (
     <div className="flex items-center gap-2 mb-1">
       <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
@@ -119,9 +119,9 @@ function AlertItemHeader({ alert, severityConfig }: { alert: StuckAlert; severit
       <Badge variant="outline" className={cn('text-[10px] px-1.5', severityConfig.color)}>{alert.severity}</Badge>
     </div>
   );
-}
+});
 
-function AlertItemMeta({ alert, displayDuration }: { alert: StuckAlert; displayDuration: number }) {
+const AlertItemMeta = memo(function AlertItemMeta({ alert, displayDuration }: { alert: StuckAlert; displayDuration: number }) {
   const ReasonIcon = REASON_ICONS[alert.reason] || AlertTriangle;
   const isCritical = alert.severity === 'critical';
   const isHigh = alert.severity === 'high';
@@ -141,42 +141,67 @@ function AlertItemMeta({ alert, displayDuration }: { alert: StuckAlert; displayD
       </span>
     </div>
   );
-}
+});
 
-function AlertItemActions({ alert, onView, onAcknowledge }: { alert: StuckAlert; onView: () => void; onAcknowledge: () => void }) {
+const AlertItemActions = memo(function AlertItemActions({ alert, onView, onAcknowledge }: { alert: StuckAlert; onView: () => void; onAcknowledge: () => void }) {
   return (
     <div className="flex flex-col gap-1 shrink-0">
-      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onView}><Eye className="h-3 w-3 mr-1" />View</Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 text-xs"
+        onClick={onView}
+        aria-label={`View details for ${alert.repositoryName}`}
+      >
+        <Eye className="h-3 w-3 mr-1" aria-hidden="true" />
+        View
+      </Button>
       {!alert.acknowledged && (
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={onAcknowledge}><Check className="h-3 w-3 mr-1" />Dismiss</Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs text-muted-foreground"
+          onClick={onAcknowledge}
+          aria-label={`Dismiss alert for ${alert.repositoryName}`}
+        >
+          <Check className="h-3 w-3 mr-1" aria-hidden="true" />
+          Dismiss
+        </Button>
       )}
     </div>
   );
-}
+});
 
-function AlertItem({ alert, onView, onAcknowledge }: AlertItemProps) {
+const AlertItem = memo(function AlertItem({ alert, onView, onAcknowledge }: AlertItemProps) {
   const severityConfig = SEVERITY_CONFIG[alert.severity];
   const SeverityIcon = severityConfig.icon;
   const displayDuration = useAlertDuration(alert.stuckDurationSeconds, alert.id);
   const isCritical = alert.severity === 'critical';
   const isHigh = alert.severity === 'high';
 
+  const alertLabel = `${alert.severity} severity alert for ${alert.repositoryName}: ${alert.description}. Stuck for ${formatStuckDuration(displayDuration)}`;
+
   return (
-    <div className={cn(
-      'flex items-start gap-3 p-3 rounded-lg border transition-all',
-      severityConfig.bgColor,
-      severityConfig.borderColor,
-      alert.acknowledged && 'opacity-60',
-      // Enhanced animations for urgent alerts
-      isCritical && !alert.acknowledged && 'animate-pulse ring-2 ring-red-500/50 shadow-lg shadow-red-500/20',
-      isHigh && !alert.acknowledged && 'ring-1 ring-orange-500/30 shadow-md shadow-orange-500/10'
-    )}>
+    <div
+      className={cn(
+        'flex items-start gap-3 p-3 rounded-lg border transition-all',
+        severityConfig.bgColor,
+        severityConfig.borderColor,
+        alert.acknowledged && 'opacity-60',
+        // Enhanced animations for urgent alerts
+        isCritical && !alert.acknowledged && 'animate-pulse ring-2 ring-red-500/50 shadow-lg shadow-red-500/20',
+        isHigh && !alert.acknowledged && 'ring-1 ring-orange-500/30 shadow-md shadow-orange-500/10'
+      )}
+      role="alert"
+      aria-live={isCritical ? 'assertive' : 'polite'}
+      aria-label={alertLabel}
+    >
       <div className={cn(
         'shrink-0 mt-0.5',
         severityConfig.color,
         isCritical && !alert.acknowledged && 'animate-bounce'
       )}>
-        <SeverityIcon className="h-5 w-5" />
+        <SeverityIcon className="h-5 w-5" aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0">
         <AlertItemHeader alert={alert} severityConfig={severityConfig} />
@@ -187,7 +212,7 @@ function AlertItem({ alert, onView, onAcknowledge }: AlertItemProps) {
       <AlertItemActions alert={alert} onView={onView} onAcknowledge={onAcknowledge} />
     </div>
   );
-}
+});
 
 function formatReasonLabel(reason: string): string {
   switch (reason) {
@@ -210,7 +235,7 @@ interface SummaryHeaderProps {
   onToggle: () => void;
 }
 
-function SummaryHeaderIcon({ hasAlerts, severityConfig, isCritical }: { hasAlerts: boolean; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] | null; isCritical: boolean }) {
+const SummaryHeaderIcon = memo(function SummaryHeaderIcon({ hasAlerts, severityConfig, isCritical }: { hasAlerts: boolean; severityConfig: typeof SEVERITY_CONFIG[AlertSeverity] | null; isCritical: boolean }) {
   if (hasAlerts) {
     return (
       <div className={cn(
@@ -231,9 +256,9 @@ function SummaryHeaderIcon({ hasAlerts, severityConfig, isCritical }: { hasAlert
       <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
     </div>
   );
-}
+});
 
-function SummaryHeaderTitle({ hasAlerts, count, isCritical, isHigh }: { hasAlerts: boolean; count: number; isCritical: boolean; isHigh: boolean }) {
+const SummaryHeaderTitle = memo(function SummaryHeaderTitle({ hasAlerts, count, isCritical, isHigh }: { hasAlerts: boolean; count: number; isCritical: boolean; isHigh: boolean }) {
   const message = hasAlerts
     ? `${count} repo${count > 1 ? 's' : ''} need${count === 1 ? 's' : ''} your help`
     : 'All repos running smoothly';
@@ -262,36 +287,43 @@ function SummaryHeaderTitle({ hasAlerts, count, isCritical, isHigh }: { hasAlert
       </p>
     </div>
   );
-}
+});
 
-function SummaryHeader({ status, isCollapsed, onToggle }: SummaryHeaderProps) {
+const SummaryHeader = memo(function SummaryHeader({ status, isCollapsed, onToggle }: SummaryHeaderProps) {
   const hasAlerts = status.totalStuckCount > 0;
   const severityConfig = status.highestSeverity ? SEVERITY_CONFIG[status.highestSeverity] : null;
   const isCritical = status.highestSeverity === 'critical';
   const isHigh = status.highestSeverity === 'high';
 
+  const ariaLabel = hasAlerts
+    ? `${status.totalStuckCount} repositories need attention. ${isCollapsed ? 'Expand' : 'Collapse'} to ${isCollapsed ? 'show' : 'hide'} details`
+    : 'All repositories running smoothly';
+
   return (
-    <div
+    <button
       className={cn(
-        'flex items-center justify-between cursor-pointer select-none rounded-lg -mx-2 px-3 py-2 transition-all',
-        'hover:bg-muted/50',
+        'w-full flex items-center justify-between cursor-pointer select-none rounded-lg -mx-2 px-3 py-2 transition-all',
+        'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
         hasAlerts && isCritical && 'bg-red-50/50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/30',
         hasAlerts && isHigh && !isCritical && 'bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-50 dark:hover:bg-orange-950/30'
       )}
       onClick={onToggle}
+      aria-label={ariaLabel}
+      aria-expanded={!isCollapsed}
+      type="button"
     >
       <div className="flex items-center gap-3">
         <SummaryHeaderIcon hasAlerts={hasAlerts} severityConfig={severityConfig} isCritical={isCritical} />
         <SummaryHeaderTitle hasAlerts={hasAlerts} count={status.totalStuckCount} isCritical={isCritical} isHigh={isHigh} />
       </div>
       {hasAlerts && (
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+        <span aria-hidden="true">
           {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </Button>
+        </span>
       )}
-    </div>
+    </button>
   );
-}
+});
 
 /* ============================================
    STATS BAR
@@ -329,9 +361,13 @@ function StatsBar({ status }: { status: StuckStatus }) {
   const totalStuckSeconds = status.alerts.reduce((sum, alert) => sum + alert.stuckDurationSeconds, 0);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 py-3 px-3 border-y bg-muted/30 rounded-lg">
+    <div
+      className="flex flex-wrap items-center gap-3 py-3 px-3 border-y bg-muted/30 rounded-lg"
+      role="region"
+      aria-label="Alert statistics"
+    >
       <TotalStuckTimeBadge totalSeconds={totalStuckSeconds} severity={status.highestSeverity} />
-      <div className="h-4 w-px bg-border" />
+      <div className="h-4 w-px bg-border" aria-hidden="true" />
       <div className="flex items-center gap-3 text-xs">
         <StatBadge count={status.waitingInputCount} label="waiting" icon={Clock} colorClass="bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400" />
         <StatBadge count={status.failedCount} label="failed" icon={XCircle} colorClass="bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400" />
@@ -360,9 +396,11 @@ function useSortedAlerts(status: StuckStatus | null) {
 
 function AlertList({ alerts, onView, onAcknowledge }: { alerts: StuckAlert[]; onView: (a: StuckAlert) => void; onAcknowledge: (repoId: string) => void }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" role="list" aria-label="Stuck repository alerts">
       {alerts.map((alert) => (
-        <AlertItem key={alert.id} alert={alert} onView={() => onView(alert)} onAcknowledge={() => onAcknowledge(alert.repositoryId)} />
+        <div key={alert.id} role="listitem">
+          <AlertItem alert={alert} onView={() => onView(alert)} onAcknowledge={() => onAcknowledge(alert.repositoryId)} />
+        </div>
       ))}
     </div>
   );
@@ -370,8 +408,25 @@ function AlertList({ alerts, onView, onAcknowledge }: { alerts: StuckAlert[]; on
 
 function ShowMoreButton({ showAll, onToggle, remainingCount }: { showAll: boolean; onToggle: () => void; remainingCount: number }) {
   return (
-    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={onToggle}>
-      {showAll ? <><ChevronUp className="h-3 w-3 mr-1" />Show less</> : <><ChevronDown className="h-3 w-3 mr-1" />Show {remainingCount} more</>}
+    <Button
+      variant="ghost"
+      size="sm"
+      className="w-full text-xs"
+      onClick={onToggle}
+      aria-label={showAll ? 'Show fewer alerts' : `Show ${remainingCount} more alerts`}
+      aria-expanded={showAll}
+    >
+      {showAll ? (
+        <>
+          <ChevronUp className="h-3 w-3 mr-1" aria-hidden="true" />
+          Show less
+        </>
+      ) : (
+        <>
+          <ChevronDown className="h-3 w-3 mr-1" aria-hidden="true" />
+          Show {remainingCount} more
+        </>
+      )}
     </Button>
   );
 }

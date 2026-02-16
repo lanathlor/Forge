@@ -1,0 +1,225 @@
+import { useEffect, useCallback, type RefObject } from 'react';
+
+export interface UseArrowKeyNavigationOptions {
+  /** Current focused index */
+  focusedIndex: number;
+  /** Callback when focused index changes */
+  onFocusChange: (index: number) => void;
+  /** Callback when Enter is pressed on an item */
+  onSelect?: (index: number) => void;
+  /** Total number of items */
+  itemCount: number;
+  /** Whether to loop around when reaching the end */
+  loop?: boolean;
+  /** Whether navigation is enabled */
+  enabled?: boolean;
+  /** Container ref to scope the navigation */
+  containerRef?: RefObject<HTMLElement>;
+  /** Selector for items within the container */
+  itemSelector?: string;
+  /** Orientation of the list */
+  orientation?: 'vertical' | 'horizontal';
+}
+
+/**
+ * Hook for arrow key navigation in lists
+ *
+ * Provides keyboard navigation using arrow keys with automatic scrolling
+ * and visual focus management.
+ *
+ * @example
+ * ```tsx
+ * const [focusedIndex, setFocusedIndex] = useState(0);
+ * const listRef = useRef<HTMLDivElement>(null);
+ *
+ * useArrowKeyNavigation({
+ *   focusedIndex,
+ *   onFocusChange: setFocusedIndex,
+ *   onSelect: (index) => handleSelect(items[index]),
+ *   itemCount: items.length,
+ *   containerRef: listRef,
+ * });
+ * ```
+ */
+export function useArrowKeyNavigation({
+  focusedIndex,
+  onFocusChange,
+  onSelect,
+  itemCount,
+  loop = true,
+  enabled = true,
+  containerRef,
+  itemSelector = '[data-list-item]',
+  orientation = 'vertical',
+}: UseArrowKeyNavigationOptions) {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled || itemCount === 0) return;
+
+      const isVertical = orientation === 'vertical';
+      const nextKey = isVertical ? 'ArrowDown' : 'ArrowRight';
+      const prevKey = isVertical ? 'ArrowUp' : 'ArrowLeft';
+
+      if (event.key === nextKey) {
+        event.preventDefault();
+        if (focusedIndex < itemCount - 1) {
+          onFocusChange(focusedIndex + 1);
+        } else if (loop) {
+          onFocusChange(0);
+        }
+        return;
+      }
+
+      if (event.key === prevKey) {
+        event.preventDefault();
+        if (focusedIndex > 0) {
+          onFocusChange(focusedIndex - 1);
+        } else if (loop) {
+          onFocusChange(itemCount - 1);
+        }
+        return;
+      }
+
+      if (event.key === 'Home') {
+        event.preventDefault();
+        onFocusChange(0);
+        return;
+      }
+
+      if (event.key === 'End') {
+        event.preventDefault();
+        onFocusChange(itemCount - 1);
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        if (onSelect && focusedIndex >= 0 && focusedIndex < itemCount) {
+          event.preventDefault();
+          onSelect(focusedIndex);
+        }
+      }
+    },
+    [enabled, itemCount, focusedIndex, onFocusChange, onSelect, loop, orientation]
+  );
+
+  useEffect(() => {
+    const container = containerRef?.current || document;
+    container.addEventListener('keydown', handleKeyDown as EventListener);
+    return () => container.removeEventListener('keydown', handleKeyDown as EventListener);
+  }, [handleKeyDown, containerRef]);
+
+  // Auto-scroll focused item into view
+  useEffect(() => {
+    if (!containerRef?.current || focusedIndex < 0) return;
+
+    const items = containerRef.current.querySelectorAll(itemSelector);
+    const focusedItem = items[focusedIndex] as HTMLElement;
+
+    if (focusedItem) {
+      focusedItem.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: 'smooth',
+      });
+    }
+  }, [focusedIndex, containerRef, itemSelector]);
+}
+
+/**
+ * Hook for managing grid-based keyboard navigation (2D arrow key navigation)
+ */
+export interface UseGridNavigationOptions {
+  /** Current focused position [row, col] */
+  focusedPosition: [number, number];
+  /** Callback when focused position changes */
+  onFocusChange: (position: [number, number]) => void;
+  /** Callback when Enter is pressed */
+  onSelect?: (position: [number, number]) => void;
+  /** Number of rows */
+  rows: number;
+  /** Number of columns */
+  columns: number;
+  /** Whether to loop around when reaching edges */
+  loop?: boolean;
+  /** Whether navigation is enabled */
+  enabled?: boolean;
+}
+
+export function useGridNavigation({
+  focusedPosition,
+  onFocusChange,
+  onSelect,
+  rows,
+  columns,
+  loop = false,
+  enabled = true,
+}: UseGridNavigationOptions) {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled || rows === 0 || columns === 0) return;
+
+      const [row, col] = focusedPosition;
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          if (row < rows - 1) {
+            onFocusChange([row + 1, col]);
+          } else if (loop) {
+            onFocusChange([0, col]);
+          }
+          break;
+
+        case 'ArrowUp':
+          event.preventDefault();
+          if (row > 0) {
+            onFocusChange([row - 1, col]);
+          } else if (loop) {
+            onFocusChange([rows - 1, col]);
+          }
+          break;
+
+        case 'ArrowRight':
+          event.preventDefault();
+          if (col < columns - 1) {
+            onFocusChange([row, col + 1]);
+          } else if (loop) {
+            onFocusChange([row, 0]);
+          }
+          break;
+
+        case 'ArrowLeft':
+          event.preventDefault();
+          if (col > 0) {
+            onFocusChange([row, col - 1]);
+          } else if (loop) {
+            onFocusChange([row, columns - 1]);
+          }
+          break;
+
+        case 'Home':
+          event.preventDefault();
+          onFocusChange([row, 0]);
+          break;
+
+        case 'End':
+          event.preventDefault();
+          onFocusChange([row, columns - 1]);
+          break;
+
+        case 'Enter':
+          if (onSelect) {
+            event.preventDefault();
+            onSelect(focusedPosition);
+          }
+          break;
+      }
+    },
+    [enabled, rows, columns, focusedPosition, onFocusChange, onSelect, loop]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+}

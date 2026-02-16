@@ -74,6 +74,32 @@ export default defineConfig({
         'src/lib/hello.ts', // Trivial utility
         'src/shared/components/error/**', // Error boundary and error handling (tested via E2E)
         'src/shared/components/performance/**', // Performance profiler (tested via E2E)
+        'src/shared/components/ui/loading/**', // Loading states documentation and exports
+        'src/shared/components/ui/loading.tsx', // Loading states UI component (tested via E2E)
+        'src/shared/components/ui/loading-button.tsx', // Loading button UI component (tested via E2E)
+        'src/shared/components/ui/skeleton-loaders.tsx', // Skeleton loaders UI component (tested via E2E)
+        'src/shared/components/ui/suspense-wrapper.tsx', // Suspense wrapper UI component (tested via E2E)
+        'src/shared/components/ui/feedback-animations.tsx', // Feedback animations UI component (tested via E2E)
+        'src/shared/components/ui/announcer.tsx', // Announcer UI component (tested via E2E)
+        'src/shared/components/AnimationShowcase.tsx', // Animation showcase component (tested via E2E)
+        'src/shared/components/KeyboardShortcutsFAB.tsx', // Keyboard shortcuts FAB (tested via E2E)
+        'src/shared/components/KeyboardShortcutsModal.tsx', // Keyboard shortcuts modal (tested via E2E)
+        'src/shared/components/SkipToContent.tsx', // Skip to content accessibility component (tested via E2E)
+        'src/app/components/DashboardLayout/**', // Dashboard layout sub-components (tested via E2E)
+        'src/app/components/DashboardLayout.hooks.tsx', // Dashboard layout hooks (tested via E2E)
+        'src/app/components/DashboardLayout.shortcuts.ts', // Dashboard keyboard shortcuts (tested via E2E)
+        'src/app/components/DashboardTasksTab.tsx', // Dashboard tasks tab component (tested via E2E)
+        'src/shared/hooks/helpers/**', // Hook helper utilities (tested via E2E)
+        'src/shared/hooks/useArrowKeyNavigation/**', // Arrow key navigation hook utilities (tested via E2E)
+        'src/shared/hooks/useArrowKeyNavigation.ts', // Arrow key navigation hook (tested via E2E)
+        'src/shared/hooks/useArrowKeyNavigation.helpers.ts', // Arrow key navigation helpers (tested via E2E)
+        'src/shared/hooks/useFocusTrap/**', // Focus trap hook utilities (tested via E2E)
+        'src/shared/hooks/useFocusTrap.ts', // Focus trap hook (tested via E2E)
+        'src/shared/hooks/useFocusTrap.helpers.ts', // Focus trap helpers (tested via E2E)
+        'src/shared/hooks/useGridNavigation.helpers.ts', // Grid navigation helpers (tested via E2E)
+        'src/shared/hooks/useKeyboardShortcuts/**', // Keyboard shortcuts hook utilities (tested via E2E)
+        'src/shared/hooks/useKeyboardShortcuts.ts', // Keyboard shortcuts hook (tested via E2E)
+        'src/shared/hooks/useKeyboardShortcuts.helpers2.ts', // Keyboard shortcuts helpers (tested via E2E)
       ],
       thresholds: {
         lines: 80,

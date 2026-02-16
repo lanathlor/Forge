@@ -1,33 +1,34 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useTaskStream } from '@/shared/hooks';
-import { TaskList } from './TaskList';
-import { TaskDetailPanel } from './TaskDetailPanel';
-import { PromptInput } from './PromptInput';
-import { Badge } from '@/shared/components/ui/badge';
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useTaskStream, useKeyboardShortcuts } from '@/shared/hooks';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useGetSessionQuery } from '@/features/sessions/store/sessionsApi';
 import {
   SessionControlsBar,
   SessionHistoryModal,
   SessionSummaryModal,
-  SessionSummary,
 } from '@/features/sessions/components';
 import {
-  PlanList,
-  PlanDetailView,
-  PlanExecutionView,
-  PlanRefinementChat,
-  PlanLaunchDialog,
   LivePlanMonitor,
 } from '@/features/plans/components';
 import { useGetPlansQuery } from '@/features/plans/store/plansApi';
-import { QAGatesConfig } from '@/features/repositories/components';
 import type { Plan } from '@/db/schema';
 import { PerformanceProfiler } from '@/shared/components/performance';
 import { ErrorBoundary } from '@/shared/components/error';
+import { KeyboardShortcutsModal } from '@/shared/components/KeyboardShortcutsModal';
+import { KeyboardShortcutsFAB } from '@/shared/components/KeyboardShortcutsFAB';
+import { TasksTabContent } from './DashboardLayout/TasksTabContent';
+
+// Lazy load heavy components for better code splitting
+const SessionSummary = lazy(() => import('@/features/sessions/components').then(mod => ({ default: mod.SessionSummary })));
+const PlanList = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanList })));
+const PlanDetailView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanDetailView })));
+const PlanExecutionView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanExecutionView })));
+const PlanRefinementChat = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanRefinementChat })));
+const PlanLaunchDialog = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanLaunchDialog })));
+const QAGatesConfig = lazy(() => import('@/features/repositories/components').then(mod => ({ default: mod.QAGatesConfig })));
 
 interface DashboardLayoutProps {
   sessionId: string;
@@ -41,6 +42,147 @@ interface DashboardLayoutProps {
 }
 
 /**
+ * Loading fallback for lazy-loaded components
+ */
+function LoadingFallback({ message }: { message: string }) {
+  return (
+    <div
+      className="flex items-center justify-center h-full min-h-[300px]"
+      role="status"
+      aria-live="polite"
+      aria-label={message}
+    >
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+        <span className="text-sm">{message}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Register all keyboard shortcuts for the dashboard
+ */
+function useRegisterDashboardShortcuts(params: {
+  registerShortcut: ReturnType<typeof useKeyboardShortcuts>['registerShortcut'];
+  handleTabChange: (tab: string) => void;
+  handleSelectTask: (taskId: string | null) => void;
+  selectedTaskId: string | null;
+  showShortcutsModal: boolean;
+  setShowShortcutsModal: (show: boolean) => void;
+  showHistoryModal: boolean;
+  setShowHistoryModal: (show: boolean) => void;
+  showSummaryModal: boolean;
+  setShowSummaryModal: (show: boolean) => void;
+  reviewPlanId: string | null;
+  setReviewPlanId: (id: string | null) => void;
+}) {
+  const {
+    registerShortcut,
+    handleTabChange,
+    handleSelectTask,
+    selectedTaskId,
+    showShortcutsModal,
+    setShowShortcutsModal,
+    showHistoryModal,
+    setShowHistoryModal,
+    showSummaryModal,
+    setShowSummaryModal,
+    reviewPlanId,
+    setReviewPlanId,
+  } = params;
+
+  useEffect(() => {
+    // Show shortcuts modal
+    registerShortcut({
+      id: 'show-shortcuts',
+      key: '?',
+      shift: true,
+      description: 'Show keyboard shortcuts',
+      category: 'General',
+      handler: () => setShowShortcutsModal(true),
+      excludeInputs: true,
+    });
+
+    // Tab navigation shortcuts
+    registerShortcut({
+      id: 'go-to-tasks',
+      key: '1',
+      ctrl: true,
+      description: 'Go to Tasks tab',
+      category: 'Navigation',
+      handler: () => handleTabChange('tasks'),
+      excludeInputs: true,
+    });
+
+    registerShortcut({
+      id: 'go-to-plans',
+      key: '2',
+      ctrl: true,
+      description: 'Go to Plans tab',
+      category: 'Navigation',
+      handler: () => handleTabChange('plans'),
+      excludeInputs: true,
+    });
+
+    registerShortcut({
+      id: 'go-to-qa-gates',
+      key: '3',
+      ctrl: true,
+      description: 'Go to QA Gates tab',
+      category: 'Navigation',
+      handler: () => handleTabChange('qa-gates'),
+      excludeInputs: true,
+    });
+
+    registerShortcut({
+      id: 'go-to-summary',
+      key: '4',
+      ctrl: true,
+      description: 'Go to Summary tab',
+      category: 'Navigation',
+      handler: () => handleTabChange('summary'),
+      excludeInputs: true,
+    });
+
+    // Close panels/modals with Escape
+    registerShortcut({
+      id: 'close-panel',
+      key: 'Escape',
+      description: 'Close panels and modals',
+      category: 'General',
+      handler: () => {
+        if (selectedTaskId) {
+          handleSelectTask(null);
+        } else if (showShortcutsModal) {
+          setShowShortcutsModal(false);
+        } else if (showHistoryModal) {
+          setShowHistoryModal(false);
+        } else if (showSummaryModal) {
+          setShowSummaryModal(false);
+        } else if (reviewPlanId) {
+          setReviewPlanId(null);
+        }
+      },
+      excludeInputs: false,
+    });
+  }, [
+    registerShortcut,
+    handleTabChange,
+    selectedTaskId,
+    handleSelectTask,
+    showShortcutsModal,
+    setShowShortcutsModal,
+    showHistoryModal,
+    setShowHistoryModal,
+    showSummaryModal,
+    setShowSummaryModal,
+    reviewPlanId,
+    setReviewPlanId,
+  ]);
+}
+
+/**
  * Main Dashboard Layout Component
  *
  * Features:
@@ -50,6 +192,8 @@ interface DashboardLayoutProps {
  * - Launch & Switch for multi-repo workflows
  * - Mobile-responsive layout
  * - Session management (pause, resume, end)
+ * - Code splitting for heavy components (Plans, QA Gates, Summary)
+ * - Performance optimized with React.memo and lazy loading
  */
 
 export function DashboardLayout({
@@ -75,6 +219,7 @@ export function DashboardLayout({
   const [launchPlan, setLaunchPlan] = useState<Plan | null>(null);
   const [showLaunchDialog, setShowLaunchDialog] = useState(false);
   const [justLaunchedPlanId, setJustLaunchedPlanId] = useState<string | null>(null);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const { data: sessionData } = useGetSessionQuery(sessionId);
   const { updates, connected, error, reconnect } = useTaskStream(sessionId);
@@ -82,6 +227,8 @@ export function DashboardLayout({
     pollingInterval: 5000,
     skipPollingIfUnfocused: true,
   });
+
+  const { registerShortcut, getShortcuts } = useKeyboardShortcuts();
 
   const session = sessionData?.session;
 
@@ -181,6 +328,22 @@ export function DashboardLayout({
     }
   }, [activeTab, handleTabChange]);
 
+  // Register keyboard shortcuts
+  useRegisterDashboardShortcuts({
+    registerShortcut,
+    handleTabChange,
+    handleSelectTask,
+    selectedTaskId,
+    showShortcutsModal,
+    setShowShortcutsModal,
+    showHistoryModal,
+    setShowHistoryModal,
+    showSummaryModal,
+    setShowSummaryModal,
+    reviewPlanId,
+    setReviewPlanId,
+  });
+
   return (
     <PerformanceProfiler id="DashboardLayout">
       <ErrorBoundary id="dashboard-main">
@@ -209,158 +372,154 @@ export function DashboardLayout({
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="mb-3">
-              <TabsTrigger value="tasks">Tasks</TabsTrigger>
-              <TabsTrigger value="plans" className="gap-1.5">
+            <TabsList className="mb-3" role="tablist" aria-label="Dashboard navigation">
+              <TabsTrigger value="tasks" aria-label="View tasks" aria-controls="tasks-panel" className="transition-all duration-200 hover:scale-105 active:scale-95">Tasks</TabsTrigger>
+              <TabsTrigger
+                value="plans"
+                className="gap-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
+                aria-label={`View plans${activePlanCount > 0 ? `, ${activePlanCount} active` : ''}`}
+                aria-controls="plans-panel"
+              >
                 Plans
                 {activePlanCount > 0 && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                  <span className="relative flex h-2 w-2" role="status" aria-label={`${activePlanCount} active plans`}>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" aria-hidden="true" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" aria-hidden="true" />
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="qa-gates">QA Gates</TabsTrigger>
-              <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="qa-gates" aria-label="View QA gates configuration" aria-controls="qa-gates-panel" className="transition-all duration-200 hover:scale-105 active:scale-95">QA Gates</TabsTrigger>
+              <TabsTrigger value="summary" aria-label="View session summary" aria-controls="summary-panel" className="transition-all duration-200 hover:scale-105 active:scale-95">Summary</TabsTrigger>
             </TabsList>
 
             {/* Tasks Tab */}
-            <TabsContent value="tasks" className="flex-1 flex flex-col gap-3 overflow-hidden mt-0 data-[state=inactive]:hidden">
-              <ErrorBoundary id="tasks-tab">
-                {/* Connection Status Bar */}
-                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-card/50">
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {connected ? (
-                      <>
-                        <Wifi className="h-4 w-4 text-green-600" />
-                        <span className="text-xs text-green-600 hidden sm:inline">Connected</span>
-                      </>
-                    ) : error ? (
-                      <>
-                        <WifiOff className="h-4 w-4 text-red-600" />
-                        <button onClick={reconnect} className="text-xs text-red-600 underline">
-                          Reconnect
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground hidden sm:inline">Connecting...</span>
-                      </>
-                    )}
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    Session: {sessionId.slice(0, 8)}
-                  </Badge>
-                </div>
-
-                <PromptInput sessionId={sessionId} onTaskCreated={handleTaskCreated} />
-
-                <div className="flex-1 flex overflow-hidden">
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <ErrorBoundary id="task-list">
-                      <TaskList
-                        sessionId={sessionId}
-                        selectedTaskId={selectedTaskId}
-                        onSelectTask={handleSelectTask}
-                        updates={updates}
-                        refreshTrigger={refreshTrigger}
-                      />
-                    </ErrorBoundary>
-                  </div>
-                  <ErrorBoundary id="task-detail">
-                    <TaskDetailPanel
-                      taskId={selectedTaskId || ''}
-                      updates={updates}
-                      open={!!selectedTaskId}
-                      onClose={() => handleSelectTask(null)}
-                    />
-                  </ErrorBoundary>
-                </div>
-              </ErrorBoundary>
+            <TabsContent
+              value="tasks"
+              id="tasks-panel"
+              role="tabpanel"
+              aria-labelledby="tasks-tab"
+              className="flex-1 flex flex-col gap-3 overflow-hidden mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+            >
+              <TasksTabContent
+                sessionId={sessionId}
+                connected={connected}
+                error={error}
+                reconnect={reconnect}
+                selectedTaskId={selectedTaskId}
+                handleSelectTask={handleSelectTask}
+                updates={updates}
+                refreshTrigger={refreshTrigger}
+                handleTaskCreated={handleTaskCreated}
+              />
             </TabsContent>
 
             {/* Plans Tab */}
-            <TabsContent value="plans" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+            <TabsContent
+              value="plans"
+              id="plans-panel"
+              role="tabpanel"
+              aria-labelledby="plans-tab"
+              className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+            >
               <ErrorBoundary id="plans-tab">
-                {planView === 'list' ? (
-                  <div className="h-full overflow-auto">
-                    <PlanList
-                      repositoryId={repositoryId}
-                      onViewPlan={handleViewPlan}
-                      onLaunchPlan={handleOpenLaunch}
-                    />
-                  </div>
-                ) : planView === 'execution' && selectedPlanId ? (
-                  <div className="h-full overflow-hidden">
-                    <PlanExecutionView
-                      planId={selectedPlanId}
-                      onBack={handleBackToList}
-                      onReview={(planId) => setReviewPlanId(planId)}
-                      justLaunched={justLaunchedPlanId === selectedPlanId}
-                    />
-                  </div>
-                ) : planView === 'detail' && selectedPlanId ? (
-                  <div className="h-full flex overflow-hidden">
-                    <div className="flex-1 overflow-auto min-w-0">
-                      <PlanDetailView
+                <Suspense fallback={<LoadingFallback message="Loading plans..." />}>
+                  {planView === 'list' ? (
+                    <div className="h-full overflow-auto">
+                      <PlanList
+                        repositoryId={repositoryId}
+                        onViewPlan={handleViewPlan}
+                        onLaunchPlan={handleOpenLaunch}
+                      />
+                    </div>
+                  ) : planView === 'execution' && selectedPlanId ? (
+                    <div className="h-full overflow-hidden">
+                      <PlanExecutionView
                         planId={selectedPlanId}
                         onBack={handleBackToList}
                         onReview={(planId) => setReviewPlanId(planId)}
-                        onLaunch={handleOpenLaunch}
-                        onViewExecution={handleViewExecution}
+                        justLaunched={justLaunchedPlanId === selectedPlanId}
                       />
                     </div>
-                    {reviewPlanId && (
-                      <PlanRefinementChat
-                        planId={reviewPlanId}
-                        open={!!reviewPlanId}
-                        onClose={() => setReviewPlanId(null)}
-                        onLaunch={() => {
-                          setReviewPlanId(null);
-                          handleOpenLaunch(reviewPlanId);
-                        }}
-                      />
-                    )}
-                  </div>
-                ) : null}
+                  ) : planView === 'detail' && selectedPlanId ? (
+                    <div className="h-full flex overflow-hidden">
+                      <div className="flex-1 overflow-auto min-w-0">
+                        <PlanDetailView
+                          planId={selectedPlanId}
+                          onBack={handleBackToList}
+                          onReview={(planId) => setReviewPlanId(planId)}
+                          onLaunch={handleOpenLaunch}
+                          onViewExecution={handleViewExecution}
+                        />
+                      </div>
+                      {reviewPlanId && (
+                        <PlanRefinementChat
+                          planId={reviewPlanId}
+                          open={!!reviewPlanId}
+                          onClose={() => setReviewPlanId(null)}
+                          onLaunch={() => {
+                            setReviewPlanId(null);
+                            handleOpenLaunch(reviewPlanId);
+                          }}
+                        />
+                      )}
+                    </div>
+                  ) : null}
+                </Suspense>
               </ErrorBoundary>
             </TabsContent>
 
             {/* QA Gates Tab */}
-            <TabsContent value="qa-gates" className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden">
+            <TabsContent
+              value="qa-gates"
+              id="qa-gates-panel"
+              role="tabpanel"
+              aria-labelledby="qa-gates-tab"
+              className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+            >
               <ErrorBoundary id="qa-gates-tab">
-                <QAGatesConfig repositoryId={repositoryId} />
+                <Suspense fallback={<LoadingFallback message="Loading QA gates..." />}>
+                  <QAGatesConfig repositoryId={repositoryId} />
+                </Suspense>
               </ErrorBoundary>
             </TabsContent>
 
             {/* Summary Tab */}
-            <TabsContent value="summary" className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden">
+            <TabsContent
+              value="summary"
+              id="summary-panel"
+              role="tabpanel"
+              aria-labelledby="summary-tab"
+              className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+            >
               <ErrorBoundary id="summary-tab">
-                <SessionSummary
-                  sessionId={sessionId}
-                  onTaskClick={(taskId) => {
-                    handleSelectTask(taskId);
-                    handleTabChange('tasks');
-                  }}
-                />
+                <Suspense fallback={<LoadingFallback message="Loading summary..." />}>
+                  <SessionSummary
+                    sessionId={sessionId}
+                    onTaskClick={(taskId) => {
+                      handleSelectTask(taskId);
+                      handleTabChange('tasks');
+                    }}
+                  />
+                </Suspense>
               </ErrorBoundary>
             </TabsContent>
           </Tabs>
 
           {/* Plan Launch Dialog */}
           {launchPlan && (
-            <PlanLaunchDialog
-              plan={launchPlan}
-              repositoryId={repositoryId}
-              open={showLaunchDialog}
-              onOpenChange={(open) => {
-                setShowLaunchDialog(open);
-                if (!open) setLaunchPlan(null);
-              }}
-              onLaunched={handleLaunched}
-              onLaunchAndSwitch={handleLaunchAndSwitch}
-            />
+            <Suspense fallback={null}>
+              <PlanLaunchDialog
+                plan={launchPlan}
+                repositoryId={repositoryId}
+                open={showLaunchDialog}
+                onOpenChange={(open) => {
+                  setShowLaunchDialog(open);
+                  if (!open) setLaunchPlan(null);
+                }}
+                onLaunched={handleLaunched}
+                onLaunchAndSwitch={handleLaunchAndSwitch}
+              />
+            </Suspense>
           )}
 
           {/* Session History Modal */}
@@ -380,6 +539,16 @@ export function DashboardLayout({
             onClose={() => setShowSummaryModal(false)}
             onNewSession={handleNewSession}
           />
+
+          {/* Keyboard Shortcuts Modal */}
+          <KeyboardShortcutsModal
+            open={showShortcutsModal}
+            onOpenChange={setShowShortcutsModal}
+            shortcuts={getShortcuts()}
+          />
+
+          {/* Keyboard Shortcuts FAB */}
+          <KeyboardShortcutsFAB />
         </div>
       </ErrorBoundary>
     </PerformanceProfiler>

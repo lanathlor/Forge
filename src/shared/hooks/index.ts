@@ -44,6 +44,25 @@ export type { ResponsiveValue, ExtractResponsiveValue } from './useResponsiveVal
 export { useCountUp, easings } from './useCountUp';
 export type { UseCountUpOptions, UseCountUpReturn } from './useCountUp';
 
+// Keyboard navigation hooks
+export {
+  useKeyboardShortcuts,
+  useKeyboardShortcut,
+  formatShortcut,
+} from './useKeyboardShortcuts';
+export type { KeyboardShortcut } from './useKeyboardShortcuts';
+
+export { useFocusTrap, useFocusRestore } from './useFocusTrap';
+
+export {
+  useArrowKeyNavigation,
+  useGridNavigation,
+} from './useArrowKeyNavigation';
+export type {
+  UseArrowKeyNavigationOptions,
+  UseGridNavigationOptions,
+} from './useArrowKeyNavigation';
+
 // SSE hooks (re-export from contexts)
 export {
   useSSE,

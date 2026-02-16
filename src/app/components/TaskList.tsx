@@ -23,6 +23,7 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 import { cn } from '@/shared/lib/utils';
 import { formatRelativeTime, truncate } from '@/shared/lib/utils';
+import type { TaskUpdate } from '@/shared/hooks/useTaskStream';
 import {
   Clock,
   CheckCircle2,
@@ -63,7 +64,7 @@ interface TaskListProps {
   sessionId: string;
   selectedTaskId: string | null;
   onSelectTask: (taskId: string) => void;
-  updates?: Array<Record<string, unknown>>;
+  updates?: TaskUpdate[];
   refreshTrigger?: number;
 }
 

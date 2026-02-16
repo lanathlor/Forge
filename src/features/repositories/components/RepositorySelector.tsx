@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react';
 import type { Repository } from '@/db/schema';
 import { useRepositoryData } from '../hooks/useRepositoryData';
 import {
@@ -138,7 +138,7 @@ function getAnimClass(animation: StatusConfig['animation']): string {
   return '';
 }
 
-function StatusDot({ status, size = 'sm' }: { status: ClaudeStatus; size?: 'xs' | 'sm' }) {
+const StatusDot = memo(({ status, size = 'sm' }: { status: ClaudeStatus; size?: 'xs' | 'sm' }) => {
   const c = STATUS_CONFIG[status];
   const sz = size === 'xs' ? 'h-1.5 w-1.5' : 'h-2 w-2';
   return (
@@ -152,7 +152,8 @@ function StatusDot({ status, size = 'sm' }: { status: ClaudeStatus; size?: 'xs' 
       )}
     </span>
   );
-}
+});
+StatusDot.displayName = 'StatusDot';
 
 /* ============================================
    REPO ROW - Active Work
@@ -169,7 +170,7 @@ interface ActiveRepoRowProps {
   onMouseEnter: () => void;
 }
 
-function ActiveRepoRow({
+const ActiveRepoRow = memo(function ActiveRepoRow({
   repo,
   liveState,
   isSelected,
@@ -184,22 +185,28 @@ function ActiveRepoRow({
   const Icon = c.icon;
   const taskCount = liveState?.currentTask ? 1 : 0;
 
+  const ariaLabel = `${repo.name}, ${c.label}${needsAttention ? ', needs attention' : ''}${taskCount > 0 ? `, ${taskCount} task` : ''}${isSelected ? ', selected' : ''}`;
+
   return (
     <button
       onClick={onSelect}
       onMouseEnter={onMouseEnter}
       data-repo-id={repo.id}
+      aria-label={ariaLabel}
+      aria-current={isSelected ? 'page' : undefined}
+      role="option"
+      aria-selected={isSelected}
       className={cn(
-        'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-100',
-        'hover:bg-muted/60 active:scale-[0.99]',
-        'focus:outline-none',
-        isFocused && 'bg-muted/80 ring-1 ring-primary/30',
+        'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200',
+        'hover:bg-muted/60 hover:pl-4 hover:shadow-sm active:scale-[0.98]',
+        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+        isFocused && 'bg-muted/80 ring-1 ring-primary/30 animate-slide-in-right',
         isSelected && !isFocused && 'bg-primary/8 border-l-2 border-l-primary',
-        needsAttention && 'ring-1 ring-red-400/50',
+        needsAttention && 'ring-1 ring-red-400/50 animate-pulse-alert',
       )}
     >
       {/* Status indicator */}
-      <div className={cn('flex items-center justify-center h-7 w-7 rounded-md shrink-0', c.bgColor)}>
+      <div className={cn('flex items-center justify-center h-7 w-7 rounded-md shrink-0', c.bgColor)} aria-hidden="true">
         <Icon className={cn('h-3.5 w-3.5', c.textColor)} />
       </div>
 
@@ -237,7 +244,7 @@ function ActiveRepoRow({
       </div>
     </button>
   );
-}
+});
 
 /* ============================================
    REPO ROW - All Repositories
@@ -252,7 +259,7 @@ interface RepoRowProps {
   onMouseEnter: () => void;
 }
 
-function RepoRow({
+const RepoRow = memo(function RepoRow({
   repo,
   liveState,
   isSelected,
@@ -261,38 +268,45 @@ function RepoRow({
   onMouseEnter,
 }: RepoRowProps) {
   const hasSession = liveState && liveState.claudeStatus !== 'idle';
+  const status = liveState?.claudeStatus ?? 'idle';
+  const statusLabel = hasSession ? STATUS_CONFIG[status].label : 'idle';
+  const ariaLabel = `${repo.name}${hasSession ? `, ${statusLabel}` : ''}${isSelected ? ', selected' : ''}`;
 
   return (
     <button
       onClick={onSelect}
       onMouseEnter={onMouseEnter}
       data-repo-id={repo.id}
+      aria-label={ariaLabel}
+      aria-current={isSelected ? 'page' : undefined}
+      role="option"
+      aria-selected={isSelected}
       className={cn(
-        'w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-all duration-100',
-        'hover:bg-muted/60 active:scale-[0.99]',
-        'focus:outline-none',
-        isFocused && 'bg-muted/80 ring-1 ring-primary/30',
+        'w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-all duration-200',
+        'hover:bg-muted/60 hover:pl-4 hover:shadow-sm active:scale-[0.98]',
+        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+        isFocused && 'bg-muted/80 ring-1 ring-primary/30 animate-slide-in-right',
         isSelected && !isFocused && 'bg-primary/8',
       )}
     >
-      <GitBranch className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <GitBranch className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
       <span className="text-sm truncate flex-1">{repo.name}</span>
       {hasSession && <StatusDot status={liveState.claudeStatus} size="xs" />}
       {isSelected && (
-        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" aria-hidden="true" />
       )}
       {isFocused && !isSelected && (
-        <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+        <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
       )}
     </button>
   );
-}
+});
 
 /* ============================================
    SECTION HEADER
    ============================================ */
 
-function SectionHeader({ title, count, icon: Icon }: { title: string; count: number; icon: LucideIcon }) {
+const SectionHeader = memo(function SectionHeader({ title, count, icon: Icon }: { title: string; count: number; icon: LucideIcon }) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5">
       <Icon className="h-3 w-3 text-muted-foreground" />
@@ -302,7 +316,7 @@ function SectionHeader({ title, count, icon: Icon }: { title: string; count: num
       <span className="text-[10px] text-muted-foreground/60">{count}</span>
     </div>
   );
-}
+});
 
 /* ============================================
    MAIN COMPONENT
@@ -594,13 +608,18 @@ export function RepositorySelector({
 
         {/* Search input */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
           <input
             ref={searchInputRef}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search repos..."
+            type="search"
+            role="searchbox"
+            aria-label="Search repositories"
+            aria-controls="repository-list"
+            aria-autocomplete="list"
             className={cn(
               'w-full h-8 pl-8 pr-12 rounded-md border text-sm',
               'bg-muted/30 border-border/50',
@@ -609,19 +628,25 @@ export function RepositorySelector({
               'transition-all duration-150',
             )}
           />
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono text-muted-foreground border border-border/50">
-            <Command className="h-2.5 w-2.5" />K
+          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono text-muted-foreground border border-border/50" aria-label="Keyboard shortcut: Command K">
+            <Command className="h-2.5 w-2.5" aria-hidden="true" />K
           </kbd>
         </div>
       </div>
 
       {/* Repo list */}
-      <div ref={listRef} className="flex-1 overflow-y-auto p-1.5">
+      <div
+        ref={listRef}
+        id="repository-list"
+        className="flex-1 overflow-y-auto p-1.5"
+        role="region"
+        aria-label="Repository list"
+      >
         {/* Active Work section */}
         {filteredItems.active.length > 0 && (
-          <div className="mb-2">
+          <div className="mb-2 animate-slide-in-down">
             <SectionHeader title="Active Work" count={filteredItems.active.length} icon={Activity} />
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 stagger-children" role="list" aria-label="Active repositories">
               {filteredItems.active.map((repo, i) => {
                 const live = liveStateMap.get(repo.id);
                 const alert = getAlertForRepo(repo.id);
@@ -645,9 +670,9 @@ export function RepositorySelector({
 
         {/* All Repositories section */}
         {filteredItems.all.length > 0 && (
-          <div>
+          <div className="animate-slide-in-down">
             <SectionHeader title="All Repositories" count={filteredItems.all.length} icon={GitBranch} />
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 stagger-children" role="list" aria-label="All repositories">
               {filteredItems.all.map((repo, j) => {
                 const globalIdx = filteredItems.active.length + j;
                 const live = liveStateMap.get(repo.id);
@@ -669,12 +694,13 @@ export function RepositorySelector({
 
         {/* No results */}
         {flatList.length === 0 && searchQuery && (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Search className="h-5 w-5 text-muted-foreground/40 mb-2" />
+          <div className="flex flex-col items-center justify-center py-8 text-center" role="status">
+            <Search className="h-5 w-5 text-muted-foreground/40 mb-2" aria-hidden="true" />
             <span className="text-sm text-muted-foreground">No repos match &quot;{searchQuery}&quot;</span>
             <button
               onClick={() => setSearchQuery('')}
-              className="mt-2 text-xs text-primary hover:underline"
+              className="mt-2 text-xs text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2 py-1"
+              aria-label="Clear search and show all repositories"
             >
               Clear search
             </button>

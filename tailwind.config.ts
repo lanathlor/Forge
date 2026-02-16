@@ -179,6 +179,30 @@ const config: Config = {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
           '50%': { opacity: '0.6', transform: 'scale(1.2)' },
         },
+        'shimmer': {
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' },
+        },
+        'slide-up-fade': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-down-fade': {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'indeterminate': {
+          '0%': { left: '-33%' },
+          '100%': { left: '100%' },
+        },
+        'skeleton-shimmer': {
+          '0%': { backgroundPosition: '-468px 0' },
+          '100%': { backgroundPosition: '468px 0' },
+        },
+        'spin': {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
       },
 
       animation: {
@@ -186,6 +210,12 @@ const config: Config = {
         'stream-glow': 'stream-glow 2s ease-in-out infinite',
         'cursor-blink': 'cursor-blink 1s step-end infinite',
         'live-pulse': 'live-pulse 1.5s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'slide-up-fade': 'slide-up-fade 0.3s ease-out',
+        'slide-down-fade': 'slide-down-fade 0.3s ease-out',
+        'indeterminate': 'indeterminate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        'skeleton-shimmer': 'skeleton-shimmer 1.6s linear infinite',
+        'spin': 'spin 1s linear infinite',
       },
 
       transitionTimingFunction: {

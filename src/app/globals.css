@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import animation system */
+@import '../shared/styles/animations.css';
+
 @layer base {
   :root {
     /* ============================================
@@ -378,6 +381,53 @@
   /* Prevent horizontal scroll on mobile */
   body {
     overflow-x: hidden;
+  }
+
+  /* ============================================
+     KEYBOARD NAVIGATION & FOCUS INDICATORS
+     ============================================ */
+
+  /* Enhanced focus indicators for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Remove default focus outline (will use :focus-visible instead) */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Button focus states */
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Input focus states */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-2 ring-ring ring-offset-0;
+    outline: none;
+  }
+
+  /* Link focus states */
+  a:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background rounded;
+    outline: none;
+  }
+
+  /* Tab navigation focus indicators for interactive elements */
+  [tabindex]:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Skip navigation outline */
+  .skip-to-content:focus {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+    outline: none;
   }
 }
 

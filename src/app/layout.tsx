@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import './globals-accessibility.css';
 import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -18,8 +19,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={inter.className}>
+        <a href="#main-content" className="skip-to-main">
+          Skip to main content
+        </a>
         <Providers>
-          <div className="min-h-screen bg-background">{children}</div>
+          <div id="main-content" className="min-h-screen bg-background" role="main">
+            {children}
+          </div>
         </Providers>
       </body>
     </html>

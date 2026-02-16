@@ -1,0 +1,395 @@
+/**
+ * Accessibility Enhancements
+ *
+ * This file contains accessibility-focused styles to ensure WCAG AA compliance
+ * and improve the experience for users with disabilities.
+ */
+
+/* ============================================
+   FOCUS INDICATORS
+   ============================================ */
+
+/* Enhanced focus indicators for better visibility */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  transition: outline-offset 0.2s ease;
+}
+
+/* Ensure focus is visible when using keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="option"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE SUPPORT
+   ============================================ */
+
+/* Improve borders and outlines in high contrast mode */
+@media (prefers-contrast: high) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    border-width: 2px;
+  }
+
+  .border {
+    border-width: 2px;
+  }
+
+  /* Ensure focus indicators are more prominent */
+  *:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+}
+
+/* ============================================
+   COLOR CONTRAST IMPROVEMENTS
+   ============================================ */
+
+/* Improve text contrast for muted text in light mode */
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+  /* Default should already be WCAG AA compliant, but we ensure minimum 4.5:1 */
+}
+
+/* Ensure status indicators have sufficient contrast */
+.text-green-600 {
+  color: rgb(22 101 52); /* Darker green for better contrast */
+}
+
+.dark .text-green-600 {
+  color: rgb(134 239 172); /* Lighter green for dark mode */
+}
+
+.text-red-600 {
+  color: rgb(185 28 28); /* Darker red for better contrast */
+}
+
+.dark .text-red-600 {
+  color: rgb(248 113 113); /* Lighter red for dark mode */
+}
+
+.text-amber-600,
+.text-amber-700 {
+  color: rgb(180 83 9); /* Darker amber for better contrast */
+}
+
+.dark .text-amber-600,
+.dark .text-amber-700 {
+  color: rgb(251 191 36); /* Lighter amber for dark mode */
+}
+
+.text-orange-600,
+.text-orange-700 {
+  color: rgb(194 65 12); /* Darker orange for better contrast */
+}
+
+.dark .text-orange-600,
+.dark .text-orange-700 {
+  color: rgb(251 146 60); /* Lighter orange for dark mode */
+}
+
+.text-blue-600 {
+  color: rgb(28 100 242); /* Darker blue for better contrast */
+}
+
+.dark .text-blue-600 {
+  color: rgb(96 165 250); /* Lighter blue for dark mode */
+}
+
+/* Improve badge text contrast */
+.bg-red-100 {
+  background-color: rgb(254 226 226);
+}
+
+.dark .bg-red-900\/40 {
+  background-color: rgba(127, 29, 29, 0.6); /* More opaque for better contrast */
+}
+
+.bg-amber-100 {
+  background-color: rgb(254 243 199);
+}
+
+.dark .bg-amber-950\/40 {
+  background-color: rgba(69, 26, 3, 0.6); /* More opaque for better contrast */
+}
+
+.bg-orange-100 {
+  background-color: rgb(255 237 213);
+}
+
+.dark .bg-orange-950\/40 {
+  background-color: rgba(67, 20, 7, 0.6); /* More opaque for better contrast */
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable all pulse/bounce animations */
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   SCREEN READER UTILITIES
+   ============================================ */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focusable when navigated to via keyboard */
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================
+   TOUCH TARGET SIZES
+   ============================================ */
+
+/* Ensure minimum touch target size of 44x44px (WCAG 2.5.5) */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="option"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* For small buttons/links, add padding to reach minimum size */
+  button.h-7,
+  button.h-8 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* ============================================
+   KEYBOARD NAVIGATION INDICATORS
+   ============================================ */
+
+/* Show skip to main content link on focus */
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 1rem;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.skip-to-main:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+/* ============================================
+   ARIA LIVE REGION STYLES
+   ============================================ */
+
+/* Style for screen reader announcements */
+[aria-live="polite"],
+[aria-live="assertive"] {
+  position: relative;
+}
+
+/* Visual indicator for critical alerts */
+[aria-live="assertive"] {
+  border-left: 4px solid hsl(var(--destructive));
+}
+
+/* ============================================
+   COLOR BLIND FRIENDLY IMPROVEMENTS
+   ============================================ */
+
+/* Add patterns/textures in addition to color for status indicators */
+.status-success::before {
+  content: "✓ ";
+  margin-right: 0.25rem;
+}
+
+.status-error::before {
+  content: "✗ ";
+  margin-right: 0.25rem;
+}
+
+.status-warning::before {
+  content: "⚠ ";
+  margin-right: 0.25rem;
+}
+
+/* ============================================
+   IMPROVED LINK IDENTIFICATION
+   ============================================ */
+
+/* Ensure links are identifiable without relying on color alone */
+a:not(.no-underline) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ============================================
+   BUTTON STATES
+   ============================================ */
+
+/* Ensure disabled state is clear */
+button:disabled,
+[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Active/pressed state for better feedback */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   FORM ACCESSIBILITY
+   ============================================ */
+
+/* Improve label association visibility */
+label {
+  cursor: pointer;
+}
+
+/* Required field indicator */
+[required] + label::after,
+[aria-required="true"] + label::after {
+  content: " *";
+  color: hsl(var(--destructive));
+}
+
+/* Error state for form fields */
+[aria-invalid="true"],
+.error {
+  border-color: hsl(var(--destructive));
+  border-width: 2px;
+}
+
+/* Error message styling */
+[role="alert"] {
+  color: hsl(var(--destructive-foreground));
+  background-color: hsl(var(--destructive) / 0.1);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+/* Ensure loading states are announced to screen readers */
+[aria-busy="true"] {
+  position: relative;
+}
+
+[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: hsl(var(--background) / 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   MODAL/DIALOG ACCESSIBILITY
+   ============================================ */
+
+/* Ensure focus trap is visible */
+[role="dialog"],
+[role="alertdialog"] {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+/* Backdrop for modals */
+[role="dialog"]::backdrop,
+[role="alertdialog"]::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   TABLE ACCESSIBILITY
+   ============================================ */
+
+/* Improve table header visibility */
+thead th {
+  font-weight: 600;
+  text-align: left;
+}
+
+/* Zebra striping for better readability */
+tbody tr:nth-child(even) {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+/* ============================================
+   ANIMATION SAFETY
+   ============================================ */
+
+/* Limit animation intensity */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-pulse-fast {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}

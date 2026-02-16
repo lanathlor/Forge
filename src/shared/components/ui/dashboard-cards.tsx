@@ -2,11 +2,14 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/shared/lib/utils"
 
+// Performance optimization: memoization
+const { memo } = React
+
 // =============================================================================
 // Skeleton Component (for loading states)
 // =============================================================================
 
-const Skeleton = React.forwardRef<
+const Skeleton = memo(React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -15,14 +18,14 @@ const Skeleton = React.forwardRef<
     className={cn("animate-pulse rounded-md bg-muted", className)}
     {...props}
   />
-))
+)))
 Skeleton.displayName = "Skeleton"
 
 // =============================================================================
 // Shared Icons (small inline SVGs)
 // =============================================================================
 
-const ChevronRightIcon = ({ className }: { className?: string }) => (
+const ChevronRightIcon = memo(({ className }: { className?: string }) => (
   <svg
     className={className}
     fill="none"
@@ -32,9 +35,10 @@ const ChevronRightIcon = ({ className }: { className?: string }) => (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
   </svg>
-)
+))
+ChevronRightIcon.displayName = "ChevronRightIcon"
 
-const TrendUpIcon = () => (
+const TrendUpIcon = memo(() => (
   <svg
     className="h-3 w-3"
     fill="none"
@@ -44,9 +48,10 @@ const TrendUpIcon = () => (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
   </svg>
-)
+))
+TrendUpIcon.displayName = "TrendUpIcon"
 
-const TrendDownIcon = () => (
+const TrendDownIcon = memo(() => (
   <svg
     className="h-3 w-3"
     fill="none"
@@ -56,22 +61,23 @@ const TrendDownIcon = () => (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
   </svg>
-)
+))
+TrendDownIcon.displayName = "TrendDownIcon"
 
 // =============================================================================
 // StatCard - For metrics with icon, value, label, trend indicator
 // =============================================================================
 
 const statCardVariants = cva(
-  "relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200",
+  "relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-[0.99]",
   {
     variants: {
       variant: {
         default: "hover:shadow-md hover:border-border-strong",
-        primary: "border-accent-primary/20 bg-accent-primary/5 hover:border-accent-primary/40",
-        success: "border-success/20 bg-success/5 hover:border-success/40",
-        warning: "border-warning/20 bg-warning/5 hover:border-warning/40",
-        error: "border-error/20 bg-error/5 hover:border-error/40",
+        primary: "border-accent-primary/20 bg-accent-primary/5 hover:border-accent-primary/40 hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)]",
+        success: "border-success/20 bg-success/5 hover:border-success/40 hover:shadow-[0_4px_20px_rgba(22,163,74,0.15)]",
+        warning: "border-warning/20 bg-warning/5 hover:border-warning/40 hover:shadow-[0_4px_20px_rgba(245,158,11,0.15)]",
+        error: "border-error/20 bg-error/5 hover:border-error/40 hover:shadow-[0_4px_20px_rgba(239,68,68,0.15)]",
       },
       size: {
         default: "p-6",
@@ -122,7 +128,7 @@ interface StatCardSkeletonProps {
   size: StatCardProps["size"]
 }
 
-const StatCardSkeleton = React.forwardRef<HTMLDivElement, StatCardSkeletonProps & React.HTMLAttributes<HTMLDivElement>>(
+const StatCardSkeleton = memo(React.forwardRef<HTMLDivElement, StatCardSkeletonProps & React.HTMLAttributes<HTMLDivElement>>(
   ({ className, variant, size, ...props }, ref) => (
     <div
       ref={ref}
@@ -139,26 +145,29 @@ const StatCardSkeleton = React.forwardRef<HTMLDivElement, StatCardSkeletonProps 
       </div>
     </div>
   )
-)
+))
 StatCardSkeleton.displayName = "StatCardSkeleton"
 
 interface TrendBadgeProps {
   trend: NonNullable<StatCardProps["trend"]>
 }
 
-const TrendBadge = ({ trend }: TrendBadgeProps) => (
+const TrendBadge = memo(({ trend }: TrendBadgeProps) => (
   <div className={cn(trendVariants({ trend: trend.direction }))}>
     {trend.direction === "up" && <TrendUpIcon />}
     {trend.direction === "down" && <TrendDownIcon />}
     <span>{trend.value}{trend.label && ` ${trend.label}`}</span>
   </div>
-)
+))
+TrendBadge.displayName = "TrendBadge"
 
-const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
+const StatCard = memo(React.forwardRef<HTMLDivElement, StatCardProps>(
   ({ className, variant, size, icon, value, label, trend, loading, ...props }, ref) => {
     if (loading) {
       return <StatCardSkeleton ref={ref} className={className ?? ""} variant={variant} size={size} {...props} />
     }
+
+    const ariaLabel = `${label}: ${value}${trend ? `, trend ${trend.direction} ${trend.value}` : ''}`;
 
     return (
       <div
@@ -168,11 +177,13 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         )}
         tabIndex={0}
+        role="region"
+        aria-label={ariaLabel}
         {...props}
       >
         <div className="flex items-start justify-between">
           {icon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden="true">
               {icon}
             </div>
           )}
@@ -185,7 +196,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       </div>
     )
   }
-)
+))
 StatCard.displayName = "StatCard"
 
 // =============================================================================
@@ -193,12 +204,12 @@ StatCard.displayName = "StatCard"
 // =============================================================================
 
 const actionCardVariants = cva(
-  "group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200",
+  "group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-[0.99]",
   {
     variants: {
       variant: {
         default: "hover:shadow-md hover:border-border-strong",
-        primary: "border-accent-primary/20 hover:border-accent-primary hover:bg-accent-primary/5",
+        primary: "border-accent-primary/20 hover:border-accent-primary hover:bg-accent-primary/5 hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)]",
         ghost: "border-transparent hover:border-border hover:bg-muted/50",
       },
       size: {
@@ -236,7 +247,7 @@ interface ActionCardSkeletonProps {
   hasAction: boolean
 }
 
-const ActionCardSkeleton = React.forwardRef<HTMLDivElement, ActionCardSkeletonProps & React.HTMLAttributes<HTMLDivElement>>(
+const ActionCardSkeleton = memo(React.forwardRef<HTMLDivElement, ActionCardSkeletonProps & React.HTMLAttributes<HTMLDivElement>>(
   ({ className, variant, size, hasAction, ...props }, ref) => (
     <div ref={ref} className={cn(actionCardVariants({ variant, size, className }))} {...props}>
       <div className="flex items-start gap-4">
@@ -253,7 +264,7 @@ const ActionCardSkeleton = React.forwardRef<HTMLDivElement, ActionCardSkeletonPr
       )}
     </div>
   )
-)
+))
 ActionCardSkeleton.displayName = "ActionCardSkeleton"
 
 interface ActionCardIconProps {
@@ -261,18 +272,19 @@ interface ActionCardIconProps {
   variant: ActionCardProps["variant"]
 }
 
-const ActionCardIcon = ({ icon, variant }: ActionCardIconProps) => (
+const ActionCardIcon = memo(({ icon, variant }: ActionCardIconProps) => (
   <div
     className={cn(
-      "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+      "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition-all duration-200 group-hover:scale-110",
       variant === "primary"
-        ? "bg-accent-primary/10 text-accent-primary group-hover:bg-accent-primary/20"
+        ? "bg-accent-primary/10 text-accent-primary group-hover:bg-accent-primary/20 group-hover:rotate-3"
         : "bg-muted text-muted-foreground group-hover:bg-muted/80"
     )}
   >
     {icon}
   </div>
-)
+))
+ActionCardIcon.displayName = "ActionCardIcon"
 
 interface ActionCardLinkProps {
   href: string
@@ -280,7 +292,7 @@ interface ActionCardLinkProps {
   disabled?: boolean
 }
 
-const ActionCardLink = ({ href, label, disabled }: ActionCardLinkProps) => (
+const ActionCardLink = memo(({ href, label, disabled }: ActionCardLinkProps) => (
   <a
     href={href}
     className={cn(
@@ -291,7 +303,8 @@ const ActionCardLink = ({ href, label, disabled }: ActionCardLinkProps) => (
     {label}
     <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
   </a>
-)
+))
+ActionCardLink.displayName = "ActionCardLink"
 
 interface ActionCardButtonProps {
   label: string
@@ -299,7 +312,7 @@ interface ActionCardButtonProps {
   disabled?: boolean
 }
 
-const ActionCardButton = ({ label, onClick, disabled }: ActionCardButtonProps) => (
+const ActionCardButton = memo(({ label, onClick, disabled }: ActionCardButtonProps) => (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -312,7 +325,8 @@ const ActionCardButton = ({ label, onClick, disabled }: ActionCardButtonProps) =
     {label}
     <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
   </button>
-)
+))
+ActionCardButton.displayName = "ActionCardButton"
 
 interface ActionCardContentProps {
   icon?: React.ReactNode
@@ -324,7 +338,7 @@ interface ActionCardContentProps {
   isInteractive: boolean
 }
 
-const ActionCardContent = ({ icon, variant, title, description, action, disabled, isInteractive }: ActionCardContentProps) => (
+const ActionCardContent = memo(({ icon, variant, title, description, action, disabled, isInteractive }: ActionCardContentProps) => (
   <>
     <div className="flex items-start gap-4">
       {icon && <ActionCardIcon icon={icon} variant={variant} />}
@@ -345,7 +359,8 @@ const ActionCardContent = ({ icon, variant, title, description, action, disabled
       </div>
     )}
   </>
-)
+))
+ActionCardContent.displayName = "ActionCardContent"
 
 function createActionCardKeyHandler(onClick?: React.MouseEventHandler<HTMLDivElement>) {
   return (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -388,7 +403,7 @@ function getActionCardInteractiveProps(isInteractive: boolean, disabled?: boolea
   }
 }
 
-const ActionCard = React.forwardRef<HTMLDivElement, ActionCardProps>(
+const ActionCard = memo(React.forwardRef<HTMLDivElement, ActionCardProps>(
   ({ className, variant, size, icon, title, description, action, disabled, loading, onClick, ...props }, ref) => {
     const isInteractive = isActionCardInteractive(onClick, action)
 
@@ -417,7 +432,7 @@ const ActionCard = React.forwardRef<HTMLDivElement, ActionCardProps>(
       </div>
     )
   }
-)
+))
 ActionCard.displayName = "ActionCard"
 
 // =============================================================================
@@ -465,7 +480,7 @@ interface ListCardHeaderProps {
   headerAction?: React.ReactNode
 }
 
-const ListCardHeader = ({ title, description, headerAction }: ListCardHeaderProps) => (
+const ListCardHeader = memo(({ title, description, headerAction }: ListCardHeaderProps) => (
   <div className="flex items-center justify-between p-4 border-b border-border">
     <div>
       {title && <h3 className="font-semibold text-text-primary">{title}</h3>}
@@ -473,7 +488,8 @@ const ListCardHeader = ({ title, description, headerAction }: ListCardHeaderProp
     </div>
     {headerAction}
   </div>
-)
+))
+ListCardHeader.displayName = "ListCardHeader"
 
 interface ListCardSkeletonProps {
   className: string
@@ -485,7 +501,7 @@ interface ListCardSkeletonProps {
   hasHeaderAction: boolean
 }
 
-const ListCardSkeletonItem = () => (
+const ListCardSkeletonItem = memo(() => (
   <div className="p-4 border-b border-border last:border-b-0">
     <div className="flex items-center gap-3">
       <Skeleton className="h-8 w-8 rounded-full" />
@@ -495,9 +511,10 @@ const ListCardSkeletonItem = () => (
       </div>
     </div>
   </div>
-)
+))
+ListCardSkeletonItem.displayName = "ListCardSkeletonItem"
 
-const ListCardSkeleton = React.forwardRef<HTMLDivElement, ListCardSkeletonProps & React.HTMLAttributes<HTMLDivElement>>(
+const ListCardSkeleton = memo(React.forwardRef<HTMLDivElement, ListCardSkeletonProps & React.HTMLAttributes<HTMLDivElement>>(
   ({ className, variant, maxHeight, loadingItemCount, hasHeader, hasDescription, hasHeaderAction, ...props }, ref) => (
     <div ref={ref} className={cn(listCardVariants({ variant, className }))} {...props}>
       {hasHeader && (
@@ -519,23 +536,24 @@ const ListCardSkeleton = React.forwardRef<HTMLDivElement, ListCardSkeletonProps 
       </div>
     </div>
   )
-)
+))
 ListCardSkeleton.displayName = "ListCardSkeleton"
 
 interface ListCardListItemProps {
   item: ListCardItem
 }
 
-const ListCardListItem = ({ item }: ListCardListItemProps) => {
+const ListCardListItem = memo(({ item }: ListCardListItemProps) => {
   if (item.onClick) {
     return (
       <button
         onClick={item.onClick}
         disabled={item.disabled}
         className={cn(
-          "w-full text-left p-4 transition-colors duration-150",
-          "hover:bg-surface-interactive focus-visible:bg-surface-interactive",
+          "w-full text-left p-4 transition-all duration-200",
+          "hover:bg-surface-interactive hover:pl-5 focus-visible:bg-surface-interactive focus-visible:pl-5",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+          "active:scale-[0.99]",
           item.disabled && "pointer-events-none opacity-50"
         )}
       >
@@ -544,11 +562,12 @@ const ListCardListItem = ({ item }: ListCardListItemProps) => {
     )
   }
   return (
-    <div className={cn("p-4", item.disabled && "opacity-50")}>
+    <div className={cn("p-4 transition-opacity duration-200", item.disabled && "opacity-50")}>
       {item.content}
     </div>
   )
-}
+})
+ListCardListItem.displayName = "ListCardListItem"
 
 function formatMaxHeight(maxHeight: string | number): string {
   return typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight
@@ -558,17 +577,18 @@ interface ListCardEmptyProps {
   emptyState?: React.ReactNode
 }
 
-const ListCardEmpty = ({ emptyState }: ListCardEmptyProps) => (
+const ListCardEmpty = memo(({ emptyState }: ListCardEmptyProps) => (
   <div className="flex items-center justify-center p-8 text-center">
     {emptyState || <p className="text-sm text-text-muted">No items to display</p>}
   </div>
-)
+))
+ListCardEmpty.displayName = "ListCardEmpty"
 
 interface ListCardItemsProps {
   items: ListCardItem[]
 }
 
-const ListCardItems = ({ items }: ListCardItemsProps) => (
+const ListCardItems = memo(({ items }: ListCardItemsProps) => (
   <ul className="divide-y divide-border">
     {items.map((item) => (
       <li key={item.id}>
@@ -576,9 +596,10 @@ const ListCardItems = ({ items }: ListCardItemsProps) => (
       </li>
     ))}
   </ul>
-)
+))
+ListCardItems.displayName = "ListCardItems"
 
-const ListCard = React.forwardRef<HTMLDivElement, ListCardProps>(
+const ListCard = memo(React.forwardRef<HTMLDivElement, ListCardProps>(
   ({ className, variant, title, description, items, maxHeight = 320, emptyState, headerAction, loading, loadingItemCount = 3, ...props }, ref) => {
     const hasHeader = !!(title || description || headerAction)
 
@@ -607,7 +628,7 @@ const ListCard = React.forwardRef<HTMLDivElement, ListCardProps>(
       </div>
     )
   }
-)
+))
 ListCard.displayName = "ListCard"
 
 // =============================================================================
@@ -619,7 +640,7 @@ export interface ListCardItemRowProps extends React.HTMLAttributes<HTMLDivElemen
   trailing?: React.ReactNode
 }
 
-const ListCardItemRow = React.forwardRef<HTMLDivElement, ListCardItemRowProps>(
+const ListCardItemRow = memo(React.forwardRef<HTMLDivElement, ListCardItemRowProps>(
   ({ className, leading, trailing, children, ...props }, ref) => (
     <div ref={ref} className={cn("flex items-center gap-3", className)} {...props}>
       {leading && <div className="shrink-0">{leading}</div>}
@@ -627,7 +648,7 @@ const ListCardItemRow = React.forwardRef<HTMLDivElement, ListCardItemRowProps>(
       {trailing && <div className="shrink-0">{trailing}</div>}
     </div>
   )
-)
+))
 ListCardItemRow.displayName = "ListCardItemRow"
 
 // =============================================================================
