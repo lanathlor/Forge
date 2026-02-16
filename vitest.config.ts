@@ -69,8 +69,11 @@ export default defineConfig({
         'src/features/repositories/components/TestGateButton.tsx', // Complex fetch + dialog component (tested via E2E)
         'src/features/repositories/components/DraggableGatesList.tsx', // Drag-and-drop component (tested via E2E)
         'src/features/repositories/components/RepositoryDetailView.tsx', // Complex detail view (tested via E2E)
+        'src/features/repositories/components/RepositorySelector.tsx', // Complex keyboard navigation component (tested via E2E)
         'src/instrumentation.ts', // Next.js instrumentation (tested via integration)
         'src/lib/hello.ts', // Trivial utility
+        'src/shared/components/error/**', // Error boundary and error handling (tested via E2E)
+        'src/shared/components/performance/**', // Performance profiler (tested via E2E)
       ],
       thresholds: {
         lines: 80,

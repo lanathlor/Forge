@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog';
-import { Play } from 'lucide-react';
+import { Play, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 interface TestGateButtonProps {
   repositoryId: string;
@@ -72,10 +72,12 @@ export function TestGateButton({ repositoryId, gateName, command }: TestGateButt
     }
   }
 
-  const statusColors = {
-    running: 'text-blue-600',
-    passed: 'text-green-600',
-    failed: 'text-red-600',
+  const getButtonIcon = () => {
+    if (!result) return <Play className="h-3.5 w-3.5" />;
+    if (result.status === 'running') return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+    if (result.status === 'passed') return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
+    if (result.status === 'failed') return <XCircle className="h-3.5 w-3.5 text-red-600" />;
+    return <Play className="h-3.5 w-3.5" />;
   };
 
   return (
@@ -86,51 +88,77 @@ export function TestGateButton({ repositoryId, gateName, command }: TestGateButt
         className="h-8 w-8"
         onClick={handleTest}
         title="Test this gate"
+        disabled={result?.status === 'running'}
       >
-        <Play className="h-3.5 w-3.5" />
+        {getButtonIcon()}
       </Button>
 
       <Dialog open={showOutput} onOpenChange={setShowOutput}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Test: {gateName}</DialogTitle>
-            <DialogDescription className="font-mono text-xs">
+            <DialogTitle className="flex items-center gap-2">
+              Test Gate: {gateName}
+            </DialogTitle>
+            <DialogDescription className="rounded-md bg-muted/50 p-2 font-mono text-xs">
               {command}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {result && (
               <>
-                <div className="flex items-center justify-between text-sm">
-                  <span className={`font-semibold ${statusColors[result.status]}`}>
+                <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+                  <div className="flex items-center gap-2">
                     {result.status === 'running' && (
-                      <span className="inline-flex items-center gap-2">
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Running...
-                      </span>
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                        <span className="font-semibold text-blue-600">Running...</span>
+                      </>
                     )}
-                    {result.status === 'passed' && 'Passed'}
-                    {result.status === 'failed' && 'Failed'}
-                  </span>
+                    {result.status === 'passed' && (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold text-green-600">Passed</span>
+                      </>
+                    )}
+                    {result.status === 'failed' && (
+                      <>
+                        <XCircle className="h-5 w-5 text-red-600" />
+                        <span className="font-semibold text-red-600">Failed</span>
+                      </>
+                    )}
+                  </div>
                   {result.duration != null && (
-                    <span className="text-muted-foreground">
-                      {(result.duration / 1000).toFixed(2)}s
-                    </span>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Duration:</span>
+                      <span className="font-mono font-semibold">
+                        {(result.duration / 1000).toFixed(2)}s
+                      </span>
+                    </div>
                   )}
                 </div>
 
                 {result.output && (
-                  <div className="max-h-80 overflow-auto rounded-lg border bg-muted/50 p-4">
-                    <pre className="whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
-                      {result.output}
-                    </pre>
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Output
+                    </div>
+                    <div className="max-h-96 overflow-auto rounded-lg border bg-muted/50 p-4">
+                      <pre className="whitespace-pre-wrap break-words font-mono text-xs text-foreground">
+                        {result.output}
+                      </pre>
+                    </div>
                   </div>
                 )}
                 {result.error && (
-                  <div className="max-h-40 overflow-auto rounded-lg border border-red-200 bg-red-50/50 p-4 dark:border-red-900/30 dark:bg-red-950/20">
-                    <pre className="whitespace-pre-wrap break-words font-mono text-xs text-red-700 dark:text-red-400">
-                      {result.error}
-                    </pre>
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-600">
+                      Error
+                    </div>
+                    <div className="max-h-64 overflow-auto rounded-lg border border-red-200 bg-red-50/50 p-4 dark:border-red-900/30 dark:bg-red-950/20">
+                      <pre className="whitespace-pre-wrap break-words font-mono text-xs text-red-900 dark:text-red-400">
+                        {result.error}
+                      </pre>
+                    </div>
                   </div>
                 )}
               </>

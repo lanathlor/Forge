@@ -592,6 +592,132 @@ describe('useQAGatesData', () => {
     });
   });
 
+  describe('Gate Mutations', () => {
+    it('reorders gates correctly', async () => {
+      const mockConfig = {
+        repository: {
+          id: 'repo-1',
+          name: 'test-repo',
+          path: '/path',
+          isClean: true,
+          currentBranch: 'main',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        config: {
+          version: '1.0.0',
+          maxRetries: 2,
+          qaGates: [
+            { name: 'gate1', command: 'test1', timeout: 1000, enabled: true, failOnError: true, order: 1 },
+            { name: 'gate2', command: 'test2', timeout: 1000, enabled: true, failOnError: true, order: 2 },
+            { name: 'gate3', command: 'test3', timeout: 1000, enabled: true, failOnError: true, order: 3 },
+          ],
+        },
+      };
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConfig,
+        })
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ run: null, gates: [], hasRun: false }),
+        });
+
+      const { result } = renderHook(() => useQAGatesData('repo-1'));
+
+      await waitFor(() => {
+        expect(result.current.config).not.toBeNull();
+      });
+
+      act(() => {
+        result.current.reorderGates(0, 2); // Move first to last
+      });
+
+      expect(result.current.gates?.[0]?.name).toBe('gate2');
+      expect(result.current.gates?.[1]?.name).toBe('gate3');
+      expect(result.current.gates?.[2]?.name).toBe('gate1');
+    });
+
+    it('handles saveConfig when config is null', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+      });
+
+      const { result } = renderHook(() => useQAGatesData('repo-1'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Config is null, saveConfig should return early
+      await act(async () => {
+        await result.current.saveConfig();
+      });
+
+      // Should not have made any save requests
+      expect(mockFetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/qa-gates/save'),
+        expect.anything()
+      );
+    });
+  });
+
+  describe('Timeout Handling', () => {
+    it('handles AbortError in runQAGates', async () => {
+      const mockConfig = {
+        repository: {
+          id: 'repo-1',
+          name: 'test-repo',
+          path: '/path',
+          isClean: true,
+          currentBranch: 'main',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        config: {
+          version: '1.0.0',
+          maxRetries: 2,
+          qaGates: [],
+        },
+      };
+
+      const mockStatus = {
+        run: null,
+        gates: [],
+        hasRun: false,
+      };
+
+      const abortError = new Error('The user aborted a request.');
+      abortError.name = 'AbortError';
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConfig,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockStatus,
+        })
+        .mockRejectedValueOnce(abortError);
+
+      const { result } = renderHook(() => useQAGatesData('repo-1'));
+
+      await waitFor(() => {
+        expect(result.current.config).not.toBeNull();
+      });
+
+      await result.current.runQAGates();
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Request timed out - please try again');
+      });
+    });
+  });
+
   describe('Repository ID Changes', () => {
     it('refetches config when repository ID changes', async () => {
       const mockConfig1 = {

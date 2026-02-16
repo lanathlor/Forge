@@ -316,7 +316,7 @@ describe('Task Orchestrator', () => {
 
       const claudeOutput =
         failedUpdate?.value?.set?.mock?.calls?.[0]?.[0]?.claudeOutput;
-      expect(claudeOutput).toBe(errorMessage);
+      expect(claudeOutput).toBe(`\n\n❌ Claude execution failed: ${errorMessage}`);
     });
 
     it('should handle non-Error exceptions', async () => {
@@ -331,7 +331,7 @@ describe('Task Orchestrator', () => {
 
       const claudeOutput =
         failedUpdate?.value?.set?.mock?.calls?.[0]?.[0]?.claudeOutput;
-      expect(claudeOutput).toBe('Unknown error');
+      expect(claudeOutput).toBe('\n\n❌ Claude execution failed: Unknown error');
     });
   });
 

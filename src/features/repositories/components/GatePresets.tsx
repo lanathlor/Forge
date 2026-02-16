@@ -94,25 +94,32 @@ export function GatePresets({ onApplyPreset }: GatePresetsProps) {
           Presets
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Load Preset Configuration</DialogTitle>
+          <DialogTitle className="text-xl">Load Preset Configuration</DialogTitle>
           <DialogDescription>
-            Replace current gates with a preset for your tech stack. This will overwrite your existing configuration.
+            Quick-start with pre-configured quality gates for your tech stack. This will replace your current configuration.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 pt-2">
+        <div className="grid gap-3 pt-2">
           {PRESETS.map((preset) => (
             <button
               key={preset.key}
-              className="flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors hover:bg-accent"
+              className="group flex w-full items-center justify-between rounded-xl border-2 border-muted p-5 text-left transition-all hover:border-primary/50 hover:bg-accent hover:shadow-md"
               onClick={() => handleSelect(preset)}
             >
-              <div>
-                <div className="font-medium">{preset.label}</div>
+              <div className="flex-1">
+                <div className="mb-1 text-lg font-semibold">{preset.label}</div>
                 <div className="text-sm text-muted-foreground">{preset.description}</div>
               </div>
-              <Badge variant="secondary">{preset.gates.length} gates</Badge>
+              <div className="ml-4 flex flex-col items-end gap-2">
+                <Badge variant="secondary" className="px-3 py-1">
+                  {preset.gates.length} gates
+                </Badge>
+                <span className="text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                  Click to load
+                </span>
+              </div>
             </button>
           ))}
         </div>

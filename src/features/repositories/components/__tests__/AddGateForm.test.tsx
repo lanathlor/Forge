@@ -38,8 +38,8 @@ describe('AddGateForm', () => {
 
   it('renders form fields', () => {
     render(<AddGateForm {...defaultProps} />);
-    expect(screen.getByText('Add New Gate')).toBeInTheDocument();
-    expect(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Add New Quality Gate')).toBeInTheDocument();
+    expect(screen.getByLabelText('Gate Name')).toBeInTheDocument();
     expect(screen.getByLabelText('Command')).toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe('AddGateForm', () => {
     const user = userEvent.setup();
     render(<AddGateForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText('Name'), 'ESLint');
+    await user.type(screen.getByLabelText('Gate Name'), 'ESLint');
     await user.type(screen.getByLabelText('Command'), 'pnpm lint');
 
     const submitBtn = screen.getByRole('button', { name: /add gate/i });
@@ -64,7 +64,7 @@ describe('AddGateForm', () => {
     const user = userEvent.setup();
     render(<AddGateForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText('Name'), 'ESLint');
+    await user.type(screen.getByLabelText('Gate Name'), 'ESLint');
     await user.type(screen.getByLabelText('Command'), 'pnpm lint');
     await user.click(screen.getByRole('button', { name: /add gate/i }));
 
@@ -82,7 +82,7 @@ describe('AddGateForm', () => {
     const user = userEvent.setup();
     render(<AddGateForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText('Name'), '  ESLint  ');
+    await user.type(screen.getByLabelText('Gate Name'), '  ESLint  ');
     await user.type(screen.getByLabelText('Command'), '  pnpm lint  ');
     await user.click(screen.getByRole('button', { name: /add gate/i }));
 
@@ -107,19 +107,19 @@ describe('AddGateForm', () => {
     const user = userEvent.setup();
     render(<AddGateForm {...defaultProps} />);
 
-    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.getByText('Required Gate')).toBeInTheDocument();
 
     const switchBtn = screen.getByRole('switch');
     await user.click(switchBtn);
 
-    expect(screen.getByText('Optional')).toBeInTheDocument();
+    expect(screen.getByText('Optional Gate')).toBeInTheDocument();
   });
 
   it('does not submit when name is only whitespace', async () => {
     const user = userEvent.setup();
     render(<AddGateForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText('Name'), '   ');
+    await user.type(screen.getByLabelText('Gate Name'), '   ');
     await user.type(screen.getByLabelText('Command'), 'pnpm lint');
 
     const submitBtn = screen.getByRole('button', { name: /add gate/i });
@@ -130,7 +130,7 @@ describe('AddGateForm', () => {
     const user = userEvent.setup();
     render(<AddGateForm {...defaultProps} nextOrder={5} />);
 
-    await user.type(screen.getByLabelText('Name'), 'Test');
+    await user.type(screen.getByLabelText('Gate Name'), 'Test');
     await user.type(screen.getByLabelText('Command'), 'npm test');
     await user.click(screen.getByRole('button', { name: /add gate/i }));
 

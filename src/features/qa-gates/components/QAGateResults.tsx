@@ -5,6 +5,9 @@ import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import type { QAGateStatus } from '@/db/schema/qa-gates';
+import { ErrorState } from '@/shared/components/error';
+import { useToast } from '@/shared/components/ui/toast';
+import { useErrorToast } from '@/shared/components/error';
 
 interface QAGateResultsProps {
   taskId: string;
@@ -258,22 +261,33 @@ function ResultsHeader({
 }
 
 interface ResultsFooterProps {
+  attempt: number;
   maxAttempts: number;
   onRerun: () => void;
 }
 
-function ResultsFooter({ maxAttempts, onRerun }: ResultsFooterProps) {
+function ResultsFooter({ attempt, maxAttempts, onRerun }: ResultsFooterProps) {
+  const maxAttemptsReached = attempt >= maxAttempts;
+
   return (
     <div className="pt-4 border-t">
-      <p className="text-sm text-destructive mb-3">
-        ⚠️ Maximum retry attempts ({maxAttempts}) reached. You can manually
-        fix the issues and re-run, or override to approve anyway.
-      </p>
+      {maxAttemptsReached ? (
+        <p className="text-sm text-destructive mb-3">
+          ⚠️ Maximum retry attempts ({maxAttempts}) reached. You can manually
+          fix the issues and re-run, or override to approve anyway.
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground mb-3">
+          🔧 QA gates failed. Fix the issues manually and re-run the gates.
+        </p>
+      )}
       <div className="flex gap-2">
         <Button variant="outline" onClick={onRerun}>
           Fix & Re-run
         </Button>
-        <Button variant="secondary">Override & Approve Anyway</Button>
+        {maxAttemptsReached && (
+          <Button variant="secondary">Override & Approve Anyway</Button>
+        )}
       </div>
     </div>
   );
@@ -283,8 +297,12 @@ function ResultsFooter({ maxAttempts, onRerun }: ResultsFooterProps) {
 function useQAGateResults(taskId: string) {
   const [results, setResults] = useState<GateDisplay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { addToast } = useToast();
+  const showError = useErrorToast(addToast);
 
   const loadResults = useCallback(async () => {
+    setError(null);
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
@@ -301,16 +319,22 @@ function useQAGateResults(taskId: string) {
 
       const data = await res.json();
       setResults(data.results || []);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error');
+
+      if (error.name === 'AbortError') {
         console.error('Request timeout: QA gate results took too long to load');
+        setError(new Error('Request timed out'));
+        showError.timeout(undefined, loadResults);
       } else {
         console.error('Failed to load QA gate results:', error);
+        setError(error);
+        showError.fromError(error, loadResults);
       }
     } finally {
       setLoading(false);
     }
-  }, [taskId]);
+  }, [taskId, addToast, showError]);
 
   useEffect(() => {
     loadResults();
@@ -318,6 +342,7 @@ function useQAGateResults(taskId: string) {
 
   async function rerunGates() {
     setLoading(true);
+    setError(null);
     try {
       // Start the QA retry in the background
       const res = await fetch(`/api/tasks/${taskId}/qa-gates/run`, {
@@ -333,14 +358,17 @@ function useQAGateResults(taskId: string) {
       setTimeout(() => {
         loadResults();
       }, 1000);
-    } catch (error) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error');
       console.error('Failed to re-run QA gates:', error);
+      setError(error);
+      showError.fromError(error, rerunGates);
       setLoading(false);
     }
     // Keep loading state true - it will be cleared by loadResults()
   }
 
-  return { results, loading, rerunGates };
+  return { results, loading, error, rerunGates };
 }
 
 function useExpandedGates() {
@@ -388,7 +416,7 @@ function ResultsView({
   onRerun,
   onToggleExpand,
 }: ResultsViewProps) {
-  const showFooter = !allPassed && attempt >= maxAttempts;
+  const showFooter = !allPassed;
 
   return (
     <Card className="p-6">
@@ -414,7 +442,7 @@ function ResultsView({
         </div>
 
         {showFooter && (
-          <ResultsFooter maxAttempts={maxAttempts} onRerun={onRerun} />
+          <ResultsFooter attempt={attempt} maxAttempts={maxAttempts} onRerun={onRerun} />
         )}
       </div>
     </Card>
@@ -427,11 +455,27 @@ export function QAGateResults({
   attempt = 1,
   maxAttempts = 3,
 }: QAGateResultsProps) {
-  const { results, loading, rerunGates } = useQAGateResults(taskId);
+  const { results, loading, error, rerunGates } = useQAGateResults(taskId);
   const { expandedGates, toggleExpanded } = useExpandedGates();
 
-  if (loading) {
+  if (loading && !error) {
     return <LoadingView />;
+  }
+
+  if (error) {
+    const errorType = error.message.includes('timed out') ? 'timeout' :
+                     error.message.includes('HTTP 5') ? 'server' :
+                     'network';
+
+    return (
+      <ErrorState
+        type={errorType}
+        title="Failed to Load QA Gate Results"
+        message={error.message}
+        onRetry={rerunGates}
+        size="md"
+      />
+    );
   }
 
   const passedCount = results.filter((r) => r.status === 'passed').length;

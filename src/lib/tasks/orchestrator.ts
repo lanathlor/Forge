@@ -402,7 +402,31 @@ export async function executeTask(taskId: string): Promise<void> {
         prompt: task.prompt,
         taskId: task.id,
       });
-      console.log(`[Task ${taskId}] Claude execution completed`);
+      console.log(`[Task ${taskId}] Claude execution completed successfully`);
+    } catch (error) {
+      console.error(`[Task ${taskId}] Claude execution failed:`, error);
+
+      // Get current output to append error message
+      const currentTask = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+      const currentOutput = currentTask?.claudeOutput || '';
+
+      // Update task status to failed
+      await db
+        .update(tasks)
+        .set({
+          status: 'failed',
+          claudeOutput: currentOutput + `\n\n❌ Claude execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(tasks.id, taskId));
+
+      taskEvents.emit('task:update', {
+        sessionId,
+        taskId,
+        status: 'failed',
+      });
+
+      throw error; // Re-throw to exit the orchestrator
     } finally {
       claudeWrapper.off('output', outputHandler);
     }

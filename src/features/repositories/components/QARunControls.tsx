@@ -2,6 +2,7 @@
 
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
+import { Play, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import type { QARunStatus } from '../types/qa-gates';
 
 interface QARunControlsProps {
@@ -16,28 +17,39 @@ function getRunStatusBadge(status: QARunStatus) {
   const variants = {
     running: {
       label: 'Running',
+      icon: <Loader2 className="h-4 w-4 animate-spin" />,
       className:
-        'h-7 px-4 text-sm font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30',
+        'h-8 px-4 text-sm font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-400 border-2 border-blue-500/30',
     },
     passed: {
-      label: 'Passed',
+      label: 'All Gates Passed',
+      icon: <CheckCircle2 className="h-4 w-4" />,
       className:
-        'h-7 px-4 text-sm font-semibold bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30',
+        'h-8 px-4 text-sm font-semibold bg-green-500/15 text-green-700 dark:text-green-400 border-2 border-green-500/30',
     },
     failed: {
-      label: 'Failed',
+      label: 'Some Gates Failed',
+      icon: <XCircle className="h-4 w-4" />,
       className:
-        'h-7 px-4 text-sm font-semibold bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30',
+        'h-8 px-4 text-sm font-semibold bg-red-500/15 text-red-700 dark:text-red-400 border-2 border-red-500/30',
     },
     cancelled: {
       label: 'Cancelled',
+      icon: <XCircle className="h-4 w-4" />,
       className:
-        'h-7 px-4 text-sm font-semibold bg-gray-500/15 text-gray-700 dark:text-gray-400 border border-gray-500/30',
+        'h-8 px-4 text-sm font-semibold bg-gray-500/15 text-gray-700 dark:text-gray-400 border-2 border-gray-500/30',
     },
   };
 
   const statusInfo = variants[status];
-  return <Badge className={statusInfo.className}>{statusInfo.label}</Badge>;
+  return (
+    <Badge className={statusInfo.className}>
+      <span className="flex items-center gap-2">
+        {statusInfo.icon}
+        {statusInfo.label}
+      </span>
+    </Badge>
+  );
 }
 
 export function QARunControls({
@@ -53,17 +65,20 @@ export function QARunControls({
       <Button
         onClick={onRun}
         disabled={isRunning || enabledGatesCount === 0}
-        variant="outline"
+        variant={hasRun && status === 'passed' ? 'outline' : 'default'}
         size="lg"
-        className="border-2 px-8 font-semibold hover:bg-accent"
+        className="gap-2 px-8 font-semibold shadow-sm"
       >
         {isRunning ? (
           <>
-            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Running...
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Running Gates...
           </>
         ) : (
-          'Run QA Gates'
+          <>
+            <Play className="h-4 w-4" />
+            {hasRun ? 'Run Again' : 'Run QA Gates'}
+          </>
         )}
       </Button>
     </div>

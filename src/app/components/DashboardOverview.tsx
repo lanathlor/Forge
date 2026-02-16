@@ -12,6 +12,9 @@ import { NeedsAttention } from './NeedsAttention';
 import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
 import { useStuckToasts } from '@/shared/components/ui/toast';
 import type { StuckAlert } from '@/lib/stuck-detection/types';
+import { ErrorBoundary, InlineError } from '@/shared/components/error';
+import { useErrorToast } from '@/shared/components/error';
+import { useToast } from '@/shared/components/ui/toast';
 
 /* ============================================
    TYPES & INTERFACES
@@ -170,9 +173,30 @@ function useActivityPagination(repositoryId?: string) {
   return { allItems, data, isLoading, isFetching, offset, handleLoadMore, handleRefresh };
 }
 
-function RecentActivitySection({ repositoryId, onItemClick, loading: externalLoading }: RecentActivitySectionProps) {
+const RecentActivitySection = React.memo(function RecentActivitySection({ repositoryId, onItemClick, loading: externalLoading }: RecentActivitySectionProps) {
   const { allItems, data, isLoading, isFetching, offset, handleLoadMore, handleRefresh } =
     useActivityPagination(repositoryId);
+  const { addToast } = useToast();
+  const showError = useErrorToast(addToast);
+
+  // Check for error state
+  const hasError = data === undefined && !isLoading && !isFetching;
+
+  React.useEffect(() => {
+    if (hasError) {
+      showError.network('Failed to load activity feed', handleRefresh);
+    }
+  }, [hasError, showError, handleRefresh]);
+
+  if (hasError) {
+    return (
+      <InlineError
+        type="network"
+        message="Failed to load recent activity. Please check your connection."
+        onRetry={handleRefresh}
+      />
+    );
+  }
 
   return (
     <RecentActivityFeed
@@ -186,7 +210,7 @@ function RecentActivitySection({ repositoryId, onItemClick, loading: externalLoa
       maxHeight={400}
     />
   );
-}
+});
 
 /* ============================================
    STUCK DETECTION INTEGRATION
@@ -213,15 +237,15 @@ function useStuckDetectionIntegration(
    ============================================ */
 
 /** DashboardOverview - Comprehensive dashboard with metrics, actions, and activity */
-export function DashboardOverview(props: DashboardOverviewProps) {
+export const DashboardOverview = React.memo(function DashboardOverview(props: DashboardOverviewProps) {
   const {
     metrics, metricsData, onCreateTask, onNewTask, onStartSession, onBrowsePlans,
     onViewRepositories, onSelectRepo, onPauseRepo, onResumeRepo, onActivityItemClick,
     selectedRepoId, loading, className,
   } = props;
 
-  const resolvedMetrics = metricsData ?? convertLegacyMetrics(metrics);
-  const handleNewTask = onNewTask ?? onCreateTask;
+  const resolvedMetrics = React.useMemo(() => metricsData ?? convertLegacyMetrics(metrics), [metricsData, metrics]);
+  const handleNewTask = React.useMemo(() => onNewTask ?? onCreateTask, [onNewTask, onCreateTask]);
 
   useStuckDetectionIntegration(onSelectRepo);
 
@@ -231,16 +255,36 @@ export function DashboardOverview(props: DashboardOverviewProps) {
 
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
-      <NeedsAttention onSelectRepo={handleNeedsAttentionSelect} maxVisible={3} />
-      <MultiSessionOverviewCard onSelectRepo={onSelectRepo} />
-      <MultiRepoCommandCenter onSelectRepo={onSelectRepo} onPauseRepo={onPauseRepo} onResumeRepo={onResumeRepo} selectedRepoId={selectedRepoId} maxVisible={8} />
-      <MetricsGrid metrics={resolvedMetrics} loading={loading} />
+      <ErrorBoundary id="needs-attention">
+        <NeedsAttention onSelectRepo={handleNeedsAttentionSelect} maxVisible={3} />
+      </ErrorBoundary>
+
+      <ErrorBoundary id="multi-session-overview">
+        <MultiSessionOverviewCard onSelectRepo={onSelectRepo} />
+      </ErrorBoundary>
+
+      <ErrorBoundary id="multi-repo-command-center">
+        <MultiRepoCommandCenter onSelectRepo={onSelectRepo} onPauseRepo={onPauseRepo} onResumeRepo={onResumeRepo} selectedRepoId={selectedRepoId} maxVisible={8} />
+      </ErrorBoundary>
+
+      <ErrorBoundary id="metrics-grid">
+        <MetricsGrid metrics={resolvedMetrics} loading={loading} />
+      </ErrorBoundary>
+
       <SectionDivider />
-      <QuickActions onNewTask={handleNewTask} onStartSession={onStartSession} onBrowsePlans={onBrowsePlans} onViewRepositories={onViewRepositories} loading={loading} />
+
+      <ErrorBoundary id="quick-actions">
+        <QuickActions onNewTask={handleNewTask} onStartSession={onStartSession} onBrowsePlans={onBrowsePlans} onViewRepositories={onViewRepositories} loading={loading} />
+      </ErrorBoundary>
+
       <SectionDivider />
-      <RecentActivitySection repositoryId={selectedRepoId} onItemClick={onActivityItemClick} loading={loading} />
+
+      {/* Recent activity feed */}
+      <ErrorBoundary id="recent-activity">
+        <RecentActivitySection repositoryId={selectedRepoId} onItemClick={onActivityItemClick} loading={loading} />
+      </ErrorBoundary>
     </div>
   );
-}
+});
 
 export default DashboardOverview;

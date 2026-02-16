@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { Card, CardContent } from '@/shared/components/ui/card';
@@ -835,7 +836,7 @@ function RepoList({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }
    MAIN COMPONENT
    ============================================ */
 
-export function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo, selectedRepoId, maxVisible = 8, className }: MultiRepoCommandCenterProps) {
+export const MultiRepoCommandCenter = React.memo(function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo, selectedRepoId, maxVisible = 8, className }: MultiRepoCommandCenterProps) {
   const { repositories, connected, error, reconnect, lastUpdated } = useMultiRepoStream();
   const { status: stuckStatus } = useStuckDetection();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -854,19 +855,19 @@ export function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo
 
   const sortedRepos = useMemo(() => sortByPriority(repositories), [repositories]);
   const visibleRepos = useMemo(() => isExpanded ? sortedRepos : sortedRepos.slice(0, maxVisible), [sortedRepos, maxVisible, isExpanded]);
-  const hiddenCount = sortedRepos.length - maxVisible;
-  const isLoading = !connected && repositories.length === 0 && !error;
+  const hiddenCount = useMemo(() => sortedRepos.length - maxVisible, [sortedRepos.length, maxVisible]);
+  const isLoading = useMemo(() => !connected && repositories.length === 0 && !error, [connected, repositories.length, error]);
 
   const handleSelect = useCallback((repoId: string) => onSelectRepo?.(repoId), [onSelectRepo]);
   const handlePause = useCallback((repoId: string, sessionId: string) => onPauseRepo?.(repoId, sessionId), [onPauseRepo]);
   const handleResume = useCallback((repoId: string, sessionId: string) => onResumeRepo?.(repoId, sessionId), [onResumeRepo]);
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     if (isLoading) return viewMode === 'grid' ? <GridSkeleton /> : <ListSkeleton />;
     if (repositories.length === 0) return <EmptyState />;
     if (viewMode === 'grid') return <RepoGrid repos={visibleRepos} selectedRepoId={selectedRepoId} alerts={alertsMap} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
     return <RepoList repos={visibleRepos} selectedRepoId={selectedRepoId} alerts={alertsMap} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
-  };
+  }, [isLoading, viewMode, repositories.length, visibleRepos, selectedRepoId, alertsMap, handleSelect, handlePause, handleResume]);
 
   return (
     <Card className={cn('relative overflow-hidden', className)}>
@@ -877,6 +878,6 @@ export function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo
       </CardContent>
     </Card>
   );
-}
+});
 
 export default MultiRepoCommandCenter;

@@ -55,18 +55,30 @@ export function ImportExportConfig({ gates, version, maxRetries, onImport }: Imp
 
   return (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" onClick={handleExport}>
-        <Download className="mr-1.5 h-4 w-4" />
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleExport}
+        title="Export configuration as .autobot.json"
+        className="gap-1.5"
+      >
+        <Download className="h-4 w-4" />
         Export
       </Button>
-      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-        <Upload className="mr-1.5 h-4 w-4" />
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => fileInputRef.current?.click()}
+        title="Import configuration from .autobot.json"
+        className="gap-1.5"
+      >
+        <Upload className="h-4 w-4" />
         Import
       </Button>
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json"
+        accept=".json,.autobot.json"
         className="hidden"
         onChange={handleImport}
       />

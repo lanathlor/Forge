@@ -222,14 +222,20 @@ function PanelHeader({
   elapsed,
   onClose,
   onCancel,
+  onRetry,
 }: {
   task: Task;
   elapsed: string;
   onClose: () => void;
   onCancel: () => void;
+  onRetry: () => void;
 }) {
   const cfg = getStatusConfig(task.status);
   const canCancel = ['pending', 'running', 'pre_flight', 'qa_running'].includes(task.status);
+  const canRetry = ['failed', 'qa_failed', 'rejected'].includes(task.status);
+
+  // Debug logging
+  console.log('TaskDetailPanel - Status:', task.status, 'canRetry:', canRetry, 'canCancel:', canCancel);
 
   return (
     <div className="flex-shrink-0 border-b bg-card px-4 py-3 sm:px-5">
@@ -248,6 +254,11 @@ function PanelHeader({
           </span>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          {canRetry && (
+            <Button variant="outline" size="sm" onClick={onRetry} className="h-7 px-2 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
+              Retry
+            </Button>
+          )}
           {canCancel && (
             <Button variant="ghost" size="sm" onClick={onCancel} className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive">
               Cancel
@@ -435,7 +446,7 @@ interface TabConfig {
 function getAvailableTabs(task: Task): TabConfig[] {
   const hasChanges = !!(task.diffContent || (task.filesChanged && task.filesChanged.length > 0));
   const showApproval = task.status === 'waiting_approval';
-  const showQA = ['waiting_qa', 'qa_running', 'qa_failed', 'waiting_approval', 'approved', 'completed'].includes(task.status);
+  const showQA = ['waiting_qa', 'qa_running', 'qa_failed', 'waiting_approval', 'approved', 'completed', 'failed'].includes(task.status);
 
   return [
     {
@@ -571,6 +582,21 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
     }
   }, [taskId]);
 
+  const handleRetry = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/retry`, { method: 'POST' });
+      if (res.ok) {
+        setTask((prev) => (prev ? { ...prev, status: 'pending' as TaskStatus } : null));
+        // Clear output and reload task data
+        setOutput('');
+        processedOutputCount.current = 0;
+        loadTask();
+      }
+    } catch (e) {
+      console.error('Failed to retry task:', e);
+    }
+  }, [taskId, loadTask]);
+
   const elapsed = useElapsedTime(task);
   const tabs = task ? getAvailableTabs(task) : [];
 
@@ -613,6 +639,7 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
             elapsed={elapsed}
             onClose={onClose}
             onCancel={handleCancel}
+            onRetry={handleRetry}
           />
 
           <Tabs

@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { Switch } from '@/shared/components/ui/switch';
-import { GripVertical, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { GripVertical, Trash2, ChevronDown, ChevronRight, Clock } from 'lucide-react';
 import { TestGateButton } from './TestGateButton';
 import type {
   QAGate,
@@ -98,29 +98,30 @@ export function QAGateCard({
 
   return (
     <Card
-      className={`transition-all ${
+      className={`group transition-all ${
         isDragging ? 'rotate-1 scale-[1.02] shadow-xl ring-2 ring-primary/20' : ''
       } ${
         gate.enabled
-          ? 'border-l-4 border-l-primary hover:shadow-md'
-          : 'border-dashed opacity-60 hover:opacity-80'
+          ? 'border-l-4 border-l-primary hover:shadow-md hover:border-l-primary/80'
+          : 'border-dashed border-muted-foreground/30 opacity-60 hover:opacity-80'
       }`}
     >
-      <CardHeader className="px-4 py-3">
+      <CardHeader className="px-5 py-4">
         <div className="flex items-center gap-3">
           {/* Drag handle */}
           <div
             {...dragHandleProps}
-            className="flex cursor-grab items-center text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
+            className="flex cursor-grab items-center text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
+            title="Drag to reorder"
           >
-            <GripVertical className="h-4 w-4" />
+            <GripVertical className="h-5 w-5" />
           </div>
 
           {/* Order number */}
           <div
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold shadow-sm transition-all ${
               gate.enabled
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground'
                 : 'bg-muted text-muted-foreground'
             }`}
           >
@@ -128,20 +129,22 @@ export function QAGateCard({
           </div>
 
           {/* Name & command */}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-semibold">{gate.name}</CardTitle>
+              <CardTitle className="text-base font-semibold">{gate.name}</CardTitle>
               {gate.failOnError ? (
-                <Badge className="h-5 border border-primary/50 bg-primary/15 px-2 text-[10px] font-bold text-primary">
+                <Badge className="h-5 border border-red-500/30 bg-red-500/15 px-2 text-[10px] font-bold text-red-700 dark:text-red-400">
                   Required
                 </Badge>
               ) : (
-                <Badge variant="outline" className="h-5 px-2 text-[10px]">
+                <Badge variant="outline" className="h-5 border-muted-foreground/30 px-2 text-[10px] text-muted-foreground">
                   Optional
                 </Badge>
               )}
             </div>
-            <code className="text-xs text-muted-foreground">{gate.command}</code>
+            <code className="block truncate text-xs text-muted-foreground" title={gate.command}>
+              {gate.command}
+            </code>
           </div>
 
           {/* Execution status badges */}
@@ -149,20 +152,22 @@ export function QAGateCard({
             <div className="flex items-center gap-2">
               <ExecutionStatusBadge status={execution.status} />
               {execution.duration != null && (
-                <span className="text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
                   {(execution.duration / 1000).toFixed(1)}s
                 </span>
               )}
             </div>
           )}
 
-          {/* Timeout */}
-          <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {(gate.timeout / 1000).toFixed(0)}s
-          </span>
+          {/* Timeout badge */}
+          <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span className="font-medium">{(gate.timeout / 1000).toFixed(0)}s</span>
+          </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 opacity-100 transition-opacity group-hover:opacity-100 md:opacity-60">
             <TestGateButton
               repositoryId={repositoryId}
               gateName={gate.name}
@@ -171,12 +176,14 @@ export function QAGateCard({
             <Switch
               checked={gate.enabled}
               onCheckedChange={(enabled) => onToggle(gate.name, enabled)}
+              title={gate.enabled ? 'Disable gate' : 'Enable gate'}
             />
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-destructive"
               onClick={() => onDelete(gate.name)}
+              title="Delete gate"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

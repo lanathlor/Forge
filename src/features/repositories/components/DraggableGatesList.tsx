@@ -58,9 +58,29 @@ export function DraggableGatesList({
 
   if (gates.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-12 text-center">
-        <p className="text-sm text-muted-foreground">No gates configured yet.</p>
-        <p className="text-xs text-muted-foreground">Add a gate or load a preset to get started.</p>
+      <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/10 py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <svg
+            className="h-8 w-8 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+        </div>
+        <p className="mb-1 text-base font-semibold">No Quality Gates Configured</p>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Add gates to validate your code quality before committing
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Click &quot;Add Gate&quot; above or load a preset to get started
+        </p>
       </div>
     );
   }

@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useMemo, useState, useCallback } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { Card, CardContent } from '@/shared/components/ui/card';
@@ -322,7 +323,7 @@ function EmptyOverview() {
    MAIN COMPONENT
    ============================================ */
 
-export function MultiSessionOverviewCard({
+export const MultiSessionOverviewCard = React.memo(function MultiSessionOverviewCard({
   onSelectRepo,
   className,
 }: MultiSessionOverviewCardProps) {
@@ -349,16 +350,16 @@ export function MultiSessionOverviewCard({
   }, [repositories]);
 
   // Show top 3 in collapsed mode, all in expanded
-  const visibleRepos = isExpanded ? sortedRepos : sortedRepos.slice(0, 3);
-  const hiddenCount = sortedRepos.length - 3;
+  const visibleRepos = useMemo(() => isExpanded ? sortedRepos : sortedRepos.slice(0, 3), [isExpanded, sortedRepos]);
+  const hiddenCount = useMemo(() => sortedRepos.length - 3, [sortedRepos.length]);
 
   const handleSelect = useCallback((repoId: string) => {
     onSelectRepo?.(repoId);
   }, [onSelectRepo]);
 
-  const isLoading = !connected && repositories.length === 0 && !error;
+  const isLoading = useMemo(() => !connected && repositories.length === 0 && !error, [connected, repositories.length, error]);
 
-  const healthConfig = HEALTH_CONFIG[stats.health];
+  const healthConfig = useMemo(() => HEALTH_CONFIG[stats.health], [stats.health]);
 
   return (
     <Card className={cn(
@@ -464,6 +465,6 @@ export function MultiSessionOverviewCard({
       </CardContent>
     </Card>
   );
-}
+});
 
 export default MultiSessionOverviewCard;

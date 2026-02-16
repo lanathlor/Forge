@@ -53,9 +53,14 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-5">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold">Add New Gate</h4>
+        <div>
+          <h4 className="text-base font-semibold">Add New Quality Gate</h4>
+          <p className="text-xs text-muted-foreground">
+            Configure a command to validate your code
+          </p>
+        </div>
         <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={onCancel}>
           <X className="h-4 w-4" />
         </Button>
@@ -63,19 +68,27 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="gate-name">Name</Label>
+          <Label htmlFor="gate-name" className="text-xs font-semibold uppercase tracking-wide">
+            Gate Name
+          </Label>
           <Input
             id="gate-name"
             placeholder="e.g. ESLint, Tests, Build"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className="h-10"
           />
+          {name.trim().length === 0 && (
+            <p className="text-xs text-muted-foreground">Give your gate a descriptive name</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="gate-timeout">Timeout</Label>
+          <Label htmlFor="gate-timeout" className="text-xs font-semibold uppercase tracking-wide">
+            Timeout
+          </Label>
           <Select value={timeout} onValueChange={setTimeout}>
-            <SelectTrigger id="gate-timeout">
+            <SelectTrigger id="gate-timeout" className="h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -86,33 +99,49 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
               ))}
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">Max execution time for this gate</p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="gate-command">Command</Label>
+        <Label htmlFor="gate-command" className="text-xs font-semibold uppercase tracking-wide">
+          Command
+        </Label>
         <Input
           id="gate-command"
           placeholder="e.g. pnpm test --run"
           value={command}
           onChange={(e) => setCommand(e.target.value)}
-          className="font-mono"
+          className="h-10 font-mono text-sm"
         />
+        {command.trim().length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Enter the shell command to execute this gate
+          </p>
+        )}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-lg border bg-background/50 p-4">
         <div className="flex items-center gap-3">
-          <Switch checked={failOnError} onCheckedChange={setFailOnError} />
-          <Label className="cursor-pointer text-sm">
-            {failOnError ? 'Required' : 'Optional'}
-            <span className="ml-2 text-xs text-muted-foreground">
-              {failOnError ? '(blocks pipeline on failure)' : '(pipeline continues on failure)'}
-            </span>
-          </Label>
+          <Switch
+            id="gate-fail-on-error"
+            checked={failOnError}
+            onCheckedChange={setFailOnError}
+          />
+          <div>
+            <Label htmlFor="gate-fail-on-error" className="cursor-pointer font-semibold">
+              {failOnError ? 'Required Gate' : 'Optional Gate'}
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {failOnError
+                ? 'Pipeline stops if this gate fails'
+                : 'Pipeline continues even if this gate fails'}
+            </p>
+          </div>
         </div>
 
-        <Button type="submit" size="sm" disabled={!isValid}>
-          <Plus className="mr-1.5 h-4 w-4" />
+        <Button type="submit" size="lg" disabled={!isValid} className="gap-2">
+          <Plus className="h-4 w-4" />
           Add Gate
         </Button>
       </div>

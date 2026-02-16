@@ -196,7 +196,7 @@ describe('QAGatesConfig', () => {
       render(<QAGatesConfig repositoryId="repo-1" />);
 
       expect(screen.getByText('2')).toBeInTheDocument();
-      expect(screen.getByText('enabled')).toBeInTheDocument();
+      expect(screen.getByText('active')).toBeInTheDocument();
     });
 
     it('displays disabled gates count', () => {
@@ -291,6 +291,215 @@ describe('QAGatesConfig', () => {
       const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 
       expect(container.firstChild).toBeNull();
+    });
+  });
+
+  describe('StatusAlert', () => {
+    it('shows info alert when QA gates have not been run', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        runStatus: { hasRun: false, run: null, gates: [] },
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText(/Configure your QA gates below/)).toBeInTheDocument();
+    });
+
+    it('shows warning alert when there are unsaved changes', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        runStatus: { hasRun: true, run: { status: 'passed' }, gates: [] },
+        gates: [
+          { ...mockConfigData.config.qaGates[0], timeout: 99999 }, // Modified timeout
+        ],
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText(/You have unsaved changes/)).toBeInTheDocument();
+    });
+
+    it('shows success alert when all gates passed', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        runStatus: {
+          hasRun: true,
+          run: { status: 'passed' },
+          gates: [],
+        },
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText(/All QA gates passed/)).toBeInTheDocument();
+    });
+
+    it('shows error alert when gates failed with singular message', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        runStatus: {
+          hasRun: true,
+          run: { status: 'failed' },
+          gates: [{ name: 'test', status: 'failed', output: '' }],
+        },
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText(/1 gate failed/)).toBeInTheDocument();
+    });
+
+    it('shows error alert when gates failed with plural message', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        runStatus: {
+          hasRun: true,
+          run: { status: 'failed' },
+          gates: [
+            { name: 'test1', status: 'failed', output: '' },
+            { name: 'test2', status: 'failed', output: '' },
+          ],
+        },
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText(/2 gates failed/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Add Gate Form', () => {
+    it('shows Add Gate form when Add Gate button is clicked', async () => {
+      const user = userEvent.setup();
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      const addButton = screen.getByText('Add Gate');
+      await user.click(addButton);
+
+      expect(screen.getByTestId('add-gate-form')).toBeInTheDocument();
+    });
+
+    it('changes button text to Cancel when form is shown', async () => {
+      const user = userEvent.setup();
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      const addButton = screen.getByText('Add Gate');
+      await user.click(addButton);
+
+      expect(screen.getByText('Cancel')).toBeInTheDocument();
+    });
+
+    it('hides form when Cancel is clicked', async () => {
+      const user = userEvent.setup();
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      const addButton = screen.getByText('Add Gate');
+      await user.click(addButton);
+      expect(screen.getByTestId('add-gate-form')).toBeInTheDocument();
+
+      const cancelButton = screen.getByText('Cancel');
+      await user.click(cancelButton);
+
+      expect(screen.queryByTestId('add-gate-form')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Save Button', () => {
+    it('shows save button when there are changes', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        gates: [
+          { ...mockConfigData.config.qaGates[0], timeout: 99999 }, // Modified
+        ],
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText('Save Configuration')).toBeInTheDocument();
+    });
+
+    it('does not show save button when there are no changes', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.queryByText('Save Configuration')).not.toBeInTheDocument();
+    });
+
+    it('shows saving state when save is in progress', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        isSaving: true,
+        gates: [
+          { ...mockConfigData.config.qaGates[0], timeout: 99999 }, // Modified
+        ],
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText('Saving...')).toBeInTheDocument();
+    });
+
+    it('calls saveConfig when save button is clicked', async () => {
+      const user = userEvent.setup();
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        gates: [
+          { ...mockConfigData.config.qaGates[0], timeout: 99999 }, // Modified
+        ],
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      const saveButton = screen.getByText('Save Configuration');
+      await user.click(saveButton);
+
+      expect(mockFns.saveConfig).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles save errors gracefully', async () => {
+      const user = userEvent.setup();
+      const saveConfigMock = vi.fn().mockRejectedValue(new Error('Save failed'));
+
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        saveConfig: saveConfigMock,
+        gates: [
+          { ...mockConfigData.config.qaGates[0], timeout: 99999 }, // Modified
+        ],
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      const saveButton = screen.getByText('Save Configuration');
+      await user.click(saveButton);
+
+      expect(saveConfigMock).toHaveBeenCalledTimes(1);
+      // Error is caught and logged in the component
+    });
+  });
+
+  describe('Stats Badge', () => {
+    it('hides disabled count badge when all gates are enabled', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn({
+        gates: [
+          { ...mockConfigData.config.qaGates[0], enabled: true },
+          { ...mockConfigData.config.qaGates[1], enabled: true },
+        ],
+      }));
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      // Should show 2 active, 0 disabled (hidden), 2 total
+      const badges = screen.getAllByText('2');
+      expect(badges.length).toBeGreaterThan(0);
+      expect(screen.queryByText('disabled')).not.toBeInTheDocument();
+    });
+
+    it('shows disabled count badge when some gates are disabled', () => {
+      vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
+
+      render(<QAGatesConfig repositoryId="repo-1" />);
+
+      expect(screen.getByText('disabled')).toBeInTheDocument();
     });
   });
 });

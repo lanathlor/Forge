@@ -13,8 +13,7 @@ services:
     volumes:
       - .:/app
       - /app/.next
-      # Commented out to allow bind mounting local node_modules
-      # - /app/node_modules
+      - /app/node_modules
       - /home/lanath/Work:/workspace
       - ~/.claude:/home/node/.claude
     environment:

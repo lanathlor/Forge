@@ -237,14 +237,14 @@ const DEFAULT_METRICS: MetricsData = {
  * - Warning state for pending approvals
  * - Responsive grid: 1 col mobile, 2 cols tablet, 3 cols desktop, 5 cols large desktop
  */
-export function MetricsGrid({
+export const MetricsGrid = React.memo(function MetricsGrid({
   metrics,
   loading = false,
   className,
   animationDuration = 1000,
   staggerDelay = 100,
 }: MetricsGridProps) {
-  const data = metrics ?? DEFAULT_METRICS;
+  const data = React.useMemo(() => metrics ?? DEFAULT_METRICS, [metrics]);
 
   return (
     <section aria-labelledby="metrics-grid-heading" className={className}>
@@ -282,7 +282,7 @@ export function MetricsGrid({
       </div>
     </section>
   );
-}
+});
 
 /* ============================================
    COMPACT METRICS VARIANT
@@ -300,15 +300,15 @@ export interface CompactMetricsGridProps {
  * - Success rate
  * - Pending approvals (with warning)
  */
-export function CompactMetricsGrid({
+export const CompactMetricsGrid = React.memo(function CompactMetricsGrid({
   metrics,
   loading = false,
   className,
 }: CompactMetricsGridProps) {
-  const data = metrics ?? DEFAULT_METRICS;
-  const criticalCards = METRIC_CARDS.filter((card) =>
+  const data = React.useMemo(() => metrics ?? DEFAULT_METRICS, [metrics]);
+  const criticalCards = React.useMemo(() => METRIC_CARDS.filter((card) =>
     ['tasks-completed', 'success-rate', 'pending-approvals'].includes(card.key)
-  );
+  ), []);
 
   return (
     <section aria-labelledby="compact-metrics-heading" className={className}>
@@ -342,6 +342,6 @@ export function CompactMetricsGrid({
       </div>
     </section>
   );
-}
+});
 
 export default MetricsGrid;

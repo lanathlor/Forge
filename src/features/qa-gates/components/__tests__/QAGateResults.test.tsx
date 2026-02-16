@@ -3,10 +3,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QAGateResults } from '../QAGateResults';
+import { ToastProvider } from '@/shared/components/ui/toast';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
+
+// Helper to render with ToastProvider
+function renderWithToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 
 describe('QAGateResults', () => {
   beforeEach(() => {
@@ -26,7 +32,7 @@ describe('QAGateResults', () => {
           })
       );
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       expect(screen.getByText('Loading QA gate results...')).toBeInTheDocument();
     });
@@ -60,7 +66,7 @@ describe('QAGateResults', () => {
     });
 
     it('displays all passed badge', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('✅ ALL PASSED')).toBeInTheDocument();
@@ -68,7 +74,7 @@ describe('QAGateResults', () => {
     });
 
     it('renders all gate results', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText(/TypeScript Check/)).toBeInTheDocument();
@@ -77,7 +83,7 @@ describe('QAGateResults', () => {
     });
 
     it('displays correct status badges', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         const badges = screen.getAllByText('passed');
@@ -86,7 +92,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows duration for each gate', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('2.5s')).toBeInTheDocument();
@@ -95,7 +101,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows success message for passed gates', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         const messages = screen.getAllByText('No errors or warnings found');
@@ -104,7 +110,7 @@ describe('QAGateResults', () => {
     });
 
     it('does not show attempt information when all passed', async () => {
-      render(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
 
       await waitFor(() => {
         expect(screen.queryByText(/Attempt/)).not.toBeInTheDocument();
@@ -112,7 +118,7 @@ describe('QAGateResults', () => {
     });
 
     it('does not show footer when all passed', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(
@@ -150,7 +156,7 @@ describe('QAGateResults', () => {
     });
 
     it('displays failed badge with count', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(
@@ -160,7 +166,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows attempt information when failed', async () => {
-      render(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
 
       await waitFor(() => {
         expect(screen.getByText('Attempt 2 of 3')).toBeInTheDocument();
@@ -168,7 +174,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows error count when details expanded', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getAllByText('Show Details').length).toBeGreaterThan(0);
@@ -183,7 +189,7 @@ describe('QAGateResults', () => {
     });
 
     it('displays individual errors', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getAllByText('Show Details').length).toBeGreaterThan(0);
@@ -199,7 +205,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows footer when max attempts reached', async () => {
-      render(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
 
       await waitFor(() => {
         expect(
@@ -209,7 +215,7 @@ describe('QAGateResults', () => {
     });
 
     it('does not show footer when max attempts not reached', async () => {
-      render(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
 
       await waitFor(() => {
         expect(
@@ -247,7 +253,7 @@ describe('QAGateResults', () => {
     });
 
     it('displays skipped badge', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('skipped')).toBeInTheDocument();
@@ -255,7 +261,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows skipped message', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(
@@ -289,7 +295,7 @@ describe('QAGateResults', () => {
         json: async () => allPassedResults,
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('✅ ALL PASSED')).toBeInTheDocument();
@@ -318,7 +324,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows "Show Details" button when gate has output or errors', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Show Details')).toBeInTheDocument();
@@ -326,7 +332,7 @@ describe('QAGateResults', () => {
     });
 
     it('toggles details visibility when button clicked', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Show Details')).toBeInTheDocument();
@@ -351,7 +357,7 @@ describe('QAGateResults', () => {
     });
 
     it('shows both output and errors when expanded', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Show Details')).toBeInTheDocument();
@@ -390,7 +396,7 @@ describe('QAGateResults', () => {
     });
 
     it('renders re-run button in header', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Re-run Gates')).toBeInTheDocument();
@@ -398,7 +404,7 @@ describe('QAGateResults', () => {
     });
 
     it('calls API to re-run gates when button clicked', async () => {
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Re-run Gates')).toBeInTheDocument();
@@ -421,7 +427,7 @@ describe('QAGateResults', () => {
     });
 
     it('renders Fix & Re-run button in footer when max attempts reached', async () => {
-      render(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
 
       await waitFor(() => {
         expect(screen.getByText('Fix & Re-run')).toBeInTheDocument();
@@ -429,7 +435,7 @@ describe('QAGateResults', () => {
     });
 
     it('renders Override & Approve Anyway button in footer', async () => {
-      render(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
 
       await waitFor(() => {
         expect(
@@ -456,7 +462,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText(/✅ Test/)).toBeInTheDocument();
@@ -479,7 +485,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText(/❌ Test/)).toBeInTheDocument();
@@ -502,7 +508,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText(/⏭️ Test/)).toBeInTheDocument();
@@ -525,7 +531,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText(/⏳ Test/)).toBeInTheDocument();
@@ -540,7 +546,7 @@ describe('QAGateResults', () => {
         .mockImplementation(() => {});
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -558,7 +564,7 @@ describe('QAGateResults', () => {
         json: async () => ({ results: [] }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('QA Gate Results')).toBeInTheDocument();
@@ -583,7 +589,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Attempt 1 of 3')).toBeInTheDocument();
@@ -606,7 +612,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" attempt={1} />);
+      renderWithToast(<QAGateResults taskId="task-1" attempt={1} />);
 
       await waitFor(() => {
         expect(screen.getByText('Attempt 1 of 3')).toBeInTheDocument();
@@ -631,7 +637,7 @@ describe('QAGateResults', () => {
         }),
       });
 
-      render(<QAGateResults taskId="task-1" />);
+      renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
         expect(screen.getByText('Show Details')).toBeInTheDocument();
