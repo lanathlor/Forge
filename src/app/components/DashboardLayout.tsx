@@ -1,8 +1,20 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  lazy,
+  Suspense,
+} from 'react';
 import { useTaskStream, useKeyboardShortcuts } from '@/shared/hooks';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/shared/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { useGetSessionQuery } from '@/features/sessions/store/sessionsApi';
 import {
@@ -10,9 +22,7 @@ import {
   SessionHistoryModal,
   SessionSummaryModal,
 } from '@/features/sessions/components';
-import {
-  LivePlanMonitor,
-} from '@/features/plans/components';
+import { LivePlanMonitor } from '@/features/plans/components';
 import { useGetPlansQuery } from '@/features/plans/store/plansApi';
 import type { Plan } from '@/db/schema';
 import { PerformanceProfiler } from '@/shared/components/performance';
@@ -22,13 +32,41 @@ import { KeyboardShortcutsFAB } from '@/shared/components/KeyboardShortcutsFAB';
 import { TasksTabContent } from './DashboardLayout/TasksTabContent';
 
 // Lazy load heavy components for better code splitting
-const SessionSummary = lazy(() => import('@/features/sessions/components').then(mod => ({ default: mod.SessionSummary })));
-const PlanList = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanList })));
-const PlanDetailView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanDetailView })));
-const PlanExecutionView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanExecutionView })));
-const PlanRefinementChat = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanRefinementChat })));
-const PlanLaunchDialog = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanLaunchDialog })));
-const QAGatesConfig = lazy(() => import('@/features/repositories/components').then(mod => ({ default: mod.QAGatesConfig })));
+const SessionSummary = lazy(() =>
+  import('@/features/sessions/components').then((mod) => ({
+    default: mod.SessionSummary,
+  }))
+);
+const PlanList = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanList,
+  }))
+);
+const PlanDetailView = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanDetailView,
+  }))
+);
+const PlanExecutionView = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanExecutionView,
+  }))
+);
+const PlanRefinementChat = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanRefinementChat,
+  }))
+);
+const PlanLaunchDialog = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanLaunchDialog,
+  }))
+);
+const QAGatesConfig = lazy(() =>
+  import('@/features/repositories/components').then((mod) => ({
+    default: mod.QAGatesConfig,
+  }))
+);
 
 interface DashboardLayoutProps {
   sessionId: string;
@@ -47,7 +85,7 @@ interface DashboardLayoutProps {
 function LoadingFallback({ message }: { message: string }) {
   return (
     <div
-      className="flex items-center justify-center h-full min-h-[300px]"
+      className="flex h-full min-h-[300px] items-center justify-center"
       role="status"
       aria-live="polite"
       aria-label={message}
@@ -210,15 +248,21 @@ export function DashboardLayout({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'plans' | 'summary' | 'qa-gates'>('tasks');
+  const [activeTab, setActiveTab] = useState<
+    'tasks' | 'plans' | 'summary' | 'qa-gates'
+  >('tasks');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [planView, setPlanView] = useState<'list' | 'detail' | 'execution'>('list');
+  const [planView, setPlanView] = useState<'list' | 'detail' | 'execution'>(
+    'list'
+  );
   const [reviewPlanId, setReviewPlanId] = useState<string | null>(null);
 
   // Launch dialog state
   const [launchPlan, setLaunchPlan] = useState<Plan | null>(null);
   const [showLaunchDialog, setShowLaunchDialog] = useState(false);
-  const [justLaunchedPlanId, setJustLaunchedPlanId] = useState<string | null>(null);
+  const [justLaunchedPlanId, setJustLaunchedPlanId] = useState<string | null>(
+    null
+  );
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const { data: sessionData } = useGetSessionQuery(sessionId);
@@ -235,7 +279,9 @@ export function DashboardLayout({
   // Count active plans for the tab badge
   const activePlanCount = useMemo(() => {
     if (!plansData?.plans) return 0;
-    return plansData.plans.filter(p => p.status === 'running' || p.status === 'paused').length;
+    return plansData.plans.filter(
+      (p) => p.status === 'running' || p.status === 'paused'
+    ).length;
   }, [plansData]);
 
   // Navigate to initial task from snapshot resume
@@ -247,24 +293,37 @@ export function DashboardLayout({
   }, [initialTaskId, onInitialTaskConsumed]);
 
   // Report task selection to parent for snapshot tracking
-  const handleSelectTask = useCallback((taskId: string | null) => {
-    setSelectedTaskId(taskId);
-    onTaskSelected?.(taskId);
-  }, [onTaskSelected]);
+  const handleSelectTask = useCallback(
+    (taskId: string | null) => {
+      setSelectedTaskId(taskId);
+      onTaskSelected?.(taskId);
+    },
+    [onTaskSelected]
+  );
 
   // Report tab changes to parent for snapshot tracking
-  const handleTabChange = useCallback((tab: string) => {
-    const typedTab = tab as 'tasks' | 'plans' | 'summary' | 'qa-gates';
-    setActiveTab(typedTab);
-    if (typedTab === 'tasks' || typedTab === 'plans' || typedTab === 'qa-gates') {
-      onTabChanged?.(typedTab);
-    }
-  }, [onTabChanged]);
+  const handleTabChange = useCallback(
+    (tab: string) => {
+      const typedTab = tab as 'tasks' | 'plans' | 'summary' | 'qa-gates';
+      setActiveTab(typedTab);
+      if (
+        typedTab === 'tasks' ||
+        typedTab === 'plans' ||
+        typedTab === 'qa-gates'
+      ) {
+        onTabChanged?.(typedTab);
+      }
+    },
+    [onTabChanged]
+  );
 
-  const handleTaskCreated = useCallback((taskId: string) => {
-    handleSelectTask(taskId);
-    setRefreshTrigger((prev) => prev + 1);
-  }, [handleSelectTask]);
+  const handleTaskCreated = useCallback(
+    (taskId: string) => {
+      handleSelectTask(taskId);
+      setRefreshTrigger((prev) => prev + 1);
+    },
+    [handleSelectTask]
+  );
 
   const handleSessionEnded = useCallback(() => {
     setShowSummaryModal(true);
@@ -285,14 +344,17 @@ export function DashboardLayout({
     setPlanView('detail');
   }, []);
 
-  const handleViewExecution = useCallback((planId: string) => {
-    setSelectedPlanId(planId);
-    setPlanView('execution');
-    // Switch to plans tab if not already there
-    if (activeTab !== 'plans') {
-      handleTabChange('plans');
-    }
-  }, [activeTab, handleTabChange]);
+  const handleViewExecution = useCallback(
+    (planId: string) => {
+      setSelectedPlanId(planId);
+      setPlanView('execution');
+      // Switch to plans tab if not already there
+      if (activeTab !== 'plans') {
+        handleTabChange('plans');
+      }
+    },
+    [activeTab, handleTabChange]
+  );
 
   const handleBackToList = useCallback(() => {
     setPlanView('list');
@@ -300,33 +362,42 @@ export function DashboardLayout({
   }, []);
 
   // Launch flow
-  const handleOpenLaunch = useCallback((planId: string) => {
-    const plan = plansData?.plans.find(p => p.id === planId);
-    if (plan) {
-      setLaunchPlan(plan);
-      setShowLaunchDialog(true);
-    }
-  }, [plansData]);
+  const handleOpenLaunch = useCallback(
+    (planId: string) => {
+      const plan = plansData?.plans.find((p) => p.id === planId);
+      if (plan) {
+        setLaunchPlan(plan);
+        setShowLaunchDialog(true);
+      }
+    },
+    [plansData]
+  );
 
-  const handleLaunched = useCallback((planId: string) => {
-    // Navigate to execution view after launch with animation
-    setJustLaunchedPlanId(planId);
-    setSelectedPlanId(planId);
-    setPlanView('execution');
-    handleTabChange('plans');
-    // Clear justLaunched flag after transition
-    setTimeout(() => setJustLaunchedPlanId(null), 5000);
-  }, [handleTabChange]);
+  const handleLaunched = useCallback(
+    (planId: string) => {
+      // Navigate to execution view after launch with animation
+      setJustLaunchedPlanId(planId);
+      setSelectedPlanId(planId);
+      setPlanView('execution');
+      handleTabChange('plans');
+      // Clear justLaunched flag after transition
+      setTimeout(() => setJustLaunchedPlanId(null), 5000);
+    },
+    [handleTabChange]
+  );
 
-  const handleLaunchAndSwitch = useCallback((_planId: string) => {
-    // Stay on current tab (tasks) - plan runs in background
-    // The LivePlanMonitor will show the running plan
-    setShowLaunchDialog(false);
-    // Switch to tasks tab if not already there
-    if (activeTab !== 'tasks') {
-      handleTabChange('tasks');
-    }
-  }, [activeTab, handleTabChange]);
+  const handleLaunchAndSwitch = useCallback(
+    (_planId: string) => {
+      // Stay on current tab (tasks) - plan runs in background
+      // The LivePlanMonitor will show the running plan
+      setShowLaunchDialog(false);
+      // Switch to tasks tab if not already there
+      if (activeTab !== 'tasks') {
+        handleTabChange('tasks');
+      }
+    },
+    [activeTab, handleTabChange]
+  );
 
   // Register keyboard shortcuts
   useRegisterDashboardShortcuts({
@@ -347,7 +418,7 @@ export function DashboardLayout({
   return (
     <PerformanceProfiler id="DashboardLayout">
       <ErrorBoundary id="dashboard-main">
-        <div className="h-full flex flex-col gap-3">
+        <div className="flex h-full flex-col gap-3">
           {/* Session Controls Bar */}
           {session && (
             <ErrorBoundary id="session-controls">
@@ -371,9 +442,24 @@ export function DashboardLayout({
           </ErrorBoundary>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="mb-3" role="tablist" aria-label="Dashboard navigation">
-              <TabsTrigger value="tasks" aria-label="View tasks" aria-controls="tasks-panel" className="transition-all duration-200 hover:scale-105 active:scale-95">Tasks</TabsTrigger>
+          <Tabs
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="flex flex-1 flex-col overflow-hidden"
+          >
+            <TabsList
+              className="mb-3"
+              role="tablist"
+              aria-label="Dashboard navigation"
+            >
+              <TabsTrigger
+                value="tasks"
+                aria-label="View tasks"
+                aria-controls="tasks-panel"
+                className="transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                Tasks
+              </TabsTrigger>
               <TabsTrigger
                 value="plans"
                 className="gap-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
@@ -382,14 +468,38 @@ export function DashboardLayout({
               >
                 Plans
                 {activePlanCount > 0 && (
-                  <span className="relative flex h-2 w-2" role="status" aria-label={`${activePlanCount} active plans`}>
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" aria-hidden="true" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" aria-hidden="true" />
+                  <span
+                    className="relative flex h-2 w-2"
+                    role="status"
+                    aria-label={`${activePlanCount} active plans`}
+                  >
+                    <span
+                      className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="relative inline-flex h-2 w-2 rounded-full bg-blue-500"
+                      aria-hidden="true"
+                    />
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="qa-gates" aria-label="View QA gates configuration" aria-controls="qa-gates-panel" className="transition-all duration-200 hover:scale-105 active:scale-95">QA Gates</TabsTrigger>
-              <TabsTrigger value="summary" aria-label="View session summary" aria-controls="summary-panel" className="transition-all duration-200 hover:scale-105 active:scale-95">Summary</TabsTrigger>
+              <TabsTrigger
+                value="qa-gates"
+                aria-label="View QA gates configuration"
+                aria-controls="qa-gates-panel"
+                className="transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                QA Gates
+              </TabsTrigger>
+              <TabsTrigger
+                value="summary"
+                aria-label="View session summary"
+                aria-controls="summary-panel"
+                className="transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                Summary
+              </TabsTrigger>
             </TabsList>
 
             {/* Tasks Tab */}
@@ -398,7 +508,7 @@ export function DashboardLayout({
               id="tasks-panel"
               role="tabpanel"
               aria-labelledby="tasks-tab"
-              className="flex-1 flex flex-col gap-3 overflow-hidden mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+              className="mt-0 flex flex-1 flex-col gap-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
             >
               <TasksTabContent
                 sessionId={sessionId}
@@ -419,10 +529,12 @@ export function DashboardLayout({
               id="plans-panel"
               role="tabpanel"
               aria-labelledby="plans-tab"
-              className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+              className="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
             >
               <ErrorBoundary id="plans-tab">
-                <Suspense fallback={<LoadingFallback message="Loading plans..." />}>
+                <Suspense
+                  fallback={<LoadingFallback message="Loading plans..." />}
+                >
                   {planView === 'list' ? (
                     <div className="h-full overflow-auto">
                       <PlanList
@@ -441,8 +553,8 @@ export function DashboardLayout({
                       />
                     </div>
                   ) : planView === 'detail' && selectedPlanId ? (
-                    <div className="h-full flex overflow-hidden">
-                      <div className="flex-1 overflow-auto min-w-0">
+                    <div className="flex h-full overflow-hidden">
+                      <div className="min-w-0 flex-1 overflow-auto">
                         <PlanDetailView
                           planId={selectedPlanId}
                           onBack={handleBackToList}
@@ -474,10 +586,12 @@ export function DashboardLayout({
               id="qa-gates-panel"
               role="tabpanel"
               aria-labelledby="qa-gates-tab"
-              className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+              className="mt-0 flex-1 overflow-auto data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
             >
               <ErrorBoundary id="qa-gates-tab">
-                <Suspense fallback={<LoadingFallback message="Loading QA gates..." />}>
+                <Suspense
+                  fallback={<LoadingFallback message="Loading QA gates..." />}
+                >
                   <QAGatesConfig repositoryId={repositoryId} />
                 </Suspense>
               </ErrorBoundary>
@@ -489,10 +603,12 @@ export function DashboardLayout({
               id="summary-panel"
               role="tabpanel"
               aria-labelledby="summary-tab"
-              className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
+              className="mt-0 flex-1 overflow-auto data-[state=inactive]:hidden data-[state=active]:animate-slide-up-fade"
             >
               <ErrorBoundary id="summary-tab">
-                <Suspense fallback={<LoadingFallback message="Loading summary..." />}>
+                <Suspense
+                  fallback={<LoadingFallback message="Loading summary..." />}
+                >
                   <SessionSummary
                     sessionId={sessionId}
                     onTaskClick={(taskId) => {

@@ -2,7 +2,10 @@
 
 import { useCallback, useRef } from 'react';
 import { useAppDispatch } from '@/shared/hooks';
-import { sessionsApi, useGetActiveSessionQuery } from '@/features/sessions/store/sessionsApi';
+import {
+  sessionsApi,
+  useGetActiveSessionQuery,
+} from '@/features/sessions/store/sessionsApi';
 
 /**
  * useOptimisticSession
@@ -30,17 +33,20 @@ export function useOptimisticSession() {
    * Call on hover or when you anticipate the user will switch to this repo.
    * Uses RTK Query's prefetch action which respects cache TTL (60s).
    */
-  const prefetchSession = useCallback((repositoryId: string) => {
-    if (prefetchedRepos.current.has(repositoryId)) return;
-    prefetchedRepos.current.add(repositoryId);
+  const prefetchSession = useCallback(
+    (repositoryId: string) => {
+      if (prefetchedRepos.current.has(repositoryId)) return;
+      prefetchedRepos.current.add(repositoryId);
 
-    // Use sessionsApi prefetch — won't re-fetch if cache is fresh within 60s
-    dispatch(
-      sessionsApi.util.prefetch('getActiveSession', repositoryId, {
-        ifOlderThan: 60,
-      }),
-    );
-  }, [dispatch]);
+      // Use sessionsApi prefetch — won't re-fetch if cache is fresh within 60s
+      dispatch(
+        sessionsApi.util.prefetch('getActiveSession', repositoryId, {
+          ifOlderThan: 60,
+        })
+      );
+    },
+    [dispatch]
+  );
 
   return {
     prefetchSession,
@@ -56,16 +62,14 @@ export function useOptimisticSession() {
  * - Never shows a blank loading state if we have any cached data
  */
 export function useOptimisticActiveSession(repositoryId: string | null) {
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-  } = useGetActiveSessionQuery(repositoryId ?? '', {
-    skip: !repositoryId,
-    // Keep previous data visible while refetching (no flicker on repo switch)
-    // RTK Query does this by default with selectFromResult
-  });
+  const { data, isLoading, isFetching, error } = useGetActiveSessionQuery(
+    repositoryId ?? '',
+    {
+      skip: !repositoryId,
+      // Keep previous data visible while refetching (no flicker on repo switch)
+      // RTK Query does this by default with selectFromResult
+    }
+  );
 
   return {
     session: data?.session ?? null,

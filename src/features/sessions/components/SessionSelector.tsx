@@ -14,7 +14,10 @@ import {
   Clock,
   Loader2,
 } from 'lucide-react';
-import { useListSessionsQuery, useResumeSessionMutation } from '../store/sessionsApi';
+import {
+  useListSessionsQuery,
+  useResumeSessionMutation,
+} from '../store/sessionsApi';
 import type { Session, SessionStatus } from '@/db/schema/sessions';
 
 interface SessionSelectorProps {
@@ -31,7 +34,6 @@ const statusIcons: Record<SessionStatus, React.ReactNode> = {
   abandoned: <XCircle className="h-3 w-3 text-red-600" />,
 };
 
- 
 export function SessionSelector({
   currentSession,
   repositoryId,
@@ -68,7 +70,7 @@ export function SessionSelector({
         className="flex items-center gap-2"
       >
         {statusIcons[currentSession.status]}
-        <span className="hidden sm:inline truncate max-w-[120px]">
+        <span className="hidden max-w-[120px] truncate sm:inline">
           {currentSession.id.slice(0, 8)}
         </span>
         <ChevronDown
@@ -85,20 +87,22 @@ export function SessionSelector({
           />
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 w-72 bg-popover border rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-lg border bg-popover shadow-lg">
             {/* Current Session */}
-            <div className="p-3 border-b bg-muted/50">
-              <div className="text-xs font-medium text-muted-foreground mb-1">
+            <div className="border-b bg-muted/50 p-3">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">
                 Current Session
               </div>
               <div className="flex items-center gap-2">
                 {statusIcons[currentSession.status]}
-                <span className="font-mono text-sm">{currentSession.id.slice(0, 8)}</span>
+                <span className="font-mono text-sm">
+                  {currentSession.id.slice(0, 8)}
+                </span>
                 <Badge variant="secondary" className="text-xs">
                   {currentSession.status}
                 </Badge>
               </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+              <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 Started{' '}
                 {formatDistanceToNow(new Date(currentSession.startedAt), {
@@ -126,7 +130,7 @@ export function SessionSelector({
                     <button
                       key={session.id}
                       onClick={() => handleSelect(session)}
-                      className="w-full px-3 py-2 text-left hover:bg-accent flex items-center justify-between group"
+                      className="group flex w-full items-center justify-between px-3 py-2 text-left hover:bg-accent"
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -138,12 +142,14 @@ export function SessionSelector({
                             {session.taskCount} tasks
                           </span>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
+                        <div className="mt-0.5 text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(session.startedAt), {
                             addSuffix: true,
                           })}
                           {session.status === 'paused' && (
-                            <span className="ml-2 text-yellow-600">(paused)</span>
+                            <span className="ml-2 text-yellow-600">
+                              (paused)
+                            </span>
                           )}
                         </div>
                       </div>
@@ -158,7 +164,7 @@ export function SessionSelector({
 
             {/* New Session Button */}
             {onCreateNewSession && (
-              <div className="p-2 border-t">
+              <div className="border-t p-2">
                 <Button
                   variant="outline"
                   size="sm"

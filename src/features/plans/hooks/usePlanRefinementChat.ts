@@ -38,22 +38,26 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     label: 'Add detail',
     icon: 'list-plus',
-    prompt: 'Add more detail to all phases and tasks. Make descriptions more specific and actionable.',
+    prompt:
+      'Add more detail to all phases and tasks. Make descriptions more specific and actionable.',
   },
   {
     label: 'Simplify',
     icon: 'minimize',
-    prompt: 'Simplify the plan. Merge redundant tasks, remove unnecessary steps, and make it more concise.',
+    prompt:
+      'Simplify the plan. Merge redundant tasks, remove unnecessary steps, and make it more concise.',
   },
   {
     label: 'Add tests',
     icon: 'shield',
-    prompt: 'Add testing tasks to each phase. Include unit tests, integration tests, and any relevant E2E tests.',
+    prompt:
+      'Add testing tasks to each phase. Include unit tests, integration tests, and any relevant E2E tests.',
   },
   {
     label: 'Error handling',
     icon: 'bug',
-    prompt: 'Add error handling and edge case tasks. Consider failure modes, validation, and recovery steps.',
+    prompt:
+      'Add error handling and edge case tasks. Consider failure modes, validation, and recovery steps.',
   },
 ];
 
@@ -84,7 +88,7 @@ async function streamRefinement(
   planId: string,
   text: string,
   messages: ChatMessage[],
-  setMessages: SetMessages,
+  setMessages: SetMessages
 ): Promise<Proposal[]> {
   const response = await fetch(`/api/plans/${planId}/refine`, {
     method: 'POST',
@@ -136,7 +140,9 @@ async function streamRefinement(
 // ---------------------------------------------------------------------------
 
 export function usePlanRefinementChat(planId: string, enabled: boolean) {
-  const { data: planData, refetch } = useGetPlanQuery(planId, { skip: !planId || !enabled });
+  const { data: planData, refetch } = useGetPlanQuery(planId, {
+    skip: !planId || !enabled,
+  });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -187,24 +193,33 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
       ]);
 
       try {
-        const proposals = await streamRefinement(planId, text, messages, setMessages);
+        const proposals = await streamRefinement(
+          planId,
+          text,
+          messages,
+          setMessages
+        );
         // Finalize: clean up <UPDATES> tags and attach proposals
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last?.role === 'assistant') {
-            last.content = last.content.replace(/<UPDATES>[\s\S]*?<\/UPDATES>/, '').trim();
+            last.content = last.content
+              .replace(/<UPDATES>[\s\S]*?<\/UPDATES>/, '')
+              .trim();
             if (proposals.length > 0) last.proposals = proposals;
           }
           return updated;
         });
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        const errorMsg =
+          error instanceof Error ? error.message : 'Unknown error';
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last?.role === 'assistant') {
-            last.content = last.content || `Sorry, something went wrong: ${errorMsg}`;
+            last.content =
+              last.content || `Sorry, something went wrong: ${errorMsg}`;
           }
           return updated;
         });
@@ -212,12 +227,16 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
         setIsLoading(false);
       }
     },
-    [input, planId, isLoading, messages],
+    [input, planId, isLoading, messages]
   );
 
   // Accept/reject individual proposals
   const setProposalStatus = useCallback(
-    (messageIdx: number, proposalId: number, status: 'accepted' | 'rejected') => {
+    (
+      messageIdx: number,
+      proposalId: number,
+      status: 'accepted' | 'rejected'
+    ) => {
       setMessages((prev) => {
         const updated = [...prev];
         const msg = updated[messageIdx];
@@ -228,7 +247,7 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
         return [...updated];
       });
     },
-    [],
+    []
   );
 
   // Apply accepted proposals for a message
@@ -273,7 +292,7 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
         setIsLoading(false);
       }
     },
-    [messages, planId, refetch],
+    [messages, planId, refetch]
   );
 
   // Accept all pending and apply at once
@@ -283,7 +302,7 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
       if (!msg?.proposals) return;
 
       const allChanges = msg.proposals.filter(
-        (p) => p.status === 'pending' || p.status === 'accepted',
+        (p) => p.status === 'pending' || p.status === 'accepted'
       );
       if (allChanges.length === 0) return;
 
@@ -321,7 +340,7 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
         setIsLoading(false);
       }
     },
-    [messages, planId, refetch],
+    [messages, planId, refetch]
   );
 
   // Reset chat state (for closing/reopening)

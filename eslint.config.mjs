@@ -58,14 +58,21 @@ export default tseslint.config(
     files: ['**/components/**/*.tsx'],
     ignores: ['**/__tests__/**', '**/*.test.tsx', '**/*.spec.tsx'],
     rules: {
-      'max-lines-per-function': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': [
+        'error',
+        { max: 400, skipBlankLines: true, skipComments: true },
+      ],
       complexity: ['error', 20],
     },
   },
 
   // Relax rules for test files - must come LAST to take precedence
   {
-    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: [
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+    ],
     rules: {
       'max-lines-per-function': 'off',
       'max-params': 'off',

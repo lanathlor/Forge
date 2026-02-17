@@ -7,8 +7,12 @@ import { TasksTabContent } from '../components/DashboardLayout/TasksTabContent';
 import { useTaskStream } from '@/shared/hooks';
 
 export default function TasksPage() {
-  const currentSessionId = useAppSelector(state => state.session.currentSessionId);
-  const { updates, connected, error, reconnect } = useTaskStream(currentSessionId || '');
+  const currentSessionId = useAppSelector(
+    (state) => state.session.currentSessionId
+  );
+  const { updates, connected, error, reconnect } = useTaskStream(
+    currentSessionId || ''
+  );
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -17,14 +21,16 @@ export default function TasksPage() {
   }, []);
 
   const handleTaskCreated = useCallback((_taskId: string) => {
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   }, []);
 
   if (!currentSessionId) {
     return (
       <AppLayout activeNavItem="tasks">
-        <div className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">No active session. Please select a repository.</p>
+        <div className="flex h-full items-center justify-center">
+          <p className="text-muted-foreground">
+            No active session. Please select a repository.
+          </p>
         </div>
       </AppLayout>
     );

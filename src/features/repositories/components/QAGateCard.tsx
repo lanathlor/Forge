@@ -10,12 +10,15 @@ import {
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { Switch } from '@/shared/components/ui/switch';
-import { GripVertical, Trash2, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import {
+  GripVertical,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+} from 'lucide-react';
 import { TestGateButton } from './TestGateButton';
-import type {
-  QAGate,
-  QAGateExecutionResult,
-} from '../types/qa-gates';
+import type { QAGate, QAGateExecutionResult } from '../types/qa-gates';
 
 interface QAGateCardProps {
   gate: QAGate;
@@ -32,15 +35,18 @@ function ExecutionStatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
     running: {
       label: 'Running',
-      className: 'h-6 border border-blue-500/30 bg-blue-500/15 px-3 text-xs font-semibold text-blue-700 dark:text-blue-400',
+      className:
+        'h-6 border border-blue-500/30 bg-blue-500/15 px-3 text-xs font-semibold text-blue-700 dark:text-blue-400',
     },
     passed: {
       label: 'Passed',
-      className: 'h-6 border border-green-500/30 bg-green-500/15 px-3 text-xs font-semibold text-green-700 dark:text-green-400',
+      className:
+        'h-6 border border-green-500/30 bg-green-500/15 px-3 text-xs font-semibold text-green-700 dark:text-green-400',
     },
     failed: {
       label: 'Failed',
-      className: 'h-6 border border-red-500/30 bg-red-500/15 px-3 text-xs font-semibold text-red-700 dark:text-red-400',
+      className:
+        'h-6 border border-red-500/30 bg-red-500/15 px-3 text-xs font-semibold text-red-700 dark:text-red-400',
     },
     skipped: {
       label: 'Skipped',
@@ -52,16 +58,29 @@ function ExecutionStatusBadge({ status }: { status: string }) {
   if (!info) return null;
 
   return (
-    <Badge variant={status === 'skipped' ? 'outline' : undefined} className={info.className}>
+    <Badge
+      variant={status === 'skipped' ? 'outline' : undefined}
+      className={info.className}
+    >
       {info.label}
     </Badge>
   );
 }
 
-function OutputSection({ output, label, isError = false }: { output: string; label: string; isError?: boolean }) {
+function OutputSection({
+  output,
+  label,
+  isError = false,
+}: {
+  output: string;
+  label: string;
+  isError?: boolean;
+}) {
   return (
     <div>
-      <div className={`mb-2 text-xs font-semibold ${isError ? 'text-red-600' : 'text-muted-foreground'}`}>
+      <div
+        className={`mb-2 text-xs font-semibold ${isError ? 'text-red-600' : 'text-muted-foreground'}`}
+      >
         {label}
       </div>
       <div
@@ -99,10 +118,12 @@ export function QAGateCard({
   return (
     <Card
       className={`group transition-all ${
-        isDragging ? 'rotate-1 scale-[1.02] shadow-xl ring-2 ring-primary/20' : ''
+        isDragging
+          ? 'rotate-1 scale-[1.02] shadow-xl ring-2 ring-primary/20'
+          : ''
       } ${
         gate.enabled
-          ? 'border-l-4 border-l-primary hover:shadow-md hover:border-l-primary/80'
+          ? 'border-l-4 border-l-primary hover:border-l-primary/80 hover:shadow-md'
           : 'border-dashed border-muted-foreground/30 opacity-60 hover:opacity-80'
       }`}
     >
@@ -131,18 +152,26 @@ export function QAGateCard({
           {/* Name & command */}
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-base font-semibold">{gate.name}</CardTitle>
+              <CardTitle className="text-base font-semibold">
+                {gate.name}
+              </CardTitle>
               {gate.failOnError ? (
                 <Badge className="h-5 border border-red-500/30 bg-red-500/15 px-2 text-[10px] font-bold text-red-700 dark:text-red-400">
                   Required
                 </Badge>
               ) : (
-                <Badge variant="outline" className="h-5 border-muted-foreground/30 px-2 text-[10px] text-muted-foreground">
+                <Badge
+                  variant="outline"
+                  className="h-5 border-muted-foreground/30 px-2 text-[10px] text-muted-foreground"
+                >
                   Optional
                 </Badge>
               )}
             </div>
-            <code className="block truncate text-xs text-muted-foreground" title={gate.command}>
+            <code
+              className="block truncate text-xs text-muted-foreground"
+              title={gate.command}
+            >
               {gate.command}
             </code>
           </div>
@@ -163,7 +192,9 @@ export function QAGateCard({
           {/* Timeout badge */}
           <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
-            <span className="font-medium">{(gate.timeout / 1000).toFixed(0)}s</span>
+            <span className="font-medium">
+              {(gate.timeout / 1000).toFixed(0)}s
+            </span>
           </div>
 
           {/* Actions */}
@@ -198,7 +229,11 @@ export function QAGateCard({
             onClick={() => setExpanded(!expanded)}
             className="flex w-full items-center gap-1.5 rounded-md bg-muted/30 px-3 py-1.5 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
           >
-            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            {expanded ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
             {expanded ? 'Hide output' : 'Show output'}
           </button>
 
@@ -208,7 +243,11 @@ export function QAGateCard({
                 <OutputSection output={execution.output} label="Output:" />
               )}
               {execution.error && (
-                <OutputSection output={execution.error} label="Error:" isError />
+                <OutputSection
+                  output={execution.error}
+                  label="Error:"
+                  isError
+                />
               )}
             </div>
           )}

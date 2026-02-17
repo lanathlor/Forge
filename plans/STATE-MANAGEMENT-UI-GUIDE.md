@@ -9,6 +9,7 @@ This document provides comprehensive guidance on using RTK Query for API calls a
 ### Philosophy
 
 **Never use `fetch` directly in components.** All API calls should go through RTK Query for:
+
 - Automatic caching and deduplication
 - Loading and error state management
 - Optimistic updates
@@ -18,6 +19,7 @@ This document provides comprehensive guidance on using RTK Query for API calls a
 ### Setup (Already Configured)
 
 The project includes:
+
 - Redux store at `src/store/index.ts`
 - RTK Query API at `src/store/api.ts`
 - Provider wrapper at `src/app/providers.tsx`
@@ -88,6 +90,7 @@ export function RepositoryList() {
 ```
 
 **Key Points:**
+
 - RTK Query provides `isLoading`, `isError`, `error` automatically
 - Data is cached - subsequent renders use cached data
 - Automatically refetches on window focus (configurable)
@@ -150,6 +153,7 @@ export function TaskPromptInput({ sessionId }: { sessionId: string }) {
 ```
 
 **Key Points:**
+
 - Mutations return `[trigger, { isLoading, isError, error }]`
 - Use `.unwrap()` to get the result or throw on error
 - RTK Query automatically invalidates related caches
@@ -242,6 +246,7 @@ export function SessionSummary({ sessionId }: { sessionId: string }) {
 ### Available Components
 
 All components are in `src/components/ui/`:
+
 - `button` - Buttons with variants
 - `card` - Container cards
 - `dialog` - Modals
@@ -516,6 +521,7 @@ export function TaskReviewPanel({ taskId }: { taskId: string }) {
 ### RTK Query
 
 1. **Always use hooks, never fetch directly**
+
    ```typescript
    // ❌ Bad
    const data = await fetch('/api/tasks');
@@ -525,6 +531,7 @@ export function TaskReviewPanel({ taskId }: { taskId: string }) {
    ```
 
 2. **Use `.unwrap()` in mutation handlers**
+
    ```typescript
    // ✅ Good
    try {
@@ -548,12 +555,14 @@ export function TaskReviewPanel({ taskId }: { taskId: string }) {
 ### shadcn/ui
 
 1. **Use semantic variants**
+
    ```typescript
    <Button variant="destructive">Delete</Button>
    <Badge variant="secondary">Pending</Badge>
    ```
 
 2. **Compose components**
+
    ```typescript
    <Card>
      <CardHeader>
@@ -578,6 +587,7 @@ export function TaskReviewPanel({ taskId }: { taskId: string }) {
 If you see old code using `fetch`, replace it:
 
 ### Before (fetch)
+
 ```typescript
 const [data, setData] = useState(null);
 const [loading, setLoading] = useState(false);
@@ -585,13 +595,14 @@ const [loading, setLoading] = useState(false);
 useEffect(() => {
   setLoading(true);
   fetch('/api/tasks')
-    .then(res => res.json())
-    .then(data => setData(data))
+    .then((res) => res.json())
+    .then((data) => setData(data))
     .finally(() => setLoading(false));
 }, []);
 ```
 
 ### After (RTK Query)
+
 ```typescript
 const { data, isLoading } = useGetTasksQuery();
 ```
@@ -605,6 +616,7 @@ That's it! RTK Query handles everything.
 When you need a new API endpoint:
 
 1. **Add it to `src/store/api.ts`**:
+
    ```typescript
    export const api = createApi({
      // ... existing code
@@ -613,13 +625,16 @@ When you need a new API endpoint:
 
        getTaskDiff: builder.query({
          query: (taskId) => `/tasks/${taskId}/diff`,
-         providesTags: (result, error, taskId) => [{ type: 'Task', id: taskId }],
+         providesTags: (result, error, taskId) => [
+           { type: 'Task', id: taskId },
+         ],
        }),
      }),
    });
    ```
 
 2. **Export the hook**:
+
    ```typescript
    export const { useGetTaskDiffQuery } = api;
    ```

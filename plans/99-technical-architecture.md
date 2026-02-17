@@ -3,6 +3,7 @@
 ## Stack Overview
 
 ### Frontend + Backend (Monolith)
+
 - **Framework**: Next.js 15 (App Router, React Server Components)
 - **Language**: TypeScript 5.x (strict mode)
 - **UI Library**: Tailwind CSS + shadcn/ui + Radix UI
@@ -12,30 +13,35 @@
 - **Validation**: Zod
 
 ### Database & ORM
+
 - **ORM**: Drizzle ORM
 - **Development**: SQLite (file-based, zero setup)
 - **Production**: PostgreSQL (migration-ready)
 - **Migration Strategy**: Drizzle Kit
 
 ### Real-time Communication
+
 - **Protocol**: Server-Sent Events (SSE)
 - **Implementation**: Native Next.js API routes + ReadableStream
 - **Client**: EventSource API (native browser)
 - **Fallback**: Polling (if SSE unavailable)
 
 ### Development Environment
+
 - **Container**: Docker + Docker Compose
 - **Package Manager**: pnpm
 - **Node**: 20 LTS
 - **Hot Reload**: Next.js Fast Refresh
 
 ### Code Quality
+
 - **Linting**: ESLint + @next/eslint-plugin + @typescript-eslint
 - **Formatting**: Prettier + prettier-plugin-tailwindcss
 - **Type Checking**: TypeScript strict mode
 - **Git Hooks**: Husky (optional)
 
 ### Testing
+
 - **Unit**: Vitest
 - **E2E**: Playwright
 - **Coverage**: Vitest coverage
@@ -200,99 +206,186 @@ import { createId } from '@paralleldrive/cuid2';
 import { relations } from 'drizzle-orm';
 
 // Repository Discovery
-export const repositories = sqliteTable('repositories', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  name: text('name').notNull(),
-  path: text('path').notNull().unique(),
-  lastScanned: integer('last_scanned', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  lastCommitSha: text('last_commit_sha'),
-  lastCommitMsg: text('last_commit_msg'),
-  currentBranch: text('current_branch'),
-  isClean: integer('is_clean', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-}, (table) => ({
-  pathIdx: index('path_idx').on(table.path),
-}));
+export const repositories = sqliteTable(
+  'repositories',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    name: text('name').notNull(),
+    path: text('path').notNull().unique(),
+    lastScanned: integer('last_scanned', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    lastCommitSha: text('last_commit_sha'),
+    lastCommitMsg: text('last_commit_msg'),
+    currentBranch: text('current_branch'),
+    isClean: integer('is_clean', { mode: 'boolean' }).notNull().default(true),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+  },
+  (table) => ({
+    pathIdx: index('path_idx').on(table.path),
+  })
+);
 
 // Session Management
-export const sessionStatusEnum = ['active', 'paused', 'completed', 'abandoned'] as const;
+export const sessionStatusEnum = [
+  'active',
+  'paused',
+  'completed',
+  'abandoned',
+] as const;
 
-export const sessions = sqliteTable('sessions', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  repositoryId: text('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  status: text('status', { enum: sessionStatusEnum }).notNull().default('active'),
-  startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  endedAt: integer('ended_at', { mode: 'timestamp' }),
-  lastActivity: integer('last_activity', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  startBranch: text('start_branch'),
-  endBranch: text('end_branch'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-}, (table) => ({
-  repoStatusIdx: index('session_repo_status_idx').on(table.repositoryId, table.status),
-  activityIdx: index('session_activity_idx').on(table.lastActivity),
-}));
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    repositoryId: text('repository_id')
+      .notNull()
+      .references(() => repositories.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: sessionStatusEnum })
+      .notNull()
+      .default('active'),
+    startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    endedAt: integer('ended_at', { mode: 'timestamp' }),
+    lastActivity: integer('last_activity', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    startBranch: text('start_branch'),
+    endBranch: text('end_branch'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+  },
+  (table) => ({
+    repoStatusIdx: index('session_repo_status_idx').on(
+      table.repositoryId,
+      table.status
+    ),
+    activityIdx: index('session_activity_idx').on(table.lastActivity),
+  })
+);
 
 // Task Execution
 export const taskStatusEnum = [
-  'pending', 'pre_flight', 'running', 'waiting_qa', 'qa_running',
-  'qa_failed', 'waiting_approval', 'approved', 'completed', 'rejected', 'failed', 'cancelled',
+  'pending',
+  'pre_flight',
+  'running',
+  'waiting_qa',
+  'qa_running',
+  'qa_failed',
+  'waiting_approval',
+  'approved',
+  'completed',
+  'rejected',
+  'failed',
+  'cancelled',
 ] as const;
 
-export const tasks = sqliteTable('tasks', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
-  prompt: text('prompt').notNull(),
-  status: text('status', { enum: taskStatusEnum }).notNull().default('pending'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  startedAt: integer('started_at', { mode: 'timestamp' }),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
-  claudeOutput: text('claude_output'),
-  startingCommit: text('starting_commit'),
-  startingBranch: text('starting_branch'),
-  filesChanged: text('files_changed'), // JSON string
-  diffContent: text('diff_content'),
-  committedSha: text('committed_sha'),
-  commitMessage: text('commit_message'),
-  approvedAt: integer('approved_at', { mode: 'timestamp' }),
-  rejectedAt: integer('rejected_at', { mode: 'timestamp' }),
-  rejectionReason: text('rejection_reason'),
-}, (table) => ({
-  sessionIdx: index('task_session_idx').on(table.sessionId),
-  statusIdx: index('task_status_idx').on(table.status),
-}));
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
+    prompt: text('prompt').notNull(),
+    status: text('status', { enum: taskStatusEnum })
+      .notNull()
+      .default('pending'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    startedAt: integer('started_at', { mode: 'timestamp' }),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
+    claudeOutput: text('claude_output'),
+    startingCommit: text('starting_commit'),
+    startingBranch: text('starting_branch'),
+    filesChanged: text('files_changed'), // JSON string
+    diffContent: text('diff_content'),
+    committedSha: text('committed_sha'),
+    commitMessage: text('commit_message'),
+    approvedAt: integer('approved_at', { mode: 'timestamp' }),
+    rejectedAt: integer('rejected_at', { mode: 'timestamp' }),
+    rejectionReason: text('rejection_reason'),
+  },
+  (table) => ({
+    sessionIdx: index('task_session_idx').on(table.sessionId),
+    statusIdx: index('task_status_idx').on(table.status),
+  })
+);
 
 // QA Gates
-export const qaGateConfigs = sqliteTable('qa_gate_configs', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  name: text('name').notNull().unique(),
-  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-  command: text('command').notNull(),
-  timeout: integer('timeout').notNull().default(60000),
-  failOnError: integer('fail_on_error', { mode: 'boolean' }).notNull().default(true),
-  order: integer('order').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-}, (table) => ({
-  enabledOrderIdx: index('qa_gate_enabled_order_idx').on(table.enabled, table.order),
-}));
+export const qaGateConfigs = sqliteTable(
+  'qa_gate_configs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    name: text('name').notNull().unique(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    command: text('command').notNull(),
+    timeout: integer('timeout').notNull().default(60000),
+    failOnError: integer('fail_on_error', { mode: 'boolean' })
+      .notNull()
+      .default(true),
+    order: integer('order').notNull().default(0),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+  },
+  (table) => ({
+    enabledOrderIdx: index('qa_gate_enabled_order_idx').on(
+      table.enabled,
+      table.order
+    ),
+  })
+);
 
-export const qaGateResults = sqliteTable('qa_gate_results', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  taskId: text('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
-  gateName: text('gate_name').notNull(),
-  status: text('status').notNull(),
-  output: text('output'),
-  errors: text('errors'), // JSON string[]
-  duration: integer('duration'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
-}, (table) => ({
-  taskIdx: index('qa_gate_result_task_idx').on(table.taskId),
-  gateNameIdx: index('qa_gate_result_gate_name_idx').on(table.gateName),
-}));
+export const qaGateResults = sqliteTable(
+  'qa_gate_results',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    taskId: text('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    gateName: text('gate_name').notNull(),
+    status: text('status').notNull(),
+    output: text('output'),
+    errors: text('errors'), // JSON string[]
+    duration: integer('duration'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
+  },
+  (table) => ({
+    taskIdx: index('qa_gate_result_task_idx').on(table.taskId),
+    gateNameIdx: index('qa_gate_result_gate_name_idx').on(table.gateName),
+  })
+);
 
 // Relations
 export const repositoriesRelations = relations(repositories, ({ many }) => ({
@@ -328,6 +421,7 @@ export const qaGateResultsRelations = relations(qaGateResults, ({ one }) => ({
 ## Configuration Files
 
 ### package.json
+
 ```json
 {
   "name": "autobot",
@@ -395,6 +489,7 @@ export const qaGateResultsRelations = relations(qaGateResults, ({ one }) => ({
 ```
 
 ### .env
+
 ```bash
 # Database
 DATABASE_URL="file:./dev.db"
@@ -417,6 +512,7 @@ PORT="3000"
 ```
 
 ### tsconfig.json
+
 ```json
 {
   "compilerOptions": {
@@ -447,12 +543,10 @@ PORT="3000"
 ```
 
 ### .eslintrc.json
+
 ```json
 {
-  "extends": [
-    "next/core-web-vitals",
-    "plugin:@typescript-eslint/recommended"
-  ],
+  "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
   "rules": {
@@ -470,6 +564,7 @@ PORT="3000"
 ```
 
 ### prettier.config.js
+
 ```js
 module.exports = {
   semi: true,
@@ -483,6 +578,7 @@ module.exports = {
 ```
 
 ### docker-compose.yml
+
 ```yaml
 version: '3.8'
 
@@ -492,7 +588,7 @@ services:
       context: .
       target: dev
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - .:/app
       - /app/node_modules
@@ -514,7 +610,7 @@ services:
       POSTGRES_USER: autobot
       POSTGRES_PASSWORD: autobot
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     profiles:
@@ -525,6 +621,7 @@ volumes:
 ```
 
 ### Dockerfile
+
 ```dockerfile
 FROM node:20-alpine AS base
 
@@ -673,7 +770,10 @@ export const api = createApi({
         method: 'POST',
         body: { message },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Task', id }, 'Session'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Task', id },
+        'Session',
+      ],
     }),
     rejectTask: builder.mutation({
       query: ({ id, reason }) => ({
@@ -681,7 +781,10 @@ export const api = createApi({
         method: 'POST',
         body: { reason },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Task', id }, 'Session'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Task', id },
+        'Session',
+      ],
     }),
 
     // QA Gates
@@ -760,21 +863,27 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 ## Key Design Patterns
 
 ### 1. Repository Pattern
+
 All database access goes through Drizzle ORM, abstracted in service modules.
 
 ### 2. Event-Driven Architecture
+
 SSE emits events for task updates, enabling real-time UI without polling.
 
 ### 3. Orchestrator Pattern
+
 `tasks/orchestrator.ts` coordinates all steps of task execution lifecycle.
 
 ### 4. Singleton Pattern
+
 Drizzle client, Claude wrapper use singletons to avoid multiple instances.
 
 ### 5. Factory Pattern
+
 Session manager creates/retrieves sessions based on state.
 
 ### 6. RTK Query Pattern
+
 All API calls use RTK Query for automatic caching, invalidation, and optimistic updates.
 
 ---
@@ -805,12 +914,14 @@ All API calls use RTK Query for automatic caching, invalidation, and optimistic 
 ## Migration from SQLite to PostgreSQL
 
 ### Step 1: Update DATABASE_URL
+
 ```bash
 # .env.production
 DATABASE_URL="postgresql://user:password@host:5432/autobot"
 ```
 
 ### Step 2: Update Drizzle Config
+
 ```typescript
 // drizzle.config.ts
 import { defineConfig } from 'drizzle-kit';
@@ -826,6 +937,7 @@ export default defineConfig({
 ```
 
 ### Step 3: Update Schema Imports
+
 ```typescript
 // src/db/schema.ts
 // Change from:
@@ -835,6 +947,7 @@ import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 ```
 
 ### Step 4: Generate and Run Migrations
+
 ```bash
 pnpm db:generate
 pnpm db:migrate
@@ -847,16 +960,19 @@ Minimal code changes required - just schema imports and config!
 ## Deployment
 
 ### Development
+
 ```bash
 docker-compose up
 ```
 
 ### Production (Docker)
+
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### Production (Bare Metal)
+
 ```bash
 pnpm install --prod
 pnpm db:migrate

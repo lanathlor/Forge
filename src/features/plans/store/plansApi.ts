@@ -27,7 +27,11 @@ export interface UpdatePlanRequest {
 }
 
 export interface ReviewPlanRequest {
-  reviewType: 'refine_descriptions' | 'add_missing' | 'optimize_order' | 'break_down';
+  reviewType:
+    | 'refine_descriptions'
+    | 'add_missing'
+    | 'optimize_order'
+    | 'break_down';
   scope?: 'all' | 'phase' | 'task';
   targetId?: string;
 }
@@ -53,21 +57,21 @@ export interface ApplySuggestionsRequest {
 function optimisticPlanStatusUpdate(
   id: string,
   status: Plan['status'],
-  dispatch: (action: unknown) => unknown,
+  dispatch: (action: unknown) => unknown
 ) {
   const patchPlan = dispatch(
     plansApi.util.updateQueryData('getPlan', id, (draft) => {
       if (draft.plan) {
         draft.plan.status = status;
       }
-    }),
+    })
   ) as { undo: () => void };
 
   const patchList = dispatch(
     plansApi.util.updateQueryData('getPlans', undefined, (draft) => {
       const plan = draft.plans.find((p: Plan) => p.id === id);
       if (plan) plan.status = status;
-    }),
+    })
   ) as { undo: () => void };
 
   return { patchPlan, patchList };
@@ -179,7 +183,11 @@ export const plansApi = api.injectEndpoints({
         method: 'POST',
       }),
       onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
-        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'running', dispatch);
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(
+          id,
+          'running',
+          dispatch
+        );
         try {
           await queryFulfilled;
         } catch {
@@ -200,7 +208,11 @@ export const plansApi = api.injectEndpoints({
         method: 'POST',
       }),
       onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
-        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'paused', dispatch);
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(
+          id,
+          'paused',
+          dispatch
+        );
         try {
           await queryFulfilled;
         } catch {
@@ -221,7 +233,11 @@ export const plansApi = api.injectEndpoints({
         method: 'POST',
       }),
       onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
-        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'running', dispatch);
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(
+          id,
+          'running',
+          dispatch
+        );
         try {
           await queryFulfilled;
         } catch {
@@ -243,7 +259,11 @@ export const plansApi = api.injectEndpoints({
       }),
       onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
         // Optimistically show as failed (most likely outcome of cancel)
-        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'failed', dispatch);
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(
+          id,
+          'failed',
+          dispatch
+        );
         try {
           const { data } = await queryFulfilled;
           // Reconcile with actual server status
@@ -252,7 +272,7 @@ export const plansApi = api.injectEndpoints({
               if (draft.plan && data.plan) {
                 draft.plan.status = data.plan.status;
               }
-            }),
+            })
           );
         } catch {
           patchPlan.undo();
@@ -269,16 +289,23 @@ export const plansApi = api.injectEndpoints({
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: (result, error, data) => [{ type: 'Plan', id: data.planId }],
+      invalidatesTags: (result, error, data) => [
+        { type: 'Plan', id: data.planId },
+      ],
     }),
 
-    updatePhase: builder.mutation<{ phase: Phase }, { id: string; data: Partial<Phase> }>({
+    updatePhase: builder.mutation<
+      { phase: Phase },
+      { id: string; data: Partial<Phase> }
+    >({
       query: ({ id, data }) => ({
         url: `/phases/${id}`,
         method: 'PATCH',
         body: data,
       }),
-      invalidatesTags: (result, error, { data }) => [{ type: 'Plan', id: data.planId }],
+      invalidatesTags: (result, error, { data }) => [
+        { type: 'Plan', id: data.planId },
+      ],
     }),
 
     deletePhase: builder.mutation<{ success: boolean }, string>({
@@ -296,16 +323,23 @@ export const plansApi = api.injectEndpoints({
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: (result, error, data) => [{ type: 'Plan', id: data.planId }],
+      invalidatesTags: (result, error, data) => [
+        { type: 'Plan', id: data.planId },
+      ],
     }),
 
-    updatePlanTask: builder.mutation<{ task: PlanTask }, { id: string; data: Partial<PlanTask> }>({
+    updatePlanTask: builder.mutation<
+      { task: PlanTask },
+      { id: string; data: Partial<PlanTask> }
+    >({
       query: ({ id, data }) => ({
         url: `/plan-tasks/${id}`,
         method: 'PATCH',
         body: data,
       }),
-      invalidatesTags: (result, error, { data }) => [{ type: 'Plan', id: data.planId }],
+      invalidatesTags: (result, error, { data }) => [
+        { type: 'Plan', id: data.planId },
+      ],
     }),
 
     deletePlanTask: builder.mutation<{ success: boolean }, string>({
@@ -321,9 +355,7 @@ export const plansApi = api.injectEndpoints({
         url: `/plan-tasks/${id}/retry`,
         method: 'POST',
       }),
-      invalidatesTags: (_result, _error, _id) => [
-        { type: 'Plan', id: 'LIST' },
-      ],
+      invalidatesTags: (_result, _error, _id) => [{ type: 'Plan', id: 'LIST' }],
     }),
   }),
 });

@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useMediaQuery } from '../useMediaQuery';
 
-function createMockMediaQueryList(matches: boolean, query: string): MediaQueryList {
+function createMockMediaQueryList(
+  matches: boolean,
+  query: string
+): MediaQueryList {
   return {
     matches,
     media: query,
@@ -93,7 +96,8 @@ describe('useMediaQuery', () => {
   });
 
   it('should cleanup listener on unmount', () => {
-    const removeEventListener = vi.fn() as MediaQueryList['removeEventListener'];
+    const removeEventListener =
+      vi.fn() as MediaQueryList['removeEventListener'];
     vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
       ...createMockMediaQueryList(false, query),
       removeEventListener,
@@ -102,7 +106,10 @@ describe('useMediaQuery', () => {
     const { unmount } = renderHook(() => useMediaQuery('(min-width: 768px)'));
     unmount();
 
-    expect(removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith(
+      'change',
+      expect.any(Function)
+    );
   });
 
   it('should handle different media queries', () => {
@@ -110,7 +117,9 @@ describe('useMediaQuery', () => {
       createMockMediaQueryList(query === '(prefers-color-scheme: dark)', query)
     );
 
-    const { result: widthResult } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+    const { result: widthResult } = renderHook(() =>
+      useMediaQuery('(min-width: 768px)')
+    );
     const { result: colorSchemeResult } = renderHook(() =>
       useMediaQuery('(prefers-color-scheme: dark)')
     );
@@ -124,9 +133,12 @@ describe('useMediaQuery', () => {
       createMockMediaQueryList(query.includes('1024'), query)
     );
 
-    const { result, rerender } = renderHook(({ query }) => useMediaQuery(query), {
-      initialProps: { query: '(min-width: 768px)' },
-    });
+    const { result, rerender } = renderHook(
+      ({ query }) => useMediaQuery(query),
+      {
+        initialProps: { query: '(min-width: 768px)' },
+      }
+    );
 
     expect(result.current).toBe(false);
 

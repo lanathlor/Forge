@@ -79,7 +79,11 @@ describe('LivePlanMonitor', () => {
   it('should return null when no active or recent plans', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [] } });
     const { container } = render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(container.firstChild).toBeNull();
   });
@@ -87,7 +91,11 @@ describe('LivePlanMonitor', () => {
   it('should return null when data is undefined', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: undefined });
     const { container } = render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(container.firstChild).toBeNull();
   });
@@ -95,7 +103,11 @@ describe('LivePlanMonitor', () => {
   it('should render running plans', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [basePlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(screen.getByText('Running Plan')).toBeInTheDocument();
     expect(screen.getByText('Plan Monitor')).toBeInTheDocument();
@@ -105,7 +117,11 @@ describe('LivePlanMonitor', () => {
   it('should render completed plans', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [completedPlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(screen.getByText('Completed Plan')).toBeInTheDocument();
     expect(screen.getByText('done')).toBeInTheDocument();
@@ -114,7 +130,11 @@ describe('LivePlanMonitor', () => {
   it('should render failed plans with destructive badge', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [failedPlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(screen.getByText('Failed Plan')).toBeInTheDocument();
     expect(screen.getByText('failed')).toBeInTheDocument();
@@ -123,7 +143,11 @@ describe('LivePlanMonitor', () => {
   it('should toggle collapse on header click', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [basePlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
 
     // Plan name should be visible initially
@@ -143,7 +167,11 @@ describe('LivePlanMonitor', () => {
   it('should call onViewExecution when running plan card clicked', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [basePlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
 
     fireEvent.click(screen.getByText('Running Plan'));
@@ -153,7 +181,11 @@ describe('LivePlanMonitor', () => {
   it('should call onViewPlan when completed plan card clicked', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [completedPlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
 
     fireEvent.click(screen.getByText('Completed Plan'));
@@ -163,7 +195,11 @@ describe('LivePlanMonitor', () => {
   it('should show progress bar for running plans', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [basePlan] } });
     const { container } = render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(screen.getByText('3/10 tasks')).toBeInTheDocument();
     expect(screen.getByText('30%')).toBeInTheDocument();
@@ -175,7 +211,11 @@ describe('LivePlanMonitor', () => {
     const pausedPlan = { ...basePlan, status: 'paused' as const };
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [pausedPlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(screen.getByText('Running Plan')).toBeInTheDocument();
   });
@@ -185,17 +225,29 @@ describe('LivePlanMonitor', () => {
       ...completedPlan,
       updatedAt: new Date(now.getTime() - 48 * 60 * 60 * 1000), // 2 days ago
     };
-    mockUseGetPlansQuery.mockReturnValue({ data: { plans: [oldCompletedPlan] } });
+    mockUseGetPlansQuery.mockReturnValue({
+      data: { plans: [oldCompletedPlan] },
+    });
     const { container } = render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(container.firstChild).toBeNull();
   });
 
   it('should show divider between active and completed plans', () => {
-    mockUseGetPlansQuery.mockReturnValue({ data: { plans: [basePlan, completedPlan] } });
+    mockUseGetPlansQuery.mockReturnValue({
+      data: { plans: [basePlan, completedPlan] },
+    });
     const { container } = render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     const divider = container.querySelector('.border-t');
     expect(divider).toBeInTheDocument();
@@ -204,7 +256,11 @@ describe('LivePlanMonitor', () => {
   it('should not show divider when only completed plans', () => {
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [completedPlan] } });
     const { container } = render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     const divider = container.querySelector('.border-t.my-1');
     expect(divider).not.toBeInTheDocument();
@@ -219,7 +275,11 @@ describe('LivePlanMonitor', () => {
     ];
     mockUseGetPlansQuery.mockReturnValue({ data: { plans } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     const doneLabels = screen.getAllByText('done');
     expect(doneLabels).toHaveLength(3);
@@ -229,7 +289,11 @@ describe('LivePlanMonitor', () => {
     const zeroPlan = { ...basePlan, totalTasks: 0, completedTasks: 0 };
     mockUseGetPlansQuery.mockReturnValue({ data: { plans: [zeroPlan] } });
     render(
-      <LivePlanMonitor repositoryId="repo-1" onViewExecution={mockOnViewExecution} onViewPlan={mockOnViewPlan} />,
+      <LivePlanMonitor
+        repositoryId="repo-1"
+        onViewExecution={mockOnViewExecution}
+        onViewPlan={mockOnViewPlan}
+      />
     );
     expect(screen.getByText('0%')).toBeInTheDocument();
   });

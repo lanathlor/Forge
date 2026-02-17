@@ -26,19 +26,20 @@ export function parseEslintOutput(output: string): {
       return { passed: true, errors: [] };
     }
 
-    const errors = results.flatMap((file: {
-      filePath: string;
-      messages: Array<{
-        line: number;
-        column: number;
-        message: string;
-        ruleId: string;
-      }>;
-    }) =>
-      file.messages.map(
-        (msg) =>
-          `${file.filePath}:${msg.line}:${msg.column} - ${msg.message} (${msg.ruleId})`
-      )
+    const errors = results.flatMap(
+      (file: {
+        filePath: string;
+        messages: Array<{
+          line: number;
+          column: number;
+          message: string;
+          ruleId: string;
+        }>;
+      }) =>
+        file.messages.map(
+          (msg) =>
+            `${file.filePath}:${msg.line}:${msg.column} - ${msg.message} (${msg.ruleId})`
+        )
     );
 
     return { passed: false, errors };

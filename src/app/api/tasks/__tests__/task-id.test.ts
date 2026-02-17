@@ -112,7 +112,9 @@ describe('tasks/[id] API route', () => {
     });
 
     it('should return 500 when cancel fails', async () => {
-      mockClaudeWrapper.cancel.mockRejectedValueOnce(new Error('Cancel failed'));
+      mockClaudeWrapper.cancel.mockRejectedValueOnce(
+        new Error('Cancel failed')
+      );
 
       const request = new Request('http://localhost/api/tasks/task-123', {
         method: 'DELETE',

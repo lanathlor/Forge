@@ -38,6 +38,24 @@ async function writeConfig(path: string, config: object) {
   await writeFile(path, JSON.stringify(config, null, 2), 'utf-8');
 }
 
+async function saveGatesConfig(
+  id: string,
+  body: { version: unknown; maxRetries?: number; qaGates: QAGateInput[] }
+) {
+  const { version, maxRetries, qaGates } = body;
+  const repo = await getRepository(id);
+  if (!repo) return { error: 'Repository not found', status: 404 };
+
+  const config = {
+    version,
+    maxRetries: maxRetries ?? 3,
+    qaGates: qaGates.map(normalizeGate),
+  };
+  const configPath = join(repo.path, '.autobot.json');
+  await writeConfig(configPath, config);
+  return { repoName: repo.name, configPath };
+}
+
 /**
  * POST /api/repositories/:id/qa-gates/save
  * Save QA gates configuration to .autobot.json
@@ -60,28 +78,17 @@ export async function POST(
       );
     }
 
-    const repo = await getRepository(id);
-    if (!repo) {
-      return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
+    const result = await saveGatesConfig(id, { version, maxRetries, qaGates });
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
-    const config = {
-      version,
-      maxRetries: maxRetries ?? 3,
-      qaGates: qaGates.map(normalizeGate),
-    };
-
-    const configPath = join(repo.path, '.autobot.json');
-    await writeConfig(configPath, config);
-
     const duration = Date.now() - startTime;
-    console.log(`[QA Gates Save] Saved configuration for ${repo.name} in ${duration}ms`);
-
-    return NextResponse.json({ success: true, path: configPath, duration });
+    console.log(`[QA Gates Save] Saved configuration for ${result.repoName} in ${duration}ms`);
+    return NextResponse.json({ success: true, path: result.configPath, duration });
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[QA Gates Save] Error after ${duration}ms:`, error);
-
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to save configuration',

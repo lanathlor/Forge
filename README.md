@@ -53,23 +53,27 @@ autobot/
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd autobot
    ```
 
 2. Install dependencies:
+
    ```bash
    pnpm install
    ```
 
 3. Copy environment variables:
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. Initialize the database:
+
    ```bash
    pnpm db:generate  # Generate migrations
    pnpm db:init      # Create database
@@ -77,6 +81,7 @@ autobot/
    ```
 
 5. Start development server:
+
    ```bash
    pnpm dev
    ```
@@ -136,11 +141,13 @@ pnpx shadcn@latest add dialog
 QA gates are now configured per-repository using `.autobot.json` files. This allows each repository to define gates specific to its tech stack.
 
 **Quick Start:**
+
 1. Create `.autobot.json` in your repository root
 2. Define QA gates for your tech stack (ESLint, TypeScript, Tests, etc.)
 3. Autobot automatically loads and runs these gates
 
 **Example configurations available:**
+
 - `examples/.autobot.json.typescript` - TypeScript/Node.js projects
 - `examples/.autobot.json.python` - Python projects
 - `examples/.autobot.json.go` - Go projects

@@ -1,4 +1,3 @@
- 
 'use client';
 
 import {
@@ -106,7 +105,9 @@ const LAYOUT_SIZES = {
    CONTEXT
    ============================================ */
 
-const DashboardShellContext = createContext<DashboardShellContextValue | null>(null);
+const DashboardShellContext = createContext<DashboardShellContextValue | null>(
+  null
+);
 
 export function useDashboardShell() {
   const context = useContext(DashboardShellContext);
@@ -121,7 +122,9 @@ export function useDashboardShell() {
    ============================================ */
 
 function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
-  const [breakpoint, setBreakpoint] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [breakpoint, setBreakpoint] = useState<'mobile' | 'tablet' | 'desktop'>(
+    'desktop'
+  );
 
   useEffect(() => {
     const checkBreakpoint = () => {
@@ -181,13 +184,15 @@ function SidebarNavItem({ item, collapsed, onClick }: SidebarNavItemProps) {
       <Icon
         className={cn(
           'h-5 w-5 flex-shrink-0 transition-colors duration-200',
-          item.active ? 'text-accent-primary' : 'text-text-muted group-hover:text-text-primary'
+          item.active
+            ? 'text-accent-primary'
+            : 'text-text-muted group-hover:text-text-primary'
         )}
       />
       <span
         className={cn(
           'whitespace-nowrap transition-all duration-300 ease-in-out',
-          collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+          collapsed ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'
         )}
       >
         {item.label}
@@ -235,9 +240,13 @@ function Sidebar({
         collapsed ? 'w-16' : 'w-64',
         className
       )}
-      style={{
-        [CSS_VARS.sidebarWidth]: collapsed ? LAYOUT_SIZES.sidebarCollapsedWidth : LAYOUT_SIZES.sidebarWidth,
-      } as React.CSSProperties}
+      style={
+        {
+          [CSS_VARS.sidebarWidth]: collapsed
+            ? LAYOUT_SIZES.sidebarCollapsedWidth
+            : LAYOUT_SIZES.sidebarWidth,
+        } as React.CSSProperties
+      }
     >
       {/* Logo / Brand Area */}
       <div
@@ -279,7 +288,7 @@ function Sidebar({
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-hide">
+      <nav className="scrollbar-hide flex-1 overflow-y-auto overflow-x-hidden p-2">
         <div className="space-y-1">
           {navItems.map((item) => (
             <SidebarNavItem key={item.id} item={item} collapsed={collapsed} />
@@ -311,7 +320,13 @@ interface MobileSidebarProps {
   logo?: ReactNode;
 }
 
-function MobileSidebar({ open, onClose, navItems, bottomNavItems, logo }: MobileSidebarProps) {
+function MobileSidebar({
+  open,
+  onClose,
+  navItems,
+  bottomNavItems,
+  logo,
+}: MobileSidebarProps) {
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (open) {
@@ -352,7 +367,7 @@ function MobileSidebar({ open, onClose, navItems, bottomNavItems, logo }: Mobile
       <div
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-surface-raised md:hidden',
-          'shadow-elevation-highest safe-top safe-bottom',
+          'safe-top safe-bottom shadow-elevation-highest',
           'transition-transform duration-300 ease-in-out will-change-transform',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -362,7 +377,11 @@ function MobileSidebar({ open, onClose, navItems, bottomNavItems, logo }: Mobile
       >
         {/* Header with Close Button */}
         <div className="flex h-14 items-center justify-between border-b border-border-default px-4">
-          {logo || <span className="text-lg font-semibold text-text-primary">Menu</span>}
+          {logo || (
+            <span className="text-lg font-semibold text-text-primary">
+              Menu
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -375,10 +394,15 @@ function MobileSidebar({ open, onClose, navItems, bottomNavItems, logo }: Mobile
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 scrollbar-hide">
+        <nav className="scrollbar-hide flex-1 overflow-y-auto p-3">
           <div className="space-y-1">
             {navItems.map((item) => (
-              <SidebarNavItem key={item.id} item={item} collapsed={false} onClick={onClose} />
+              <SidebarNavItem
+                key={item.id}
+                item={item}
+                collapsed={false}
+                onClick={onClose}
+              />
             ))}
           </div>
         </nav>
@@ -387,7 +411,12 @@ function MobileSidebar({ open, onClose, navItems, bottomNavItems, logo }: Mobile
         <div className="border-t border-border-default p-3">
           <div className="space-y-1">
             {bottomNavItems.map((item) => (
-              <SidebarNavItem key={item.id} item={item} collapsed={false} onClick={onClose} />
+              <SidebarNavItem
+                key={item.id}
+                item={item}
+                collapsed={false}
+                onClick={onClose}
+              />
             ))}
           </div>
         </div>
@@ -407,11 +436,16 @@ export interface ActionBarProps {
   position?: 'top' | 'bottom' | 'floating';
 }
 
-export function ActionBar({ children, className, position = 'top' }: ActionBarProps) {
+export function ActionBar({
+  children,
+  className,
+  position = 'top',
+}: ActionBarProps) {
   const positionClasses = {
     top: 'relative',
     bottom: 'relative',
-    floating: 'fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-3xl w-[calc(100%-2rem)]',
+    floating:
+      'fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-3xl w-[calc(100%-2rem)]',
   };
 
   return (
@@ -442,7 +476,11 @@ export interface ActionBarSectionProps {
   align?: 'start' | 'center' | 'end';
 }
 
-export function ActionBarSection({ children, className, align = 'start' }: ActionBarSectionProps) {
+export function ActionBarSection({
+  children,
+  className,
+  align = 'start',
+}: ActionBarSectionProps) {
   const alignClasses = {
     start: 'justify-start',
     center: 'justify-center',
@@ -450,7 +488,11 @@ export function ActionBarSection({ children, className, align = 'start' }: Actio
   };
 
   return (
-    <div className={cn('flex items-center gap-2', alignClasses[align], className)}>{children}</div>
+    <div
+      className={cn('flex items-center gap-2', alignClasses[align], className)}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -466,11 +508,17 @@ interface RightPanelProps {
   className?: string;
 }
 
-function RightPanel({ children, open, onClose, title = 'Details', className }: RightPanelProps) {
+function RightPanel({
+  children,
+  open,
+  onClose,
+  title = 'Details',
+  className,
+}: RightPanelProps) {
   return (
     <aside
       className={cn(
-        'hidden xl:flex h-full flex-col border-l border-border-default bg-surface-raised',
+        'hidden h-full flex-col border-l border-border-default bg-surface-raised xl:flex',
         'transition-[width,opacity] duration-300 ease-in-out will-change-[width,opacity]',
         'overflow-hidden',
         open ? 'w-80 opacity-100' : 'w-0 opacity-0',
@@ -500,7 +548,7 @@ function RightPanel({ children, open, onClose, title = 'Details', className }: R
       </div>
       <div
         className={cn(
-          'flex-1 min-w-80 overflow-y-auto p-4 scrollbar-hide',
+          'scrollbar-hide min-w-80 flex-1 overflow-y-auto p-4',
           'transition-opacity duration-200',
           open ? 'opacity-100' : 'opacity-0'
         )}
@@ -549,23 +597,29 @@ function MainContent({
       )}
 
       {/* Content Area with max-width constraint */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <div className="mx-auto h-full w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+      <div className="scrollbar-hide flex-1 overflow-y-auto">
+        <div className="mx-auto h-full w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
       </div>
 
       {/* Right Panel Toggle (desktop only, when right panel content exists) */}
       {hasRightPanel && (
-        <div className="hidden xl:block fixed right-4 top-4 z-20">
+        <div className="fixed right-4 top-4 z-20 hidden xl:block">
           <Button
             variant="outline"
             size="icon"
             onClick={onToggleRightPanel}
             className={cn(
-              'h-9 w-9 bg-surface-raised shadow-elevation-low border-border-default',
+              'h-9 w-9 border-border-default bg-surface-raised shadow-elevation-low',
               'transition-all duration-200 ease-in-out',
-              rightPanelOpen ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'
+              rightPanelOpen
+                ? 'pointer-events-none scale-95 opacity-0'
+                : 'scale-100 opacity-100'
             )}
-            aria-label={rightPanelOpen ? 'Close details panel' : 'Open details panel'}
+            aria-label={
+              rightPanelOpen ? 'Close details panel' : 'Open details panel'
+            }
             aria-expanded={rightPanelOpen}
           >
             <PanelRightOpen className="h-5 w-5" />
@@ -587,7 +641,7 @@ interface MobileHeaderProps {
 
 function MobileHeader({ onMenuClick, header }: MobileHeaderProps) {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border-default bg-surface-raised px-4 md:hidden safe-top">
+    <header className="safe-top flex h-14 items-center justify-between border-b border-border-default bg-surface-raised px-4 md:hidden">
       <Button
         variant="ghost"
         size="icon"
@@ -597,7 +651,11 @@ function MobileHeader({ onMenuClick, header }: MobileHeaderProps) {
       >
         <Menu className="h-5 w-5" />
       </Button>
-      {header || <span className="text-lg font-semibold text-text-primary">Dashboard</span>}
+      {header || (
+        <span className="text-lg font-semibold text-text-primary">
+          Dashboard
+        </span>
+      )}
       <div className="w-9" aria-hidden="true" />
     </header>
   );
@@ -691,22 +749,31 @@ export function DashboardShell({
           // CSS Grid for responsive layout structure
           'grid',
           // Mobile: stacked layout (header row + content row)
-          'grid-rows-[auto_1fr] grid-cols-1',
+          'grid-cols-1 grid-rows-[auto_1fr]',
           // Tablet+: single row, columns handled by flex children
-          'md:grid-rows-1 md:grid-cols-1',
+          'md:grid-cols-1 md:grid-rows-1',
           className
         )}
-        style={{
-          // CSS custom properties for layout calculations
-          [CSS_VARS.sidebarWidth]: sidebarCollapsed ? LAYOUT_SIZES.sidebarCollapsedWidth : LAYOUT_SIZES.sidebarWidth,
-          [CSS_VARS.rightPanelWidth]: rightPanelOpen ? LAYOUT_SIZES.rightPanelWidth : '0px',
-          [CSS_VARS.headerHeight]: LAYOUT_SIZES.headerHeight,
-          [CSS_VARS.maxContentWidth]: LAYOUT_SIZES.maxContentWidth,
-        } as React.CSSProperties}
+        style={
+          {
+            // CSS custom properties for layout calculations
+            [CSS_VARS.sidebarWidth]: sidebarCollapsed
+              ? LAYOUT_SIZES.sidebarCollapsedWidth
+              : LAYOUT_SIZES.sidebarWidth,
+            [CSS_VARS.rightPanelWidth]: rightPanelOpen
+              ? LAYOUT_SIZES.rightPanelWidth
+              : '0px',
+            [CSS_VARS.headerHeight]: LAYOUT_SIZES.headerHeight,
+            [CSS_VARS.maxContentWidth]: LAYOUT_SIZES.maxContentWidth,
+          } as React.CSSProperties
+        }
       >
         {/* Mobile Header - visible on mobile only */}
         <div className="md:hidden">
-          <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} header={header} />
+          <MobileHeader
+            onMenuClick={() => setMobileMenuOpen(true)}
+            header={header}
+          />
         </div>
 
         {/* Mobile Sidebar Overlay */}
@@ -725,7 +792,7 @@ export function DashboardShell({
         */}
         <div className="flex min-h-0 w-full overflow-hidden">
           {/* Desktop/Tablet Sidebar - hidden on mobile */}
-          <div className="hidden md:block flex-shrink-0">
+          <div className="hidden flex-shrink-0 md:block">
             <Sidebar
               navItems={navItems}
               bottomNavItems={bottomNavItems}

@@ -56,7 +56,9 @@ describe('useNavigationItems', () => {
       wrapper: createWrapper(store),
     });
 
-    const dashboardItem = result.current.items.find((item) => item.id === 'dashboard');
+    const dashboardItem = result.current.items.find(
+      (item) => item.id === 'dashboard'
+    );
     expect(dashboardItem).toBeDefined();
     expect(dashboardItem?.label).toBe('Dashboard');
     expect(dashboardItem?.active).toBe(true); // Default active item
@@ -86,7 +88,9 @@ describe('useNavigationItems', () => {
       { wrapper: createWrapper(store) }
     );
 
-    const dashboardItem = result.current.items.find((item) => item.id === 'dashboard');
+    const dashboardItem = result.current.items.find(
+      (item) => item.id === 'dashboard'
+    );
     const plansItem = result.current.items.find((item) => item.id === 'plans');
 
     expect(dashboardItem?.active).toBe(false);
@@ -96,10 +100,9 @@ describe('useNavigationItems', () => {
   it('should call onNavigate when item onClick is called', () => {
     const store = createMockStore();
     const onNavigate = vi.fn();
-    const { result } = renderHook(
-      () => useNavigationItems({ onNavigate }),
-      { wrapper: createWrapper(store) }
-    );
+    const { result } = renderHook(() => useNavigationItems({ onNavigate }), {
+      wrapper: createWrapper(store),
+    });
 
     const plansItem = result.current.items.find((item) => item.id === 'plans');
     plansItem?.onClick?.();
@@ -122,11 +125,17 @@ describe('useNavigationItems', () => {
   it('should return status indicators when session is active', () => {
     const store = createMockStore({ currentSessionId: 'session-1' });
     const { result } = renderHook(
-      () => useNavigationItems({ hasActiveSession: true, sessionStatus: 'running' }),
+      () =>
+        useNavigationItems({
+          hasActiveSession: true,
+          sessionStatus: 'running',
+        }),
       { wrapper: createWrapper(store) }
     );
 
-    const sessionIndicator = result.current.statusIndicators.find((i) => i.id === 'session');
+    const sessionIndicator = result.current.statusIndicators.find(
+      (i) => i.id === 'session'
+    );
     expect(sessionIndicator).toBeDefined();
     expect(sessionIndicator?.value).toBe('Running');
     expect(sessionIndicator?.type).toBe('success');
@@ -140,7 +149,9 @@ describe('useNavigationItems', () => {
       { wrapper: createWrapper(store) }
     );
 
-    const runningIndicator = result.current.statusIndicators.find((i) => i.id === 'running-tasks');
+    const runningIndicator = result.current.statusIndicators.find(
+      (i) => i.id === 'running-tasks'
+    );
     expect(runningIndicator).toBeDefined();
     expect(runningIndicator?.value).toBe(5);
     expect(runningIndicator?.pulse).toBe(true);
@@ -153,7 +164,9 @@ describe('useNavigationItems', () => {
       { wrapper: createWrapper(store) }
     );
 
-    const pendingIndicator = result.current.statusIndicators.find((i) => i.id === 'pending-tasks');
+    const pendingIndicator = result.current.statusIndicators.find(
+      (i) => i.id === 'pending-tasks'
+    );
     expect(pendingIndicator).toBeDefined();
     expect(pendingIndicator?.value).toBe(3);
   });
@@ -165,7 +178,9 @@ describe('useNavigationItems', () => {
       { wrapper: createWrapper(store) }
     );
 
-    const pendingIndicator = result.current.statusIndicators.find((i) => i.id === 'pending-tasks');
+    const pendingIndicator = result.current.statusIndicators.find(
+      (i) => i.id === 'pending-tasks'
+    );
     expect(pendingIndicator).toBeUndefined();
   });
 
@@ -175,8 +190,12 @@ describe('useNavigationItems', () => {
       wrapper: createWrapper(store),
     });
 
-    const primaryItems = result.current.items.filter((item) => item.priority === 'primary');
-    const secondaryItems = result.current.items.filter((item) => item.priority === 'secondary');
+    const primaryItems = result.current.items.filter(
+      (item) => item.priority === 'primary'
+    );
+    const secondaryItems = result.current.items.filter(
+      (item) => item.priority === 'secondary'
+    );
 
     expect(primaryItems.length).toBe(4); // dashboard, tasks, plans, repositories
     expect(secondaryItems.length).toBe(2); // settings, help
@@ -189,18 +208,23 @@ describe('useNavigationItems', () => {
     });
 
     // Should detect active session from Redux state
-    const sessionIndicator = result.current.statusIndicators.find((i) => i.id === 'session');
+    const sessionIndicator = result.current.statusIndicators.find(
+      (i) => i.id === 'session'
+    );
     expect(sessionIndicator).toBeDefined();
   });
 
   it('should show paused session status', () => {
     const store = createMockStore();
     const { result } = renderHook(
-      () => useNavigationItems({ hasActiveSession: true, sessionStatus: 'paused' }),
+      () =>
+        useNavigationItems({ hasActiveSession: true, sessionStatus: 'paused' }),
       { wrapper: createWrapper(store) }
     );
 
-    const sessionIndicator = result.current.statusIndicators.find((i) => i.id === 'session');
+    const sessionIndicator = result.current.statusIndicators.find(
+      (i) => i.id === 'session'
+    );
     expect(sessionIndicator?.value).toBe('Paused');
     expect(sessionIndicator?.type).toBe('info');
   });
@@ -208,11 +232,14 @@ describe('useNavigationItems', () => {
   it('should show error session status', () => {
     const store = createMockStore();
     const { result } = renderHook(
-      () => useNavigationItems({ hasActiveSession: true, sessionStatus: 'error' }),
+      () =>
+        useNavigationItems({ hasActiveSession: true, sessionStatus: 'error' }),
       { wrapper: createWrapper(store) }
     );
 
-    const dashboardItem = result.current.items.find((item) => item.id === 'dashboard');
+    const dashboardItem = result.current.items.find(
+      (item) => item.id === 'dashboard'
+    );
     expect(dashboardItem?.status).toBe('error');
   });
 
@@ -233,7 +260,9 @@ describe('useNavigationItems', () => {
       wrapper: createWrapper(store),
     });
 
-    const settingsItem = result.current.items.find((item) => item.id === 'settings');
+    const settingsItem = result.current.items.find(
+      (item) => item.id === 'settings'
+    );
     expect(settingsItem?.tooltip).toBe('Application settings');
 
     const helpItem = result.current.items.find((item) => item.id === 'help');

@@ -22,14 +22,18 @@ describe('RepositoryErrorState', () => {
     render(
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={false} />
     );
-    expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Try Again' })
+    ).toBeInTheDocument();
   });
 
   it('renders Rescanning... button when rescanning', () => {
     render(
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={true} />
     );
-    expect(screen.getByRole('button', { name: 'Rescanning...' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Rescanning...' })
+    ).toBeInTheDocument();
   });
 
   it('calls onRescan when button is clicked', async () => {

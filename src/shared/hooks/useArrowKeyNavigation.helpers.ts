@@ -10,7 +10,9 @@ export interface NavigationMove {
 /**
  * Get navigation keys based on orientation
  */
-export function getNavigationKeys(orientation: 'vertical' | 'horizontal'): NavigationMove {
+export function getNavigationKeys(
+  orientation: 'vertical' | 'horizontal'
+): NavigationMove {
   const isVertical = orientation === 'vertical';
   return {
     nextKey: isVertical ? 'ArrowDown' : 'ArrowRight',

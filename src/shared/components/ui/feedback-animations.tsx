@@ -48,13 +48,16 @@ export function SuccessCheckmark({
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-full bg-success/10 text-success animate-bounce-in',
+        'animate-bounce-in flex items-center justify-center rounded-full bg-success/10 text-success',
         sizeMap[size],
         className
       )}
       {...props}
     >
-      <Check className={cn(iconSizeMap[size], 'animate-checkmark')} strokeWidth={3} />
+      <Check
+        className={cn(iconSizeMap[size], 'animate-checkmark')}
+        strokeWidth={3}
+      />
     </div>
   );
 }
@@ -81,7 +84,7 @@ export function ErrorIndicator({
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-full bg-error/10 text-error animate-shake',
+        'animate-shake flex items-center justify-center rounded-full bg-error/10 text-error',
         sizeMap[size],
         className
       )}
@@ -114,7 +117,7 @@ export function WarningIndicator({
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-full bg-warning/10 text-warning animate-pulse-alert',
+        'animate-pulse-alert flex items-center justify-center rounded-full bg-warning/10 text-warning',
         sizeMap[size],
         className
       )}
@@ -147,7 +150,7 @@ export function InfoIndicator({
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-full bg-info/10 text-info animate-fade-in',
+        'animate-fade-in flex items-center justify-center rounded-full bg-info/10 text-info',
         sizeMap[size],
         className
       )}
@@ -169,12 +172,14 @@ export interface SuccessFlashProps extends React.HTMLAttributes<HTMLDivElement> 
   trigger?: boolean;
 }
 
-export function SuccessFlash({ children, trigger, className, ...props }: SuccessFlashProps) {
+export function SuccessFlash({
+  children,
+  trigger,
+  className,
+  ...props
+}: SuccessFlashProps) {
   return (
-    <div
-      className={cn(trigger && 'success-flash', className)}
-      {...props}
-    >
+    <div className={cn(trigger && 'success-flash', className)} {...props}>
       {children}
     </div>
   );
@@ -191,12 +196,14 @@ export interface ErrorFlashProps extends React.HTMLAttributes<HTMLDivElement> {
   trigger?: boolean;
 }
 
-export function ErrorFlash({ children, trigger, className, ...props }: ErrorFlashProps) {
+export function ErrorFlash({
+  children,
+  trigger,
+  className,
+  ...props
+}: ErrorFlashProps) {
   return (
-    <div
-      className={cn(trigger && 'error-flash', className)}
-      {...props}
-    >
+    <div className={cn(trigger && 'error-flash', className)} {...props}>
       {children}
     </div>
   );
@@ -230,7 +237,7 @@ export function LoadingSpinner({
   return (
     <div
       className={cn(
-        'inline-block rounded-full border-current border-t-transparent animate-spin',
+        'inline-block animate-spin rounded-full border-current border-t-transparent',
         spinnerSize[size],
         className
       )}
@@ -244,20 +251,25 @@ export function LoadingSpinner({
    ============================================ */
 
 export function useRipple() {
-  const [ripples, setRipples] = React.useState<Array<{ x: number; y: number; id: number }>>([]);
+  const [ripples, setRipples] = React.useState<
+    Array<{ x: number; y: number; id: number }>
+  >([]);
 
-  const addRipple = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const id = Date.now();
+  const addRipple = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const id = Date.now();
 
-    setRipples((prev) => [...prev, { x, y, id }]);
+      setRipples((prev) => [...prev, { x, y, id }]);
 
-    setTimeout(() => {
-      setRipples((prev) => prev.filter((ripple) => ripple.id !== id));
-    }, 600);
-  }, []);
+      setTimeout(() => {
+        setRipples((prev) => prev.filter((ripple) => ripple.id !== id));
+      }, 600);
+    },
+    []
+  );
 
   const RippleContainer = React.useCallback(
     () => (
@@ -265,7 +277,7 @@ export function useRipple() {
         {ripples.map((ripple) => (
           <span
             key={ripple.id}
-            className="absolute rounded-full bg-white/30 animate-ripple pointer-events-none"
+            className="animate-ripple pointer-events-none absolute rounded-full bg-white/30"
             style={{
               left: ripple.x,
               top: ripple.y,
@@ -294,10 +306,16 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   height?: string | number;
 }
 
-export function Skeleton({ className, width, height, style, ...props }: SkeletonProps) {
+export function Skeleton({
+  className,
+  width,
+  height,
+  style,
+  ...props
+}: SkeletonProps) {
   return (
     <div
-      className={cn('bg-muted rounded skeleton-pulse', className)}
+      className={cn('skeleton-pulse rounded bg-muted', className)}
       style={{
         width,
         height,

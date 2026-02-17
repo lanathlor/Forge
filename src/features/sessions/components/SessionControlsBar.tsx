@@ -77,8 +77,8 @@ function formatElapsed(ms: number): string {
 }
 
 function useElapsedTime(startedAt: Date, isRunning: boolean) {
-  const [elapsed, setElapsed] = useState(() =>
-    Date.now() - new Date(startedAt).getTime()
+  const [elapsed, setElapsed] = useState(
+    () => Date.now() - new Date(startedAt).getTime()
   );
 
   useEffect(() => {
@@ -119,10 +119,7 @@ export function SessionControlsBar({
   const isPaused = session.status === 'paused';
   const isActionable = isActive || isPaused;
 
-  const elapsed = useElapsedTime(
-    session.startedAt,
-    isActive
-  );
+  const elapsed = useElapsedTime(session.startedAt, isActive);
 
   const handleEndSession = useCallback(async () => {
     await endSession(session.id);
@@ -151,42 +148,47 @@ export function SessionControlsBar({
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex items-center gap-2 sm:gap-3 px-3 py-2 bg-card/95 backdrop-blur-sm border rounded-lg shadow-sm">
+      <div className="sticky top-0 z-10 flex items-center gap-2 rounded-lg border bg-card/95 px-3 py-2 shadow-sm backdrop-blur-sm sm:gap-3">
         {/* Status Indicator */}
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <div className="relative flex-shrink-0">
-            <span className={`block h-2.5 w-2.5 rounded-full ${statusInfo.color}`} />
+            <span
+              className={`block h-2.5 w-2.5 rounded-full ${statusInfo.color}`}
+            />
             {isActive && (
               <span
                 className={`absolute inset-0 h-2.5 w-2.5 rounded-full ${statusInfo.pulseColor} animate-ping opacity-75`}
               />
             )}
           </div>
-          <span className="text-xs font-medium text-muted-foreground hidden sm:inline">
+          <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
             {statusInfo.label}
           </span>
         </div>
 
         {/* Separator */}
-        <div className="h-4 w-px bg-border flex-shrink-0" />
+        <div className="h-4 w-px flex-shrink-0 bg-border" />
 
         {/* Repo Name (truncated on small screens) */}
-        <span className="text-sm font-medium truncate min-w-0 max-w-[120px] sm:max-w-[200px]">
+        <span className="min-w-0 max-w-[120px] truncate text-sm font-medium sm:max-w-[200px]">
           {repositoryName}
         </span>
 
         {/* Elapsed Time */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
           <Clock className="h-3 w-3" />
           <span>{formatElapsed(elapsed)}</span>
         </div>
 
         {/* Quick Stats (desktop only) */}
         {stats && (
-          <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground flex-shrink-0">
+          <div className="hidden flex-shrink-0 items-center gap-3 text-xs text-muted-foreground md:flex">
             <div className="h-4 w-px bg-border" />
             <span>
-              <span className="font-medium text-foreground">{stats.totalTasks}</span> tasks
+              <span className="font-medium text-foreground">
+                {stats.totalTasks}
+              </span>{' '}
+              tasks
             </span>
             {stats.completedTasks > 0 && (
               <span className="flex items-center gap-1 text-green-600">
@@ -201,7 +203,7 @@ export function SessionControlsBar({
         <div className="flex-1" />
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1.5">
           {/* History Button */}
           {onOpenHistory && (
             <Button
@@ -315,8 +317,10 @@ function EndSessionDialog({
           <DialogTitle>End Session?</DialogTitle>
           <DialogDescription>
             This will end the current session for{' '}
-            <span className="font-medium text-foreground">{repositoryName}</span>.
-            You can view it later in session history.
+            <span className="font-medium text-foreground">
+              {repositoryName}
+            </span>
+            . You can view it later in session history.
           </DialogDescription>
         </DialogHeader>
 
@@ -333,25 +337,33 @@ function EndSessionDialog({
           {stats && (
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-md bg-muted/50 p-2 text-center">
-                <div className="flex items-center justify-center mb-0.5">
+                <div className="mb-0.5 flex items-center justify-center">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="text-lg font-semibold">{stats.totalTasks}</div>
-                <div className="text-[10px] text-muted-foreground leading-tight">Tasks</div>
+                <div className="text-[10px] leading-tight text-muted-foreground">
+                  Tasks
+                </div>
               </div>
-              <div className="rounded-md bg-green-50 dark:bg-green-950/20 p-2 text-center">
-                <div className="flex items-center justify-center mb-0.5">
+              <div className="rounded-md bg-green-50 p-2 text-center dark:bg-green-950/20">
+                <div className="mb-0.5 flex items-center justify-center">
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                 </div>
-                <div className="text-lg font-semibold text-green-600">{stats.completedTasks}</div>
-                <div className="text-[10px] text-muted-foreground leading-tight">Completed</div>
+                <div className="text-lg font-semibold text-green-600">
+                  {stats.completedTasks}
+                </div>
+                <div className="text-[10px] leading-tight text-muted-foreground">
+                  Completed
+                </div>
               </div>
               <div className="rounded-md bg-muted/50 p-2 text-center">
-                <div className="flex items-center justify-center mb-0.5">
+                <div className="mb-0.5 flex items-center justify-center">
                   <GitCommit className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="text-lg font-semibold">{stats.commits}</div>
-                <div className="text-[10px] text-muted-foreground leading-tight">Commits</div>
+                <div className="text-[10px] leading-tight text-muted-foreground">
+                  Commits
+                </div>
               </div>
             </div>
           )}
@@ -360,19 +372,23 @@ function EndSessionDialog({
           {stats && (stats.rejectedTasks > 0 || stats.failedTasks > 0) && (
             <div className="space-y-1.5">
               {stats.rejectedTasks > 0 && (
-                <div className="flex items-center gap-2 text-xs bg-yellow-50 dark:bg-yellow-950/20 rounded-md px-2.5 py-1.5">
-                  <XCircle className="h-3.5 w-3.5 text-yellow-600 flex-shrink-0" />
+                <div className="flex items-center gap-2 rounded-md bg-yellow-50 px-2.5 py-1.5 text-xs dark:bg-yellow-950/20">
+                  <XCircle className="h-3.5 w-3.5 flex-shrink-0 text-yellow-600" />
                   <span>
-                    <span className="font-medium text-yellow-600">{stats.rejectedTasks}</span>{' '}
+                    <span className="font-medium text-yellow-600">
+                      {stats.rejectedTasks}
+                    </span>{' '}
                     task{stats.rejectedTasks > 1 ? 's' : ''} rejected
                   </span>
                 </div>
               )}
               {stats.failedTasks > 0 && (
-                <div className="flex items-center gap-2 text-xs bg-red-50 dark:bg-red-950/20 rounded-md px-2.5 py-1.5">
-                  <AlertTriangle className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                <div className="flex items-center gap-2 rounded-md bg-red-50 px-2.5 py-1.5 text-xs dark:bg-red-950/20">
+                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 text-red-600" />
                   <span>
-                    <span className="font-medium text-red-600">{stats.failedTasks}</span>{' '}
+                    <span className="font-medium text-red-600">
+                      {stats.failedTasks}
+                    </span>{' '}
                     task{stats.failedTasks > 1 ? 's' : ''} failed
                   </span>
                 </div>
@@ -389,11 +405,7 @@ function EndSessionDialog({
           >
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={isEnding}
-          >
+          <Button variant="destructive" onClick={onConfirm} disabled={isEnding}>
             {isEnding ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

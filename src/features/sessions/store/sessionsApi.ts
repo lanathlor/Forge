@@ -63,7 +63,12 @@ export interface EnhancedSessionSummary extends SessionSummary {
   };
   timeline: Array<{
     timestamp: string;
-    type: 'session_start' | 'task_start' | 'task_complete' | 'task_fail' | 'session_end';
+    type:
+      | 'session_start'
+      | 'task_start'
+      | 'task_complete'
+      | 'task_fail'
+      | 'session_end';
     label: string;
     taskId?: string;
   }>;
@@ -107,7 +112,10 @@ export const sessionsApi = api.injectEndpoints({
     }),
 
     // List sessions for a repository
-    listSessions: builder.query<{ sessions: SessionWithStats[] }, ListSessionsParams>({
+    listSessions: builder.query<
+      { sessions: SessionWithStats[] },
+      ListSessionsParams
+    >({
       query: ({ repositoryId, limit = 10, offset = 0, status }) => {
         let url = `/sessions?repositoryId=${repositoryId}&list=true&limit=${limit}&offset=${offset}`;
         if (status) {
@@ -118,7 +126,10 @@ export const sessionsApi = api.injectEndpoints({
       providesTags: (result) =>
         result
           ? [
-              ...result.sessions.map((s) => ({ type: 'Session' as const, id: s.id })),
+              ...result.sessions.map((s) => ({
+                type: 'Session' as const,
+                id: s.id,
+              })),
               { type: 'Session', id: 'LIST' },
             ]
           : [{ type: 'Session', id: 'LIST' }],
@@ -153,7 +164,7 @@ export const sessionsApi = api.injectEndpoints({
             if (draft.session) {
               draft.session.status = 'paused' as SessionStatus;
             }
-          }),
+          })
         );
         try {
           await queryFulfilled;
@@ -180,7 +191,7 @@ export const sessionsApi = api.injectEndpoints({
             if (draft.session) {
               draft.session.status = 'active' as SessionStatus;
             }
-          }),
+          })
         );
         try {
           await queryFulfilled;

@@ -13,16 +13,25 @@ export interface RevertResult {
   errors?: string[];
 }
 
-async function revertModifiedFiles(containerPath: string, files: FileChange[], startingCommit: string) {
+async function revertModifiedFiles(
+  containerPath: string,
+  files: FileChange[],
+  startingCommit: string
+) {
   const filesReverted: string[] = [];
   const errors: string[] = [];
   for (const file of files) {
     try {
-      await execAsync(`git checkout ${startingCommit} -- "${file.path}"`, { cwd: containerPath, timeout: 10000 });
+      await execAsync(`git checkout ${startingCommit} -- "${file.path}"`, {
+        cwd: containerPath,
+        timeout: 10000,
+      });
       filesReverted.push(file.path);
       console.log(`[revertTaskChanges] Reverted: ${file.path}`);
     } catch (error) {
-      errors.push(`Failed to revert ${file.path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Failed to revert ${file.path}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
   return { filesReverted, errors };
@@ -37,21 +46,35 @@ async function deleteNewFiles(containerPath: string, files: FileChange[]) {
       filesDeleted.push(file.path);
       console.log(`[revertTaskChanges] Deleted: ${file.path}`);
     } catch (error) {
-      errors.push(`Failed to delete ${file.path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Failed to delete ${file.path}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
   return { filesDeleted, errors };
 }
 
-export async function revertTaskChanges(repoPath: string, startingCommit: string, filesChanged: FileChange[]): Promise<RevertResult> {
+export async function revertTaskChanges(
+  repoPath: string,
+  startingCommit: string,
+  filesChanged: FileChange[]
+): Promise<RevertResult> {
   const containerPath = getContainerPath(repoPath);
-  console.log(`[revertTaskChanges] Reverting ${filesChanged.length} files from ${startingCommit} in ${containerPath}`);
+  console.log(
+    `[revertTaskChanges] Reverting ${filesChanged.length} files from ${startingCommit} in ${containerPath}`
+  );
 
   try {
-    const modifiedOrDeleted = filesChanged.filter(f => f.status === 'modified' || f.status === 'deleted');
-    const newFiles = filesChanged.filter(f => f.status === 'added');
+    const modifiedOrDeleted = filesChanged.filter(
+      (f) => f.status === 'modified' || f.status === 'deleted'
+    );
+    const newFiles = filesChanged.filter((f) => f.status === 'added');
 
-    const revertResult = await revertModifiedFiles(containerPath, modifiedOrDeleted, startingCommit);
+    const revertResult = await revertModifiedFiles(
+      containerPath,
+      modifiedOrDeleted,
+      startingCommit
+    );
     const deleteResult = await deleteNewFiles(containerPath, newFiles);
 
     try {
@@ -69,7 +92,14 @@ export async function revertTaskChanges(repoPath: string, startingCommit: string
     };
   } catch (error) {
     console.error(`[revertTaskChanges] Fatal error:`, error);
-    return { filesReverted: [], filesDeleted: [], success: false, errors: [error instanceof Error ? error.message : 'Unknown error during revert'] };
+    return {
+      filesReverted: [],
+      filesDeleted: [],
+      success: false,
+      errors: [
+        error instanceof Error ? error.message : 'Unknown error during revert',
+      ],
+    };
   }
 }
 
@@ -80,24 +110,42 @@ async function getTaskWithRepository(taskId: string) {
   });
 }
 
-function validateTaskForReject(task: Awaited<ReturnType<typeof getTaskWithRepository>>) {
+function validateTaskForReject(
+  task: Awaited<ReturnType<typeof getTaskWithRepository>>
+) {
   if (!task) throw new Error('Task not found');
-  if (!['waiting_approval', 'qa_failed'].includes(task.status)) throw new Error(`Task cannot be rejected from status: ${task.status}`);
+  if (!['waiting_approval', 'qa_failed'].includes(task.status))
+    throw new Error(`Task cannot be rejected from status: ${task.status}`);
   if (!task.startingCommit) throw new Error('Task has no starting commit');
-  if (!task.filesChanged || task.filesChanged.length === 0) throw new Error('No files changed to revert');
+  if (!task.filesChanged || task.filesChanged.length === 0)
+    throw new Error('No files changed to revert');
 }
 
-export async function rejectAndRevertTask(taskId: string, reason?: string): Promise<RevertResult> {
-  console.log(`[rejectAndRevertTask] Rejecting task: ${taskId}, reason: ${reason || 'No reason provided'}`);
+export async function rejectAndRevertTask(
+  taskId: string,
+  reason?: string
+): Promise<RevertResult> {
+  console.log(
+    `[rejectAndRevertTask] Rejecting task: ${taskId}, reason: ${reason || 'No reason provided'}`
+  );
 
   const task = await getTaskWithRepository(taskId);
   validateTaskForReject(task);
 
-  const result = await revertTaskChanges(task!.session.repository.path, task!.startingCommit!, task!.filesChanged!);
+  const result = await revertTaskChanges(
+    task!.session.repository.path,
+    task!.startingCommit!,
+    task!.filesChanged!
+  );
 
   await db
     .update(tasks)
-    .set({ status: 'rejected', rejectedAt: new Date(), rejectionReason: reason, updatedAt: new Date() })
+    .set({
+      status: 'rejected',
+      rejectedAt: new Date(),
+      rejectionReason: reason,
+      updatedAt: new Date(),
+    })
     .where(eq(tasks.id, taskId));
 
   // Sync plan task status

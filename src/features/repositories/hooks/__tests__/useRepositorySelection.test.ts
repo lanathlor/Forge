@@ -72,7 +72,9 @@ describe('useRepositorySelection', () => {
     it('should initialize with null when no repositories', () => {
       vi.mocked(storage.get).mockReturnValue(null);
 
-      const { result } = renderHook(() => useRepositorySelection([], undefined));
+      const { result } = renderHook(() =>
+        useRepositorySelection([], undefined)
+      );
 
       expect(result.current.selected).toBeNull();
     });

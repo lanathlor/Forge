@@ -1,8 +1,8 @@
 function SummaryList({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <h3 className="font-medium mb-2">{title}</h3>
-      <ul className="list-disc list-inside space-y-1 text-sm">
+      <h3 className="mb-2 font-medium">{title}</h3>
+      <ul className="list-inside list-disc space-y-1 text-sm">
         {items.map((item, index) => (
           <li key={index}>{item}</li>
         ))}
@@ -38,10 +38,13 @@ export function ImplementationSummary() {
   ];
 
   return (
-    <div className="pt-8 border-t">
-      <h2 className="text-xl font-semibold mb-4">Implementation Summary</h2>
-      <div className="bg-muted p-6 rounded-lg space-y-4">
-        <SummaryList title="✅ Completed Components:" items={completedComponents} />
+    <div className="border-t pt-8">
+      <h2 className="mb-4 text-xl font-semibold">Implementation Summary</h2>
+      <div className="space-y-4 rounded-lg bg-muted p-6">
+        <SummaryList
+          title="✅ Completed Components:"
+          items={completedComponents}
+        />
         <SummaryList title="🔑 Key Features:" items={keyFeatures} />
         <SummaryList title="📝 Database Schema:" items={dbSchema} />
       </div>

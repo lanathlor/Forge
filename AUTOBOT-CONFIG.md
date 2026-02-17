@@ -29,22 +29,22 @@ Create a `.autobot.json` file in the root of your repository:
 
 ### Root Configuration
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `version` | string | No | `"1.0"` | Configuration schema version |
-| `maxRetries` | number | No | `3` | Maximum number of QA gate retry attempts |
-| `qaGates` | array | Yes | - | Array of QA gate configurations |
+| Field        | Type   | Required | Default | Description                              |
+| ------------ | ------ | -------- | ------- | ---------------------------------------- |
+| `version`    | string | No       | `"1.0"` | Configuration schema version             |
+| `maxRetries` | number | No       | `3`     | Maximum number of QA gate retry attempts |
+| `qaGates`    | array  | Yes      | -       | Array of QA gate configurations          |
 
 ### QA Gate Configuration
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | string | Yes | - | Display name for the gate |
-| `enabled` | boolean | No | `true` | Whether this gate is active |
-| `command` | string | Yes | - | Shell command to execute |
-| `timeout` | number | No | `60000` | Timeout in milliseconds |
-| `failOnError` | boolean | No | `true` | Whether to stop execution if this gate fails |
-| `order` | number | No | - | Execution order (lower runs first) |
+| Field         | Type    | Required | Default | Description                                  |
+| ------------- | ------- | -------- | ------- | -------------------------------------------- |
+| `name`        | string  | Yes      | -       | Display name for the gate                    |
+| `enabled`     | boolean | No       | `true`  | Whether this gate is active                  |
+| `command`     | string  | Yes      | -       | Shell command to execute                     |
+| `timeout`     | number  | No       | `60000` | Timeout in milliseconds                      |
+| `failOnError` | boolean | No       | `true`  | Whether to stop execution if this gate fails |
+| `order`       | number  | No       | -       | Execution order (lower runs first)           |
 
 ## How It Works
 
@@ -223,24 +223,29 @@ Create a `.autobot.json` file in the root of your repository:
 ## Best Practices
 
 ### 1. Order Your Gates Strategically
+
 Run fast checks first (linting, formatting) before slow ones (tests, builds):
+
 ```json
 {
-  "order": 1,  // Fast: ESLint (5-10s)
-  "order": 2,  // Fast: TypeScript (10-20s)
-  "order": 3,  // Slow: Tests (30s-5min)
-  "order": 4   // Slowest: Build (1-5min)
+  "order": 1, // Fast: ESLint (5-10s)
+  "order": 2, // Fast: TypeScript (10-20s)
+  "order": 3, // Slow: Tests (30s-5min)
+  "order": 4 // Slowest: Build (1-5min)
 }
 ```
 
 ### 2. Use Appropriate Timeouts
+
 - Linting: 30-60 seconds
 - Type checking: 60-120 seconds
 - Tests: 300-600 seconds (5-10 minutes)
 - Builds: 180-600 seconds (3-10 minutes)
 
 ### 3. Decide When to Fail Fast
+
 Set `failOnError: true` for critical gates, `false` for optional ones:
+
 ```json
 {
   "name": "ESLint",
@@ -253,17 +258,20 @@ Set `failOnError: true` for critical gates, `false` for optional ones:
 ```
 
 ### 4. Disable Optional Gates Initially
+
 Start with essential gates enabled, add more as needed:
+
 ```json
 {
   "name": "Build",
-  "enabled": false  // Enable later when needed
+  "enabled": false // Enable later when needed
 }
 ```
 
 ## API Endpoints
 
 ### Get Repository QA Gates
+
 ```bash
 GET /api/repositories/:id/qa-gates
 ```
@@ -271,6 +279,7 @@ GET /api/repositories/:id/qa-gates
 Returns the QA gate configuration for a specific repository, loaded from its `.autobot.json` file.
 
 ### Run QA Gates for a Task
+
 ```bash
 POST /api/tasks/:id/qa-gates/run
 ```
@@ -278,6 +287,7 @@ POST /api/tasks/:id/qa-gates/run
 Manually run QA gates for a task (useful for re-running after manual fixes).
 
 ### Get QA Gate Results
+
 ```bash
 GET /api/tasks/:id/qa-gates/results
 ```
@@ -287,12 +297,14 @@ Get the results of the most recent QA gate run for a task.
 ## Example Templates
 
 Pre-configured templates are available in the `examples/` directory:
+
 - `.autobot.json.typescript` - TypeScript/Node.js projects
 - `.autobot.json.python` - Python projects
 - `.autobot.json.go` - Go projects
 - `.autobot.json.rust` - Rust projects
 
 Copy the appropriate template to your repository:
+
 ```bash
 cp examples/.autobot.json.typescript /path/to/your/repo/.autobot.json
 ```
@@ -300,20 +312,24 @@ cp examples/.autobot.json.typescript /path/to/your/repo/.autobot.json
 ## Troubleshooting
 
 ### Gates Not Running
+
 - Ensure `.autobot.json` is in the repository root
 - Verify JSON syntax is valid
 - Check that `enabled: true` for gates you want to run
 
 ### Commands Failing
+
 - Test commands manually in the repository: `cd /path/to/repo && your-command`
 - Ensure all dependencies are installed (npm/pnpm/cargo/etc.)
 - Check that command paths are correct for your system
 
 ### Timeout Issues
+
 - Increase `timeout` value for slow-running gates
 - Consider splitting large test suites into separate gates
 
 ### Wrong Tech Stack Detected
+
 - Create a custom `.autobot.json` with your specific commands
 - Override the default configuration with repo-specific needs
 

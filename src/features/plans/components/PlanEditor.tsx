@@ -63,7 +63,7 @@ interface DragState {
 function detectCircularDependency(
   taskId: string,
   newDeps: string[],
-  allTasks: PlanTask[],
+  allTasks: PlanTask[]
 ): { hasCycle: boolean; cyclePath: string[] } {
   const taskMap = new Map(allTasks.map((t) => [t.id, t]));
 
@@ -73,11 +73,20 @@ function detectCircularDependency(
       adjList.set(t.id, newDeps);
     } else {
       const rawTDeps = t.dependsOn;
-      adjList.set(t.id, Array.isArray(rawTDeps)
-        ? rawTDeps
-        : typeof rawTDeps === 'string' && rawTDeps
-          ? (() => { try { return JSON.parse(rawTDeps); } catch { return []; } })()
-          : []);
+      adjList.set(
+        t.id,
+        Array.isArray(rawTDeps)
+          ? rawTDeps
+          : typeof rawTDeps === 'string' && rawTDeps
+            ? (() => {
+                try {
+                  return JSON.parse(rawTDeps);
+                } catch {
+                  return [];
+                }
+              })()
+            : []
+      );
     }
   }
 
@@ -176,14 +185,14 @@ function InlineEditable({
         setIsEditing(false);
       }
     },
-    [handleSave, multiline, value],
+    [handleSave, multiline, value]
   );
 
   if (disabled) {
     return (
       <span className={className}>
         {value || (
-          <span className="text-muted-foreground italic">{placeholder}</span>
+          <span className="italic text-muted-foreground">{placeholder}</span>
         )}
       </span>
     );
@@ -204,18 +213,18 @@ function InlineEditable({
           <Textarea
             {...sharedProps}
             onChange={(e) => setDraft(e.target.value)}
-            className={cn('flex-1 text-xs min-h-[60px]', inputClassName)}
+            className={cn('min-h-[60px] flex-1 text-xs', inputClassName)}
             rows={3}
           />
         ) : (
           <Input
             {...sharedProps}
             onChange={(e) => setDraft(e.target.value)}
-            className={cn('flex-1 h-8 text-sm', inputClassName)}
+            className={cn('h-8 flex-1 text-sm', inputClassName)}
           />
         )}
         {saving && (
-          <Loader2 className="h-3.5 w-3.5 mt-2 animate-spin text-muted-foreground flex-shrink-0" />
+          <Loader2 className="mt-2 h-3.5 w-3.5 flex-shrink-0 animate-spin text-muted-foreground" />
         )}
       </div>
     );
@@ -225,9 +234,9 @@ function InlineEditable({
     <span
       className={cn(
         className,
-        'cursor-text rounded-sm px-1 -mx-1 transition-colors',
+        '-mx-1 cursor-text rounded-sm px-1 transition-colors',
         'hover:bg-muted/60 hover:ring-1 hover:ring-border/50',
-        !value && 'text-muted-foreground italic',
+        !value && 'italic text-muted-foreground'
       )}
       onClick={() => setIsEditing(true)}
       role="button"
@@ -241,7 +250,7 @@ function InlineEditable({
     >
       {value || placeholder}
       {saving && (
-        <Loader2 className="inline-block h-3 w-3 ml-1 animate-spin text-muted-foreground" />
+        <Loader2 className="ml-1 inline-block h-3 w-3 animate-spin text-muted-foreground" />
       )}
     </span>
   );
@@ -256,7 +265,7 @@ function useDragHandlers(
   phaseTasksMap: Map<string, PlanTask[]>,
   updatePhase: ReturnType<typeof useUpdatePhaseMutation>[0],
   updateTask: ReturnType<typeof useUpdatePlanTaskMutation>[0],
-  planId: string,
+  planId: string
 ) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -270,7 +279,7 @@ function useDragHandlers(
         e.currentTarget.style.opacity = '0.5';
       }
     },
-    [],
+    []
   );
 
   const handleTaskDragStart = useCallback(
@@ -282,7 +291,7 @@ function useDragHandlers(
         e.currentTarget.style.opacity = '0.5';
       }
     },
-    [],
+    []
   );
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
@@ -300,13 +309,17 @@ function useDragHandlers(
       e.dataTransfer.dropEffect = 'move';
       setDragOverId(targetPhaseId);
     },
-    [dragState],
+    [dragState]
   );
 
   const handlePhaseDrop = useCallback(
     async (e: React.DragEvent, targetPhaseId: string) => {
       e.preventDefault();
-      if (!dragState || dragState.type !== 'phase' || dragState.id === targetPhaseId) {
+      if (
+        !dragState ||
+        dragState.type !== 'phase' ||
+        dragState.id === targetPhaseId
+      ) {
         setDragState(null);
         setDragOverId(null);
         return;
@@ -322,13 +335,13 @@ function useDragHandlers(
       reordered.splice(targetIdx, 0, moved);
 
       const updates = reordered.map((p, i) =>
-        updatePhase({ id: p.id, data: { order: i + 1, planId } }),
+        updatePhase({ id: p.id, data: { order: i + 1, planId } })
       );
       await Promise.all(updates);
       setDragState(null);
       setDragOverId(null);
     },
-    [dragState, phases, updatePhase, planId],
+    [dragState, phases, updatePhase, planId]
   );
 
   const handleTaskDragOver = useCallback(
@@ -338,13 +351,17 @@ function useDragHandlers(
       e.dataTransfer.dropEffect = 'move';
       setDragOverId(targetTaskId);
     },
-    [dragState],
+    [dragState]
   );
 
   const handleTaskDrop = useCallback(
     async (e: React.DragEvent, targetTaskId: string, targetPhaseId: string) => {
       e.preventDefault();
-      if (!dragState || dragState.type !== 'task' || dragState.id === targetTaskId) {
+      if (
+        !dragState ||
+        dragState.type !== 'task' ||
+        dragState.id === targetTaskId
+      ) {
         setDragState(null);
         setDragOverId(null);
         return;
@@ -364,7 +381,7 @@ function useDragHandlers(
         reordered.splice(targetIdx, 0, moved);
 
         const updates = reordered.map((t, i) =>
-          updateTask({ id: t.id, data: { order: i + 1, planId } }),
+          updateTask({ id: t.id, data: { order: i + 1, planId } })
         );
         await Promise.all(updates);
       } else {
@@ -373,9 +390,11 @@ function useDragHandlers(
           id: dragState.id,
           data: { phaseId: targetPhaseId, order: targetIdx + 1, planId },
         });
-        const remainingSource = sourceTasks.filter((t) => t.id !== dragState.id);
+        const remainingSource = sourceTasks.filter(
+          (t) => t.id !== dragState.id
+        );
         const sourceUpdates = remainingSource.map((t, i) =>
-          updateTask({ id: t.id, data: { order: i + 1, planId } }),
+          updateTask({ id: t.id, data: { order: i + 1, planId } })
         );
         await Promise.all(sourceUpdates);
       }
@@ -383,7 +402,7 @@ function useDragHandlers(
       setDragState(null);
       setDragOverId(null);
     },
-    [dragState, phaseTasksMap, updateTask, planId],
+    [dragState, phaseTasksMap, updateTask, planId]
   );
 
   return {
@@ -440,10 +459,15 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
   }, [data]);
 
   const {
-    dragState, dragOverId,
-    handlePhaseDragStart, handleTaskDragStart, handleDragEnd,
-    handlePhaseDragOver, handlePhaseDrop,
-    handleTaskDragOver, handleTaskDrop,
+    dragState,
+    dragOverId,
+    handlePhaseDragStart,
+    handleTaskDragStart,
+    handleDragEnd,
+    handlePhaseDragOver,
+    handlePhaseDrop,
+    handleTaskDragOver,
+    handleTaskDrop,
   } = useDragHandlers(phases, phaseTasksMap, updatePhase, updateTask, planId);
 
   // Auto-expand all on first load
@@ -480,56 +504,56 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
         }, 600);
       }
     },
-    [],
+    []
   );
 
   // --- Inline save handlers ---
   const handleSaveTitle = useCallback(
     (title: string) =>
       withSaving('plan-title', () =>
-        updatePlan({ id: planId, data: { title } }).unwrap(),
+        updatePlan({ id: planId, data: { title } }).unwrap()
       ),
-    [planId, updatePlan, withSaving],
+    [planId, updatePlan, withSaving]
   );
 
   const handleSaveDescription = useCallback(
     (description: string) =>
       withSaving('plan-desc', () =>
-        updatePlan({ id: planId, data: { description } }).unwrap(),
+        updatePlan({ id: planId, data: { description } }).unwrap()
       ),
-    [planId, updatePlan, withSaving],
+    [planId, updatePlan, withSaving]
   );
 
   const handleSavePhaseTitle = useCallback(
     (phaseId: string, title: string) =>
       withSaving(`phase-${phaseId}`, () =>
-        updatePhase({ id: phaseId, data: { title, planId } }).unwrap(),
+        updatePhase({ id: phaseId, data: { title, planId } }).unwrap()
       ),
-    [planId, updatePhase, withSaving],
+    [planId, updatePhase, withSaving]
   );
 
   const handleSavePhaseDescription = useCallback(
     (phaseId: string, description: string) =>
       withSaving(`phase-${phaseId}`, () =>
-        updatePhase({ id: phaseId, data: { description, planId } }).unwrap(),
+        updatePhase({ id: phaseId, data: { description, planId } }).unwrap()
       ),
-    [planId, updatePhase, withSaving],
+    [planId, updatePhase, withSaving]
   );
 
   const handleSaveTaskTitle = useCallback(
     (taskId: string, title: string) =>
       withSaving(`task-${taskId}`, () =>
-        updateTask({ id: taskId, data: { title, planId } }).unwrap(),
+        updateTask({ id: taskId, data: { title, planId } }).unwrap()
       ),
-    [planId, updateTask, withSaving],
+    [planId, updateTask, withSaving]
   );
 
   const handleSaveTaskDescription = useCallback(
     (taskId: string, description: string) =>
       withSaving(`task-${taskId}`, () =>
-        updateTask({ id: taskId, data: { description, planId } }).unwrap(),
+        updateTask({ id: taskId, data: { description, planId } }).unwrap()
       ),
-    [planId, updateTask, withSaving],
+    [planId, updateTask, withSaving]
   );
 
   // --- Phase CRUD ---
@@ -553,7 +577,7 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
       if (!confirm('Delete this phase and all its tasks?')) return;
       await deletePhase(phaseId);
     },
-    [deletePhase],
+    [deletePhase]
   );
 
   // --- Task CRUD ---
@@ -570,7 +594,7 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
         canRunInParallel: false,
       });
     },
-    [phaseTasksMap, planId, createTask],
+    [phaseTasksMap, planId, createTask]
   );
 
   const handleDeleteTask = useCallback(
@@ -578,7 +602,7 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
       if (!confirm('Delete this task?')) return;
       await deleteTask(taskId);
     },
-    [deleteTask],
+    [deleteTask]
   );
 
   // --- Dependency management ---
@@ -592,7 +616,13 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
       const currentDeps: string[] = Array.isArray(rawCurrentDeps)
         ? rawCurrentDeps
         : typeof rawCurrentDeps === 'string' && rawCurrentDeps
-          ? (() => { try { return JSON.parse(rawCurrentDeps); } catch { return []; } })()
+          ? (() => {
+              try {
+                return JSON.parse(rawCurrentDeps);
+              } catch {
+                return [];
+              }
+            })()
           : [];
       const newDeps = currentDeps.includes(depTaskId)
         ? currentDeps.filter((d) => d !== depTaskId)
@@ -601,7 +631,7 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
       const { hasCycle, cyclePath } = detectCircularDependency(
         taskId,
         newDeps,
-        data.tasks,
+        data.tasks
       );
       if (hasCycle) {
         setDepError(`Circular dependency: ${cyclePath.join(' \u2192 ')}`);
@@ -610,16 +640,19 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
       }
 
       await withSaving(`dep-${taskId}`, () =>
-        updateTask({ id: taskId, data: { dependsOn: newDeps, planId } }).unwrap(),
+        updateTask({
+          id: taskId,
+          data: { dependsOn: newDeps, planId },
+        }).unwrap()
       );
     },
-    [data, updateTask, planId, withSaving],
+    [data, updateTask, planId, withSaving]
   );
 
   // --- Loading/error states ---
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="flex h-full flex-col">
         <EditorBreadcrumb onBack={onBack} />
         <EditorSkeleton />
       </div>
@@ -628,12 +661,14 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
 
   if (error || !data) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="flex h-full flex-col">
         <EditorBreadcrumb onBack={onBack} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <AlertTriangle className="h-10 w-10 text-destructive mx-auto" />
-            <p className="text-sm text-destructive font-medium">Failed to load plan</p>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="space-y-3 text-center">
+            <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
+            <p className="text-sm font-medium text-destructive">
+              Failed to load plan
+            </p>
             <Button variant="outline" size="sm" onClick={onBack}>
               Back to Plans
             </Button>
@@ -650,20 +685,20 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
   const isSaving = savingFields.size > 0;
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-4 overflow-hidden">
+    <div className="flex h-full flex-col gap-4 overflow-hidden lg:flex-row">
       {/* Main editor area */}
-      <div className="flex-1 flex flex-col gap-4 overflow-auto pb-6 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto pb-6">
         {/* Breadcrumb + actions */}
-        <div className="flex items-center justify-between flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center justify-between">
           <EditorBreadcrumb onBack={onBack} planTitle={plan.title} />
           <div className="flex items-center gap-2">
             {isSaving ? (
-              <span className="text-xs text-muted-foreground flex items-center gap-1.5 animate-in fade-in duration-200">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground duration-200 animate-in fade-in">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Saving...
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
                 <Save className="h-3 w-3" />
                 All changes saved
               </span>
@@ -674,10 +709,13 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
               className="h-8"
               onClick={() => setShowHistory(!showHistory)}
             >
-              <History className="h-3.5 w-3.5 mr-1.5" />
+              <History className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">History</span>
               {iterations.length > 0 && (
-                <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px] leading-none">
+                <Badge
+                  variant="secondary"
+                  className="ml-1.5 h-4 px-1 text-[10px] leading-none"
+                >
                   {iterations.length}
                 </Badge>
               )}
@@ -697,10 +735,13 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
 
         {/* Dependency error toast */}
         {depError && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 duration-200 animate-in slide-in-from-top-2">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             <span>{depError}</span>
-            <button className="ml-auto text-red-400/60 hover:text-red-400" onClick={() => setDepError(null)}>
+            <button
+              className="ml-auto text-red-400/60 hover:text-red-400"
+              onClick={() => setDepError(null)}
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -722,8 +763,12 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
               dragOverId={dragOverId}
               depPickerTaskId={depPickerTaskId}
               onToggle={() => togglePhase(phase.id)}
-              onSavePhaseTitle={(title) => handleSavePhaseTitle(phase.id, title)}
-              onSavePhaseDescription={(desc) => handleSavePhaseDescription(phase.id, desc)}
+              onSavePhaseTitle={(title) =>
+                handleSavePhaseTitle(phase.id, title)
+              }
+              onSavePhaseDescription={(desc) =>
+                handleSavePhaseDescription(phase.id, desc)
+              }
               onDeletePhase={() => handleDeletePhase(phase.id)}
               onSaveTaskTitle={handleSaveTaskTitle}
               onSaveTaskDescription={handleSaveTaskDescription}
@@ -746,8 +791,12 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
 
         {/* Add phase button */}
         {isEditable && (
-          <Button onClick={handleAddPhase} variant="outline" className="w-full border-dashed h-10">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button
+            onClick={handleAddPhase}
+            variant="outline"
+            className="h-10 w-full border-dashed"
+          >
+            <Plus className="mr-2 h-4 w-4" />
             Add Phase
           </Button>
         )}
@@ -767,12 +816,18 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
 // Breadcrumb
 // ---------------------------------------------------------------------------
 
-function EditorBreadcrumb({ onBack, planTitle }: { onBack: () => void; planTitle?: string }) {
+function EditorBreadcrumb({
+  onBack,
+  planTitle,
+}: {
+  onBack: () => void;
+  planTitle?: string;
+}) {
   return (
-    <nav className="flex items-center gap-1.5 text-sm flex-shrink-0">
+    <nav className="flex flex-shrink-0 items-center gap-1.5 text-sm">
       <button
         onClick={onBack}
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
         <span className="hidden sm:inline">Plans</span>
@@ -780,11 +835,11 @@ function EditorBreadcrumb({ onBack, planTitle }: { onBack: () => void; planTitle
       {planTitle && (
         <>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-          <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-[400px]">
+          <span className="max-w-[200px] truncate font-medium text-foreground sm:max-w-[400px]">
             {planTitle}
           </span>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-          <span className="text-primary text-xs font-medium">Editor</span>
+          <span className="text-xs font-medium text-primary">Editor</span>
         </>
       )}
     </nav>
@@ -811,14 +866,14 @@ function PlanHeaderEditor({
   phasesCount: number;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5 sm:p-6 space-y-3">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="space-y-3 rounded-xl border bg-card p-5 sm:p-6">
+      <div className="mb-1 flex items-center gap-2">
         <PlanStatusBadge status={plan.status} />
         <span className="text-xs text-muted-foreground">
           Created {formatRelativeTime(new Date(plan.createdAt))}
         </span>
         {savingFields.has('plan-title') && (
-          <span className="text-xs text-emerald-500 flex items-center gap-1 animate-in fade-in">
+          <span className="flex items-center gap-1 text-xs text-emerald-500 animate-in fade-in">
             <Check className="h-3 w-3" />
             Saved
           </span>
@@ -828,7 +883,7 @@ function PlanHeaderEditor({
       <InlineEditable
         value={plan.title}
         onSave={onSaveTitle}
-        className="text-lg sm:text-xl font-semibold text-foreground block"
+        className="block text-lg font-semibold text-foreground sm:text-xl"
         disabled={!isEditable}
         placeholder="Plan title..."
         saving={savingFields.has('plan-title')}
@@ -837,14 +892,14 @@ function PlanHeaderEditor({
       <InlineEditable
         value={plan.description || ''}
         onSave={onSaveDescription}
-        className="text-sm text-muted-foreground block"
+        className="block text-sm text-muted-foreground"
         disabled={!isEditable}
         placeholder="Click to add a description..."
         multiline
         saving={savingFields.has('plan-desc')}
       />
 
-      <div className="flex items-center gap-4 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+      <div className="flex items-center gap-4 border-t border-border/50 pt-2 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Zap className="h-3 w-3" />
           {phasesCount} phase{phasesCount !== 1 ? 's' : ''}
@@ -917,7 +972,11 @@ function EditorPhaseItem({
   onPhaseDragOver: (e: React.DragEvent, phaseId: string) => void;
   onPhaseDrop: (e: React.DragEvent, phaseId: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
-  onTaskDragStart: (e: React.DragEvent, taskId: string, phaseId: string) => void;
+  onTaskDragStart: (
+    e: React.DragEvent,
+    taskId: string,
+    phaseId: string
+  ) => void;
   onTaskDragOver: (e: React.DragEvent, taskId: string) => void;
   onTaskDrop: (e: React.DragEvent, taskId: string, phaseId: string) => void;
   onToggleDepPicker: (taskId: string) => void;
@@ -929,9 +988,9 @@ function EditorPhaseItem({
     <Card
       className={cn(
         'overflow-hidden transition-all duration-200',
-        isDragOver && 'ring-2 ring-primary/50 scale-[1.01]',
+        isDragOver && 'scale-[1.01] ring-2 ring-primary/50',
         phase.status === 'completed' && 'border-emerald-500/30',
-        phase.status === 'failed' && 'border-red-500/30',
+        phase.status === 'failed' && 'border-red-500/30'
       )}
       draggable={isEditable}
       onDragStart={(e) => onPhaseDragStart(e, phase.id)}
@@ -941,39 +1000,47 @@ function EditorPhaseItem({
     >
       <div
         className={cn(
-          'flex items-center gap-2 px-3 sm:px-4 py-3 transition-colors',
+          'flex items-center gap-2 px-3 py-3 transition-colors sm:px-4',
           'hover:bg-muted/40',
-          isExpanded && 'border-b border-border/50',
+          isExpanded && 'border-b border-border/50'
         )}
       >
         {isEditable && (
-          <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground">
+          <div className="flex-shrink-0 cursor-grab text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing">
             <GripVertical className="h-4 w-4" />
           </div>
         )}
 
         <button
           onClick={onToggle}
-          className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          className="flex-shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         >
-          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </button>
 
         <div
           className={cn(
-            'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold',
+            'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold',
             phase.status === 'completed'
               ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30'
               : phase.status === 'failed'
                 ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30'
-                : 'bg-muted text-muted-foreground',
+                : 'bg-muted text-muted-foreground'
           )}
         >
-          {phase.status === 'completed' ? <Check className="h-3.5 w-3.5" /> : phaseNumber}
+          {phase.status === 'completed' ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            phaseNumber
+          )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             <InlineEditable
               value={phase.title}
               onSave={onSavePhaseTitle}
@@ -983,8 +1050,8 @@ function EditorPhaseItem({
               saving={savingFields.has(`phase-${phase.id}`)}
             />
             {phase.executionMode !== 'sequential' && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                <Users className="h-2.5 w-2.5 mr-0.5" />
+              <Badge variant="outline" className="h-5 px-1.5 py-0 text-[10px]">
+                <Users className="mr-0.5 h-2.5 w-2.5" />
                 {phase.executionMode}
               </Badge>
             )}
@@ -993,7 +1060,7 @@ function EditorPhaseItem({
             <InlineEditable
               value={phase.description ?? ''}
               onSave={onSavePhaseDescription}
-              className="text-xs text-muted-foreground mt-0.5 block truncate"
+              className="mt-0.5 block truncate text-xs text-muted-foreground"
               disabled={!isEditable}
               placeholder="Add description..."
               saving={savingFields.has(`phase-${phase.id}`)}
@@ -1001,7 +1068,7 @@ function EditorPhaseItem({
           )}
         </div>
 
-        <span className="text-xs tabular-nums text-muted-foreground flex-shrink-0">
+        <span className="flex-shrink-0 text-xs tabular-nums text-muted-foreground">
           {phaseTasks.length} task{phaseTasks.length !== 1 ? 's' : ''}
         </span>
 
@@ -1009,7 +1076,7 @@ function EditorPhaseItem({
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 w-7 p-0 text-destructive hover:text-destructive flex-shrink-0"
+            className="h-7 w-7 flex-shrink-0 p-0 text-destructive hover:text-destructive"
             onClick={onDeletePhase}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -1028,29 +1095,35 @@ function EditorPhaseItem({
                 isEditable={isEditable}
                 savingFields={savingFields}
                 showDepPicker={depPickerTaskId === task.id}
-                isDragOver={dragOverId === task.id && dragState?.type === 'task'}
+                isDragOver={
+                  dragOverId === task.id && dragState?.type === 'task'
+                }
                 onSaveTitle={(title) => onSaveTaskTitle(task.id, title)}
-                onSaveDescription={(desc) => onSaveTaskDescription(task.id, desc)}
+                onSaveDescription={(desc) =>
+                  onSaveTaskDescription(task.id, desc)
+                }
                 onDelete={() => onDeleteTask(task.id)}
                 onDragStart={(e) => onTaskDragStart(e, task.id, phase.id)}
                 onDragOver={(e) => onTaskDragOver(e, task.id)}
                 onDrop={(e) => onTaskDrop(e, task.id, phase.id)}
                 onDragEnd={onDragEnd}
                 onToggleDepPicker={() => onToggleDepPicker(task.id)}
-                onToggleDependency={(depId) => onToggleDependency(task.id, depId)}
+                onToggleDependency={(depId) =>
+                  onToggleDependency(task.id, depId)
+                }
               />
             ))}
           </div>
 
           {isEditable && (
-            <div className="p-3 border-t border-border/30">
+            <div className="border-t border-border/30 p-3">
               <Button
                 onClick={onAddTask}
                 variant="ghost"
                 size="sm"
-                className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                className="h-8 w-full text-xs text-muted-foreground hover:text-foreground"
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Task
               </Button>
             </div>
@@ -1102,19 +1175,26 @@ function EditorTaskRow({
   const deps: string[] = Array.isArray(rawDeps)
     ? rawDeps
     : typeof rawDeps === 'string' && rawDeps
-      ? (() => { try { return JSON.parse(rawDeps); } catch { return []; } })()
+      ? (() => {
+          try {
+            return JSON.parse(rawDeps);
+          } catch {
+            return [];
+          }
+        })()
       : [];
   const depTasks = deps
     .map((depId) => allTasks.find((t) => t.id === depId))
     .filter(Boolean) as PlanTask[];
   const availableDeps = allTasks.filter((t) => t.id !== task.id);
-  const isSaving = savingFields.has(`task-${task.id}`) || savingFields.has(`dep-${task.id}`);
+  const isSaving =
+    savingFields.has(`task-${task.id}`) || savingFields.has(`dep-${task.id}`);
 
   return (
     <div
       className={cn(
-        'group px-3 sm:px-4 py-3 transition-all duration-150',
-        isDragOver && 'bg-primary/5 border-t-2 border-t-primary',
+        'group px-3 py-3 transition-all duration-150 sm:px-4',
+        isDragOver && 'border-t-2 border-t-primary bg-primary/5'
       )}
       draggable={isEditable}
       onDragStart={onDragStart}
@@ -1124,7 +1204,7 @@ function EditorTaskRow({
     >
       <div className="flex items-start gap-2">
         {isEditable && (
-          <div className="flex-shrink-0 mt-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="mt-0.5 flex-shrink-0 cursor-grab text-muted-foreground/30 opacity-0 transition-opacity hover:text-muted-foreground active:cursor-grabbing group-hover:opacity-100">
             <GripVertical className="h-4 w-4" />
           </div>
         )}
@@ -1132,18 +1212,18 @@ function EditorTaskRow({
         <div className="mt-1.5 flex-shrink-0">
           <div
             className={cn(
-              'w-2.5 h-2.5 rounded-full',
+              'h-2.5 w-2.5 rounded-full',
               task.status === 'completed' && 'bg-emerald-500',
-              task.status === 'running' && 'bg-amber-500 animate-pulse',
+              task.status === 'running' && 'animate-pulse bg-amber-500',
               task.status === 'failed' && 'bg-red-500',
               task.status === 'skipped' && 'bg-slate-400',
-              task.status === 'pending' && 'bg-muted-foreground/30',
+              task.status === 'pending' && 'bg-muted-foreground/30'
             )}
           />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             <InlineEditable
               value={task.title}
               onSave={onSaveTitle}
@@ -1152,32 +1232,36 @@ function EditorTaskRow({
               placeholder="Task title..."
               saving={isSaving}
             />
-            {isSaving && <Check className="h-3 w-3 text-emerald-500 animate-in fade-in" />}
+            {isSaving && (
+              <Check className="h-3 w-3 text-emerald-500 animate-in fade-in" />
+            )}
           </div>
 
           <InlineEditable
             value={task.description}
             onSave={onSaveDescription}
-            className="text-xs text-muted-foreground mt-0.5 block line-clamp-2 whitespace-pre-wrap"
+            className="mt-0.5 line-clamp-2 block whitespace-pre-wrap text-xs text-muted-foreground"
             disabled={!isEditable}
             placeholder="Describe what this task should accomplish..."
             multiline
           />
 
           {depTasks.length > 0 && (
-            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <Link2 className="h-3 w-3 text-muted-foreground/50" />
               {depTasks.map((dep) => (
                 <span
                   key={dep.id}
                   className={cn(
-                    'inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md border',
+                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px]',
                     dep.status === 'completed'
-                      ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5'
-                      : 'border-border text-muted-foreground bg-muted/30',
+                      ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
+                      : 'border-border bg-muted/30 text-muted-foreground'
                   )}
                 >
-                  {dep.status === 'completed' && <Check className="h-2.5 w-2.5" />}
+                  {dep.status === 'completed' && (
+                    <Check className="h-2.5 w-2.5" />
+                  )}
                   {dep.title}
                   {isEditable && (
                     <button
@@ -1206,7 +1290,7 @@ function EditorTaskRow({
         </div>
 
         {isEditable && (
-          <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <Button
               size="sm"
               variant="ghost"
@@ -1266,18 +1350,23 @@ function DependencyPicker({
   }, [onClose]);
 
   const filtered = availableTasks.filter((t) =>
-    t.title.toLowerCase().includes(search.toLowerCase()),
+    t.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div
       ref={ref}
-      className="mt-2 rounded-lg border bg-popover shadow-lg p-2 space-y-2 animate-in slide-in-from-top-1 duration-150"
+      className="mt-2 space-y-2 rounded-lg border bg-popover p-2 shadow-lg duration-150 animate-in slide-in-from-top-1"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-foreground">Dependencies</span>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+        <span className="text-xs font-medium text-foreground">
+          Dependencies
+        </span>
+        <button
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground"
+        >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -1290,9 +1379,11 @@ function DependencyPicker({
         autoFocus
       />
 
-      <div className="max-h-40 overflow-y-auto space-y-0.5">
+      <div className="max-h-40 space-y-0.5 overflow-y-auto">
         {filtered.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2 text-center">No tasks found</p>
+          <p className="py-2 text-center text-xs text-muted-foreground">
+            No tasks found
+          </p>
         ) : (
           filtered.map((t) => {
             const isSelected = currentDeps.includes(t.id);
@@ -1300,21 +1391,27 @@ function DependencyPicker({
               <button
                 key={t.id}
                 className={cn(
-                  'w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-colors',
-                  isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/60 text-foreground',
+                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors',
+                  isSelected
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-foreground hover:bg-muted/60'
                 )}
                 onClick={() => onToggle(t.id)}
               >
                 <div
                   className={cn(
-                    'w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0',
-                    isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                    'flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded border',
+                    isSelected
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input'
                   )}
                 >
                   {isSelected && <Check className="h-2.5 w-2.5" />}
                 </div>
                 <span className="truncate">{t.title}</span>
-                {isSelected && <Unlink className="h-3 w-3 ml-auto flex-shrink-0 text-muted-foreground" />}
+                {isSelected && (
+                  <Unlink className="ml-auto h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                )}
               </button>
             );
           })
@@ -1340,12 +1437,16 @@ function VersionHistorySidebar({
   const sortedIterations = useMemo(
     () =>
       [...iterations].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ),
-    [iterations],
+    [iterations]
   );
 
-  const iterationTypeLabels: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  const iterationTypeLabels: Record<
+    string,
+    { label: string; icon: React.ReactNode; color: string }
+  > = {
     generation: {
       label: 'Generated',
       icon: <Zap className="h-2.5 w-2.5" />,
@@ -1370,34 +1471,42 @@ function VersionHistorySidebar({
 
   return (
     <>
-      {isVisible && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />}
+      {isVisible && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={onClose}
+        />
+      )}
 
       <div
         className={cn(
-          'w-72 border-l bg-card flex-shrink-0 flex flex-col overflow-hidden',
-          'fixed right-0 top-0 bottom-0 z-50 lg:static lg:z-auto',
+          'flex w-72 flex-shrink-0 flex-col overflow-hidden border-l bg-card',
+          'fixed bottom-0 right-0 top-0 z-50 lg:static lg:z-auto',
           'transition-transform duration-200 ease-in-out',
           isVisible ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
           !isVisible && 'hidden lg:flex',
-          isVisible && 'flex',
+          isVisible && 'flex'
         )}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+        <div className="flex flex-shrink-0 items-center justify-between border-b px-4 py-3">
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <History className="h-4 w-4" />
             Version History
           </h3>
-          <button className="text-muted-foreground hover:text-foreground" onClick={onClose}>
+          <button
+            className="text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">
           {sortedIterations.length === 0 ? (
-            <div className="text-center py-8">
-              <History className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+            <div className="py-8 text-center">
+              <History className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
               <p className="text-xs text-muted-foreground">No history yet</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">
+              <p className="mt-1 text-[10px] text-muted-foreground/60">
                 Changes will appear here as the plan evolves
               </p>
             </div>
@@ -1405,7 +1514,8 @@ function VersionHistorySidebar({
             <div className="space-y-1">
               {sortedIterations.map((iteration, idx) => {
                 const typeConfig =
-                  iterationTypeLabels[iteration.iterationType] || iterationTypeLabels.user_edit;
+                  iterationTypeLabels[iteration.iterationType] ||
+                  iterationTypeLabels.user_edit;
                 const changes = iteration.changes as
                   | Record<string, unknown>[]
                   | Record<string, unknown>
@@ -1421,51 +1531,56 @@ function VersionHistorySidebar({
                   <div
                     key={iteration.id}
                     className={cn(
-                      'relative pl-6 pb-4',
-                      idx < sortedIterations.length - 1 && 'border-l border-border/50 ml-2',
+                      'relative pb-4 pl-6',
+                      idx < sortedIterations.length - 1 &&
+                        'ml-2 border-l border-border/50'
                     )}
                   >
                     <div
                       className={cn(
-                        'absolute left-0 top-1 w-4 h-4 rounded-full border-2 bg-card flex items-center justify-center',
-                        isLatest ? 'border-primary' : 'border-border',
+                        'absolute left-0 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-card',
+                        isLatest ? 'border-primary' : 'border-border'
                       )}
                     >
                       <div
                         className={cn(
-                          'w-1.5 h-1.5 rounded-full',
-                          isLatest ? 'bg-primary' : 'bg-muted-foreground/30',
+                          'h-1.5 w-1.5 rounded-full',
+                          isLatest ? 'bg-primary' : 'bg-muted-foreground/30'
                         )}
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border font-medium',
-                            typeConfig!.color,
+                            'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium',
+                            typeConfig!.color
                           )}
                         >
                           {typeConfig!.icon}
                           {typeConfig!.label}
                         </span>
-                        <span className="text-[10px] text-muted-foreground capitalize">
+                        <span className="text-[10px] capitalize text-muted-foreground">
                           by {iteration.changedBy}
                         </span>
                         {isLatest && (
-                          <span className="text-[10px] text-primary font-medium">Latest</span>
+                          <span className="text-[10px] font-medium text-primary">
+                            Latest
+                          </span>
                         )}
                       </div>
 
                       {iteration.prompt && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                        <p className="line-clamp-2 text-xs italic text-muted-foreground">
                           &ldquo;{iteration.prompt}&rdquo;
                         </p>
                       )}
 
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
-                        <span>{formatRelativeTime(new Date(iteration.createdAt))}</span>
+                        <span>
+                          {formatRelativeTime(new Date(iteration.createdAt))}
+                        </span>
                         {changeCount > 0 && (
                           <span>
                             {changeCount} change{changeCount !== 1 ? 's' : ''}
@@ -1490,35 +1605,38 @@ function VersionHistorySidebar({
 
 function EditorSkeleton() {
   return (
-    <div className="space-y-4 mt-4 animate-pulse">
-      <div className="rounded-xl border bg-card p-6 space-y-3">
-        <div className="h-4 w-20 bg-muted rounded" />
-        <div className="h-7 w-64 bg-muted rounded" />
-        <div className="h-4 w-96 bg-muted/60 rounded" />
-        <div className="h-px bg-border/50 mt-3" />
+    <div className="mt-4 animate-pulse space-y-4">
+      <div className="space-y-3 rounded-xl border bg-card p-6">
+        <div className="h-4 w-20 rounded bg-muted" />
+        <div className="h-7 w-64 rounded bg-muted" />
+        <div className="h-4 w-96 rounded bg-muted/60" />
+        <div className="mt-3 h-px bg-border/50" />
         <div className="flex gap-4">
-          <div className="h-3 w-16 bg-muted/40 rounded" />
-          <div className="h-3 w-20 bg-muted/40 rounded" />
-          <div className="h-3 w-24 bg-muted/40 rounded" />
+          <div className="h-3 w-16 rounded bg-muted/40" />
+          <div className="h-3 w-20 rounded bg-muted/40" />
+          <div className="h-3 w-24 rounded bg-muted/40" />
         </div>
       </div>
       {[1, 2].map((i) => (
         <div key={i} className="rounded-lg border bg-card">
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-4 h-4 bg-muted/40 rounded" />
-            <div className="w-7 h-7 rounded-full bg-muted" />
+            <div className="h-4 w-4 rounded bg-muted/40" />
+            <div className="h-7 w-7 rounded-full bg-muted" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-4 w-40 bg-muted rounded" />
+              <div className="h-4 w-40 rounded bg-muted" />
             </div>
-            <div className="h-3 w-12 bg-muted/40 rounded" />
+            <div className="h-3 w-12 rounded bg-muted/40" />
           </div>
           <div className="border-t border-border/30">
             {[1, 2, 3].map((j) => (
-              <div key={j} className="flex items-center gap-3 px-4 py-3 border-b border-border/15">
-                <div className="w-2.5 h-2.5 rounded-full bg-muted/40" />
+              <div
+                key={j}
+                className="flex items-center gap-3 border-b border-border/15 px-4 py-3"
+              >
+                <div className="h-2.5 w-2.5 rounded-full bg-muted/40" />
                 <div className="flex-1 space-y-1">
-                  <div className="h-3.5 w-32 bg-muted rounded" />
-                  <div className="h-3 w-48 bg-muted/40 rounded" />
+                  <div className="h-3.5 w-32 rounded bg-muted" />
+                  <div className="h-3 w-48 rounded bg-muted/40" />
                 </div>
               </div>
             ))}

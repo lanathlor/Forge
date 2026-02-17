@@ -13,7 +13,13 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/card';
 import { cn } from '@/shared/lib/utils';
 
 /* ============================================
@@ -93,7 +99,8 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   network: {
     icon: WifiOff,
     title: 'Network Error',
-    defaultMessage: 'Unable to connect to the server. Please check your internet connection.',
+    defaultMessage:
+      'Unable to connect to the server. Please check your internet connection.',
     color: 'text-orange-600 dark:text-orange-400',
     bgColor: 'bg-orange-50 dark:bg-orange-950/50',
     borderColor: 'border-orange-200 dark:border-orange-800',
@@ -211,11 +218,24 @@ export function ErrorState({
   };
 
   return (
-    <div className={cn('flex items-center justify-center p-4', sizeClasses[size], className)}>
-      <div className="max-w-md w-full text-center space-y-4">
+    <div
+      className={cn(
+        'flex items-center justify-center p-4',
+        sizeClasses[size],
+        className
+      )}
+    >
+      <div className="w-full max-w-md space-y-4 text-center">
         {/* Icon */}
         <div className="flex justify-center">
-          <div className={cn('rounded-full p-4', config.bgColor, config.borderColor, 'border')}>
+          <div
+            className={cn(
+              'rounded-full p-4',
+              config.bgColor,
+              config.borderColor,
+              'border'
+            )}
+          >
             <Icon className={cn(iconSizes[size], config.color)} />
           </div>
         </div>
@@ -227,9 +247,14 @@ export function ErrorState({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-2 justify-center pt-2">
+        <div className="flex flex-wrap justify-center gap-2 pt-2">
           {onRetry && showRetry && (
-            <Button onClick={onRetry} variant="default" size="sm" className="gap-2">
+            <Button
+              onClick={onRetry}
+              variant="default"
+              size="sm"
+              className="gap-2"
+            >
               <RefreshCw className="h-4 w-4" />
               Try Again
             </Button>
@@ -240,7 +265,12 @@ export function ErrorState({
             </Button>
           )}
           {showReport && (
-            <Button onClick={handleReport} variant="ghost" size="sm" className="gap-2">
+            <Button
+              onClick={handleReport}
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+            >
               <ExternalLink className="h-4 w-4" />
               Report Issue
             </Button>
@@ -267,23 +297,33 @@ interface InlineErrorProps {
  *
  * Compact error display for inline use (e.g., in forms or small sections)
  */
-export function InlineError({ type = 'generic', message, onRetry, className }: InlineErrorProps) {
+export function InlineError({
+  type = 'generic',
+  message,
+  onRetry,
+  className,
+}: InlineErrorProps) {
   const config = ERROR_CONFIGS[type];
   const Icon = config.icon;
 
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-3 rounded-lg border',
+        'flex items-center gap-3 rounded-lg border p-3',
         config.bgColor,
         config.borderColor,
         className
       )}
     >
       <Icon className={cn('h-4 w-4 flex-shrink-0', config.color)} />
-      <p className="text-sm flex-1">{message}</p>
+      <p className="flex-1 text-sm">{message}</p>
       {onRetry && (
-        <Button onClick={onRetry} variant="ghost" size="sm" className="h-7 px-2 gap-1">
+        <Button
+          onClick={onRetry}
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1 px-2"
+        >
           <RefreshCw className="h-3 w-3" />
           Retry
         </Button>
@@ -352,12 +392,22 @@ export function CardError({
       </CardHeader>
       <CardContent className="flex gap-2">
         {onRetry && (
-          <Button onClick={onRetry} variant="outline" size="sm" className="gap-2">
+          <Button
+            onClick={onRetry}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
             <RefreshCw className="h-4 w-4" />
             Retry
           </Button>
         )}
-        <Button onClick={handleReport} variant="ghost" size="sm" className="gap-2">
+        <Button
+          onClick={handleReport}
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+        >
           <ExternalLink className="h-4 w-4" />
           Report
         </Button>

@@ -113,10 +113,7 @@ function flattenSingleChildDirs(node: TreeNode): TreeNode {
     let collapsed = child;
 
     // Collapse directories that have exactly one child which is also a directory
-    while (
-      !collapsed.file &&
-      collapsed.children.size === 1
-    ) {
+    while (!collapsed.file && collapsed.children.size === 1) {
       const entry = [...collapsed.children.entries()][0];
       if (!entry) break;
       const [, onlyChild] = entry;
@@ -188,9 +185,9 @@ function DirectoryNode({
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          'w-full flex items-center gap-1.5 px-2 py-1 text-xs rounded-md',
-          'hover:bg-surface-interactive transition-colors min-h-[28px]',
-          'text-text-secondary hover:text-text-primary',
+          'flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs',
+          'min-h-[28px] transition-colors hover:bg-surface-interactive',
+          'text-text-secondary hover:text-text-primary'
         )}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
       >
@@ -205,7 +202,7 @@ function DirectoryNode({
           <Folder className="h-3.5 w-3.5 flex-shrink-0 text-amber-400/70" />
         )}
         <span className="truncate font-medium">{node.name}</span>
-        <span className="ml-auto flex items-center gap-1.5 text-[10px] tabular-nums flex-shrink-0">
+        <span className="ml-auto flex flex-shrink-0 items-center gap-1.5 text-[10px] tabular-nums">
           {node.totalAdditions > 0 && (
             <span className="text-emerald-500">+{node.totalAdditions}</span>
           )}
@@ -267,20 +264,30 @@ function FileNode({
     <button
       onClick={onSelect}
       className={cn(
-        'w-full flex items-center gap-1.5 px-2 py-1 text-xs rounded-md min-h-[28px]',
+        'flex min-h-[28px] w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs',
         'transition-colors',
         selected
           ? 'bg-accent-primary/15 text-accent-primary'
-          : 'hover:bg-surface-interactive text-text-secondary hover:text-text-primary',
+          : 'text-text-secondary hover:bg-surface-interactive hover:text-text-primary'
       )}
       style={{ paddingLeft: `${depth * 12 + 8}px` }}
       title={file.path}
     >
-      <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', selected ? 'text-accent-primary' : iconColor)} />
-      <span className={cn('truncate font-mono text-[11px]', selected && 'font-medium')}>
+      <Icon
+        className={cn(
+          'h-3.5 w-3.5 flex-shrink-0',
+          selected ? 'text-accent-primary' : iconColor
+        )}
+      />
+      <span
+        className={cn(
+          'truncate font-mono text-[11px]',
+          selected && 'font-medium'
+        )}
+      >
         {name}
       </span>
-      <span className="ml-auto flex items-center gap-1.5 text-[10px] tabular-nums flex-shrink-0">
+      <span className="ml-auto flex flex-shrink-0 items-center gap-1.5 text-[10px] tabular-nums">
         {file.additions > 0 && (
           <span className="text-emerald-500">+{file.additions}</span>
         )}
@@ -315,24 +322,36 @@ function FlatFileNode({
     <button
       onClick={onSelect}
       className={cn(
-        'w-full flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md min-h-[32px]',
+        'flex min-h-[32px] w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs',
         'transition-colors',
         selected
           ? 'bg-accent-primary/15 text-accent-primary'
-          : 'hover:bg-surface-interactive text-text-secondary hover:text-text-primary',
+          : 'text-text-secondary hover:bg-surface-interactive hover:text-text-primary'
       )}
       title={file.path}
     >
-      <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', selected ? 'text-accent-primary' : iconColor)} />
-      <div className="flex flex-col items-start min-w-0 flex-1">
-        <span className={cn('truncate font-mono text-[11px] w-full text-left', selected && 'font-medium')}>
+      <Icon
+        className={cn(
+          'h-3.5 w-3.5 flex-shrink-0',
+          selected ? 'text-accent-primary' : iconColor
+        )}
+      />
+      <div className="flex min-w-0 flex-1 flex-col items-start">
+        <span
+          className={cn(
+            'w-full truncate text-left font-mono text-[11px]',
+            selected && 'font-medium'
+          )}
+        >
           {fileName}
         </span>
         {dirPath && (
-          <span className="truncate text-[10px] text-text-muted w-full text-left">{dirPath}</span>
+          <span className="w-full truncate text-left text-[10px] text-text-muted">
+            {dirPath}
+          </span>
         )}
       </div>
-      <span className="flex items-center gap-1.5 text-[10px] tabular-nums flex-shrink-0">
+      <span className="flex flex-shrink-0 items-center gap-1.5 text-[10px] tabular-nums">
         {file.additions > 0 && (
           <span className="text-emerald-500">+{file.additions}</span>
         )}
@@ -348,7 +367,12 @@ function FlatFileNode({
 // Main FileTree component
 // ---------------------------------------------------------------------------
 
-export function FileTree({ files, selectedFile, onSelectFile, className }: FileTreeProps) {
+export function FileTree({
+  files,
+  selectedFile,
+  onSelectFile,
+  className,
+}: FileTreeProps) {
   const [filter, setFilter] = useState('');
 
   const tree = useMemo(() => {
@@ -378,31 +402,31 @@ export function FileTree({ files, selectedFile, onSelectFile, className }: FileT
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
           Files
         </h3>
-        <span className="text-[10px] text-text-muted tabular-nums">
+        <span className="text-[10px] tabular-nums text-text-muted">
           {files.length} changed
         </span>
       </div>
 
       {/* Search filter */}
       {showFilter && (
-        <div className="px-2 py-1.5 border-b border-border">
+        <div className="border-b border-border px-2 py-1.5">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-text-muted" />
+            <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-text-muted" />
             <input
               type="text"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter files..."
-              className="w-full pl-7 pr-7 py-1 text-xs bg-surface-sunken border border-border rounded-md text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/30"
+              className="w-full rounded-md border border-border bg-surface-sunken py-1 pl-7 pr-7 text-xs text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/30"
             />
             {filter && (
               <button
                 onClick={() => setFilter('')}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-surface-interactive text-text-muted hover:text-text-primary"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted hover:bg-surface-interactive hover:text-text-primary"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -412,7 +436,7 @@ export function FileTree({ files, selectedFile, onSelectFile, className }: FileT
       )}
 
       {/* Tree / filtered list */}
-      <div className="flex-1 overflow-y-auto p-1.5 scrollbar-hide">
+      <div className="scrollbar-hide flex-1 overflow-y-auto p-1.5">
         {filteredFiles ? (
           // Show flat filtered results
           filteredFiles.length > 0 ? (

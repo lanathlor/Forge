@@ -7,6 +7,7 @@ Real-time notifications sent to Discord channels when important events occur: ta
 ## User Problem
 
 **Without this feature**:
+
 - Must watch dashboard constantly
 - Miss important events
 - Can't multitask while Claude works
@@ -14,6 +15,7 @@ Real-time notifications sent to Discord channels when important events occur: ta
 - Mobile monitoring difficult
 
 **With this feature**:
+
 - Get notified on Discord (desktop + mobile)
 - Continue other work while Claude executes
 - Team members stay informed
@@ -23,6 +25,7 @@ Real-time notifications sent to Discord channels when important events occur: ta
 ## User Stories
 
 ### Story 1: Task Completion Alerts
+
 ```
 AS A developer
 I WANT to receive Discord notifications when tasks complete
@@ -30,6 +33,7 @@ SO THAT I don't have to watch the dashboard
 ```
 
 ### Story 2: QA Failure Alerts
+
 ```
 AS A developer
 I WANT immediate notification when QA gates fail
@@ -37,6 +41,7 @@ SO THAT I can review and fix issues quickly
 ```
 
 ### Story 3: Team Visibility
+
 ```
 AS A team lead
 I WANT all team members to see task activity
@@ -135,24 +140,28 @@ SO THAT we have shared visibility into AI-assisted development
 ## Notification Types
 
 ### 1. Task Lifecycle
+
 - **Task Started** - When task execution begins
 - **Task Completed** - When task approved and committed
 - **Task Rejected** - When user rejects changes
 - **Task Failed** - When execution errors occur
 
 ### 2. QA Events
+
 - **QA Running** - When gates start (optional, can be noisy)
 - **QA Failed (Retrying)** - When gates fail but retrying
 - **QA Failed (Final)** - When all retries exhausted
 - **QA Passed** - When all gates pass
 
 ### 3. Plan Execution
+
 - **Plan Started** - When plan execution begins
 - **Plan Step Completed** - When each step finishes
 - **Plan Step Failed** - When step fails after retries
 - **Plan Completed** - When entire plan finishes
 
 ### 4. System Events
+
 - **Session Started** - When new session begins
 - **Session Ended** - When session closed (with summary)
 - **Repository Scanned** - When new repos discovered
@@ -160,116 +169,125 @@ SO THAT we have shared visibility into AI-assisted development
 ## Discord Embed Examples
 
 ### Task Completed (Rich Embed)
-```json
+
+````json
 {
-  "embeds": [{
-    "title": "✅ Task Completed",
-    "description": "**my-app** • Add error handling to API endpoints",
-    "color": 5763719,
-    "fields": [
-      {
-        "name": "Commit",
-        "value": "`a3f2c1d`",
-        "inline": true
+  "embeds": [
+    {
+      "title": "✅ Task Completed",
+      "description": "**my-app** • Add error handling to API endpoints",
+      "color": 5763719,
+      "fields": [
+        {
+          "name": "Commit",
+          "value": "`a3f2c1d`",
+          "inline": true
+        },
+        {
+          "name": "Duration",
+          "value": "10m 32s",
+          "inline": true
+        },
+        {
+          "name": "Files Changed",
+          "value": "4 files (+90, -15)",
+          "inline": true
+        },
+        {
+          "name": "Commit Message",
+          "value": "```\nfeat(api): add error handling to endpoints\n\n- Wrap routes in try-catch\n- Add error middleware\n- Create error types\n```"
+        }
+      ],
+      "footer": {
+        "text": "Gatekeeper",
+        "icon_url": "https://your-icon-url.com/icon.png"
       },
-      {
-        "name": "Duration",
-        "value": "10m 32s",
-        "inline": true
-      },
-      {
-        "name": "Files Changed",
-        "value": "4 files (+90, -15)",
-        "inline": true
-      },
-      {
-        "name": "Commit Message",
-        "value": "```\nfeat(api): add error handling to endpoints\n\n- Wrap routes in try-catch\n- Add error middleware\n- Create error types\n```"
-      }
-    ],
-    "footer": {
-      "text": "Gatekeeper",
-      "icon_url": "https://your-icon-url.com/icon.png"
-    },
-    "timestamp": "2024-01-15T14:40:00.000Z",
-    "url": "https://gatekeeper.local/tasks/abc123"
-  }]
+      "timestamp": "2024-01-15T14:40:00.000Z",
+      "url": "https://gatekeeper.local/tasks/abc123"
+    }
+  ]
 }
-```
+````
 
 ### QA Failed (Warning Embed)
-```json
+
+````json
 {
-  "embeds": [{
-    "title": "❌ QA Gates Failed",
-    "description": "**my-app** • Add error handling to API endpoints",
-    "color": 15548997,
-    "fields": [
-      {
-        "name": "Attempt",
-        "value": "2/3",
-        "inline": true
+  "embeds": [
+    {
+      "title": "❌ QA Gates Failed",
+      "description": "**my-app** • Add error handling to API endpoints",
+      "color": 15548997,
+      "fields": [
+        {
+          "name": "Attempt",
+          "value": "2/3",
+          "inline": true
+        },
+        {
+          "name": "Failed Gates",
+          "value": "TypeScript",
+          "inline": true
+        },
+        {
+          "name": "Status",
+          "value": "🔄 Claude is fixing errors...",
+          "inline": false
+        },
+        {
+          "name": "Errors",
+          "value": "```\nsrc/api/routes.ts:15:3\nProperty 'user' does not exist on Request\n```"
+        }
+      ],
+      "footer": {
+        "text": "Gatekeeper",
+        "icon_url": "https://your-icon-url.com/icon.png"
       },
-      {
-        "name": "Failed Gates",
-        "value": "TypeScript",
-        "inline": true
-      },
-      {
-        "name": "Status",
-        "value": "🔄 Claude is fixing errors...",
-        "inline": false
-      },
-      {
-        "name": "Errors",
-        "value": "```\nsrc/api/routes.ts:15:3\nProperty 'user' does not exist on Request\n```"
-      }
-    ],
-    "footer": {
-      "text": "Gatekeeper",
-      "icon_url": "https://your-icon-url.com/icon.png"
-    },
-    "timestamp": "2024-01-15T14:35:00.000Z",
-    "url": "https://gatekeeper.local/tasks/abc123"
-  }]
+      "timestamp": "2024-01-15T14:35:00.000Z",
+      "url": "https://gatekeeper.local/tasks/abc123"
+    }
+  ]
 }
-```
+````
 
 ### Plan Progress (Info Embed)
+
 ```json
 {
-  "embeds": [{
-    "title": "📋 Plan Progress",
-    "description": "**my-app** • add-auth.md",
-    "color": 3447003,
-    "fields": [
-      {
-        "name": "Progress",
-        "value": "3/5 steps",
-        "inline": true
+  "embeds": [
+    {
+      "title": "📋 Plan Progress",
+      "description": "**my-app** • add-auth.md",
+      "color": 3447003,
+      "fields": [
+        {
+          "name": "Progress",
+          "value": "3/5 steps",
+          "inline": true
+        },
+        {
+          "name": "Duration",
+          "value": "20m",
+          "inline": true
+        },
+        {
+          "name": "Current Step",
+          "value": "✅ Create auth middleware (Step 3)",
+          "inline": false
+        },
+        {
+          "name": "Remaining",
+          "value": "• Add login endpoint\n• Add protected routes",
+          "inline": false
+        }
+      ],
+      "footer": {
+        "text": "Gatekeeper",
+        "icon_url": "https://your-icon-url.com/icon.png"
       },
-      {
-        "name": "Duration",
-        "value": "20m",
-        "inline": true
-      },
-      {
-        "name": "Current Step",
-        "value": "✅ Create auth middleware (Step 3)",
-        "inline": false
-      },
-      {
-        "name": "Remaining",
-        "value": "• Add login endpoint\n• Add protected routes",
-        "inline": false
-      }
-    ],
-    "footer": {
-      "text": "Gatekeeper",
-      "icon_url": "https://your-icon-url.com/icon.png"
-    },
-    "timestamp": "2024-01-15T14:45:00.000Z"
-  }]
+      "timestamp": "2024-01-15T14:45:00.000Z"
+    }
+  ]
 }
 ```
 
@@ -397,10 +415,10 @@ export class DiscordNotifier {
 // src/lib/notifications/embeds.ts
 
 const COLORS = {
-  success: 5763719,  // Green
-  error: 15548997,   // Red
+  success: 5763719, // Green
+  error: 15548997, // Red
   warning: 16776960, // Yellow
-  info: 3447003,     // Blue
+  info: 3447003, // Blue
 };
 
 export function buildTaskCompletedEmbed(task: Task): EmbedBuilder {
@@ -438,7 +456,11 @@ export function buildTaskCompletedEmbed(task: Task): EmbedBuilder {
   };
 }
 
-export function buildQAFailedEmbed(task: Task, attempt: number, errors: string[]): EmbedBuilder {
+export function buildQAFailedEmbed(
+  task: Task,
+  attempt: number,
+  errors: string[]
+): EmbedBuilder {
   return {
     title: '❌ QA Gates Failed',
     description: `**${task.repository.name}** • ${truncate(task.prompt, 100)}`,
@@ -451,7 +473,10 @@ export function buildQAFailedEmbed(task: Task, attempt: number, errors: string[]
       },
       {
         name: 'Status',
-        value: attempt < 3 ? '🔄 Claude is fixing errors...' : '🛑 Max retries reached',
+        value:
+          attempt < 3
+            ? '🔄 Claude is fixing errors...'
+            : '🛑 Max retries reached',
         inline: false,
       },
       {
@@ -533,14 +558,21 @@ export class NotificationService {
     await this.discord.sendEmbed(embed);
   }
 
-  async notifyQAFailed(task: Task, attempt: number, errors: string[]): Promise<void> {
+  async notifyQAFailed(
+    task: Task,
+    attempt: number,
+    errors: string[]
+  ): Promise<void> {
     if (!this.config?.qaFailed || !this.discord) return;
 
     const embed = buildQAFailedEmbed(task, attempt, errors);
     await this.discord.sendEmbed(embed);
   }
 
-  async notifyPlanProgress(planExecution: PlanExecution, step: PlanStep): Promise<void> {
+  async notifyPlanProgress(
+    planExecution: PlanExecution,
+    step: PlanStep
+  ): Promise<void> {
     if (!this.config?.planStepCompleted || !this.discord) return;
 
     const embed = buildPlanProgressEmbed(planExecution, step);
@@ -634,13 +666,17 @@ export const notificationConfig = sqliteTable('notification_config', {
   qaPassed: integer('qa_passed', { mode: 'boolean' }).default(true),
 
   planStarted: integer('plan_started', { mode: 'boolean' }).default(true),
-  planStepCompleted: integer('plan_step_completed', { mode: 'boolean' }).default(true),
+  planStepCompleted: integer('plan_step_completed', {
+    mode: 'boolean',
+  }).default(true),
   planFailed: integer('plan_failed', { mode: 'boolean' }).default(true),
   planCompleted: integer('plan_completed', { mode: 'boolean' }).default(true),
 
   // Format
   useRichEmbeds: integer('use_rich_embeds', { mode: 'boolean' }).default(true),
-  includeDashboardLinks: integer('include_dashboard_links', { mode: 'boolean' }).default(true),
+  includeDashboardLinks: integer('include_dashboard_links', {
+    mode: 'boolean',
+  }).default(true),
 
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -653,7 +689,7 @@ Notifications are Discord's responsibility, but settings page must be mobile-fri
 ```tsx
 // Mobile-first settings layout
 <div className="notification-settings">
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
     <div className="webhook-config col-span-full">
       {/* Webhook URL input */}
     </div>
@@ -681,15 +717,19 @@ Notifications are Discord's responsibility, but settings page must be mobile-fri
 ## Edge Cases
 
 ### Scenario: Discord Webhook Invalid
+
 **Handling**: Log error, continue execution, show warning in settings
 
 ### Scenario: Network Error
+
 **Handling**: Retry once, then log and continue
 
 ### Scenario: Rate Limit Hit
+
 **Handling**: Queue messages, send when rate limit resets
 
 ### Scenario: Webhook Deleted
+
 **Handling**: Detect 404, disable notifications, alert user
 
 ## Acceptance Criteria

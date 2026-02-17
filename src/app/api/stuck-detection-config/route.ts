@@ -1,5 +1,9 @@
 import type { NextRequest } from 'next/server';
-import { getStuckDetector, StuckDetectionConfigSchema, DEFAULT_STUCK_CONFIG } from '@/lib/stuck-detection';
+import {
+  getStuckDetector,
+  StuckDetectionConfigSchema,
+  DEFAULT_STUCK_CONFIG,
+} from '@/lib/stuck-detection';
 
 /**
  * GET - Retrieve current stuck detection configuration
@@ -43,10 +47,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

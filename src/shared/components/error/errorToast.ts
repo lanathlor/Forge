@@ -7,7 +7,12 @@
 
 import type { Toast } from '@/shared/components/ui/toast';
 
-export type ErrorToastType = 'network' | 'timeout' | 'validation' | 'server' | 'generic';
+export type ErrorToastType =
+  | 'network'
+  | 'timeout'
+  | 'validation'
+  | 'server'
+  | 'generic';
 
 interface ErrorToastOptions {
   /**
@@ -46,7 +51,14 @@ interface ShowErrorToastFn {
 export function createErrorToast(
   addToast: (toast: Omit<Toast, 'id'>) => string
 ): ShowErrorToastFn {
-  return ({ type = 'generic', title, message, onRetry, duration = 7000, dismissible = true }) => {
+  return ({
+    type = 'generic',
+    title,
+    message,
+    onRetry,
+    duration = 7000,
+    dismissible = true,
+  }) => {
     const errorTitle = title || getErrorTitle(type);
 
     return addToast({
@@ -108,17 +120,26 @@ function isValidationError(err: Record<string, unknown>): boolean {
  * Check if error is server error (5xx)
  */
 function isServerError(err: Record<string, unknown>): boolean {
-  return err.status !== undefined && typeof err.status === 'number' && err.status >= 500;
+  return (
+    err.status !== undefined &&
+    typeof err.status === 'number' &&
+    err.status >= 500
+  );
 }
 
 /**
  * Format object errors
  */
-function formatObjectError(err: Record<string, unknown>): { title: string; message: string; type: ErrorToastType } {
+function formatObjectError(err: Record<string, unknown>): {
+  title: string;
+  message: string;
+  type: ErrorToastType;
+} {
   if (isNetworkError(err)) {
     return {
       title: 'Network Error',
-      message: 'Unable to connect to the server. Please check your internet connection.',
+      message:
+        'Unable to connect to the server. Please check your internet connection.',
       type: 'network',
     };
   }
@@ -161,7 +182,11 @@ function formatObjectError(err: Record<string, unknown>): { title: string; messa
 /**
  * Parse and format error from various sources
  */
-export function formatError(error: unknown): { title: string; message: string; type: ErrorToastType } {
+export function formatError(error: unknown): {
+  title: string;
+  message: string;
+  type: ErrorToastType;
+} {
   if (error instanceof Error) {
     return { title: 'Error', message: error.message, type: 'generic' };
   }
@@ -188,10 +213,16 @@ export const errorToastHelpers = {
   /**
    * Show a network error toast
    */
-  network: (addToast: (toast: Omit<Toast, 'id'>) => string, message?: string, onRetry?: () => void) => {
+  network: (
+    addToast: (toast: Omit<Toast, 'id'>) => string,
+    message?: string,
+    onRetry?: () => void
+  ) => {
     return createErrorToast(addToast)({
       type: 'network',
-      message: message || 'Unable to connect to the server. Please check your internet connection.',
+      message:
+        message ||
+        'Unable to connect to the server. Please check your internet connection.',
       onRetry,
     });
   },
@@ -199,10 +230,15 @@ export const errorToastHelpers = {
   /**
    * Show a timeout error toast
    */
-  timeout: (addToast: (toast: Omit<Toast, 'id'>) => string, message?: string, onRetry?: () => void) => {
+  timeout: (
+    addToast: (toast: Omit<Toast, 'id'>) => string,
+    message?: string,
+    onRetry?: () => void
+  ) => {
     return createErrorToast(addToast)({
       type: 'timeout',
-      message: message || 'The request took too long to complete. Please try again.',
+      message:
+        message || 'The request took too long to complete. Please try again.',
       onRetry,
     });
   },
@@ -210,7 +246,10 @@ export const errorToastHelpers = {
   /**
    * Show a validation error toast
    */
-  validation: (addToast: (toast: Omit<Toast, 'id'>) => string, message: string) => {
+  validation: (
+    addToast: (toast: Omit<Toast, 'id'>) => string,
+    message: string
+  ) => {
     return createErrorToast(addToast)({
       type: 'validation',
       message,
@@ -221,10 +260,15 @@ export const errorToastHelpers = {
   /**
    * Show a server error toast
    */
-  server: (addToast: (toast: Omit<Toast, 'id'>) => string, message?: string, onRetry?: () => void) => {
+  server: (
+    addToast: (toast: Omit<Toast, 'id'>) => string,
+    message?: string,
+    onRetry?: () => void
+  ) => {
     return createErrorToast(addToast)({
       type: 'server',
-      message: message || 'An error occurred on the server. Please try again later.',
+      message:
+        message || 'An error occurred on the server. Please try again later.',
       onRetry,
     });
   },
@@ -232,7 +276,11 @@ export const errorToastHelpers = {
   /**
    * Show a generic error toast from an unknown error
    */
-  fromError: (addToast: (toast: Omit<Toast, 'id'>) => string, error: unknown, onRetry?: () => void) => {
+  fromError: (
+    addToast: (toast: Omit<Toast, 'id'>) => string,
+    error: unknown,
+    onRetry?: () => void
+  ) => {
     const formatted = formatError(error);
     return createErrorToast(addToast)({
       type: formatted.type,
@@ -270,7 +318,8 @@ export function useErrorToast(addToast: (toast: Omit<Toast, 'id'>) => string) {
       errorToastHelpers.network(addToast, message, onRetry),
     timeout: (message?: string, onRetry?: () => void) =>
       errorToastHelpers.timeout(addToast, message, onRetry),
-    validation: (message: string) => errorToastHelpers.validation(addToast, message),
+    validation: (message: string) =>
+      errorToastHelpers.validation(addToast, message),
     server: (message?: string, onRetry?: () => void) =>
       errorToastHelpers.server(addToast, message, onRetry),
     fromError: (error: unknown, onRetry?: () => void) =>

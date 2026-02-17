@@ -23,11 +23,16 @@ export const sessionSlice = createSlice({
   reducers: {
     hydrateFromStorage: (state) => {
       // Load persisted state from localStorage (client-side only)
-      const persisted = storage.get<Partial<SessionState>>(STORAGE_KEYS.SESSION);
+      const persisted = storage.get<Partial<SessionState>>(
+        STORAGE_KEYS.SESSION
+      );
       if (persisted) {
-        state.currentSessionId = persisted.currentSessionId ?? state.currentSessionId;
-        state.currentRepositoryId = persisted.currentRepositoryId ?? state.currentRepositoryId;
-        state.isSidebarCollapsed = persisted.isSidebarCollapsed ?? state.isSidebarCollapsed;
+        state.currentSessionId =
+          persisted.currentSessionId ?? state.currentSessionId;
+        state.currentRepositoryId =
+          persisted.currentRepositoryId ?? state.currentRepositoryId;
+        state.isSidebarCollapsed =
+          persisted.isSidebarCollapsed ?? state.isSidebarCollapsed;
       }
       state.isHydrated = true;
     },
@@ -52,6 +57,6 @@ export const {
   setCurrentSession,
   setCurrentRepository,
   setSidebarCollapsed,
-  clearSession
+  clearSession,
 } = sessionSlice.actions;
 export default sessionSlice.reducer;

@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
 import { eq } from 'drizzle-orm';
-import { claudeWrapper } from '@/lib/claude/wrapper';
+import { createAIProvider } from '@/lib/ai';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 interface Message {
@@ -13,7 +13,12 @@ interface Message {
 }
 
 interface RefinementUpdate {
-  action: 'update_phase' | 'update_task' | 'create_task' | 'create_phase' | 'delete_task';
+  action:
+    | 'update_phase'
+    | 'update_task'
+    | 'create_task'
+    | 'create_phase'
+    | 'delete_task';
   phaseOrder?: number;
   taskOrder?: number;
   updates?: Record<string, string>;
@@ -46,7 +51,9 @@ export async function POST(
     async start(controller) {
       try {
         const send = (data: Record<string, unknown>) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+          );
         };
 
         // Load plan with all related data
@@ -78,11 +85,18 @@ export async function POST(
           .where(eq(phases.planId, planId))
           .orderBy(phases.order);
 
-        const tasks = await db.select().from(planTasks).where(eq(planTasks.planId, planId));
+        const tasks = await db
+          .select()
+          .from(planTasks)
+          .where(eq(planTasks.planId, planId));
 
         // Build context for Claude
         const planContext = {
-          plan: { title: plan.title, description: plan.description, status: plan.status },
+          plan: {
+            title: plan.title,
+            description: plan.description,
+            status: plan.status,
+          },
           phases: planPhases.map((p, idx) => ({
             order: idx + 1,
             title: p.title,
@@ -101,7 +115,10 @@ export async function POST(
 
         const conversationContext = conversationHistory
           .slice(-6)
-          .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+          .map(
+            (msg) =>
+              `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+          )
           .join('\n\n');
 
         const fullPrompt = `You are helping refine a development plan. Current plan structure:
@@ -137,7 +154,8 @@ CRITICAL: Always include <UPDATES> when the user asks for changes. Each update n
 
         let response: string;
         try {
-          response = await claudeWrapper.executeWithStream(
+          const aiProvider = createAIProvider();
+          response = await aiProvider.executeWithStream(
             fullPrompt,
             workingDir,
             (chunk) => {
@@ -148,7 +166,8 @@ CRITICAL: Always include <UPDATES> when the user asks for changes. Each update n
         } catch (error) {
           send({
             type: 'error',
-            message: error instanceof Error ? error.message : 'Failed to call Claude',
+            message:
+              error instanceof Error ? error.message : 'Failed to call Claude',
           });
           controller.close();
           return;
@@ -167,7 +186,12 @@ CRITICAL: Always include <UPDATES> when the user asks for changes. Each update n
               let applied = 0;
 
               for (const update of updates) {
-                const success = await applyUpdate(update, planPhases, tasks, planId);
+                const success = await applyUpdate(
+                  update,
+                  planPhases,
+                  tasks,
+                  planId
+                );
                 if (success) applied++;
               }
 
@@ -199,7 +223,10 @@ CRITICAL: Always include <UPDATES> when the user asks for changes. Each update n
             }
           } catch (error) {
             console.error('Failed to parse updates:', error);
-            send({ type: 'error', message: 'Failed to parse suggested changes' });
+            send({
+              type: 'error',
+              message: 'Failed to parse suggested changes',
+            });
           }
         }
 
@@ -207,9 +234,12 @@ CRITICAL: Always include <UPDATES> when the user asks for changes. Each update n
         controller.close();
       } catch (error) {
         console.error('Error in plan refinement:', error);
-        const errorDetails = error instanceof Error ? error.message : 'Unknown error';
+        const errorDetails =
+          error instanceof Error ? error.message : 'Unknown error';
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'error', message: errorDetails })}\n\n`)
+          encoder.encode(
+            `data: ${JSON.stringify({ type: 'error', message: errorDetails })}\n\n`
+          )
         );
         controller.close();
       }
@@ -228,27 +258,50 @@ CRITICAL: Always include <UPDATES> when the user asks for changes. Each update n
 // Helper: Get the "before" state for displaying diffs
 function getBeforeContext(
   update: RefinementUpdate,
-  planPhases: { id: string; order: number; title: string; description: string | null }[],
-  tasks: { id: string; phaseId: string; order: number; title: string; description: string }[]
+  planPhases: {
+    id: string;
+    order: number;
+    title: string;
+    description: string | null;
+  }[],
+  tasks: {
+    id: string;
+    phaseId: string;
+    order: number;
+    title: string;
+    description: string;
+  }[]
 ) {
   if (update.action === 'update_phase' && update.phaseOrder) {
     const phase = planPhases.find((p) => p.order === update.phaseOrder);
     if (phase) {
       return { title: phase.title, description: phase.description || '' };
     }
-  } else if (update.action === 'update_task' && update.phaseOrder && update.taskOrder) {
+  } else if (
+    update.action === 'update_task' &&
+    update.phaseOrder &&
+    update.taskOrder
+  ) {
     const phase = planPhases.find((p) => p.order === update.phaseOrder);
     if (phase) {
-      const phaseTasks = tasks.filter((t) => t.phaseId === phase.id).sort((a, b) => a.order - b.order);
+      const phaseTasks = tasks
+        .filter((t) => t.phaseId === phase.id)
+        .sort((a, b) => a.order - b.order);
       const task = phaseTasks[update.taskOrder - 1];
       if (task) {
         return { title: task.title, description: task.description };
       }
     }
-  } else if (update.action === 'delete_task' && update.phaseOrder && update.taskOrder) {
+  } else if (
+    update.action === 'delete_task' &&
+    update.phaseOrder &&
+    update.taskOrder
+  ) {
     const phase = planPhases.find((p) => p.order === update.phaseOrder);
     if (phase) {
-      const phaseTasks = tasks.filter((t) => t.phaseId === phase.id).sort((a, b) => a.order - b.order);
+      const phaseTasks = tasks
+        .filter((t) => t.phaseId === phase.id)
+        .sort((a, b) => a.order - b.order);
       const task = phaseTasks[update.taskOrder - 1];
       if (task) {
         return { title: task.title, description: task.description };
@@ -261,8 +314,19 @@ function getBeforeContext(
 // Helper: Apply a single update to the database
 async function applyUpdate(
   update: RefinementUpdate,
-  planPhases: { id: string; order: number; title: string; description: string | null }[],
-  tasks: { id: string; phaseId: string; order: number; title: string; description: string }[],
+  planPhases: {
+    id: string;
+    order: number;
+    title: string;
+    description: string | null;
+  }[],
+  tasks: {
+    id: string;
+    phaseId: string;
+    order: number;
+    title: string;
+    description: string;
+  }[],
   planId: string
 ): Promise<boolean> {
   try {
@@ -275,7 +339,11 @@ async function applyUpdate(
           .where(eq(phases.id, targetPhase.id));
         return true;
       }
-    } else if (update.action === 'update_task' && update.phaseOrder && update.taskOrder) {
+    } else if (
+      update.action === 'update_task' &&
+      update.phaseOrder &&
+      update.taskOrder
+    ) {
       const targetPhase = planPhases.find((p) => p.order === update.phaseOrder);
       if (targetPhase && update.updates) {
         const phaseTasks = tasks
@@ -290,7 +358,11 @@ async function applyUpdate(
           return true;
         }
       }
-    } else if (update.action === 'create_task' && update.phaseOrder && update.task) {
+    } else if (
+      update.action === 'create_task' &&
+      update.phaseOrder &&
+      update.task
+    ) {
       const targetPhase = planPhases.find((p) => p.order === update.phaseOrder);
       if (targetPhase) {
         const phaseTasks = tasks.filter((t) => t.phaseId === targetPhase.id);
@@ -313,7 +385,11 @@ async function applyUpdate(
         pauseAfter: false,
       });
       return true;
-    } else if (update.action === 'delete_task' && update.phaseOrder && update.taskOrder) {
+    } else if (
+      update.action === 'delete_task' &&
+      update.phaseOrder &&
+      update.taskOrder
+    ) {
       const targetPhase = planPhases.find((p) => p.order === update.phaseOrder);
       if (targetPhase) {
         const phaseTasks = tasks

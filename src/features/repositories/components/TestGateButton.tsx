@@ -25,13 +25,23 @@ interface TestResult {
   duration: number | null;
 }
 
-export function TestGateButton({ repositoryId, gateName, command }: TestGateButtonProps) {
+export function TestGateButton({
+  repositoryId,
+  gateName,
+  command,
+}: TestGateButtonProps) {
   const [showOutput, setShowOutput] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
 
   async function handleTest() {
     setShowOutput(true);
-    setResult({ status: 'running', output: '', error: null, exitCode: null, duration: null });
+    setResult({
+      status: 'running',
+      output: '',
+      error: null,
+      exitCode: null,
+      duration: null,
+    });
 
     try {
       const controller = new AbortController();
@@ -74,9 +84,12 @@ export function TestGateButton({ repositoryId, gateName, command }: TestGateButt
 
   const getButtonIcon = () => {
     if (!result) return <Play className="h-3.5 w-3.5" />;
-    if (result.status === 'running') return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
-    if (result.status === 'passed') return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
-    if (result.status === 'failed') return <XCircle className="h-3.5 w-3.5 text-red-600" />;
+    if (result.status === 'running')
+      return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+    if (result.status === 'passed')
+      return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
+    if (result.status === 'failed')
+      return <XCircle className="h-3.5 w-3.5 text-red-600" />;
     return <Play className="h-3.5 w-3.5" />;
   };
 
@@ -111,19 +124,25 @@ export function TestGateButton({ repositoryId, gateName, command }: TestGateButt
                     {result.status === 'running' && (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                        <span className="font-semibold text-blue-600">Running...</span>
+                        <span className="font-semibold text-blue-600">
+                          Running...
+                        </span>
                       </>
                     )}
                     {result.status === 'passed' && (
                       <>
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold text-green-600">Passed</span>
+                        <span className="font-semibold text-green-600">
+                          Passed
+                        </span>
                       </>
                     )}
                     {result.status === 'failed' && (
                       <>
                         <XCircle className="h-5 w-5 text-red-600" />
-                        <span className="font-semibold text-red-600">Failed</span>
+                        <span className="font-semibold text-red-600">
+                          Failed
+                        </span>
                       </>
                     )}
                   </div>

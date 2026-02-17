@@ -114,7 +114,9 @@ describe('Performance Utilities', () => {
 
       const result = prefersReducedMotion();
       expect(result).toBe(true);
-      expect(matchMediaMock).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+      expect(matchMediaMock).toHaveBeenCalledWith(
+        '(prefers-reduced-motion: reduce)'
+      );
     });
   });
 
@@ -122,7 +124,9 @@ describe('Performance Utilities', () => {
     it('should not log in production', () => {
       const originalEnv = process.env.NODE_ENV;
       vi.stubEnv('NODE_ENV', 'production');
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       logSlowRender({
         id: 'TestComponent',
@@ -141,7 +145,9 @@ describe('Performance Utilities', () => {
     it('should log slow renders in development', () => {
       const originalEnv = process.env.NODE_ENV;
       vi.stubEnv('NODE_ENV', 'development');
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       logSlowRender({
         id: 'TestComponent',
@@ -165,7 +171,9 @@ describe('Performance Utilities', () => {
     it('should not log fast renders', () => {
       const originalEnv = process.env.NODE_ENV;
       vi.stubEnv('NODE_ENV', 'development');
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       logSlowRender({
         id: 'TestComponent',
@@ -218,7 +226,9 @@ describe('Performance Utilities', () => {
   describe('measureRender', () => {
     it('should not measure in production', () => {
       vi.stubEnv('NODE_ENV', 'production');
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
       const fn = vi.fn();
 
       measureRender('TestComponent', fn);
@@ -231,7 +241,9 @@ describe('Performance Utilities', () => {
 
     it('should measure and log slow renders in development', () => {
       vi.stubEnv('NODE_ENV', 'development');
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       // Mock performance.now to simulate slow render
       const performanceNowSpy = vi.spyOn(performance, 'now');
@@ -242,7 +254,9 @@ describe('Performance Utilities', () => {
 
       expect(fn).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Performance] TestComponent render took 20.00ms')
+        expect.stringContaining(
+          '[Performance] TestComponent render took 20.00ms'
+        )
       );
 
       vi.unstubAllEnvs();
@@ -250,7 +264,9 @@ describe('Performance Utilities', () => {
 
     it('should not log fast renders in development', () => {
       vi.stubEnv('NODE_ENV', 'development');
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       // Mock performance.now to simulate fast render
       const performanceNowSpy = vi.spyOn(performance, 'now');

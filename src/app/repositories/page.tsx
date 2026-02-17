@@ -15,14 +15,14 @@ export default function RepositoriesPage() {
   return (
     <AppLayout>
       <div className="h-full p-4 lg:p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto max-w-4xl">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">Repositories</h1>
+            <h1 className="mb-2 text-2xl font-bold">Repositories</h1>
             <p className="text-muted-foreground">
               Select a repository to view its dashboard and manage tasks.
             </p>
           </div>
-          <div className="bg-card border border-border rounded-lg p-6">
+          <div className="rounded-lg border border-border bg-card p-6">
             <RepositorySelector
               onSelect={handleSelectRepository}
               isCollapsed={false}

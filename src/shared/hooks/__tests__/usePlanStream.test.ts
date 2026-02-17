@@ -7,7 +7,10 @@ vi.mock('@/features/plans/store/plansApi', () => ({
 }));
 
 // Keep SSESubscription callbacks per event type (last-write-wins per test render)
-const mockCallbacks: Map<string, (event: { data: unknown; timestamp: string }) => void> = new Map();
+const mockCallbacks: Map<
+  string,
+  (event: { data: unknown; timestamp: string }) => void
+> = new Map();
 let mockConnected = true;
 let mockStatus = 'connected';
 
@@ -17,7 +20,7 @@ vi.mock('@/shared/contexts/SSEContext', () => ({
   useSSESubscription: (
     _connectionId: string,
     eventType: string,
-    callback: (event: { data: unknown; timestamp: string }) => void,
+    callback: (event: { data: unknown; timestamp: string }) => void
   ) => {
     // Store the latest callback for each event type
     mockCallbacks.set(eventType, callback);
@@ -40,7 +43,9 @@ describe('usePlanStream', () => {
     mockConnected = true;
     mockStatus = 'connected';
     mockRefetch.mockReset();
-    vi.mocked(useGetPlanQuery).mockReturnValue({ refetch: mockRefetch } as ReturnType<typeof useGetPlanQuery>);
+    vi.mocked(useGetPlanQuery).mockReturnValue({
+      refetch: mockRefetch,
+    } as ReturnType<typeof useGetPlanQuery>);
   });
 
   it('should return default state when planId is null', () => {
@@ -63,9 +68,15 @@ describe('usePlanStream', () => {
   });
 
   it('should not connect when enabled is false', () => {
-    const { result } = renderHook(() => usePlanStream('plan-1', { enabled: false }));
+    const { result } = renderHook(() =>
+      usePlanStream('plan-1', { enabled: false })
+    );
     act(() => {
-      simulateSSEEvent('plan_execution', { planId: 'plan-1', type: 'task_started', timestamp: '2026-01-01T00:00:00Z' });
+      simulateSSEEvent('plan_execution', {
+        planId: 'plan-1',
+        type: 'task_started',
+        timestamp: '2026-01-01T00:00:00Z',
+      });
     });
     expect(result.current.events).toHaveLength(0);
   });
@@ -73,7 +84,12 @@ describe('usePlanStream', () => {
   it('should process plan execution events matching planId', () => {
     const { result } = renderHook(() => usePlanStream('plan-1'));
 
-    const event = { planId: 'plan-1', type: 'task_started', taskId: 'task-1', timestamp: '2026-01-01T00:00:00Z' };
+    const event = {
+      planId: 'plan-1',
+      type: 'task_started',
+      taskId: 'task-1',
+      timestamp: '2026-01-01T00:00:00Z',
+    };
 
     act(() => {
       simulateSSEEvent('plan_execution', event);
@@ -87,7 +103,11 @@ describe('usePlanStream', () => {
     const { result } = renderHook(() => usePlanStream('plan-1'));
 
     act(() => {
-      simulateSSEEvent('plan_execution', { planId: 'plan-2', type: 'task_started', timestamp: '2026-01-01T00:00:00Z' });
+      simulateSSEEvent('plan_execution', {
+        planId: 'plan-2',
+        type: 'task_started',
+        timestamp: '2026-01-01T00:00:00Z',
+      });
     });
 
     expect(result.current.events).toHaveLength(0);
@@ -98,7 +118,11 @@ describe('usePlanStream', () => {
     renderHook(() => usePlanStream('plan-1'));
 
     act(() => {
-      simulateSSEEvent('plan_execution', { planId: 'plan-1', type: 'task_completed', timestamp: '2026-01-01T00:00:00Z' });
+      simulateSSEEvent('plan_execution', {
+        planId: 'plan-1',
+        type: 'task_completed',
+        timestamp: '2026-01-01T00:00:00Z',
+      });
     });
 
     expect(mockRefetch).toHaveBeenCalled();
@@ -108,7 +132,11 @@ describe('usePlanStream', () => {
     renderHook(() => usePlanStream('plan-1'));
 
     act(() => {
-      simulateSSEEvent('plan_execution', { planId: 'plan-1', type: 'task_progress', timestamp: '2026-01-01T00:00:00Z' });
+      simulateSSEEvent('plan_execution', {
+        planId: 'plan-1',
+        type: 'task_progress',
+        timestamp: '2026-01-01T00:00:00Z',
+      });
     });
 
     expect(mockRefetch).not.toHaveBeenCalled();
@@ -164,7 +192,11 @@ describe('usePlanStream', () => {
     );
 
     act(() => {
-      simulateSSEEvent('plan_execution', { planId: 'plan-1', type: 'task_started', timestamp: '2026-01-01T00:00:00Z' });
+      simulateSSEEvent('plan_execution', {
+        planId: 'plan-1',
+        type: 'task_started',
+        timestamp: '2026-01-01T00:00:00Z',
+      });
     });
 
     expect(result.current.events).toHaveLength(1);

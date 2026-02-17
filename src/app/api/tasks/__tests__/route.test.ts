@@ -210,7 +210,9 @@ describe('tasks API route', () => {
 
       mockDb.query.tasks.findMany.mockResolvedValueOnce(mockTasks);
 
-      const request = new Request('http://localhost/api/tasks?sessionId=session-123');
+      const request = new Request(
+        'http://localhost/api/tasks?sessionId=session-123'
+      );
 
       const response = await GET(request);
       const data = await response.json();

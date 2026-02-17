@@ -15,7 +15,7 @@ export function RepositoryHeader({
   isRescanning,
 }: RepositoryHeaderProps) {
   return (
-    <div className="p-4 border-b space-y-3">
+    <div className="space-y-3 border-b p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Repositories ({repoCount})</h2>
         <div className="flex items-center gap-1">

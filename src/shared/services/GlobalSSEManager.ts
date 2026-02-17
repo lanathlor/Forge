@@ -14,7 +14,12 @@
  * - Connection quality metrics (latency history, jitter)
  */
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'paused';
+export type ConnectionStatus =
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'paused';
 
 export interface ConnectionQualityMetrics {
   /** Average latency over last N samples */
@@ -99,12 +104,17 @@ function calculateQualityMetrics(
       latencySamples: [],
       successfulConnections: successCount,
       failedConnections: failCount,
-      successRate: successCount + failCount > 0 ? successCount / (successCount + failCount) : 1,
+      successRate:
+        successCount + failCount > 0
+          ? successCount / (successCount + failCount)
+          : 1,
     };
   }
 
   const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-  const variance = samples.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / samples.length;
+  const variance =
+    samples.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) /
+    samples.length;
   const jitter = Math.sqrt(variance);
 
   return {
@@ -113,7 +123,10 @@ function calculateQualityMetrics(
     latencySamples: [...samples],
     successfulConnections: successCount,
     failedConnections: failCount,
-    successRate: successCount + failCount > 0 ? successCount / (successCount + failCount) : 1,
+    successRate:
+      successCount + failCount > 0
+        ? successCount / (successCount + failCount)
+        : 1,
   };
 }
 
@@ -135,8 +148,12 @@ class SSEConnection {
   private statusListeners = new Set<(status: ConnectionStatus) => void>();
 
   // Network and visibility state
-  private _isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-  private _isVisible = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true;
+  private _isOnline =
+    typeof navigator !== 'undefined' ? navigator.onLine : true;
+  private _isVisible =
+    typeof document !== 'undefined'
+      ? document.visibilityState === 'visible'
+      : true;
   private visibilityHandler: (() => void) | null = null;
   private onlineHandler: (() => void) | null = null;
   private offlineHandler: (() => void) | null = null;
@@ -151,35 +168,27 @@ class SSEConnection {
     this.setupBrowserEventListeners();
   }
 
-  /** Set up browser event listeners for network and visibility changes */
-  private setupBrowserEventListeners(): void {
-    if (typeof window === 'undefined') return;
-
-    // Visibility change handler
-    this.visibilityHandler = () => {
+  private buildVisibilityHandler(): () => void {
+    return () => {
       const wasVisible = this._isVisible;
       this._isVisible = document.visibilityState === 'visible';
-
       if (this._isVisible && !wasVisible) {
-        // Page became visible
         if (this.config.reconnectOnVisible && this._status === 'paused') {
           console.log(`[GlobalSSE:${this.config.id}] Page visible, reconnecting`);
           this.connect();
         } else if (this._status === 'disconnected' || this._status === 'reconnecting') {
-          // Force immediate reconnect when page becomes visible
           this.reconnect();
         }
       } else if (!this._isVisible && wasVisible && this.config.pauseWhenHidden) {
-        // Page became hidden - optionally pause
         console.log(`[GlobalSSE:${this.config.id}] Page hidden, pausing connection`);
         this.pause();
       }
-
       this.notifyStatusListeners();
     };
+  }
 
-    // Online handler
-    this.onlineHandler = () => {
+  private buildOnlineHandler(): () => void {
+    return () => {
       this._isOnline = true;
       console.log(`[GlobalSSE:${this.config.id}] Network online, reconnecting`);
       if (this._status === 'disconnected' || this._status === 'reconnecting' || this._status === 'paused') {
@@ -187,16 +196,22 @@ class SSEConnection {
       }
       this.notifyStatusListeners();
     };
+  }
 
-    // Offline handler
-    this.offlineHandler = () => {
+  private buildOfflineHandler(): () => void {
+    return () => {
       this._isOnline = false;
       console.log(`[GlobalSSE:${this.config.id}] Network offline`);
-      // Don't disconnect - let the heartbeat timeout handle it
-      // This allows the connection to survive brief network blips
       this.notifyStatusListeners();
     };
+  }
 
+  /** Set up browser event listeners for network and visibility changes */
+  private setupBrowserEventListeners(): void {
+    if (typeof window === 'undefined') return;
+    this.visibilityHandler = this.buildVisibilityHandler();
+    this.onlineHandler = this.buildOnlineHandler();
+    this.offlineHandler = this.buildOfflineHandler();
     document.addEventListener('visibilitychange', this.visibilityHandler);
     window.addEventListener('online', this.onlineHandler);
     window.addEventListener('offline', this.offlineHandler);
@@ -225,7 +240,7 @@ class SSEConnection {
   }
 
   private notifyStatusListeners(): void {
-    this.statusListeners.forEach(listener => listener(this._status));
+    this.statusListeners.forEach((listener) => listener(this._status));
   }
 
   get status(): ConnectionStatus {
@@ -248,7 +263,9 @@ class SSEConnection {
       reconnectAttempts: this.reconnectAttempts,
       latency: this.latency,
       uptime: this.connectionStartTime
-        ? Math.floor((now.getTime() - this.connectionStartTime.getTime()) / 1000)
+        ? Math.floor(
+            (now.getTime() - this.connectionStartTime.getTime()) / 1000
+          )
         : 0,
       isOnline: this._isOnline,
       isVisible: this._isVisible,
@@ -263,7 +280,7 @@ class SSEConnection {
   private setStatus(status: ConnectionStatus) {
     if (this._status !== status) {
       this._status = status;
-      this.statusListeners.forEach(listener => listener(status));
+      this.statusListeners.forEach((listener) => listener(status));
     }
   }
 
@@ -274,9 +291,17 @@ class SSEConnection {
 
   /** Named events to listen for from SSE endpoints */
   private static readonly NAMED_EVENTS = [
-    'connected', 'bulk_update', 'repo_update', 'keep_alive',
-    'task_update', 'task_output', 'qa_gate_update',
-    'stuck_update', 'stuck_detected', 'stuck_resolved', 'stuck_escalated',
+    'connected',
+    'bulk_update',
+    'repo_update',
+    'keep_alive',
+    'task_update',
+    'task_output',
+    'qa_gate_update',
+    'stuck_update',
+    'stuck_detected',
+    'stuck_resolved',
+    'stuck_escalated',
     'plan_execution',
   ];
 
@@ -297,7 +322,7 @@ class SSEConnection {
     es.onmessage = (event) => this.handleMessage(event);
     es.onerror = () => this.handleError();
 
-    SSEConnection.NAMED_EVENTS.forEach(eventType => {
+    SSEConnection.NAMED_EVENTS.forEach((eventType) => {
       es.addEventListener(eventType, (event) => {
         this.handleNamedEvent(eventType, event as MessageEvent);
       });
@@ -306,7 +331,9 @@ class SSEConnection {
 
   connect(): void {
     if (!this._isOnline) {
-      console.log(`[GlobalSSE:${this.config.id}] Cannot connect - browser is offline`);
+      console.log(
+        `[GlobalSSE:${this.config.id}] Cannot connect - browser is offline`
+      );
       this.setStatus('disconnected');
       return;
     }
@@ -348,7 +375,10 @@ class SSEConnection {
       const data = JSON.parse(event.data);
       this.dispatchEvent(eventType, data);
     } catch (err) {
-      console.error(`[GlobalSSE:${this.config.id}] Parse error for ${eventType}:`, err);
+      console.error(
+        `[GlobalSSE:${this.config.id}] Parse error for ${eventType}:`,
+        err
+      );
     }
   }
 
@@ -384,7 +414,9 @@ class SSEConnection {
       clearTimeout(this.heartbeatTimeout);
     }
     this.heartbeatTimeout = setTimeout(() => {
-      console.warn(`[GlobalSSE:${this.config.id}] Heartbeat timeout - connection may be stale`);
+      console.warn(
+        `[GlobalSSE:${this.config.id}] Heartbeat timeout - connection may be stale`
+      );
       this.reconnect();
     }, this.config.heartbeatTimeout);
   }
@@ -408,7 +440,9 @@ class SSEConnection {
       this.config.maxReconnectDelay
     );
 
-    console.log(`[GlobalSSE:${this.config.id}] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    console.log(
+      `[GlobalSSE:${this.config.id}] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`
+    );
 
     this.reconnectTimeout = setTimeout(() => {
       this.connect();
@@ -431,7 +465,7 @@ class SSEConnection {
     // Dispatch to type-specific subscribers
     const typeSubscribers = this.subscribers.get(type);
     if (typeSubscribers) {
-      typeSubscribers.forEach(callback => {
+      typeSubscribers.forEach((callback) => {
         try {
           callback(event);
         } catch (err) {
@@ -441,16 +475,22 @@ class SSEConnection {
     }
 
     // Dispatch to global subscribers
-    this.globalSubscribers.forEach(callback => {
+    this.globalSubscribers.forEach((callback) => {
       try {
         callback(event);
       } catch (err) {
-        console.error(`[GlobalSSE:${this.config.id}] Global subscriber error:`, err);
+        console.error(
+          `[GlobalSSE:${this.config.id}] Global subscriber error:`,
+          err
+        );
       }
     });
   }
 
-  subscribe<T = unknown>(eventType: string, callback: SSEEventCallback<T>): UnsubscribeFn {
+  subscribe<T = unknown>(
+    eventType: string,
+    callback: SSEEventCallback<T>
+  ): UnsubscribeFn {
     if (!this.subscribers.has(eventType)) {
       this.subscribers.set(eventType, new Set());
     }
@@ -539,11 +579,17 @@ class SSEConnection {
 class GlobalSSEManagerClass {
   private static instance: GlobalSSEManagerClass | null = null;
   private connections = new Map<string, SSEConnection>();
-  private healthListeners = new Set<(health: Map<string, SSEConnectionHealth>) => void>();
+  private healthListeners = new Set<
+    (health: Map<string, SSEConnectionHealth>) => void
+  >();
   private networkListeners = new Set<(isOnline: boolean) => void>();
   private visibilityListeners = new Set<(isVisible: boolean) => void>();
-  private _isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-  private _isVisible = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true;
+  private _isOnline =
+    typeof navigator !== 'undefined' ? navigator.onLine : true;
+  private _isVisible =
+    typeof document !== 'undefined'
+      ? document.visibilityState === 'visible'
+      : true;
 
   private constructor() {
     // Private constructor for singleton
@@ -571,7 +617,7 @@ class GlobalSSEManagerClass {
   }
 
   private notifyNetworkListeners(isOnline: boolean): void {
-    this.networkListeners.forEach(listener => {
+    this.networkListeners.forEach((listener) => {
       try {
         listener(isOnline);
       } catch (err) {
@@ -581,7 +627,7 @@ class GlobalSSEManagerClass {
   }
 
   private notifyVisibilityListeners(isVisible: boolean): void {
-    this.visibilityListeners.forEach(listener => {
+    this.visibilityListeners.forEach((listener) => {
       try {
         listener(isVisible);
       } catch (err) {
@@ -622,7 +668,11 @@ class GlobalSSEManagerClass {
   /**
    * Create or get a connection to an SSE endpoint
    */
-  connect(id: string, url: string, config?: Partial<Omit<ConnectionConfig, 'id' | 'url'>>): SSEConnection {
+  connect(
+    id: string,
+    url: string,
+    config?: Partial<Omit<ConnectionConfig, 'id' | 'url'>>
+  ): SSEConnection {
     if (this.connections.has(id)) {
       return this.connections.get(id)!;
     }
@@ -665,7 +715,10 @@ class GlobalSSEManagerClass {
   /**
    * Subscribe to all events from a specific connection
    */
-  subscribeAll(connectionId: string, callback: SSEEventCallback): UnsubscribeFn {
+  subscribeAll(
+    connectionId: string,
+    callback: SSEEventCallback
+  ): UnsubscribeFn {
     const connection = this.connections.get(connectionId);
     if (!connection) {
       console.warn(`[GlobalSSE] No connection found with id: ${connectionId}`);
@@ -689,26 +742,28 @@ class GlobalSSEManagerClass {
    * Get overall connection status (worst status of all connections)
    */
   getOverallStatus(): ConnectionStatus {
-    const statuses = Array.from(this.connections.values()).map(c => c.status);
+    const statuses = Array.from(this.connections.values()).map((c) => c.status);
 
     if (statuses.length === 0) return 'disconnected';
-    if (statuses.every(s => s === 'connected')) return 'connected';
-    if (statuses.some(s => s === 'reconnecting')) return 'reconnecting';
-    if (statuses.some(s => s === 'connecting')) return 'connecting';
+    if (statuses.every((s) => s === 'connected')) return 'connected';
+    if (statuses.some((s) => s === 'reconnecting')) return 'reconnecting';
+    if (statuses.some((s) => s === 'connecting')) return 'connecting';
     return 'disconnected';
   }
 
   /**
    * Subscribe to health changes across all connections
    */
-  onHealthChange(listener: (health: Map<string, SSEConnectionHealth>) => void): UnsubscribeFn {
+  onHealthChange(
+    listener: (health: Map<string, SSEConnectionHealth>) => void
+  ): UnsubscribeFn {
     this.healthListeners.add(listener);
     return () => this.healthListeners.delete(listener);
   }
 
   private notifyHealthListeners() {
     const health = this.getHealth();
-    this.healthListeners.forEach(listener => {
+    this.healthListeners.forEach((listener) => {
       try {
         listener(health);
       } catch (err) {
@@ -731,7 +786,7 @@ class GlobalSSEManagerClass {
    * Reconnect all connections
    */
   reconnectAll(): void {
-    this.connections.forEach(connection => connection.reconnect());
+    this.connections.forEach((connection) => connection.reconnect());
   }
 
   /**
@@ -750,7 +805,7 @@ class GlobalSSEManagerClass {
    * Disconnect all connections
    */
   disconnectAll(): void {
-    this.connections.forEach(connection => connection.disconnect());
+    this.connections.forEach((connection) => connection.disconnect());
     this.connections.clear();
     this.healthListeners.clear();
   }
@@ -774,7 +829,7 @@ class GlobalSSEManagerClass {
    */
   get totalQueuedEvents(): number {
     let total = 0;
-    this.connections.forEach(connection => {
+    this.connections.forEach((connection) => {
       total += connection.queuedEventCount;
     });
     return total;
@@ -788,7 +843,7 @@ class GlobalSSEManagerClass {
     let totalSuccess = 0;
     let totalFailed = 0;
 
-    this.connections.forEach(connection => {
+    this.connections.forEach((connection) => {
       const health = connection.health;
       allSamples.push(...health.quality.latencySamples);
       totalSuccess += health.quality.successfulConnections;
@@ -802,7 +857,7 @@ class GlobalSSEManagerClass {
    * Reset quality metrics for all connections
    */
   resetAllQualityMetrics(): void {
-    this.connections.forEach(connection => {
+    this.connections.forEach((connection) => {
       connection.resetQualityMetrics();
     });
   }

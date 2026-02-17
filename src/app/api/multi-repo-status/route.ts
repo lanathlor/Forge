@@ -3,7 +3,10 @@ import { db } from '@/db';
 import { sessions } from '@/db/schema/sessions';
 import { tasks } from '@/db/schema/tasks';
 import { eq, desc } from 'drizzle-orm';
-import type { ClaudeStatus, RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
+import type {
+  ClaudeStatus,
+  RepoSessionState,
+} from '@/shared/hooks/useMultiRepoStream';
 
 /**
  * Status mappings for task status to Claude status
@@ -76,7 +79,10 @@ function checkNeedsAttention(status: ClaudeStatus): boolean {
 /**
  * Build repository session state from database records
  */
-async function buildRepoSessionState(repo: { id: string; name: string }): Promise<RepoSessionState> {
+async function buildRepoSessionState(repo: {
+  id: string;
+  name: string;
+}): Promise<RepoSessionState> {
   const session = await db.query.sessions.findFirst({
     where: eq(sessions.repositoryId, repo.id),
     orderBy: [desc(sessions.lastActivity)],

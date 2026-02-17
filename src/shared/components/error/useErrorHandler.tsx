@@ -29,7 +29,9 @@ import { useErrorToast } from './errorToast';
 export function useErrorHandler() {
   const { addToast } = useToast();
   const errorToast = useErrorToast(addToast);
-  const lastErrorRef = useRef<{ error: unknown; timestamp: number } | null>(null);
+  const lastErrorRef = useRef<{ error: unknown; timestamp: number } | null>(
+    null
+  );
 
   /**
    * Handle an error with optional toast notification
@@ -243,12 +245,7 @@ export function createSafeAsync<TArgs extends unknown[], TResult>(
     rethrow?: boolean;
   }
 ) {
-  const {
-    message,
-    onError,
-    onSuccess,
-    rethrow = false,
-  } = options || {};
+  const { message, onError, onSuccess, rethrow = false } = options || {};
 
   return async (...args: TArgs): Promise<TResult | undefined> => {
     try {

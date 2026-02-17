@@ -16,14 +16,8 @@ vi.mock('@/features/plans/store/plansApi', () => ({
     mockGeneratePlan,
     { isLoading: false },
   ]),
-  useExecutePlanMutation: vi.fn(() => [
-    mockExecutePlan,
-    { isLoading: false },
-  ]),
-  useUpdatePlanMutation: vi.fn(() => [
-    mockUpdatePlan,
-    { isLoading: false },
-  ]),
+  useExecutePlanMutation: vi.fn(() => [mockExecutePlan, { isLoading: false }]),
+  useUpdatePlanMutation: vi.fn(() => [mockUpdatePlan, { isLoading: false }]),
   useGetPlanQuery: vi.fn(() => ({
     data: null,
     refetch: vi.fn(),
@@ -70,7 +64,9 @@ describe('GeneratePlanDialog', () => {
 
   it('should render dialog with title', () => {
     renderDialog();
-    expect(screen.getAllByText('Generate Plan').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Generate Plan').length).toBeGreaterThanOrEqual(
+      1
+    );
   });
 
   it('should render form fields', () => {
@@ -90,7 +86,11 @@ describe('GeneratePlanDialog', () => {
   it('should have disabled Generate Plan button when fields are empty', () => {
     renderDialog();
     const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
-    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    const generateButton = buttons.find(
+      (btn) =>
+        btn.textContent?.includes('Generate Plan') &&
+        !btn.textContent?.includes('Launch')
+    );
     expect(generateButton).toBeDisabled();
   });
 
@@ -104,7 +104,11 @@ describe('GeneratePlanDialog', () => {
     fireEvent.change(descInput, { target: { value: 'Test Description' } });
 
     const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
-    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    const generateButton = buttons.find(
+      (btn) =>
+        btn.textContent?.includes('Generate Plan') &&
+        !btn.textContent?.includes('Launch')
+    );
     expect(generateButton).not.toBeDisabled();
   });
 
@@ -118,7 +122,11 @@ describe('GeneratePlanDialog', () => {
     fireEvent.change(descInput, { target: { value: 'My Description' } });
 
     const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
-    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    const generateButton = buttons.find(
+      (btn) =>
+        btn.textContent?.includes('Generate Plan') &&
+        !btn.textContent?.includes('Launch')
+    );
     fireEvent.click(generateButton!);
 
     await waitFor(() => {
@@ -136,7 +144,9 @@ describe('GeneratePlanDialog', () => {
     const bugFixButton = screen.getByText('Bug Fix');
     fireEvent.click(bugFixButton);
 
-    const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
+    const descInput = screen.getByLabelText(
+      'Description'
+    ) as HTMLTextAreaElement;
     expect(descInput.value).toContain('Fix a bug:');
     expect(descInput.value).toContain('Current behavior:');
   });
@@ -147,7 +157,9 @@ describe('GeneratePlanDialog', () => {
     const bugFixButton = screen.getByText('Bug Fix');
     fireEvent.click(bugFixButton);
 
-    const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
+    const descInput = screen.getByLabelText(
+      'Description'
+    ) as HTMLTextAreaElement;
     expect(descInput.value).toContain('Fix a bug:');
 
     fireEvent.click(bugFixButton);
@@ -176,7 +188,11 @@ describe('GeneratePlanDialog', () => {
     fireEvent.change(descInput, { target: { value: 'My Description' } });
 
     const buttons = screen.getAllByRole('button', { name: /Generate Plan/i });
-    const generateButton = buttons.find(btn => btn.textContent?.includes('Generate Plan') && !btn.textContent?.includes('Launch'));
+    const generateButton = buttons.find(
+      (btn) =>
+        btn.textContent?.includes('Generate Plan') &&
+        !btn.textContent?.includes('Launch')
+    );
     fireEvent.click(generateButton!);
 
     await waitFor(() => {

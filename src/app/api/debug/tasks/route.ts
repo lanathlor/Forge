@@ -4,9 +4,18 @@ import { tasks, type TaskStatus } from '@/db/schema/tasks';
 import { eq, desc } from 'drizzle-orm';
 
 const VALID_STATUSES = [
-  'pending', 'pre_flight', 'running', 'waiting_qa', 'qa_running',
-  'qa_failed', 'waiting_approval', 'approved', 'completed',
-  'rejected', 'failed', 'cancelled'
+  'pending',
+  'pre_flight',
+  'running',
+  'waiting_qa',
+  'qa_running',
+  'qa_failed',
+  'waiting_approval',
+  'approved',
+  'completed',
+  'rejected',
+  'failed',
+  'cancelled',
 ];
 
 function validateStatus(status: string): boolean {
@@ -46,20 +55,23 @@ export async function GET() {
       .limit(10);
 
     // Get status counts
-    const statusCounts = await db
-      .select()
-      .from(tasks);
+    const statusCounts = await db.select().from(tasks);
 
-    const counts = statusCounts.reduce((acc, task) => {
-      acc[task.status] = (acc[task.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const counts = statusCounts.reduce(
+      (acc, task) => {
+        acc[task.status] = (acc[task.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return NextResponse.json({
-      recentTasks: recentTasks.map(task => ({
+      recentTasks: recentTasks.map((task) => ({
         id: task.id,
         idShort: task.id.substring(0, 8),
-        promptPreview: task.prompt?.substring(0, 60) + (task.prompt?.length > 60 ? '...' : ''),
+        promptPreview:
+          task.prompt?.substring(0, 60) +
+          (task.prompt?.length > 60 ? '...' : ''),
         status: task.status,
         hasOutput: !!task.claudeOutput,
         outputLength: task.claudeOutput?.length || 0,
@@ -90,20 +102,14 @@ export async function POST(request: Request) {
     }
 
     if (!validateStatus(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
     // Update task status
     const result = await updateTaskStatus(taskId, status as TaskStatus);
 
     if (result.length === 0) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     return NextResponse.json({

@@ -6,14 +6,32 @@ import { ImportExportConfig } from '../ImportExportConfig';
 import type { QAGate } from '../../types/qa-gates';
 
 vi.mock('lucide-react', () => ({
-  Download: (props: Record<string, unknown>) => <svg data-testid="download-icon" {...props} />,
-  Upload: (props: Record<string, unknown>) => <svg data-testid="upload-icon" {...props} />,
+  Download: (props: Record<string, unknown>) => (
+    <svg data-testid="download-icon" {...props} />
+  ),
+  Upload: (props: Record<string, unknown>) => (
+    <svg data-testid="upload-icon" {...props} />
+  ),
 }));
 
 describe('ImportExportConfig', () => {
   const mockGates: QAGate[] = [
-    { name: 'ESLint', command: 'pnpm lint', timeout: 60000, enabled: true, failOnError: true, order: 1 },
-    { name: 'Tests', command: 'pnpm test', timeout: 300000, enabled: true, failOnError: false, order: 2 },
+    {
+      name: 'ESLint',
+      command: 'pnpm lint',
+      timeout: 60000,
+      enabled: true,
+      failOnError: true,
+      order: 1,
+    },
+    {
+      name: 'Tests',
+      command: 'pnpm test',
+      timeout: 300000,
+      enabled: true,
+      failOnError: false,
+      order: 2,
+    },
   ];
 
   const defaultProps = {
@@ -54,12 +72,23 @@ describe('ImportExportConfig', () => {
 
     const fileContent = JSON.stringify({
       qaGates: [
-        { name: 'Build', command: 'pnpm build', timeout: 120000, enabled: true, failOnError: true, order: 1 },
+        {
+          name: 'Build',
+          command: 'pnpm build',
+          timeout: 120000,
+          enabled: true,
+          failOnError: true,
+          order: 1,
+        },
       ],
     });
 
-    const file = new File([fileContent], 'config.json', { type: 'application/json' });
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([fileContent], 'config.json', {
+      type: 'application/json',
+    });
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
 
     await user.upload(fileInput, file);
 
@@ -73,11 +102,22 @@ describe('ImportExportConfig', () => {
     render(<ImportExportConfig {...defaultProps} />);
 
     const fileContent = JSON.stringify([
-      { name: 'Lint', command: 'lint', timeout: 60000, enabled: true, failOnError: true, order: 1 },
+      {
+        name: 'Lint',
+        command: 'lint',
+        timeout: 60000,
+        enabled: true,
+        failOnError: true,
+        order: 1,
+      },
     ]);
 
-    const file = new File([fileContent], 'config.json', { type: 'application/json' });
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([fileContent], 'config.json', {
+      type: 'application/json',
+    });
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
 
     await user.upload(fileInput, file);
 
@@ -92,8 +132,12 @@ describe('ImportExportConfig', () => {
 
     render(<ImportExportConfig {...defaultProps} />);
 
-    const file = new File(['not json'], 'config.json', { type: 'application/json' });
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['not json'], 'config.json', {
+      type: 'application/json',
+    });
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
 
     await user.upload(fileInput, file);
 

@@ -220,7 +220,9 @@ describe('RepositoryCollapsedView', () => {
           isRescanning={false}
         />
       );
-      const buttonContainer = container.querySelector('.flex.flex-col.items-center');
+      const buttonContainer = container.querySelector(
+        '.flex.flex-col.items-center'
+      );
       expect(buttonContainer).toBeInTheDocument();
     });
   });

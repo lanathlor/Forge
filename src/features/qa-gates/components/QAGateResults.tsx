@@ -60,11 +60,7 @@ interface StatusBadgeProps {
 }
 
 function StatusBadge({ status }: StatusBadgeProps) {
-  return (
-    <Badge variant={getStatusVariant(status)}>
-      {status}
-    </Badge>
-  );
+  return <Badge variant={getStatusVariant(status)}>{status}</Badge>;
 }
 
 interface GateStatusMessageProps {
@@ -105,9 +101,7 @@ function GateDetailsToggle({ isExpanded, onToggle }: GateDetailsToggleProps) {
       <span className="text-muted-foreground">
         {isExpanded ? 'Hide Details' : 'Show Details'}
       </span>
-      <span className="text-muted-foreground">
-        {isExpanded ? '▼' : '▶'}
-      </span>
+      <span className="text-muted-foreground">{isExpanded ? '▼' : '▶'}</span>
     </button>
   );
 }
@@ -184,13 +178,14 @@ function GateResultItem({
   isExpanded,
   onToggleExpand,
 }: GateResultItemProps) {
-  const hasDetails = result.output || (result.errors && result.errors.length > 0);
+  const hasDetails =
+    result.output || (result.errors && result.errors.length > 0);
 
   return (
     <div className="rounded-lg border p-4 transition-colors hover:bg-muted/50">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="mb-2 flex items-center gap-3">
             <span className="font-medium">
               {getGateIcon(result.status)} {result.gateName}
             </span>
@@ -270,14 +265,14 @@ function ResultsFooter({ attempt, maxAttempts, onRerun }: ResultsFooterProps) {
   const maxAttemptsReached = attempt >= maxAttempts;
 
   return (
-    <div className="pt-4 border-t">
+    <div className="border-t pt-4">
       {maxAttemptsReached ? (
-        <p className="text-sm text-destructive mb-3">
+        <p className="mb-3 text-sm text-destructive">
           ⚠️ Maximum retry attempts ({maxAttempts}) reached. You can manually
           fix the issues and re-run, or override to approve anyway.
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground mb-3">
+        <p className="mb-3 text-sm text-muted-foreground">
           🔧 QA gates failed. Fix the issues manually and re-run the gates.
         </p>
       )}
@@ -442,7 +437,11 @@ function ResultsView({
         </div>
 
         {showFooter && (
-          <ResultsFooter attempt={attempt} maxAttempts={maxAttempts} onRerun={onRerun} />
+          <ResultsFooter
+            attempt={attempt}
+            maxAttempts={maxAttempts}
+            onRerun={onRerun}
+          />
         )}
       </div>
     </Card>
@@ -463,9 +462,11 @@ export function QAGateResults({
   }
 
   if (error) {
-    const errorType = error.message.includes('timed out') ? 'timeout' :
-                     error.message.includes('HTTP 5') ? 'server' :
-                     'network';
+    const errorType = error.message.includes('timed out')
+      ? 'timeout'
+      : error.message.includes('HTTP 5')
+        ? 'server'
+        : 'network';
 
     return (
       <ErrorState

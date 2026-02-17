@@ -97,9 +97,7 @@ describe('Alert Components', () => {
 
     it('should apply custom className', () => {
       render(
-        <AlertDescription className="custom-desc">
-          Description
-        </AlertDescription>
+        <AlertDescription className="custom-desc">Description</AlertDescription>
       );
 
       const description = screen.getByText('Description');
@@ -151,7 +149,9 @@ describe('Alert Components', () => {
       const alert = screen.getByRole('alert');
       expect(alert).toBeInTheDocument();
       expect(screen.getByText('Critical Error')).toBeInTheDocument();
-      expect(screen.getByText('This is a critical error message')).toBeInTheDocument();
+      expect(
+        screen.getByText('This is a critical error message')
+      ).toBeInTheDocument();
     });
   });
 });

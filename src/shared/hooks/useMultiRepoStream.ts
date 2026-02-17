@@ -1,9 +1,19 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useSSESubscription, useSSEConnected, useSSEStatus } from '@/shared/contexts/SSEContext';
+import {
+  useSSESubscription,
+  useSSEConnected,
+  useSSEStatus,
+} from '@/shared/contexts/SSEContext';
 
-export type ClaudeStatus = 'idle' | 'thinking' | 'writing' | 'waiting_input' | 'stuck' | 'paused';
+export type ClaudeStatus =
+  | 'idle'
+  | 'thinking'
+  | 'writing'
+  | 'waiting_input'
+  | 'stuck'
+  | 'paused';
 
 export interface RepoSessionState {
   repositoryId: string;
@@ -11,7 +21,12 @@ export interface RepoSessionState {
   sessionId: string | null;
   sessionStatus: 'active' | 'paused' | 'completed' | 'abandoned' | null;
   claudeStatus: ClaudeStatus;
-  currentTask: { id: string; prompt: string; status: string; progress?: number } | null;
+  currentTask: {
+    id: string;
+    prompt: string;
+    status: string;
+    progress?: number;
+  } | null;
   timeElapsed: number;
   lastActivity: string;
   needsAttention: boolean;
@@ -35,7 +50,10 @@ interface UseMultiRepoStreamReturn {
 type SetRepos = React.Dispatch<React.SetStateAction<RepoSessionState[]>>;
 type SetUpdated = React.Dispatch<React.SetStateAction<string | null>>;
 
-function upsertRepo(prev: RepoSessionState[], updated: RepoSessionState): RepoSessionState[] {
+function upsertRepo(
+  prev: RepoSessionState[],
+  updated: RepoSessionState
+): RepoSessionState[] {
   const idx = prev.findIndex((r) => r.repositoryId === updated.repositoryId);
   if (idx >= 0) {
     const next = [...prev];
@@ -46,37 +64,60 @@ function upsertRepo(prev: RepoSessionState[], updated: RepoSessionState): RepoSe
 }
 
 function useConnectedSubscription(setRepos: SetRepos, setUpdated: SetUpdated) {
-  useSSESubscription<{ repositories?: RepoSessionState[] }>('unified', 'connected', (event) => {
-    if (event.data?.repositories) {
-      setRepos(event.data.repositories);
-      setUpdated(new Date().toISOString());
-    }
-  }, []);
+  useSSESubscription<{ repositories?: RepoSessionState[] }>(
+    'unified',
+    'connected',
+    (event) => {
+      if (event.data?.repositories) {
+        setRepos(event.data.repositories);
+        setUpdated(new Date().toISOString());
+      }
+    },
+    []
+  );
 }
 
 function useBulkUpdateSubscription(setRepos: SetRepos, setUpdated: SetUpdated) {
-  useSSESubscription<{ repositories?: RepoSessionState[]; timestamp?: string }>('unified', 'bulk_update', (event) => {
-    if (event.data?.repositories) {
-      setRepos(event.data.repositories);
-      setUpdated(event.data.timestamp ?? new Date().toISOString());
-    }
-  }, []);
+  useSSESubscription<{ repositories?: RepoSessionState[]; timestamp?: string }>(
+    'unified',
+    'bulk_update',
+    (event) => {
+      if (event.data?.repositories) {
+        setRepos(event.data.repositories);
+        setUpdated(event.data.timestamp ?? new Date().toISOString());
+      }
+    },
+    []
+  );
 }
 
 function useRepoUpdateSubscription(setRepos: SetRepos, setUpdated: SetUpdated) {
-  useSSESubscription<{ repository?: RepoSessionState; timestamp?: string }>('unified', 'repo_update', (event) => {
-    if (!event.data?.repository) return;
-    setRepos((prev) => upsertRepo(prev, event.data.repository!));
-    setUpdated(event.data.timestamp ?? new Date().toISOString());
-  }, []);
+  useSSESubscription<{ repository?: RepoSessionState; timestamp?: string }>(
+    'unified',
+    'repo_update',
+    (event) => {
+      if (!event.data?.repository) return;
+      setRepos((prev) => upsertRepo(prev, event.data.repository!));
+      setUpdated(event.data.timestamp ?? new Date().toISOString());
+    },
+    []
+  );
 }
 
-function useTaskUpdateRepoSubscription(setRepos: SetRepos, setUpdated: SetUpdated) {
-  useSSESubscription<{ repository?: RepoSessionState; timestamp?: string }>('unified', 'task_update', (event) => {
-    if (!event.data?.repository) return;
-    setRepos((prev) => upsertRepo(prev, event.data.repository!));
-    setUpdated(event.data.timestamp ?? new Date().toISOString());
-  }, []);
+function useTaskUpdateRepoSubscription(
+  setRepos: SetRepos,
+  setUpdated: SetUpdated
+) {
+  useSSESubscription<{ repository?: RepoSessionState; timestamp?: string }>(
+    'unified',
+    'task_update',
+    (event) => {
+      if (!event.data?.repository) return;
+      setRepos((prev) => upsertRepo(prev, event.data.repository!));
+      setUpdated(event.data.timestamp ?? new Date().toISOString());
+    },
+    []
+  );
 }
 
 /**
@@ -100,5 +141,11 @@ export function useMultiRepoStream(): UseMultiRepoStreamReturn {
   // GlobalSSEManager handles reconnection automatically. No-op for API compatibility.
   const reconnect = useCallback(() => {}, []);
 
-  return { repositories, connected: isConnected, error: status === 'disconnected' ? 'Connection lost' : null, reconnect, lastUpdated };
+  return {
+    repositories,
+    connected: isConnected,
+    error: status === 'disconnected' ? 'Connection lost' : null,
+    reconnect,
+    lastUpdated,
+  };
 }

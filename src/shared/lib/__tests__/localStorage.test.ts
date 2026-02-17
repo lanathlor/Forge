@@ -34,7 +34,9 @@ describe('localStorage utility', () => {
 
     it('should return null on JSON parse error', () => {
       localStorage.setItem('invalid-json', 'not valid json {');
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const result = storage.get('invalid-json');
       expect(result).toBeNull();
@@ -71,7 +73,9 @@ describe('localStorage utility', () => {
     });
 
     it('should handle JSON stringify errors gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       // Create circular reference
       const circular: { self?: unknown } = {};
       circular.self = circular;
@@ -187,10 +191,14 @@ describe('localStorage utility', () => {
 
   describe('localStorage errors', () => {
     it('remove should return false when localStorage.removeItem throws', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
-        throw new Error('Storage error');
-      });
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const removeItemSpy = vi
+        .spyOn(localStorage, 'removeItem')
+        .mockImplementation(() => {
+          throw new Error('Storage error');
+        });
 
       const result = storage.remove('test-key');
       expect(result).toBe(false);
@@ -201,10 +209,14 @@ describe('localStorage utility', () => {
     });
 
     it('clear should return false when localStorage.clear throws', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const clearSpy = vi.spyOn(localStorage, 'clear').mockImplementation(() => {
-        throw new Error('Storage error');
-      });
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const clearSpy = vi
+        .spyOn(localStorage, 'clear')
+        .mockImplementation(() => {
+          throw new Error('Storage error');
+        });
 
       const result = storage.clear();
       expect(result).toBe(false);

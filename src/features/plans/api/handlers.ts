@@ -4,7 +4,11 @@ import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { generatePlanFromDescription } from '@/lib/plans/generator';
-import { reviewPlan, applySuggestions, type ReviewType } from '@/lib/plans/reviewer';
+import {
+  reviewPlan,
+  applySuggestions,
+  type ReviewType,
+} from '@/lib/plans/reviewer';
 import { planExecutor } from '@/lib/plans/executor';
 
 // ============================================================================
@@ -15,7 +19,9 @@ import { planExecutor } from '@/lib/plans/executor';
  * Enriches a plan with dynamically calculated metadata from actual tasks and phases.
  * This ensures the counts are always accurate even if DB fields get out of sync.
  */
-async function enrichPlanWithCalculatedMetadata(plan: typeof plans.$inferSelect) {
+async function enrichPlanWithCalculatedMetadata(
+  plan: typeof plans.$inferSelect
+) {
   try {
     // Get actual phases count
     const allPhases = await db
@@ -32,8 +38,12 @@ async function enrichPlanWithCalculatedMetadata(plan: typeof plans.$inferSelect)
     const phasesArray = Array.isArray(allPhases) ? allPhases : [];
     const tasksArray = Array.isArray(allTasks) ? allTasks : [];
 
-    const completedPhasesCount = phasesArray.filter(p => p.status === 'completed').length;
-    const completedTasksCount = tasksArray.filter(t => t.status === 'completed').length;
+    const completedPhasesCount = phasesArray.filter(
+      (p) => p.status === 'completed'
+    ).length;
+    const completedTasksCount = tasksArray.filter(
+      (t) => t.status === 'completed'
+    ).length;
 
     // Return plan with calculated metadata
     return {
@@ -58,14 +68,18 @@ async function enrichPlanWithCalculatedMetadata(plan: typeof plans.$inferSelect)
 export async function handleGetPlans(repositoryId?: string) {
   try {
     const query = repositoryId
-      ? db.select().from(plans).where(eq(plans.repositoryId, repositoryId)).orderBy(desc(plans.createdAt))
+      ? db
+          .select()
+          .from(plans)
+          .where(eq(plans.repositoryId, repositoryId))
+          .orderBy(desc(plans.createdAt))
       : db.select().from(plans).orderBy(desc(plans.createdAt));
 
     const allPlans = await query;
 
     // Enrich each plan with calculated metadata
     const enrichedPlans = await Promise.all(
-      allPlans.map(plan => enrichPlanWithCalculatedMetadata(plan))
+      allPlans.map((plan) => enrichPlanWithCalculatedMetadata(plan))
     );
 
     return NextResponse.json({ plans: enrichedPlans });
@@ -87,10 +101,7 @@ export async function handleGetPlan(planId: string) {
       .limit(1);
 
     if (!plan) {
-      return NextResponse.json(
-        { error: 'Plan not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
 
     // Load related data
@@ -200,7 +211,10 @@ export async function handleGeneratePlan(data: {
   } catch (error) {
     console.error('Error generating plan:', error);
     return NextResponse.json(
-      { error: 'Failed to generate plan', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to generate plan',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -225,10 +239,7 @@ export async function handleUpdatePlan(
       .returning();
 
     if (!updatedPlan) {
-      return NextResponse.json(
-        { error: 'Plan not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
 
     return NextResponse.json({ plan: updatedPlan });
@@ -347,10 +358,7 @@ export async function handleUpdatePhase(
       .returning();
 
     if (!updatedPhase) {
-      return NextResponse.json(
-        { error: 'Phase not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Phase not found' }, { status: 404 });
     }
 
     return NextResponse.json({ phase: updatedPhase });
@@ -373,10 +381,7 @@ export async function handleDeletePhase(phaseId: string) {
       .limit(1);
 
     if (!phase) {
-      return NextResponse.json(
-        { error: 'Phase not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Phase not found' }, { status: 404 });
     }
 
     // Delete related tasks
@@ -505,7 +510,10 @@ export async function handleUpdateTask(
   }
 ) {
   try {
-    const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
+    const updateData: Record<string, unknown> = {
+      ...data,
+      updatedAt: new Date(),
+    };
 
     // Handle dependsOn array serialization
     if (data.dependsOn !== undefined) {
@@ -519,10 +527,7 @@ export async function handleUpdateTask(
       .returning();
 
     if (!updatedTask) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     return NextResponse.json({ task: updatedTask });
@@ -545,10 +550,7 @@ export async function handleDeleteTask(taskId: string) {
       .limit(1);
 
     if (!task) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     // Delete task
@@ -609,10 +611,7 @@ export async function handleRetryTask(taskId: string) {
       .returning();
 
     if (!updatedTask) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     // Get the plan and resume it if it's paused or failed
@@ -634,7 +633,10 @@ export async function handleRetryTask(taskId: string) {
 
       // Trigger plan execution
       planExecutor.executePlan(plan.id).catch((error) => {
-        console.error(`Background plan execution failed for ${plan.id}:`, error);
+        console.error(
+          `Background plan execution failed for ${plan.id}:`,
+          error
+        );
       });
 
       console.log(`[RetryTask] Resumed plan ${plan.id} for task ${taskId}`);
@@ -687,7 +689,11 @@ export async function handleApplySuggestions(data: {
   suggestionIndices: number[];
 }) {
   try {
-    await applySuggestions(data.planId, data.iterationId, data.suggestionIndices);
+    await applySuggestions(
+      data.planId,
+      data.iterationId,
+      data.suggestionIndices
+    );
 
     // Return updated plan
     const [plan] = await db

@@ -7,9 +7,9 @@ services:
       args:
         USER_UID: ${USER_UID:-1000}
         USER_GID: ${USER_GID:-100}
-    user: "${USER_UID:-1000}:${USER_GID:-100}"
+    user: '${USER_UID:-1000}:${USER_GID:-100}'
     ports:
-      - "3001:3000"
+      - '3001:3000'
     volumes:
       - .:/app
       - /app/.next
@@ -34,7 +34,7 @@ services:
       POSTGRES_USER: autobot
       POSTGRES_PASSWORD: autobot
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     profiles:

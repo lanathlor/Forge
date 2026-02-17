@@ -9,6 +9,7 @@ Gatekeeper is a quality assurance dashboard for Claude Code. It sits between you
 ## The Problem
 
 When using Claude Code directly:
+
 - You don't know what changed until Claude is done
 - No automated quality checks before changes land
 - Manual commit message writing
@@ -21,6 +22,7 @@ When using Claude Code directly:
 ## The Solution
 
 Gatekeeper provides:
+
 1. **Repository Management** - Work across multiple repos from one dashboard
 2. **Task Oversight** - See Claude's work in real-time as it happens
 3. **Automated QA Gates with Retry** - Lint, type-check, test - Claude auto-fixes failures (3 attempts)
@@ -35,51 +37,61 @@ Gatekeeper provides:
 ## Core Features
 
 ### 1. Repository Discovery & Selection
+
 **What**: Automatically find all git repos in your workspace
 **Why**: Work across multiple projects without manual configuration
 **See**: `01-feature-repository-discovery.md`
 
 ### 2. Claude Task Execution
+
 **What**: Send prompts to Claude Code and monitor execution
 **Why**: Keep Claude working while you maintain oversight
 **See**: `02-feature-task-execution.md`
 
 ### 3. QA Gate System with Intelligent Retry
+
 **What**: Automated quality checks (ESLint, TypeScript, tests) with auto-retry
 **Why**: Claude fixes its own errors automatically (up to 3 attempts)
 **See**: `03-feature-qa-gates.md`
 
 ### 4. Diff Viewing & Review
+
 **What**: Visual code comparison with file tree navigation
 **Why**: Understand exactly what changed before approving
 **See**: `04-feature-diff-review.md`
 
 ### 5. Approval & Commit Workflow
+
 **What**: Approve changes → Claude writes commit msg → You review → Auto-commit
 **Why**: Maintain clean git history without manual work
 **See**: `05-feature-approval-commit.md`
 
 ### 6. Reject & Revert Workflow
+
 **What**: Reject changes and surgically revert Claude's modifications
 **Why**: Safe escape hatch when Claude goes wrong
 **See**: `06-feature-reject-revert.md`
 
 ### 7. Real-time Mobile Dashboard
+
 **What**: Live updates of task status, output, and progress - mobile-responsive
 **Why**: Monitor and control from any device
 **See**: `07-feature-dashboard.md`
 
 ### 8. Session Management
+
 **What**: Group related tasks into sessions with history
 **Why**: Organize work and review past decisions
 **See**: `08-feature-sessions.md`
 
 ### 9. PRD Plan Execution ⭐ NEW
+
 **What**: Execute multi-step markdown plans with context clearing between steps
 **Why**: Systematic execution of complex features without context pollution
 **See**: `09-feature-prd-plan-execution.md`
 
 ### 10. Discord Notifications ⭐ NEW
+
 **What**: Real-time notifications to Discord for all important events
 **Why**: Stay informed on mobile without watching dashboard
 **See**: `10-feature-discord-notifications.md`
@@ -87,6 +99,7 @@ Gatekeeper provides:
 ## 📚 Essential Reading Before Implementation
 
 **Must Read First**:
+
 1. **STATE-MANAGEMENT-UI-GUIDE.md** - RTK Query patterns and shadcn/ui usage (CRITICAL)
 2. **99-technical-architecture.md** - Full technical stack and patterns
 3. **100-implementation-plan.md** OR **IMPLEMENTATION-ROADMAP.md** - Development roadmap
@@ -156,6 +169,7 @@ These documents explain how to use RTK Query for all API calls (never use `fetch
 **Who**: Developers using Claude Code for software engineering tasks
 
 **Use Cases**:
+
 - Solo developers wanting quality control over AI changes
 - Teams needing audit trails for AI-assisted development
 - Projects with strict quality gates (linting, testing)
@@ -168,12 +182,14 @@ These documents explain how to use RTK Query for all API calls (never use `fetch
 **Recommended: Gatekeeper** ✅
 
 Rationale:
+
 - Reflects core functionality (QA gates)
 - Implies oversight and quality control
 - Professional and memorable
 - .com domain available variants
 
 **Alternatives**:
+
 1. **Vigil** - Constant watching/monitoring
 2. **Shepherd** - Guiding Claude to quality
 3. **Sentinel** - Guardian of your codebase
@@ -197,6 +213,7 @@ Choose your preferred name and I'll update all documentation accordingly!
 ## Success Metrics
 
 **MVP is successful when**:
+
 1. ✅ Can discover and select repos from workspace
 2. ✅ Can send prompts to Claude and see real-time updates
 3. ✅ QA gates run automatically with 3-retry logic
@@ -226,6 +243,7 @@ Choose your preferred name and I'll update all documentation accordingly!
 ## Documentation Index
 
 **Product Features** (read these first):
+
 1. `01-feature-repository-discovery.md` - Find and select repos
 2. `02-feature-task-execution.md` - Run Claude tasks
 3. `03-feature-qa-gates.md` - Automated quality checks with retry
@@ -238,6 +256,7 @@ Choose your preferred name and I'll update all documentation accordingly!
 10. `10-feature-discord-notifications.md` - ⭐ Mobile notifications
 
 **Technical Documentation**:
+
 - `99-technical-architecture.md` - Stack, structure, Drizzle setup
 - `100-implementation-plan.md` - Development roadmap
 

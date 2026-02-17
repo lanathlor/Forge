@@ -5,7 +5,13 @@ import type { ClaudeStatus } from '@/shared/hooks/useMultiRepoStream';
 
 export interface RepoEvent {
   id: string;
-  type: 'task_completed' | 'task_failed' | 'approval_needed' | 'qa_failed' | 'stuck' | 'plan_updated';
+  type:
+    | 'task_completed'
+    | 'task_failed'
+    | 'approval_needed'
+    | 'qa_failed'
+    | 'stuck'
+    | 'plan_updated';
   message: string;
   timestamp: string;
   taskId?: string;
@@ -51,7 +57,9 @@ interface RepoSnapshotState {
 const MAX_EVENTS = 5;
 
 const loadPersistedSnapshots = (): RepoSnapshotState => {
-  const persisted = storage.get<Record<string, RepoSnapshot>>(STORAGE_KEYS.REPO_SNAPSHOTS);
+  const persisted = storage.get<Record<string, RepoSnapshot>>(
+    STORAGE_KEYS.REPO_SNAPSHOTS
+  );
   return {
     snapshots: persisted || {},
     dismissedRepoId: null,
@@ -84,7 +92,10 @@ export const repoSnapshotSlice = createSlice({
   name: 'repoSnapshot',
   initialState,
   reducers: {
-    updateSnapshot: (state, action: PayloadAction<Partial<RepoSnapshot> & { repositoryId: string }>) => {
+    updateSnapshot: (
+      state,
+      action: PayloadAction<Partial<RepoSnapshot> & { repositoryId: string }>
+    ) => {
       const { repositoryId, ...updates } = action.payload;
       const existing = state.snapshots[repositoryId];
       state.snapshots[repositoryId] = {
@@ -103,11 +114,17 @@ export const repoSnapshotSlice = createSlice({
       }
     },
 
-    addEvent: (state, action: PayloadAction<{ repositoryId: string; event: RepoEvent }>) => {
+    addEvent: (
+      state,
+      action: PayloadAction<{ repositoryId: string; event: RepoEvent }>
+    ) => {
       const { repositoryId, event } = action.payload;
       const snapshot = state.snapshots[repositoryId];
       if (snapshot) {
-        snapshot.recentEvents = [event, ...snapshot.recentEvents].slice(0, MAX_EVENTS);
+        snapshot.recentEvents = [event, ...snapshot.recentEvents].slice(
+          0,
+          MAX_EVENTS
+        );
         snapshot.lastUpdated = new Date().toISOString();
         persistSnapshots(state.snapshots);
       }

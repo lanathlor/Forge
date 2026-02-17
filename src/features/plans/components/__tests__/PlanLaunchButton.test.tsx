@@ -7,8 +7,18 @@ import type { Plan } from '@/db/schema';
 vi.mock('../../hooks/usePreflightChecks', () => ({
   usePreflightChecks: vi.fn(() => ({
     checks: [
-      { id: 'repo', label: 'Repository accessible', status: 'pass', detail: 'my-repo' },
-      { id: 'clean', label: 'Working tree clean', status: 'pass', detail: 'No uncommitted changes' },
+      {
+        id: 'repo',
+        label: 'Repository accessible',
+        status: 'pass',
+        detail: 'my-repo',
+      },
+      {
+        id: 'clean',
+        label: 'Working tree clean',
+        status: 'pass',
+        detail: 'No uncommitted changes',
+      },
     ],
     isReady: true,
     isChecking: false,
@@ -67,7 +77,7 @@ describe('PlanLaunchButton', () => {
         plan={basePlan}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
   });
@@ -78,7 +88,7 @@ describe('PlanLaunchButton', () => {
         plan={{ ...basePlan, status: 'draft' }}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
   });
@@ -89,7 +99,7 @@ describe('PlanLaunchButton', () => {
         plan={{ ...basePlan, status: 'running' }}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(container.innerHTML).toBe('');
   });
@@ -100,7 +110,7 @@ describe('PlanLaunchButton', () => {
         plan={basePlan}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByText('Launch Plan'));
@@ -117,10 +127,12 @@ describe('PlanLaunchButton', () => {
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
         onLaunchAndSwitch={mockOnLaunchAndSwitch}
-      />,
+      />
     );
 
-    const switchButton = screen.getByTitle('Launch the plan and return to command center');
+    const switchButton = screen.getByTitle(
+      'Launch the plan and return to command center'
+    );
     fireEvent.click(switchButton);
 
     await waitFor(() => {
@@ -134,9 +146,11 @@ describe('PlanLaunchButton', () => {
         plan={basePlan}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
-    expect(screen.queryByTitle('Launch the plan and return to command center')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTitle('Launch the plan and return to command center')
+    ).not.toBeInTheDocument();
   });
 
   it('should update plan to ready before executing when draft', async () => {
@@ -145,7 +159,7 @@ describe('PlanLaunchButton', () => {
         plan={{ ...basePlan, status: 'draft' }}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByText('Launch Plan'));
@@ -164,7 +178,7 @@ describe('PlanLaunchButton', () => {
         plan={basePlan}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByText('Launch Plan'));
@@ -182,7 +196,7 @@ describe('PlanLaunchButton', () => {
         plan={basePlan}
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByText('Launch Plan'));
@@ -199,7 +213,7 @@ describe('PlanLaunchButton', () => {
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
         size="lg"
-      />,
+      />
     );
     // lg size shows phase/task info below the button
     expect(screen.getByText(/2/)).toBeInTheDocument();
@@ -212,7 +226,7 @@ describe('PlanLaunchButton', () => {
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
         size="lg"
-      />,
+      />
     );
     // Should show "1 phase" without trailing "s" and "1 task"
     expect(container.textContent).toContain('1 phase');
@@ -228,7 +242,7 @@ describe('PlanLaunchButton', () => {
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
         showPreflight={true}
-      />,
+      />
     );
     // Checks are shown as mini icons
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
@@ -241,7 +255,7 @@ describe('PlanLaunchButton', () => {
         repositoryId="repo-1"
         onLaunched={mockOnLaunched}
         showPreflight={false}
-      />,
+      />
     );
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
   });

@@ -9,7 +9,11 @@ async function emitTaskUpdateEvent(taskId: string) {
     where: eq(tasks.id, taskId),
   });
   if (task) {
-    taskEvents.emit('task:update', { sessionId: task.sessionId, taskId, status: 'rejected' });
+    taskEvents.emit('task:update', {
+      sessionId: task.sessionId,
+      taskId,
+      status: 'rejected',
+    });
   }
 }
 
@@ -22,7 +26,9 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const { reason } = body;
 
-    console.log(`[Reject API] Rejecting task: ${id}, reason: ${reason || 'No reason provided'}`);
+    console.log(
+      `[Reject API] Rejecting task: ${id}, reason: ${reason || 'No reason provided'}`
+    );
 
     const result = await rejectAndRevertTask(id, reason);
 
@@ -53,7 +59,9 @@ export async function POST(
   } catch (error) {
     console.error('[Reject API] Error:', error);
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to reject task' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to reject task',
+      },
       { status: 400 }
     );
   }

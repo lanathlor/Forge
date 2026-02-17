@@ -1,11 +1,22 @@
 import type { NextRequest } from 'next/server';
-import { getStuckDetector, stuckEvents, type StuckEvent, type StuckStatus } from '@/lib/stuck-detection';
+import {
+  getStuckDetector,
+  stuckEvents,
+  type StuckEvent,
+  type StuckStatus,
+} from '@/lib/stuck-detection';
 
 /**
  * Encode SSE message
  */
-function encodeSSE(encoder: TextEncoder, eventType: string, data: object): Uint8Array {
-  return encoder.encode(`event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`);
+function encodeSSE(
+  encoder: TextEncoder,
+  eventType: string,
+  data: object
+): Uint8Array {
+  return encoder.encode(
+    `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`
+  );
 }
 
 function createEventHandler(
@@ -22,10 +33,18 @@ function createEventHandler(
   };
 }
 
-function createStatusHandler(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+function createStatusHandler(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder
+) {
   return (status: StuckStatus) => {
     try {
-      controller.enqueue(encodeSSE(encoder, 'stuck_update', { status, timestamp: new Date().toISOString() }));
+      controller.enqueue(
+        encodeSSE(encoder, 'stuck_update', {
+          status,
+          timestamp: new Date().toISOString(),
+        })
+      );
     } catch {
       // Stream closed
     }
@@ -49,7 +68,12 @@ function setupIntervals(
   const statusInterval = setInterval(() => {
     try {
       const status = detector.getStatus();
-      controller.enqueue(encodeSSE(encoder, 'stuck_update', { status, timestamp: new Date().toISOString() }));
+      controller.enqueue(
+        encodeSSE(encoder, 'stuck_update', {
+          status,
+          timestamp: new Date().toISOString(),
+        })
+      );
     } catch {
       clearInterval(statusInterval);
     }
@@ -58,41 +82,60 @@ function setupIntervals(
   return { keepAliveInterval, statusInterval };
 }
 
+function subscribeStuckEvents(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder
+) {
+  const onStuckDetected = createEventHandler(controller, encoder, 'stuck_detected');
+  const onStuckResolved = createEventHandler(controller, encoder, 'stuck_resolved');
+  const onStuckEscalated = createEventHandler(controller, encoder, 'stuck_escalated');
+  const onStuckUpdate = createStatusHandler(controller, encoder);
+
+  stuckEvents.on('stuck:detected', onStuckDetected);
+  stuckEvents.on('stuck:resolved', onStuckResolved);
+  stuckEvents.on('stuck:escalated', onStuckEscalated);
+  stuckEvents.on('stuck:update', onStuckUpdate);
+
+  return () => {
+    stuckEvents.off('stuck:detected', onStuckDetected);
+    stuckEvents.off('stuck:resolved', onStuckResolved);
+    stuckEvents.off('stuck:escalated', onStuckEscalated);
+    stuckEvents.off('stuck:update', onStuckUpdate);
+  };
+}
+
+function createStuckDetectionStream(
+  encoder: TextEncoder,
+  detector: ReturnType<typeof getStuckDetector>,
+  signal: AbortSignal
+) {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(encodeSSE(encoder, 'connected', {
+        status: detector.getStatus(),
+        timestamp: new Date().toISOString(),
+      }));
+
+      const unsubscribe = subscribeStuckEvents(controller, encoder);
+      const { keepAliveInterval, statusInterval } = setupIntervals(controller, encoder, detector);
+
+      signal.addEventListener('abort', () => {
+        clearInterval(keepAliveInterval);
+        clearInterval(statusInterval);
+        unsubscribe();
+        try { controller.close(); } catch { /* Already closed */ }
+      });
+    },
+  });
+}
+
 /**
  * Server-Sent Events endpoint for real-time stuck detection updates
  */
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
   const detector = getStuckDetector();
-
-  const stream = new ReadableStream({
-    start(controller) {
-      const initialStatus = detector.getStatus();
-      controller.enqueue(encodeSSE(encoder, 'connected', { status: initialStatus, timestamp: new Date().toISOString() }));
-
-      const onStuckDetected = createEventHandler(controller, encoder, 'stuck_detected');
-      const onStuckResolved = createEventHandler(controller, encoder, 'stuck_resolved');
-      const onStuckEscalated = createEventHandler(controller, encoder, 'stuck_escalated');
-      const onStuckUpdate = createStatusHandler(controller, encoder);
-
-      stuckEvents.on('stuck:detected', onStuckDetected);
-      stuckEvents.on('stuck:resolved', onStuckResolved);
-      stuckEvents.on('stuck:escalated', onStuckEscalated);
-      stuckEvents.on('stuck:update', onStuckUpdate);
-
-      const { keepAliveInterval, statusInterval } = setupIntervals(controller, encoder, detector);
-
-      request.signal.addEventListener('abort', () => {
-        clearInterval(keepAliveInterval);
-        clearInterval(statusInterval);
-        stuckEvents.off('stuck:detected', onStuckDetected);
-        stuckEvents.off('stuck:resolved', onStuckResolved);
-        stuckEvents.off('stuck:escalated', onStuckEscalated);
-        stuckEvents.off('stuck:update', onStuckUpdate);
-        try { controller.close(); } catch { /* Already closed */ }
-      });
-    },
-  });
+  const stream = createStuckDetectionStream(encoder, detector, request.signal);
 
   return new Response(stream, {
     headers: {
@@ -134,9 +177,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('[stuck-detection-stream] POST error:', error);
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -73,6 +73,7 @@ src/
 ### Anti-Patterns (DO NOT DO THIS)
 
 ❌ **Wrong**:
+
 ```
 src/
 ├── components/        # All components mixed together
@@ -82,6 +83,7 @@ src/
 ```
 
 This creates:
+
 - Tight coupling between unrelated features
 - Merge conflicts
 - Hard to navigate
@@ -100,6 +102,7 @@ When adding a new feature:
 ## Technology Stack
 
 ### Frontend
+
 - **Next.js 15** (App Router)
 - **React 19**
 - **TypeScript** (strict mode)
@@ -107,14 +110,17 @@ When adding a new feature:
 - **shadcn/ui** (component library)
 
 ### State Management
+
 - **Redux Toolkit** (global state)
 - **RTK Query** (data fetching & caching)
 
 ### Database
+
 - **SQLite** (dev) / **PostgreSQL** (prod)
 - **Drizzle ORM** (type-safe queries)
 
 ### Deployment
+
 - **Docker** (containerization)
 - **Docker Compose** (local development)
 
@@ -172,10 +178,11 @@ All logic lives in the feature's `api/handlers.ts`.
 
 ```yaml
 volumes:
-  - /home/lanath/Work:/workspace  # NO :ro flag!
+  - /home/lanath/Work:/workspace # NO :ro flag!
 ```
 
 The app needs write access to:
+
 - Create commits
 - Revert changes
 - Update git state
@@ -245,10 +252,8 @@ export const repositoriesApi = api.injectEndpoints({
 });
 
 // Export hooks from the feature
-export const {
-  useGetRepositoriesQuery,
-  useRescanRepositoriesMutation,
-} = repositoriesApi;
+export const { useGetRepositoriesQuery, useRescanRepositoriesMutation } =
+  repositoriesApi;
 ```
 
 Import feature APIs in store to register them:
@@ -268,6 +273,7 @@ export const store = configureStore({
 ```
 
 **Benefits**:
+
 - Features are self-contained
 - Endpoints live with their feature
 - Easy to add/remove features
@@ -276,12 +282,14 @@ export const store = configureStore({
 ### Redux Slices Organization
 
 **Feature-specific slices** → `src/features/{feature}/store/`
+
 ```typescript
 // src/features/sessions/store/sessionSlice.ts
 export default sessionSlice.reducer;
 ```
 
 **Shared slices** → `src/shared/store/`
+
 ```typescript
 // src/shared/store/uiSlice.ts
 export default uiSlice.reducer;
@@ -313,11 +321,13 @@ export default uiSlice.reducer;
 ## Deployment
 
 ### Development
+
 ```bash
 docker compose up -d
 ```
 
 ### Production
+
 ```bash
 docker build --target runner -t autobot:prod .
 docker run -p 3000:3000 -v ./data:/app/data autobot:prod
@@ -332,10 +342,7 @@ try {
   // Operation
 } catch (error) {
   console.error('Context:', error);
-  return NextResponse.json(
-    { error: 'User-friendly message' },
-    { status: 500 }
-  );
+  return NextResponse.json({ error: 'User-friendly message' }, { status: 500 });
 }
 ```
 

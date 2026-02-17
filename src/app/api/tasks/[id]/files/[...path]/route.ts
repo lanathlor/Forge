@@ -16,7 +16,10 @@ async function getTaskWithRepository(id: string) {
   });
 }
 
-function validateTask(task: Awaited<ReturnType<typeof getTaskWithRepository>>, id: string) {
+function validateTask(
+  task: Awaited<ReturnType<typeof getTaskWithRepository>>,
+  id: string
+) {
   if (!task) {
     console.error(`[Files API] Task not found: ${id}`);
     return { error: 'Task not found', status: 404 };
@@ -36,24 +39,38 @@ export async function GET(
     const { id, path: pathParts } = await params;
     const filePath = pathParts.join('/');
 
-    console.log(`[Files API] Fetching file content for task ${id}, file: ${filePath}`);
+    console.log(
+      `[Files API] Fetching file content for task ${id}, file: ${filePath}`
+    );
 
     const task = await getTaskWithRepository(id);
     const validationError = validateTask(task, id);
     if (validationError) {
-      return Response.json({ error: validationError.error }, { status: validationError.status });
+      return Response.json(
+        { error: validationError.error },
+        { status: validationError.status }
+      );
     }
 
     const repoPath = task!.session.repository.path;
-    const content = await getFileContentBeforeAndAfter(repoPath, filePath, task!.startingCommit!);
+    const content = await getFileContentBeforeAndAfter(
+      repoPath,
+      filePath,
+      task!.startingCommit!
+    );
 
-    console.log(`[Files API] Successfully retrieved file content for ${filePath}`);
+    console.log(
+      `[Files API] Successfully retrieved file content for ${filePath}`
+    );
 
     return Response.json(content);
   } catch (error) {
     console.error('[Files API] Error fetching file content:', error);
     return Response.json(
-      { error: 'Failed to fetch file content', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch file content',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

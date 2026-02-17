@@ -31,9 +31,10 @@ export const PlanLaunchCard = React.memo(function PlanLaunchCard({
   onResume,
   onPause,
 }: PlanLaunchCardProps) {
-  const progress = plan.totalTasks > 0
-    ? Math.round((plan.completedTasks / plan.totalTasks) * 100)
-    : 0;
+  const progress =
+    plan.totalTasks > 0
+      ? Math.round((plan.completedTasks / plan.totalTasks) * 100)
+      : 0;
 
   const canLaunch = plan.status === 'ready' || plan.status === 'draft';
   const isActive = plan.status === 'running' || plan.status === 'paused';
@@ -43,32 +44,34 @@ export const PlanLaunchCard = React.memo(function PlanLaunchCard({
       className={cn(
         'group flex flex-col transition-all hover:shadow-md',
         canLaunch && 'hover:border-primary/40 hover:shadow-primary/5',
-        isActive && 'border-l-2 border-l-blue-500',
+        isActive && 'border-l-2 border-l-blue-500'
       )}
     >
       {/* Header */}
-      <div className="px-4 pt-3 pb-2">
+      <div className="px-4 pb-2 pt-3">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <h3 className="text-sm font-semibold truncate">{plan.title}</h3>
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="truncate text-sm font-semibold">{plan.title}</h3>
             <PlanStatusBadge status={plan.status} size="sm" />
           </div>
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
             onClick={() => onView(plan.id)}
           >
             <Eye className="h-3.5 w-3.5" />
           </Button>
         </div>
         {plan.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{plan.description}</p>
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+            {plan.description}
+          </p>
         )}
       </div>
 
       {/* Stats */}
-      <div className="px-4 py-1.5 flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex items-center gap-4 px-4 py-1.5 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Layers className="h-3 w-3" />
           {plan.totalPhases}
@@ -86,14 +89,17 @@ export const PlanLaunchCard = React.memo(function PlanLaunchCard({
       {/* Progress */}
       {plan.totalTasks > 0 && (
         <div className="px-4 py-1.5">
-          <div className="h-1 bg-secondary rounded-full overflow-hidden">
+          <div className="h-1 overflow-hidden rounded-full bg-secondary">
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                plan.status === 'failed' ? 'bg-red-500'
-                  : plan.status === 'completed' ? 'bg-emerald-500'
-                  : plan.status === 'running' ? 'bg-blue-500'
-                  : 'bg-primary',
+                plan.status === 'failed'
+                  ? 'bg-red-500'
+                  : plan.status === 'completed'
+                    ? 'bg-emerald-500'
+                    : plan.status === 'running'
+                      ? 'bg-blue-500'
+                      : 'bg-primary'
               )}
               style={{ width: `${progress}%` }}
             />
@@ -102,7 +108,7 @@ export const PlanLaunchCard = React.memo(function PlanLaunchCard({
       )}
 
       {/* Launch action */}
-      <div className="px-4 pb-3 pt-1 mt-auto">
+      <div className="mt-auto px-4 pb-3 pt-1">
         {canLaunch ? (
           <Button
             size="sm"

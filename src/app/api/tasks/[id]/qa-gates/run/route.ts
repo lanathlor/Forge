@@ -28,13 +28,13 @@ export async function POST(
     // Start the retry process in the background (don't await)
     // This allows the HTTP response to return immediately
     // Progress will be shown via task events
-    manualQARetry(id).catch(error => {
+    manualQARetry(id).catch((error) => {
       console.error(`[QA Retry] Error for task ${id}:`, error);
     });
 
     return NextResponse.json({
       success: true,
-      message: 'QA retry started in background'
+      message: 'QA retry started in background',
     });
   } catch (error) {
     const errorMessage =

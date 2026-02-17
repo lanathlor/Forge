@@ -1,11 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { format } from 'date-fns';
-import { Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 
 interface Task {
   id: string;
@@ -36,7 +47,7 @@ interface TaskTimelineProps {
  * Displays all tasks in a session with their current status
  * Mobile-responsive: Stacks vertically on small screens
  */
- 
+
 export function TaskTimeline({
   sessionId,
   selectedTaskId,
@@ -55,7 +66,11 @@ export function TaskTimeline({
   // Update task statuses based on SSE updates
   useEffect(() => {
     const latestUpdate = updates[updates.length - 1];
-    if (latestUpdate?.type === 'task_update' && latestUpdate.taskId && typeof latestUpdate.status === 'string') {
+    if (
+      latestUpdate?.type === 'task_update' &&
+      latestUpdate.taskId &&
+      typeof latestUpdate.status === 'string'
+    ) {
       setTasks((prev) =>
         prev.map((task) =>
           task.id === latestUpdate.taskId
@@ -92,7 +107,7 @@ export function TaskTimeline({
         return <XCircle className="h-4 w-4 text-red-600" />;
       case 'running':
       case 'qa_running':
-        return <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />;
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />;
       case 'waiting_approval':
         return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       default:
@@ -100,7 +115,9 @@ export function TaskTimeline({
     }
   };
 
-  const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  const getStatusVariant = (
+    status: string
+  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'completed':
         return 'default';
@@ -139,12 +156,10 @@ export function TaskTimeline({
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="flex h-full flex-col">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base sm:text-lg">
-            Task Timeline
-          </CardTitle>
+          <CardTitle className="text-base sm:text-lg">Task Timeline</CardTitle>
           <Button
             variant="ghost"
             size="sm"
@@ -155,34 +170,36 @@ export function TaskTimeline({
           </Button>
         </div>
         {session && (
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
             Session started {format(new Date(session.startedAt), 'PPp')}
           </p>
         )}
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-y-auto space-y-2 sm:space-y-3">
+      <CardContent className="flex-1 space-y-2 overflow-y-auto sm:space-y-3">
         {tasks.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             <p className="text-sm">No tasks yet</p>
-            <p className="text-xs mt-1">Submit a prompt to get started</p>
+            <p className="mt-1 text-xs">Submit a prompt to get started</p>
           </div>
         ) : (
           tasks.map((task) => (
             <button
               key={task.id}
               onClick={() => onSelectTask(task.id)}
-              className={`w-full text-left p-3 sm:p-4 rounded-lg border transition-all duration-200 ${
+              className={`w-full rounded-lg border p-3 text-left transition-all duration-200 sm:p-4 ${
                 selectedTaskId === task.id
                   ? 'border-primary bg-primary/5 shadow-sm'
                   : 'border-border hover:bg-muted/50'
               }`}
             >
               <div className="flex items-start gap-2 sm:gap-3">
-                <div className="mt-0.5 flex-shrink-0">{getStatusIcon(task.status)}</div>
+                <div className="mt-0.5 flex-shrink-0">
+                  {getStatusIcon(task.status)}
+                </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
                     <Badge
                       variant={getStatusVariant(task.status)}
                       className="text-xs"
@@ -194,12 +211,12 @@ export function TaskTimeline({
                     </span>
                   </div>
 
-                  <p className="text-sm font-medium text-foreground break-words">
+                  <p className="break-words text-sm font-medium text-foreground">
                     {truncatePrompt(task.prompt)}
                   </p>
 
                   {task.completedAt && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Completed {format(new Date(task.completedAt), 'HH:mm:ss')}
                     </p>
                   )}

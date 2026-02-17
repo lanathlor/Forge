@@ -7,6 +7,7 @@ A visual code comparison tool that shows exactly what Claude changed, with synta
 ## User Problem
 
 **Without this feature**:
+
 - Run `git diff` manually in terminal
 - Hard to review multiple file changes
 - No syntax highlighting
@@ -14,6 +15,7 @@ A visual code comparison tool that shows exactly what Claude changed, with synta
 - Missing context of surrounding code
 
 **With this feature**:
+
 - Visual side-by-side comparison
 - Syntax-highlighted code
 - File tree with change indicators
@@ -23,6 +25,7 @@ A visual code comparison tool that shows exactly what Claude changed, with synta
 ## User Stories
 
 ### Story 1: Visual Diff Review
+
 ```
 AS A developer
 I WANT to see before/after code side-by-side
@@ -30,6 +33,7 @@ SO THAT I can quickly understand what changed
 ```
 
 ### Story 2: Multi-file Navigation
+
 ```
 AS A developer
 I WANT to navigate between changed files easily
@@ -37,6 +41,7 @@ SO THAT I can review all changes efficiently
 ```
 
 ### Story 3: Context Understanding
+
 ```
 AS A developer
 I WANT to see surrounding code context
@@ -198,7 +203,7 @@ export interface FileChange {
   additions: number;
   deletions: number;
   oldPath?: string; // For renamed files
-  patch: string;    // Individual file diff
+  patch: string; // Individual file diff
 }
 
 export interface DiffStats {
@@ -212,10 +217,9 @@ export async function captureDiff(
   fromCommit: string
 ): Promise<DiffResult> {
   // Get full diff
-  const { stdout: fullDiff } = await execAsync(
-    `git diff ${fromCommit} HEAD`,
-    { cwd: repoPath }
-  );
+  const { stdout: fullDiff } = await execAsync(`git diff ${fromCommit} HEAD`, {
+    cwd: repoPath,
+  });
 
   // Get file stats
   const { stdout: statOutput } = await execAsync(
@@ -330,10 +334,9 @@ export async function getFileContent(
   commit: string = 'HEAD'
 ): Promise<string> {
   try {
-    const { stdout } = await execAsync(
-      `git show ${commit}:${filePath}`,
-      { cwd: repoPath }
-    );
+    const { stdout } = await execAsync(`git show ${commit}:${filePath}`, {
+      cwd: repoPath,
+    });
     return stdout;
   } catch (error) {
     // File might not exist at this commit (new file)
@@ -358,6 +361,7 @@ export async function getFileContentBeforeAndAfter(
 ### API Endpoints
 
 **GET /api/tasks/:id/diff**
+
 ```typescript
 import { db } from '@/lib/db';
 import { tasks } from '@/db/schema';
@@ -395,7 +399,8 @@ export async function GET(
   const diff = await captureDiff(repoPath, task.startingCommit!);
 
   // Cache in database
-  await db.update(tasks)
+  await db
+    .update(tasks)
     .set({
       diffContent: diff.fullDiff,
       filesChanged: JSON.stringify(diff.changedFiles),
@@ -407,6 +412,7 @@ export async function GET(
 ```
 
 **GET /api/tasks/:id/files/:path**
+
 ```typescript
 // Get before/after content for specific file
 
@@ -597,24 +603,31 @@ function getLanguageFromPath(path: string): string {
 ## Edge Cases
 
 ### Scenario: Binary File Changed
+
 **Handling**: Show "Binary file changed" message, no diff view
 
 ### Scenario: File Too Large (> 1MB)
+
 **Handling**: Show warning, offer "Download" instead of inline view
 
 ### Scenario: File Deleted
+
 **Handling**: Only show "before" content in Monaco
 
 ### Scenario: New File Added
+
 **Handling**: Only show "after" content in Monaco
 
 ### Scenario: File Renamed
+
 **Handling**: Show both paths, display diff if content also changed
 
 ### Scenario: No Changes (empty diff)
+
 **Handling**: Show "No changes detected" message
 
 ### Scenario: Merge Conflict Markers
+
 **Handling**: Highlight conflict markers in Monaco, warn user
 
 ## Acceptance Criteria
@@ -634,10 +647,12 @@ function getLanguageFromPath(path: string): string {
 ## Dependencies
 
 **Required for**:
+
 - Approval decision (need to see changes)
 - Understanding what Claude did
 
 **Depends on**:
+
 - Task execution completed
 - Git diff available
 - Starting commit recorded

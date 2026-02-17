@@ -2,7 +2,10 @@
 
 import * as React from 'react';
 import { cn } from '@/shared/lib/utils';
-import { StatCard, type StatCardProps } from '@/shared/components/ui/dashboard-cards';
+import {
+  StatCard,
+  type StatCardProps,
+} from '@/shared/components/ui/dashboard-cards';
 import { useCountUp, easings } from '@/shared/hooks/useCountUp';
 import { usePrefersReducedMotion } from '@/shared/hooks/usePrefersReducedMotion';
 import {
@@ -112,7 +115,7 @@ function AnimatedStatCard({
       className={cn(
         props.className,
         // Subtle fade-in effect on mount
-        !prefersReducedMotion && !loading && 'animate-in fade-in-0 duration-300'
+        !prefersReducedMotion && !loading && 'duration-300 animate-in fade-in-0'
       )}
     />
   );
@@ -273,7 +276,9 @@ export const MetricsGrid = React.memo(function MetricsGrid({
               animationDelay={index * staggerDelay}
               className={cn(
                 // Add subtle warning pulse animation when there are pending approvals
-                hasWarning && !loading && 'ring-2 ring-warning/50 ring-offset-2 ring-offset-background'
+                hasWarning &&
+                  !loading &&
+                  'ring-2 ring-warning/50 ring-offset-2 ring-offset-background'
               )}
               aria-label={`${card.label}: ${loading ? 'Loading' : card.formatValue ? card.formatValue(card.getValue(data)) : card.getValue(data)}`}
             />
@@ -306,9 +311,15 @@ export const CompactMetricsGrid = React.memo(function CompactMetricsGrid({
   className,
 }: CompactMetricsGridProps) {
   const data = React.useMemo(() => metrics ?? DEFAULT_METRICS, [metrics]);
-  const criticalCards = React.useMemo(() => METRIC_CARDS.filter((card) =>
-    ['tasks-completed', 'success-rate', 'pending-approvals'].includes(card.key)
-  ), []);
+  const criticalCards = React.useMemo(
+    () =>
+      METRIC_CARDS.filter((card) =>
+        ['tasks-completed', 'success-rate', 'pending-approvals'].includes(
+          card.key
+        )
+      ),
+    []
+  );
 
   return (
     <section aria-labelledby="compact-metrics-heading" className={className}>
@@ -333,9 +344,7 @@ export const CompactMetricsGrid = React.memo(function CompactMetricsGrid({
               size="sm"
               animationDuration={800}
               animationDelay={index * 75}
-              className={cn(
-                hasWarning && !loading && 'ring-2 ring-warning/50'
-              )}
+              className={cn(hasWarning && !loading && 'ring-2 ring-warning/50')}
             />
           );
         })}

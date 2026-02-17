@@ -23,6 +23,15 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
-  tagTypes: ['Repository', 'Session', 'Task', 'QAGate', 'Plan', 'Phase', 'PlanTask', 'Activity'],
+  tagTypes: [
+    'Repository',
+    'Session',
+    'Task',
+    'QAGate',
+    'Plan',
+    'Phase',
+    'PlanTask',
+    'Activity',
+  ],
   endpoints: () => ({}), // Empty - features will inject their endpoints
 });

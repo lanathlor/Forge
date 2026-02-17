@@ -178,13 +178,13 @@ function FolderNode({
     <div>
       <button
         onClick={() => onToggle(node.path)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted/50 rounded transition-colors"
+        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors hover:bg-muted/50"
         style={{ paddingLeft: `${paddingLeft}px` }}
       >
         <ChevronIcon isExpanded={isExpanded} />
         <FolderIcon isOpen={isExpanded} />
         <span className="truncate font-medium">{node.name}</span>
-        <span className="text-xs text-muted-foreground ml-auto">
+        <span className="ml-auto text-xs text-muted-foreground">
           {node.children.length}
         </span>
       </button>
@@ -226,26 +226,53 @@ function getStuckIconClassName(severity: string | undefined): string {
   return 'text-red-400';
 }
 
-function RepositoryNodeIcon({ isStuck, severity }: { isStuck: boolean; severity?: string }) {
+function RepositoryNodeIcon({
+  isStuck,
+  severity,
+}: {
+  isStuck: boolean;
+  severity?: string;
+}) {
   if (isStuck) {
-    return <AlertTriangle className={cn('h-4 w-4 shrink-0', getStuckIconClassName(severity))} />;
+    return (
+      <AlertTriangle
+        className={cn('h-4 w-4 shrink-0', getStuckIconClassName(severity))}
+      />
+    );
   }
   return <GitBranch className="h-4 w-4 shrink-0" />;
 }
 
-function getRepoNodeClasses(isSelected: boolean, isStuck: boolean, severity?: string): string {
-  const baseClass = 'w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded transition-colors';
+function getRepoNodeClasses(
+  isSelected: boolean,
+  isStuck: boolean,
+  severity?: string
+): string {
+  const baseClass =
+    'w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded transition-colors';
 
   if (isStuck) {
-    return cn(baseClass, 'border-l-2 animate-pulse', getStuckNodeClassName(severity));
+    return cn(
+      baseClass,
+      'border-l-2 animate-pulse',
+      getStuckNodeClassName(severity)
+    );
   }
   if (isSelected) {
-    return cn(baseClass, 'bg-primary/10 text-primary border-l-2 border-primary');
+    return cn(
+      baseClass,
+      'bg-primary/10 text-primary border-l-2 border-primary'
+    );
   }
   return cn(baseClass, 'hover:bg-muted/50');
 }
 
-function RepositoryNode({ node, level, isSelected, onSelect }: RepositoryNodeProps) {
+function RepositoryNode({
+  node,
+  level,
+  isSelected,
+  onSelect,
+}: RepositoryNodeProps) {
   const paddingLeft = level * 16 + 32;
   const repo = node.repository!;
   const { getAlertForRepo } = useStuckDetection();
@@ -259,7 +286,7 @@ function RepositoryNode({ node, level, isSelected, onSelect }: RepositoryNodePro
       style={{ paddingLeft: `${paddingLeft}px` }}
     >
       <RepositoryNodeIcon isStuck={isStuck} severity={stuckAlert?.severity} />
-      <span className="truncate flex-1 text-left">{node.name}</span>
+      <span className="flex-1 truncate text-left">{node.name}</span>
       {isStuck && stuckAlert ? (
         <StuckBadge severity={stuckAlert.severity} />
       ) : (
@@ -281,7 +308,7 @@ function StuckBadge({ severity }: StuckBadgeProps) {
     <Badge
       variant="destructive"
       className={cn(
-        'text-xs shrink-0',
+        'shrink-0 text-xs',
         isCritical && 'animate-pulse bg-red-600',
         isHigh && 'bg-orange-500'
       )}
@@ -297,9 +324,9 @@ interface ChevronIconProps {
 
 function ChevronIcon({ isExpanded }: ChevronIconProps) {
   return isExpanded ? (
-    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
   ) : (
-    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
   );
 }
 
@@ -309,9 +336,9 @@ interface FolderIconProps {
 
 function FolderIcon({ isOpen }: FolderIconProps) {
   return isOpen ? (
-    <FolderOpen className="h-4 w-4 text-blue-500 shrink-0" />
+    <FolderOpen className="h-4 w-4 shrink-0 text-blue-500" />
   ) : (
-    <Folder className="h-4 w-4 text-blue-500 shrink-0" />
+    <Folder className="h-4 w-4 shrink-0 text-blue-500" />
   );
 }
 
@@ -323,7 +350,7 @@ function RepositoryStatusBadge({ isClean }: RepositoryStatusBadgeProps) {
   return (
     <Badge
       variant={isClean ? 'default' : 'secondary'}
-      className="text-xs shrink-0"
+      className="shrink-0 text-xs"
     >
       {isClean ? '✓' : '•'}
     </Badge>

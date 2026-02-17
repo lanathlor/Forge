@@ -45,11 +45,26 @@ describe('git/commit', () => {
   describe('generateBasicCommitMessage', () => {
     it('should generate a basic commit message with file stats', () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/index.ts', status: 'modified', additions: 10, deletions: 5, patch: '' },
-        { path: 'src/utils.ts', status: 'added', additions: 20, deletions: 0, patch: '' },
+        {
+          path: 'src/index.ts',
+          status: 'modified',
+          additions: 10,
+          deletions: 5,
+          patch: '',
+        },
+        {
+          path: 'src/utils.ts',
+          status: 'added',
+          additions: 20,
+          deletions: 0,
+          patch: '',
+        },
       ];
 
-      const message = commitModule.generateBasicCommitMessage('Add new feature', filesChanged);
+      const message = commitModule.generateBasicCommitMessage(
+        'Add new feature',
+        filesChanged
+      );
 
       expect(message).toContain('Add new feature');
       expect(message).toContain('2 files changed');
@@ -59,32 +74,62 @@ describe('git/commit', () => {
     });
 
     it('should truncate long task prompts', () => {
-      const longPrompt = 'This is a very long task prompt that exceeds the 50 character limit';
+      const longPrompt =
+        'This is a very long task prompt that exceeds the 50 character limit';
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          patch: '',
+        },
       ];
 
-      const message = commitModule.generateBasicCommitMessage(longPrompt, filesChanged);
+      const message = commitModule.generateBasicCommitMessage(
+        longPrompt,
+        filesChanged
+      );
 
-      expect(message.split('\n')[0]).toBe('This is a very long task prompt that exceeds the 5...');
+      expect(message.split('\n')[0]).toBe(
+        'This is a very long task prompt that exceeds the 5...'
+      );
     });
 
     it('should handle single file correctly', () => {
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
       ];
 
-      const message = commitModule.generateBasicCommitMessage('Fix bug', filesChanged);
+      const message = commitModule.generateBasicCommitMessage(
+        'Fix bug',
+        filesChanged
+      );
 
       expect(message).toContain('1 file changed');
     });
 
     it('should handle deleted files', () => {
       const filesChanged: FileChange[] = [
-        { path: 'old-file.ts', status: 'deleted', additions: 0, deletions: 50, patch: '' },
+        {
+          path: 'old-file.ts',
+          status: 'deleted',
+          additions: 0,
+          deletions: 50,
+          patch: '',
+        },
       ];
 
-      const message = commitModule.generateBasicCommitMessage('Remove unused file', filesChanged);
+      const message = commitModule.generateBasicCommitMessage(
+        'Remove unused file',
+        filesChanged
+      );
 
       expect(message).toContain('- old-file.ts (deleted)');
       expect(message).toContain('+0 insertions, -50 deletions');
@@ -92,10 +137,20 @@ describe('git/commit', () => {
 
     it('should handle renamed files', () => {
       const filesChanged: FileChange[] = [
-        { path: 'new-name.ts', status: 'renamed', additions: 2, deletions: 2, oldPath: 'old-name.ts', patch: '' },
+        {
+          path: 'new-name.ts',
+          status: 'renamed',
+          additions: 2,
+          deletions: 2,
+          oldPath: 'old-name.ts',
+          patch: '',
+        },
       ];
 
-      const message = commitModule.generateBasicCommitMessage('Rename file', filesChanged);
+      const message = commitModule.generateBasicCommitMessage(
+        'Rename file',
+        filesChanged
+      );
 
       expect(message).toContain('- new-name.ts (renamed)');
     });
@@ -103,7 +158,10 @@ describe('git/commit', () => {
     it('should handle empty files changed array', () => {
       const filesChanged: FileChange[] = [];
 
-      const message = commitModule.generateBasicCommitMessage('Empty commit', filesChanged);
+      const message = commitModule.generateBasicCommitMessage(
+        'Empty commit',
+        filesChanged
+      );
 
       expect(message).toContain('0 files changed');
       expect(message).toContain('+0 insertions, -0 deletions');
@@ -113,18 +171,37 @@ describe('git/commit', () => {
   describe('commitTaskChanges', () => {
     it('should stage and commit files successfully', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/index.ts', status: 'modified', additions: 10, deletions: 5, patch: '' },
-        { path: 'src/new.ts', status: 'added', additions: 20, deletions: 0, patch: '' },
+        {
+          path: 'src/index.ts',
+          status: 'modified',
+          additions: 10,
+          deletions: 5,
+          patch: '',
+        },
+        {
+          path: 'src/new.ts',
+          status: 'added',
+          additions: 20,
+          deletions: 0,
+          patch: '',
+        },
       ];
 
       mockExecAsync
-        .mockResolvedValueOnce({ stdout: 'M  src/index.ts\n?? src/new.ts\n', stderr: '' }) // git status --porcelain (has changes)
+        .mockResolvedValueOnce({
+          stdout: 'M  src/index.ts\n?? src/new.ts\n',
+          stderr: '',
+        }) // git status --porcelain (has changes)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add for first file
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add for second file
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'abc123def456\n', stderr: '' }); // git rev-parse HEAD
 
-      const result = await commitModule.commitTaskChanges('/repo', filesChanged, 'Test commit message');
+      const result = await commitModule.commitTaskChanges(
+        '/repo',
+        filesChanged,
+        'Test commit message'
+      );
 
       expect(result.sha).toBe('abc123def456');
       expect(result.message).toBe('Test commit message');
@@ -134,7 +211,13 @@ describe('git/commit', () => {
 
     it('should use git rm for deleted files', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'deleted-file.ts', status: 'deleted', additions: 0, deletions: 50, patch: '' },
+        {
+          path: 'deleted-file.ts',
+          status: 'deleted',
+          additions: 0,
+          deletions: 50,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -143,17 +226,27 @@ describe('git/commit', () => {
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha123\n', stderr: '' }); // git rev-parse HEAD
 
-      await commitModule.commitTaskChanges('/repo', filesChanged, 'Delete file');
-
-      expect(mockExecAsync).toHaveBeenCalledWith(
-        'git rm "deleted-file.ts"',
-        { cwd: '/repo', timeout: 10000 }
+      await commitModule.commitTaskChanges(
+        '/repo',
+        filesChanged,
+        'Delete file'
       );
+
+      expect(mockExecAsync).toHaveBeenCalledWith('git rm "deleted-file.ts"', {
+        cwd: '/repo',
+        timeout: 10000,
+      });
     });
 
     it('should use git add for modified files', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'modified-file.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
+        {
+          path: 'modified-file.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -162,30 +255,47 @@ describe('git/commit', () => {
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha456\n', stderr: '' }); // git rev-parse HEAD
 
-      await commitModule.commitTaskChanges('/repo', filesChanged, 'Modify file');
-
-      expect(mockExecAsync).toHaveBeenCalledWith(
-        'git add "modified-file.ts"',
-        { cwd: '/repo', timeout: 10000 }
+      await commitModule.commitTaskChanges(
+        '/repo',
+        filesChanged,
+        'Modify file'
       );
+
+      expect(mockExecAsync).toHaveBeenCalledWith('git add "modified-file.ts"', {
+        cwd: '/repo',
+        timeout: 10000,
+      });
     });
 
     it('should throw error when staging fails', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
       ];
 
       mockExecAsync
         .mockResolvedValueOnce({ stdout: 'M  file.ts\n', stderr: '' }) // git status --porcelain (has changes)
         .mockRejectedValueOnce(new Error('Failed to stage file')); // git add fails
 
-      await expect(commitModule.commitTaskChanges('/repo', filesChanged, 'Test'))
-        .rejects.toThrow('Failed to commit changes: Failed to stage file');
+      await expect(
+        commitModule.commitTaskChanges('/repo', filesChanged, 'Test')
+      ).rejects.toThrow('Failed to commit changes: Failed to stage file');
     });
 
     it('should throw error when commit fails', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -193,13 +303,20 @@ describe('git/commit', () => {
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add
         .mockRejectedValueOnce(new Error('Nothing to commit')); // git commit fails
 
-      await expect(commitModule.commitTaskChanges('/repo', filesChanged, 'Test'))
-        .rejects.toThrow('Failed to commit changes: Nothing to commit');
+      await expect(
+        commitModule.commitTaskChanges('/repo', filesChanged, 'Test')
+      ).rejects.toThrow('Failed to commit changes: Nothing to commit');
     });
 
     it('should escape single quotes in commit message', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -208,7 +325,11 @@ describe('git/commit', () => {
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
         .mockResolvedValueOnce({ stdout: 'sha789\n', stderr: '' }); // git rev-parse HEAD
 
-      await commitModule.commitTaskChanges('/repo', filesChanged, "Fix user's profile bug");
+      await commitModule.commitTaskChanges(
+        '/repo',
+        filesChanged,
+        "Fix user's profile bug"
+      );
 
       // Check that the commit command was called with escaped message (call index 2 after status and add)
       const commitCall = mockExecAsync.mock.calls[2];
@@ -219,7 +340,13 @@ describe('git/commit', () => {
       mockGetContainerPath.mockReturnValueOnce('/container/path');
 
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -232,10 +359,10 @@ describe('git/commit', () => {
 
       expect(mockGetContainerPath).toHaveBeenCalledWith('/host/path');
       // Verify container path is used - the second call (git add) uses the container path with timeout 10000
-      expect(mockExecAsync).toHaveBeenCalledWith(
-        'git add "file.ts"',
-        { cwd: '/container/path', timeout: 10000 }
-      );
+      expect(mockExecAsync).toHaveBeenCalledWith('git add "file.ts"', {
+        cwd: '/container/path',
+        timeout: 10000,
+      });
     });
   });
 
@@ -245,7 +372,13 @@ describe('git/commit', () => {
       prompt: 'Fix authentication bug',
       status: 'waiting_approval',
       filesChanged: [
-        { path: 'src/auth.ts', status: 'modified', additions: 15, deletions: 5, patch: '' },
+        {
+          path: 'src/auth.ts',
+          status: 'modified',
+          additions: 15,
+          deletions: 5,
+          patch: '',
+        },
       ],
       startingCommit: 'abc123',
       session: {
@@ -273,8 +406,9 @@ describe('git/commit', () => {
     it('should throw error when task not found', async () => {
       mockDb.query.tasks.findFirst.mockResolvedValueOnce(null);
 
-      await expect(commitModule.approveAndCommitTask('nonexistent'))
-        .rejects.toThrow('Task not found');
+      await expect(
+        commitModule.approveAndCommitTask('nonexistent')
+      ).rejects.toThrow('Task not found');
     });
 
     it('should throw error when task status is not waiting_approval', async () => {
@@ -283,8 +417,9 @@ describe('git/commit', () => {
         status: 'running',
       });
 
-      await expect(commitModule.approveAndCommitTask('task-123'))
-        .rejects.toThrow('Task status is running, expected waiting_approval');
+      await expect(
+        commitModule.approveAndCommitTask('task-123')
+      ).rejects.toThrow('Task status is running, expected waiting_approval');
     });
 
     it('should throw error when no files changed', async () => {
@@ -293,8 +428,9 @@ describe('git/commit', () => {
         filesChanged: [],
       });
 
-      await expect(commitModule.approveAndCommitTask('task-123'))
-        .rejects.toThrow('No files changed to commit');
+      await expect(
+        commitModule.approveAndCommitTask('task-123')
+      ).rejects.toThrow('No files changed to commit');
     });
 
     it('should throw error when filesChanged is null', async () => {
@@ -303,8 +439,9 @@ describe('git/commit', () => {
         filesChanged: null,
       });
 
-      await expect(commitModule.approveAndCommitTask('task-123'))
-        .rejects.toThrow('No files changed to commit');
+      await expect(
+        commitModule.approveAndCommitTask('task-123')
+      ).rejects.toThrow('No files changed to commit');
     });
   });
 });

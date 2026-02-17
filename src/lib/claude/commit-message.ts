@@ -1,5 +1,5 @@
 import type { FileChange } from '@/db/schema/tasks';
-import { claudeWrapper } from './wrapper';
+import { createAIProvider } from '@/lib/ai';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 const COMMIT_MESSAGE_GENERATION_TIMEOUT = 120000; // 2 minutes
@@ -15,10 +15,11 @@ const PREAMBLE_PATTERNS = [
   /^Looking at (?:the|these) changes/i,
 ];
 
-const CONVENTIONAL_COMMIT_REGEX = /^(feat|fix|refactor|docs|test|chore|style|perf|ci|build)(\(.+?\))?:/i;
+const CONVENTIONAL_COMMIT_REGEX =
+  /^(feat|fix|refactor|docs|test|chore|style|perf|ci|build)(\(.+?\))?:/i;
 
 function isPreambleLine(line: string): boolean {
-  return PREAMBLE_PATTERNS.some(pattern => pattern.test(line));
+  return PREAMBLE_PATTERNS.some((pattern) => pattern.test(line));
 }
 
 /**
@@ -45,9 +46,26 @@ function extractCommitMessage(rawOutput: string): string {
 
   const commitMessage = lines.slice(startIndex).join('\n').trim();
   if (!commitMessage) {
-    console.warn('[extractCommitMessage] Failed to extract commit message, using raw output');
+    console.warn(
+      '[extractCommitMessage] Failed to extract commit message, using raw output'
+    );
     return rawOutput.trim();
   }
+  return commitMessage;
+}
+
+async function invokeClaudeForCommitMessage(
+  prompt: string,
+  workingDirectory: string
+): Promise<string> {
+  const aiProvider = createAIProvider();
+  const rawOutput = await aiProvider.executeOneShot(prompt, workingDirectory, COMMIT_MESSAGE_GENERATION_TIMEOUT);
+  console.log('[generateCommitMessage] Raw output from Claude:');
+  console.log('[generateCommitMessage]', rawOutput.substring(0, 200));
+  const commitMessage = extractCommitMessage(rawOutput);
+  console.log('[generateCommitMessage] Successfully generated commit message');
+  console.log('[generateCommitMessage] Message length:', commitMessage.length);
+  console.log('[generateCommitMessage] First line:', commitMessage.split('\n')[0]);
   return commitMessage;
 }
 
@@ -60,34 +78,14 @@ export async function generateCommitMessage(
   diffContent: string,
   repoPath: string
 ): Promise<string> {
-  // Convert to container path if running in Docker
   const workingDirectory = getContainerPath(repoPath);
-
-  // Construct the prompt for Claude
   const prompt = constructCommitMessagePrompt(taskPrompt, filesChanged, diffContent);
-
   console.log('[generateCommitMessage] Calling Claude Code CLI via wrapper...');
   console.log('[generateCommitMessage] Host path:', repoPath);
   console.log('[generateCommitMessage] Working directory:', workingDirectory);
 
   try {
-    const rawOutput = await claudeWrapper.executeOneShot(
-      prompt,
-      workingDirectory,
-      COMMIT_MESSAGE_GENERATION_TIMEOUT
-    );
-
-    console.log('[generateCommitMessage] Raw output from Claude:');
-    console.log('[generateCommitMessage]', rawOutput.substring(0, 200));
-
-    // Extract the actual commit message, removing Claude's preamble
-    const commitMessage = extractCommitMessage(rawOutput);
-
-    console.log('[generateCommitMessage] Successfully generated commit message');
-    console.log('[generateCommitMessage] Message length:', commitMessage.length);
-    console.log('[generateCommitMessage] First line:', commitMessage.split('\n')[0]);
-
-    return commitMessage;
+    return await invokeClaudeForCommitMessage(prompt, workingDirectory);
   } catch (error) {
     console.error('[generateCommitMessage] Error:', error);
     throw new Error(

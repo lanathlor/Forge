@@ -22,7 +22,10 @@ async function fetchRepository(id: string) {
 
 function handleError(error: unknown, startTime: number, repoId?: string) {
   const duration = Date.now() - startTime;
-  console.error(`[QA Gates API] Error after ${duration}ms for repository ${repoId}:`, error);
+  console.error(
+    `[QA Gates API] Error after ${duration}ms for repository ${repoId}:`,
+    error
+  );
 
   if (error instanceof Error && error.message === 'Database query timeout') {
     return NextResponse.json(

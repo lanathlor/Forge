@@ -21,7 +21,8 @@ const globalForStuckDetection = global as typeof globalThis & {
 /**
  * Event emitter for stuck detection events
  */
-export const stuckEvents = globalForStuckDetection.stuckEvents ?? new EventEmitter();
+export const stuckEvents =
+  globalForStuckDetection.stuckEvents ?? new EventEmitter();
 
 if (!globalForStuckDetection.stuckEvents) {
   globalForStuckDetection.stuckEvents = stuckEvents;
@@ -121,7 +122,10 @@ export class StuckDetector {
   /**
    * Create a new tracker with default values
    */
-  private createTracker(update: RepoStateUpdate, now: number): RepoStuckTracker {
+  private createTracker(
+    update: RepoStateUpdate,
+    now: number
+  ): RepoStuckTracker {
     return {
       repositoryId: update.repositoryId,
       repositoryName: update.repositoryName,
@@ -141,7 +145,11 @@ export class StuckDetector {
   /**
    * Handle status transition for a tracker
    */
-  private handleStatusTransition(tracker: RepoStuckTracker, status: string | null, now: number): void {
+  private handleStatusTransition(
+    tracker: RepoStuckTracker,
+    status: string | null,
+    now: number
+  ): void {
     tracker.statusHistory.push({ status: status || 'idle', timestamp: now });
     if (tracker.statusHistory.length > 10) tracker.statusHistory.shift();
 
@@ -162,7 +170,11 @@ export class StuckDetector {
    * Update or create a repository tracker with new state
    */
   updateRepoState(update: RepoStateUpdate): void {
-    if (!this.config.enabled || this.config.excludedRepoIds.includes(update.repositoryId)) return;
+    if (
+      !this.config.enabled ||
+      this.config.excludedRepoIds.includes(update.repositoryId)
+    )
+      return;
 
     const now = Date.now();
     let tracker = this.trackers.get(update.repositoryId);
@@ -178,7 +190,8 @@ export class StuckDetector {
     tracker.blockedQAGate = update.blockedQAGate ?? null;
 
     if (update.hasOutput) tracker.lastOutputTimestamp = now;
-    if (update.status !== tracker.currentStatus) this.handleStatusTransition(tracker, update.status, now);
+    if (update.status !== tracker.currentStatus)
+      this.handleStatusTransition(tracker, update.status, now);
   }
 
   /**
@@ -198,14 +211,20 @@ export class StuckDetector {
   /**
    * Process a single tracker for stuck condition
    */
-  private processTracker(repoId: string, tracker: RepoStuckTracker, now: number): void {
+  private processTracker(
+    repoId: string,
+    tracker: RepoStuckTracker,
+    now: number
+  ): void {
     const wasStuck = tracker.isStuck;
     const previousReason = tracker.stuckReason;
     const stuckReason = this.detectStuckCondition(tracker, now);
 
     if (stuckReason && !wasStuck) this.markAsStuck(tracker, stuckReason, now);
-    else if (stuckReason && wasStuck && stuckReason !== previousReason) { this.resolveStuck(repoId); this.markAsStuck(tracker, stuckReason, now); }
-    else if (!stuckReason && wasStuck) this.resolveStuck(repoId);
+    else if (stuckReason && wasStuck && stuckReason !== previousReason) {
+      this.resolveStuck(repoId);
+      this.markAsStuck(tracker, stuckReason, now);
+    } else if (!stuckReason && wasStuck) this.resolveStuck(repoId);
     else if (stuckReason && wasStuck) this.updateStuckDuration(tracker, now);
   }
 
@@ -215,36 +234,78 @@ export class StuckDetector {
   private checkAllTrackers(): void {
     if (!this.config.enabled) return;
     const now = Date.now();
-    for (const [repoId, tracker] of this.trackers) this.processTracker(repoId, tracker, now);
+    for (const [repoId, tracker] of this.trackers)
+      this.processTracker(repoId, tracker, now);
   }
 
   /**
    * Check if time since last output exceeds threshold
    */
-  private isOutputStale(tracker: RepoStuckTracker, now: number, thresholdSeconds: number): boolean {
+  private isOutputStale(
+    tracker: RepoStuckTracker,
+    now: number,
+    thresholdSeconds: number
+  ): boolean {
     const threshold = this.getEffectiveThreshold(thresholdSeconds) * 1000;
-    return (now - tracker.lastOutputTimestamp) > threshold;
+    return now - tracker.lastOutputTimestamp > threshold;
   }
 
   /**
    * Check for status-based stuck conditions
    */
-  private detectStatusBasedCondition(tracker: RepoStuckTracker, now: number): StuckReason | null {
+  private detectStatusBasedCondition(
+    tracker: RepoStuckTracker,
+    now: number
+  ): StuckReason | null {
     const status = tracker.currentStatus;
     if (!status) return null;
-    if (WAITING_STATUSES.includes(status) && this.isOutputStale(tracker, now, this.config.waitingInputThresholdSeconds)) return 'waiting_input';
-    if (THINKING_STATUSES.includes(status) && this.isOutputStale(tracker, now, this.config.noOutputThresholdSeconds)) return 'no_output';
+    if (
+      WAITING_STATUSES.includes(status) &&
+      this.isOutputStale(tracker, now, this.config.waitingInputThresholdSeconds)
+    )
+      return 'waiting_input';
+    if (
+      THINKING_STATUSES.includes(status) &&
+      this.isOutputStale(tracker, now, this.config.noOutputThresholdSeconds)
+    )
+      return 'no_output';
     return null;
   }
 
   /**
    * Detect if a tracker is in a stuck condition
    */
-  private detectStuckCondition(tracker: RepoStuckTracker, now: number): StuckReason | null {
+  private detectStuckCondition(
+    tracker: RepoStuckTracker,
+    now: number
+  ): StuckReason | null {
     if (!tracker.sessionId) return null;
-    if (tracker.consecutiveFailures >= this.config.repeatedFailureCount) return 'repeated_failures';
-    if (tracker.blockedQAGate || tracker.currentStatus === 'qa_failed') return 'qa_gate_blocked';
+    if (tracker.consecutiveFailures >= this.config.repeatedFailureCount)
+      return 'repeated_failures';
+    if (tracker.blockedQAGate || tracker.currentStatus === 'qa_failed')
+      return 'qa_gate_blocked';
     return this.detectStatusBasedCondition(tracker, now);
+  }
+
+  private buildStuckAlert(tracker: RepoStuckTracker, reason: StuckReason, now: number): StuckAlert {
+    const durationSeconds = 0;
+    return {
+      id: generateAlertId(),
+      repositoryId: tracker.repositoryId,
+      repositoryName: tracker.repositoryName,
+      sessionId: tracker.sessionId,
+      taskId: tracker.taskId,
+      reason,
+      description: this.getReasonDescription(reason, tracker),
+      severity: getAlertSeverity(reason, durationSeconds),
+      detectedAt: new Date(now).toISOString(),
+      stuckDurationSeconds: durationSeconds,
+      lastOutputAt: new Date(tracker.lastOutputTimestamp).toISOString(),
+      failureCount: reason === 'repeated_failures' ? tracker.consecutiveFailures : undefined,
+      blockedGateName: reason === 'qa_gate_blocked' ? (tracker.blockedQAGate ?? undefined) : undefined,
+      acknowledged: false,
+      suggestedAction: getSuggestedAction(reason),
+    };
   }
 
   /**
@@ -255,38 +316,12 @@ export class StuckDetector {
     tracker.stuckReason = reason;
     tracker.stuckSince = now;
 
-    const durationSeconds = 0;
-    const severity = getAlertSeverity(reason, durationSeconds);
-
-    const alert: StuckAlert = {
-      id: generateAlertId(),
-      repositoryId: tracker.repositoryId,
-      repositoryName: tracker.repositoryName,
-      sessionId: tracker.sessionId,
-      taskId: tracker.taskId,
-      reason,
-      description: this.getReasonDescription(reason, tracker),
-      severity,
-      detectedAt: new Date(now).toISOString(),
-      stuckDurationSeconds: durationSeconds,
-      lastOutputAt: new Date(tracker.lastOutputTimestamp).toISOString(),
-      failureCount: reason === 'repeated_failures' ? tracker.consecutiveFailures : undefined,
-      blockedGateName: reason === 'qa_gate_blocked' ? tracker.blockedQAGate ?? undefined : undefined,
-      acknowledged: false,
-      suggestedAction: getSuggestedAction(reason),
-    };
-
+    const alert = this.buildStuckAlert(tracker, reason, now);
     this.alerts.set(tracker.repositoryId, alert);
 
-    // Emit event
-    const event: StuckEvent = {
-      type: 'stuck_detected',
-      alert,
-      timestamp: new Date().toISOString(),
-    };
+    const event: StuckEvent = { type: 'stuck_detected', alert, timestamp: new Date().toISOString() };
     stuckEvents.emit('stuck:detected', event);
     stuckEvents.emit('stuck:update', this.getStatus());
-
     console.log(`[StuckDetector] Stuck detected: ${tracker.repositoryName} - ${reason}`);
   }
 
@@ -345,14 +380,19 @@ export class StuckDetector {
       stuckEvents.emit('stuck:escalated', event);
       stuckEvents.emit('stuck:update', this.getStatus());
 
-      console.log(`[StuckDetector] Stuck escalated: ${tracker.repositoryName} - ${previousSeverity} -> ${newSeverity}`);
+      console.log(
+        `[StuckDetector] Stuck escalated: ${tracker.repositoryName} - ${previousSeverity} -> ${newSeverity}`
+      );
     }
   }
 
   /**
    * Get human-readable description for stuck reason
    */
-  private getReasonDescription(reason: StuckReason, tracker: RepoStuckTracker): string {
+  private getReasonDescription(
+    reason: StuckReason,
+    tracker: RepoStuckTracker
+  ): string {
     switch (reason) {
       case 'no_output':
         return 'No output received for an extended period';
@@ -394,16 +434,23 @@ export class StuckDetector {
     const severityOrder = ['low', 'medium', 'high', 'critical'] as const;
 
     for (const alert of alerts) {
-      if (!highestSeverity || severityOrder.indexOf(alert.severity) > severityOrder.indexOf(highestSeverity)) {
+      if (
+        !highestSeverity ||
+        severityOrder.indexOf(alert.severity) >
+          severityOrder.indexOf(highestSeverity)
+      ) {
         highestSeverity = alert.severity;
       }
     }
 
     return {
       totalStuckCount: alerts.length,
-      waitingInputCount: alerts.filter(a => a.reason === 'waiting_input').length,
-      failedCount: alerts.filter(a => a.reason === 'repeated_failures').length,
-      qaBlockedCount: alerts.filter(a => a.reason === 'qa_gate_blocked').length,
+      waitingInputCount: alerts.filter((a) => a.reason === 'waiting_input')
+        .length,
+      failedCount: alerts.filter((a) => a.reason === 'repeated_failures')
+        .length,
+      qaBlockedCount: alerts.filter((a) => a.reason === 'qa_gate_blocked')
+        .length,
       alerts,
       highestSeverity,
       lastUpdated: new Date().toISOString(),
@@ -430,7 +477,9 @@ export class StuckDetector {
 /**
  * Get or create the singleton stuck detector instance
  */
-export function getStuckDetector(config?: Partial<StuckDetectionConfig>): StuckDetector {
+export function getStuckDetector(
+  config?: Partial<StuckDetectionConfig>
+): StuckDetector {
   if (!globalForStuckDetection.stuckDetector) {
     globalForStuckDetection.stuckDetector = new StuckDetector(config);
     globalForStuckDetection.stuckDetector.start();

@@ -1,7 +1,13 @@
 'use client';
 
 import React, { Component, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, ExternalLink, Copy, Check } from 'lucide-react';
+import {
+  AlertTriangle,
+  RefreshCw,
+  ExternalLink,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 
@@ -51,7 +57,10 @@ interface ErrorBoundaryState {
  * </ErrorBoundary>
  * ```
  */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, copied: false };
@@ -70,8 +79,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.props.onError?.(error, errorInfo);
 
     // Log to error tracking service if available
-    if (typeof window !== 'undefined' && (window as unknown as { errorTracker?: { logError: (error: Error, context: Record<string, unknown>) => void } }).errorTracker) {
-      (window as unknown as { errorTracker: { logError: (error: Error, context: Record<string, unknown>) => void } }).errorTracker.logError(error, {
+    if (
+      typeof window !== 'undefined' &&
+      (
+        window as unknown as {
+          errorTracker?: {
+            logError: (error: Error, context: Record<string, unknown>) => void;
+          };
+        }
+      ).errorTracker
+    ) {
+      (
+        window as unknown as {
+          errorTracker: {
+            logError: (error: Error, context: Record<string, unknown>) => void;
+          };
+        }
+      ).errorTracker.logError(error, {
         boundaryId,
         componentStack: errorInfo.componentStack,
       });
@@ -79,7 +103,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined, copied: false });
+    this.setState({
+      hasError: false,
+      error: undefined,
+      errorInfo: undefined,
+      copied: false,
+    });
   };
 
   handleReport = () => {
@@ -138,7 +167,12 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
         return this.props.fallback;
       }
 
-      const { showReport = true, showDetails = false, errorTitle = 'Something went wrong', size = 'md' } = this.props;
+      const {
+        showReport = true,
+        showDetails = false,
+        errorTitle = 'Something went wrong',
+        size = 'md',
+      } = this.props;
       const { error, errorInfo, copied } = this.state;
 
       const sizeClasses = {
@@ -162,29 +196,34 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
       return (
         <div
           className={cn(
-            'flex flex-col items-center justify-center border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-950/20',
+            'flex flex-col items-center justify-center rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20',
             sizeClasses[size]
           )}
           role="alert"
           aria-live="assertive"
         >
-          <AlertTriangle className={cn('text-red-500 mb-3', iconSizes[size])} />
-          <h3 className={cn('font-semibold text-red-700 dark:text-red-400 mb-2', titleSizes[size])}>
+          <AlertTriangle className={cn('mb-3 text-red-500', iconSizes[size])} />
+          <h3
+            className={cn(
+              'mb-2 font-semibold text-red-700 dark:text-red-400',
+              titleSizes[size]
+            )}
+          >
             {errorTitle}
           </h3>
-          <p className="text-sm text-red-600 dark:text-red-500 mb-4 text-center max-w-md">
+          <p className="mb-4 max-w-md text-center text-sm text-red-600 dark:text-red-500">
             {error?.message || 'An unexpected error occurred'}
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={this.handleRetry}
-              className="text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30"
+              className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="mr-2 h-4 w-4" />
               Try Again
             </Button>
 
@@ -193,9 +232,9 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
                 variant="ghost"
                 size="sm"
                 onClick={this.handleReport}
-                className="text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                className="text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
+                <ExternalLink className="mr-2 h-4 w-4" />
                 Report Issue
               </Button>
             )}
@@ -204,16 +243,16 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
               variant="ghost"
               size="sm"
               onClick={this.handleCopyError}
-              className="text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+              className="text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4 mr-2" />
+                  <Check className="mr-2 h-4 w-4" />
                   Copied!
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4 mr-2" />
+                  <Copy className="mr-2 h-4 w-4" />
                   Copy Error
                 </>
               )}
@@ -223,11 +262,11 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
           {/* Error Details (Expandable) */}
           {showDetails && error && (
             <details className="mt-4 w-full max-w-2xl">
-              <summary className="cursor-pointer text-xs text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 mb-2">
+              <summary className="mb-2 cursor-pointer text-xs text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400">
                 Show technical details
               </summary>
-              <div className="mt-2 p-3 bg-red-100 dark:bg-red-950/50 rounded border border-red-200 dark:border-red-800">
-                <div className="text-xs font-mono text-red-800 dark:text-red-300 space-y-2">
+              <div className="mt-2 rounded border border-red-200 bg-red-100 p-3 dark:border-red-800 dark:bg-red-950/50">
+                <div className="space-y-2 font-mono text-xs text-red-800 dark:text-red-300">
                   <div>
                     <strong>Error:</strong> {error.name}
                   </div>
@@ -237,7 +276,7 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
                   {error.stack && (
                     <div>
                       <strong>Stack:</strong>
-                      <pre className="mt-1 overflow-x-auto text-[10px] whitespace-pre-wrap">
+                      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px]">
                         {error.stack}
                       </pre>
                     </div>
@@ -245,7 +284,7 @@ Component Stack: ${errorInfo?.componentStack || 'No component stack'}
                   {errorInfo?.componentStack && (
                     <div>
                       <strong>Component Stack:</strong>
-                      <pre className="mt-1 overflow-x-auto text-[10px] whitespace-pre-wrap">
+                      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px]">
                         {errorInfo.componentStack}
                       </pre>
                     </div>

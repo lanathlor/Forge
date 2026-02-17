@@ -23,7 +23,11 @@ describe('PlanPreflightBanner', () => {
     });
 
     const { container } = render(
-      <PlanPreflightBanner repositoryId="repo-1" planId="plan-1" enabled={false} />,
+      <PlanPreflightBanner
+        repositoryId="repo-1"
+        planId="plan-1"
+        enabled={false}
+      />
     );
     expect(container.innerHTML).toBe('');
   });
@@ -37,7 +41,7 @@ describe('PlanPreflightBanner', () => {
     });
 
     const { container } = render(
-      <PlanPreflightBanner repositoryId="repo-1" planId="plan-1" />,
+      <PlanPreflightBanner repositoryId="repo-1" planId="plan-1" />
     );
     expect(container.innerHTML).toBe('');
   });
@@ -45,8 +49,18 @@ describe('PlanPreflightBanner', () => {
   it('should show "All systems go" when all checks pass', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'pass', detail: 'my-repo' },
-        { id: 'clean', label: 'Working tree clean', status: 'pass', detail: 'Clean' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'pass',
+          detail: 'my-repo',
+        },
+        {
+          id: 'clean',
+          label: 'Working tree clean',
+          status: 'pass',
+          detail: 'Clean',
+        },
       ],
       isReady: true,
       isChecking: false,
@@ -62,8 +76,18 @@ describe('PlanPreflightBanner', () => {
   it('should show "Pre-flight check failed" when a check fails', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'fail', detail: 'Not found' },
-        { id: 'clean', label: 'Working tree clean', status: 'pass', detail: 'Clean' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'fail',
+          detail: 'Not found',
+        },
+        {
+          id: 'clean',
+          label: 'Working tree clean',
+          status: 'pass',
+          detail: 'Clean',
+        },
       ],
       isReady: false,
       isChecking: false,
@@ -77,8 +101,18 @@ describe('PlanPreflightBanner', () => {
   it('should show "Ready with warnings" when checks have warnings but no failures', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'pass', detail: 'my-repo' },
-        { id: 'clean', label: 'Working tree clean', status: 'warn', detail: 'Uncommitted changes' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'pass',
+          detail: 'my-repo',
+        },
+        {
+          id: 'clean',
+          label: 'Working tree clean',
+          status: 'warn',
+          detail: 'Uncommitted changes',
+        },
       ],
       isReady: true,
       isChecking: false,
@@ -92,7 +126,12 @@ describe('PlanPreflightBanner', () => {
   it('should show "Running pre-flight checks..." when checking', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'checking', detail: '' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'checking',
+          detail: '',
+        },
       ],
       isReady: false,
       isChecking: true,
@@ -100,13 +139,20 @@ describe('PlanPreflightBanner', () => {
     });
 
     render(<PlanPreflightBanner repositoryId="repo-1" planId="plan-1" />);
-    expect(screen.getByText('Running pre-flight checks...')).toBeInTheDocument();
+    expect(
+      screen.getByText('Running pre-flight checks...')
+    ).toBeInTheDocument();
   });
 
   it('should show detail text for non-pass checks', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'fail', detail: 'Not found' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'fail',
+          detail: 'Not found',
+        },
       ],
       isReady: false,
       isChecking: false,
@@ -120,7 +166,12 @@ describe('PlanPreflightBanner', () => {
   it('should not show detail text for passing checks', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'pass', detail: 'my-repo' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'pass',
+          detail: 'my-repo',
+        },
       ],
       isReady: true,
       isChecking: false,
@@ -134,7 +185,12 @@ describe('PlanPreflightBanner', () => {
   it('should apply custom className', () => {
     mockUsePreflightChecks.mockReturnValue({
       checks: [
-        { id: 'repo', label: 'Repository accessible', status: 'pass', detail: 'my-repo' },
+        {
+          id: 'repo',
+          label: 'Repository accessible',
+          status: 'pass',
+          detail: 'my-repo',
+        },
       ],
       isReady: true,
       isChecking: false,
@@ -142,7 +198,11 @@ describe('PlanPreflightBanner', () => {
     });
 
     const { container } = render(
-      <PlanPreflightBanner repositoryId="repo-1" planId="plan-1" className="custom-class" />,
+      <PlanPreflightBanner
+        repositoryId="repo-1"
+        planId="plan-1"
+        className="custom-class"
+      />
     );
     expect(container.firstChild).toHaveClass('custom-class');
   });

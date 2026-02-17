@@ -1,16 +1,36 @@
 'use client';
 
 import * as React from 'react';
-import { createContext, useContext, useCallback, useState, useRef, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
 import { cn } from '@/shared/lib/utils';
-import { X, AlertTriangle, CheckCircle, Info, AlertCircle, Clock } from 'lucide-react';
+import {
+  X,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  AlertCircle,
+  Clock,
+} from 'lucide-react';
 import { Button } from './button';
 
 /* ============================================
    TYPES
    ============================================ */
 
-export type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info' | 'stuck';
+export type ToastVariant =
+  | 'default'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'stuck';
 
 export interface Toast {
   id: string;
@@ -70,66 +90,94 @@ function useToastTimeouts() {
 
   const clearTimeout_ = useCallback((id: string) => {
     const timeout = timeoutsRef.current.get(id);
-    if (timeout) { clearTimeout(timeout); timeoutsRef.current.delete(id); }
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
   }, []);
 
-  const setTimeout_ = useCallback((id: string, callback: () => void, duration: number) => {
-    const timeout = setTimeout(callback, duration);
-    timeoutsRef.current.set(id, timeout);
-  }, []);
+  const setTimeout_ = useCallback(
+    (id: string, callback: () => void, duration: number) => {
+      const timeout = setTimeout(callback, duration);
+      timeoutsRef.current.set(id, timeout);
+    },
+    []
+  );
 
   const clearAll = useCallback(() => {
-    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
     timeoutsRef.current.clear();
   }, []);
 
   useEffect(() => {
     const currentTimeouts = timeoutsRef.current;
-    return () => { currentTimeouts.forEach(timeout => clearTimeout(timeout)); };
+    return () => {
+      currentTimeouts.forEach((timeout) => clearTimeout(timeout));
+    };
   }, []);
 
   return { clearTimeout: clearTimeout_, setTimeout: setTimeout_, clearAll };
 }
 
-function useToastActions(defaultDuration: number, maxToasts: number, timeouts: ReturnType<typeof useToastTimeouts>) {
+function useToastActions(
+  defaultDuration: number,
+  maxToasts: number,
+  timeouts: ReturnType<typeof useToastTimeouts>
+) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const removeToast = useCallback((id: string) => {
-    timeouts.clearTimeout(id);
-    setToasts(prev => {
-      const toast = prev.find(t => t.id === id);
-      toast?.onDismiss?.();
-      return prev.filter(t => t.id !== id);
-    });
-  }, [timeouts]);
+  const removeToast = useCallback(
+    (id: string) => {
+      timeouts.clearTimeout(id);
+      setToasts((prev) => {
+        const toast = prev.find((t) => t.id === id);
+        toast?.onDismiss?.();
+        return prev.filter((t) => t.id !== id);
+      });
+    },
+    [timeouts]
+  );
 
-  const addToast = useCallback((toast: Omit<Toast, 'id'>): string => {
-    const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const duration = toast.duration ?? defaultDuration;
+  const addToast = useCallback(
+    (toast: Omit<Toast, 'id'>): string => {
+      const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const duration = toast.duration ?? defaultDuration;
 
-    setToasts(prev => {
-      const newToasts = [...prev, { ...toast, id }];
-      if (newToasts.length > maxToasts) {
-        const removed = newToasts.shift();
-        if (removed) timeouts.clearTimeout(removed.id);
-      }
-      return newToasts;
-    });
+      setToasts((prev) => {
+        const newToasts = [...prev, { ...toast, id }];
+        if (newToasts.length > maxToasts) {
+          const removed = newToasts.shift();
+          if (removed) timeouts.clearTimeout(removed.id);
+        }
+        return newToasts;
+      });
 
-    if (duration > 0) timeouts.setTimeout(id, () => removeToast(id), duration);
-    return id;
-  }, [defaultDuration, maxToasts, removeToast, timeouts]);
+      if (duration > 0)
+        timeouts.setTimeout(id, () => removeToast(id), duration);
+      return id;
+    },
+    [defaultDuration, maxToasts, removeToast, timeouts]
+  );
 
   const updateToast = useCallback((id: string, updates: Partial<Toast>) => {
-    setToasts(prev => prev.map(t => (t.id === id ? { ...t, ...updates } : t)));
+    setToasts((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    );
   }, []);
 
-  const clearAll = useCallback(() => { timeouts.clearAll(); setToasts([]); }, [timeouts]);
+  const clearAll = useCallback(() => {
+    timeouts.clearAll();
+    setToasts([]);
+  }, [timeouts]);
 
   return { toasts, addToast, removeToast, updateToast, clearAll };
 }
 
-export function ToastProvider({ children, maxToasts = 5, defaultDuration = 5000 }: ToastProviderProps) {
+export function ToastProvider({
+  children,
+  maxToasts = 5,
+  defaultDuration = 5000,
+}: ToastProviderProps) {
   const timeouts = useToastTimeouts();
   const actions = useToastActions(defaultDuration, maxToasts, timeouts);
 
@@ -154,7 +202,7 @@ function ToastContainer() {
     <div
       className={cn(
         'fixed bottom-4 right-4 z-[100] flex flex-col gap-2',
-        'max-w-md w-full pointer-events-none'
+        'pointer-events-none w-full max-w-md'
       )}
       role="region"
       aria-label="Notifications"
@@ -175,7 +223,10 @@ interface ToastItemProps {
   index: number;
 }
 
-const VARIANT_STYLES: Record<ToastVariant, { bg: string; border: string; icon: React.ElementType }> = {
+const VARIANT_STYLES: Record<
+  ToastVariant,
+  { bg: string; border: string; icon: React.ElementType }
+> = {
   default: {
     bg: 'bg-background',
     border: 'border-border',
@@ -217,13 +268,16 @@ const VARIANT_ICON_COLORS: Record<ToastVariant, string> = {
   stuck: 'text-red-600 dark:text-red-400',
 };
 
-function useLiveTimeStuck(initialTime: number | undefined, toastId: string): number {
+function useLiveTimeStuck(
+  initialTime: number | undefined,
+  toastId: string
+): number {
   const [liveTime, setLiveTime] = useState(initialTime ?? 0);
 
   useEffect(() => {
     if (initialTime === undefined) return;
     setLiveTime(initialTime);
-    const interval = setInterval(() => setLiveTime(t => t + 1), 1000);
+    const interval = setInterval(() => setLiveTime((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, [initialTime, toastId]);
 
@@ -231,14 +285,28 @@ function useLiveTimeStuck(initialTime: number | undefined, toastId: string): num
 }
 
 function getStuckTimeClassName(isCritical: boolean, isHigh: boolean): string {
-  if (isCritical) return 'text-red-600 dark:text-red-400 font-bold animate-pulse';
+  if (isCritical)
+    return 'text-red-600 dark:text-red-400 font-bold animate-pulse';
   if (isHigh) return 'text-orange-600 dark:text-orange-400 font-semibold';
   return 'text-red-600 dark:text-red-400';
 }
 
-function StuckTimeDisplay({ liveTimeStuck, isCritical, isHigh }: { liveTimeStuck: number; isCritical: boolean; isHigh: boolean }) {
+function StuckTimeDisplay({
+  liveTimeStuck,
+  isCritical,
+  isHigh,
+}: {
+  liveTimeStuck: number;
+  isCritical: boolean;
+  isHigh: boolean;
+}) {
   return (
-    <p className={cn('text-xs mt-1 font-mono flex items-center gap-1', getStuckTimeClassName(isCritical, isHigh))}>
+    <p
+      className={cn(
+        'mt-1 flex items-center gap-1 font-mono text-xs',
+        getStuckTimeClassName(isCritical, isHigh)
+      )}
+    >
       <Clock className={cn('h-3 w-3', isCritical && 'animate-pulse')} />
       Stuck for {formatDuration(liveTimeStuck)}
       {isCritical && <span className="ml-1 text-[10px]">(!)</span>}
@@ -253,26 +321,60 @@ function ToastContent({ toast }: { toast: Toast }) {
 
   return (
     <div className="flex-1">
-      {toast.repositoryName && <p className="text-xs font-medium text-muted-foreground mb-0.5">{toast.repositoryName}</p>}
+      {toast.repositoryName && (
+        <p className="mb-0.5 text-xs font-medium text-muted-foreground">
+          {toast.repositoryName}
+        </p>
+      )}
       <p className="text-sm font-semibold">{toast.title}</p>
-      {toast.description && <p className="text-sm text-muted-foreground mt-1">{toast.description}</p>}
-      {toast.timeStuck !== undefined && <StuckTimeDisplay liveTimeStuck={liveTimeStuck} isCritical={isCritical} isHigh={isHigh} />}
+      {toast.description && (
+        <p className="mt-1 text-sm text-muted-foreground">
+          {toast.description}
+        </p>
+      )}
+      {toast.timeStuck !== undefined && (
+        <StuckTimeDisplay
+          liveTimeStuck={liveTimeStuck}
+          isCritical={isCritical}
+          isHigh={isHigh}
+        />
+      )}
     </div>
   );
 }
 
 function ToastDismissButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/50" onClick={onClick}>
-      <X className="h-4 w-4" /><span className="sr-only">Dismiss</span>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-6 w-6 p-0 hover:bg-muted/50"
+      onClick={onClick}
+    >
+      <X className="h-4 w-4" />
+      <span className="sr-only">Dismiss</span>
     </Button>
   );
 }
 
-function ToastActionButton({ action, onDismiss }: { action: Toast['action']; onDismiss: () => void }) {
+function ToastActionButton({
+  action,
+  onDismiss,
+}: {
+  action: Toast['action'];
+  onDismiss: () => void;
+}) {
   if (!action) return null;
   return (
-    <Button variant="outline" size="sm" className="mt-2" onClick={() => { action.onClick(); onDismiss(); }}>
+    <Button
+      variant="outline"
+      size="sm"
+      className="mt-2"
+      onClick={() => {
+        action.onClick();
+        onDismiss();
+      }}
+    >
       {action.label}
     </Button>
   );
@@ -286,15 +388,33 @@ function ToastItem({ toast, index }: ToastItemProps) {
   const styles = VARIANT_STYLES[variant];
   const Icon = styles.icon;
 
-  const handleDismiss = () => { setIsExiting(true); setTimeout(() => removeToast(toast.id), 150); };
+  const handleDismiss = () => {
+    setIsExiting(true);
+    setTimeout(() => removeToast(toast.id), 150);
+  };
 
   return (
-    <div className={cn('pointer-events-auto flex items-start gap-3 p-4 rounded-lg border shadow-lg', 'transform transition-all duration-200', styles.bg, styles.border, isExiting ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0', 'animate-in slide-in-from-right-4')} style={{ animationDelay: `${index * 50}ms` }} role="alert">
-      <Icon className={cn('h-5 w-5 shrink-0 mt-0.5', VARIANT_ICON_COLORS[variant])} />
-      <div className="flex-1 min-w-0">
+    <div
+      className={cn(
+        'pointer-events-auto flex items-start gap-3 rounded-lg border p-4 shadow-lg',
+        'transform transition-all duration-200',
+        styles.bg,
+        styles.border,
+        isExiting ? 'translate-x-4 opacity-0' : 'translate-x-0 opacity-100',
+        'animate-in slide-in-from-right-4'
+      )}
+      style={{ animationDelay: `${index * 50}ms` }}
+      role="alert"
+    >
+      <Icon
+        className={cn('mt-0.5 h-5 w-5 shrink-0', VARIANT_ICON_COLORS[variant])}
+      />
+      <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <ToastContent toast={toast} />
-          {toast.dismissible !== false && <ToastDismissButton onClick={handleDismiss} />}
+          {toast.dismissible !== false && (
+            <ToastDismissButton onClick={handleDismiss} />
+          )}
         </div>
         <ToastActionButton action={toast.action} onDismiss={handleDismiss} />
       </div>
@@ -329,43 +449,49 @@ export function useStuckToasts() {
   const { addToast, updateToast, removeToast } = useToast();
   const activeToastsRef = useRef<Map<string, string>>(new Map());
 
-  const showStuckAlert = useCallback((
-    repositoryId: string,
-    repositoryName: string,
-    reason: string,
-    timeStuck: number,
-    onAction?: () => void
-  ) => {
-    const existingToastId = activeToastsRef.current.get(repositoryId);
+  const showStuckAlert = useCallback(
+    (
+      repositoryId: string,
+      repositoryName: string,
+      reason: string,
+      timeStuck: number,
+      onAction?: () => void
+    ) => {
+      const existingToastId = activeToastsRef.current.get(repositoryId);
 
-    if (existingToastId) {
-      // Update existing toast
-      updateToast(existingToastId, { timeStuck });
-    } else {
-      // Create new toast
-      const toastId = addToast({
-        title: getStuckTitle(reason),
-        description: getStuckDescription(reason),
-        variant: 'stuck',
-        repositoryName,
-        timeStuck,
-        duration: 0, // Don't auto-dismiss stuck toasts
-        action: onAction ? { label: 'View', onClick: onAction } : undefined,
-        onDismiss: () => {
-          activeToastsRef.current.delete(repositoryId);
-        },
-      });
-      activeToastsRef.current.set(repositoryId, toastId);
-    }
-  }, [addToast, updateToast]);
+      if (existingToastId) {
+        // Update existing toast
+        updateToast(existingToastId, { timeStuck });
+      } else {
+        // Create new toast
+        const toastId = addToast({
+          title: getStuckTitle(reason),
+          description: getStuckDescription(reason),
+          variant: 'stuck',
+          repositoryName,
+          timeStuck,
+          duration: 0, // Don't auto-dismiss stuck toasts
+          action: onAction ? { label: 'View', onClick: onAction } : undefined,
+          onDismiss: () => {
+            activeToastsRef.current.delete(repositoryId);
+          },
+        });
+        activeToastsRef.current.set(repositoryId, toastId);
+      }
+    },
+    [addToast, updateToast]
+  );
 
-  const resolveStuckAlert = useCallback((repositoryId: string) => {
-    const toastId = activeToastsRef.current.get(repositoryId);
-    if (toastId) {
-      removeToast(toastId);
-      activeToastsRef.current.delete(repositoryId);
-    }
-  }, [removeToast]);
+  const resolveStuckAlert = useCallback(
+    (repositoryId: string) => {
+      const toastId = activeToastsRef.current.get(repositoryId);
+      if (toastId) {
+        removeToast(toastId);
+        activeToastsRef.current.delete(repositoryId);
+      }
+    },
+    [removeToast]
+  );
 
   return { showStuckAlert, resolveStuckAlert };
 }
@@ -390,7 +516,7 @@ function getStuckTitle(reason: string): string {
 function getStuckDescription(reason: string): string {
   switch (reason) {
     case 'no_output':
-      return 'Claude hasn\'t responded for a while';
+      return "Claude hasn't responded for a while";
     case 'waiting_input':
       return 'Waiting for your approval or input';
     case 'repeated_failures':

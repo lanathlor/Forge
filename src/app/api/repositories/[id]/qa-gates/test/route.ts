@@ -34,6 +34,14 @@ async function executeGateCommand(command: string, cwd: string) {
   return { exitCode, output, error };
 }
 
+async function runGateTest(id: string, command: string, gateName: string) {
+  const repo = await getRepository(id);
+  if (!repo) return { notFound: true } as const;
+  console.log(`[QA Gate Test] Testing gate "${gateName}" for repository ${repo.name}`);
+  const result = await executeGateCommand(command, repo.path);
+  return { ...result, gateName, command, success: result.exitCode === 0 };
+}
+
 /**
  * POST /api/repositories/:id/qa-gates/test
  * Test a single QA gate command without persisting results
@@ -56,34 +64,18 @@ export async function POST(
       );
     }
 
-    const repo = await getRepository(id);
-    if (!repo) {
+    const result = await runGateTest(id, command, gateName);
+    if ('notFound' in result) {
       return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
     }
 
-    console.log(`[QA Gate Test] Testing gate "${gateName}" for repository ${repo.name}`);
-
-    const { exitCode, output, error } = await executeGateCommand(command, repo.path);
     const duration = Date.now() - startTime;
-
-    return NextResponse.json({
-      gateName,
-      command,
-      exitCode,
-      output,
-      error,
-      duration,
-      success: exitCode === 0,
-    });
+    return NextResponse.json({ ...result, duration });
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[QA Gate Test] Error after ${duration}ms:`, error);
-
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to test gate',
-        duration,
-      },
+      { error: error instanceof Error ? error.message : 'Failed to test gate', duration },
       { status: 500 }
     );
   }

@@ -17,7 +17,9 @@ import { test, expect, type Page } from '@playwright/test';
  */
 async function waitForAppReady(page: Page) {
   await page.waitForLoadState('networkidle');
-  await expect(page.locator('main, [role="main"]').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('main, [role="main"]').first()).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 /**
@@ -63,7 +65,9 @@ async function gotoDashboard(page: Page) {
 // ---------------------------------------------------------------------------
 
 test.describe('Journey 1: Start session → create task → view output → approve', () => {
-  test('dashboard loads and shows repository selector or empty state', async ({ page }) => {
+  test('dashboard loads and shows repository selector or empty state', async ({
+    page,
+  }) => {
     await gotoDashboard(page);
 
     // The app should show either a repository selector or empty state
@@ -84,7 +88,9 @@ test.describe('Journey 1: Start session → create task → view output → appr
     expect(hasSelector || hasEmptyState).toBeTruthy();
   });
 
-  test('navigation links are present and reachable via keyboard', async ({ page }) => {
+  test('navigation links are present and reachable via keyboard', async ({
+    page,
+  }) => {
     await gotoDashboard(page);
 
     // Main nav should exist (sidebar or top bar)
@@ -97,9 +103,11 @@ test.describe('Journey 1: Start session → create task → view output → appr
     expect(linkCount).toBeGreaterThan(0);
   });
 
-  test('task list renders without errors when session is active', async ({ page }) => {
+  test('task list renders without errors when session is active', async ({
+    page,
+  }) => {
     const consoleErrors: string[] = [];
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
 
@@ -108,7 +116,7 @@ test.describe('Journey 1: Start session → create task → view output → appr
 
     // Check that no critical JS errors occurred
     const criticalErrors = consoleErrors.filter(
-      e =>
+      (e) =>
         !e.includes('favicon') &&
         !e.includes('Hydration') &&
         !e.includes('hydrat') &&
@@ -126,26 +134,39 @@ test.describe('Journey 1: Start session → create task → view output → appr
     const tasksTab = page.locator(
       '[role="tab"]:has-text("Tasks"), button:has-text("Tasks"), [data-testid="tasks-tab"]'
     );
-    const tabVisible = await tasksTab.first().isVisible({ timeout: 8_000 }).catch(() => false);
+    const tabVisible = await tasksTab
+      .first()
+      .isVisible({ timeout: 8_000 })
+      .catch(() => false);
 
     if (tabVisible) {
       await tasksTab.first().click();
       // After clicking, the tab should be selected
       await page.waitForTimeout(300);
-      const activeTab = page.locator('[role="tab"][aria-selected="true"], [role="tab"][data-state="active"]');
-      const isActive = await activeTab.first().isVisible({ timeout: 2_000 }).catch(() => false);
+      const activeTab = page.locator(
+        '[role="tab"][aria-selected="true"], [role="tab"][data-state="active"]'
+      );
+      const isActive = await activeTab
+        .first()
+        .isVisible({ timeout: 2_000 })
+        .catch(() => false);
       expect(isActive || tabVisible).toBeTruthy();
     } else {
       // Tasks content might be shown directly
       const tasksContent = page.locator(
         'text=Tasks, text=No tasks, text=task, [data-testid="task-list"]'
       );
-      const hasTasksContent = await tasksContent.first().isVisible({ timeout: 5_000 }).catch(() => false);
+      const hasTasksContent = await tasksContent
+        .first()
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false);
       expect(hasTasksContent || !tabVisible).toBeTruthy();
     }
   });
 
-  test('approval panel elements are accessible when task needs review', async ({ page }) => {
+  test('approval panel elements are accessible when task needs review', async ({
+    page,
+  }) => {
     await gotoDashboard(page);
 
     // Check for approval-related content
@@ -161,7 +182,9 @@ test.describe('Journey 1: Start session → create task → view output → appr
     const approvalCount = await approvalElements.count();
     // If approval UI is shown, it should have interactive elements
     if (approvalCount > 0) {
-      const approveBtn = page.locator('button:has-text("Approve"), button:has-text("approve")').first();
+      const approveBtn = page
+        .locator('button:has-text("Approve"), button:has-text("approve")')
+        .first();
       const isEnabled = await approveBtn.isEnabled().catch(() => false);
       expect(typeof isEnabled).toBe('boolean'); // Just verify it's queryable
     }
@@ -221,7 +244,10 @@ test.describe('Journey 2: Create plan → execute → monitor progress', () => {
     const plansContent = page.locator(
       'text=Plans, text=Plan, text=No plans, text=repository selected, [data-testid="plan-list"]'
     );
-    const hasPlanContent = await plansContent.first().isVisible({ timeout: 8_000 }).catch(() => false);
+    const hasPlanContent = await plansContent
+      .first()
+      .isVisible({ timeout: 8_000 })
+      .catch(() => false);
     expect(hasPlanContent).toBeTruthy();
   });
 
@@ -231,7 +257,10 @@ test.describe('Journey 2: Create plan → execute → monitor progress', () => {
     const plansTab = page.locator(
       '[role="tab"]:has-text("Plans"), button:has-text("Plans"), [data-testid="plans-tab"]'
     );
-    const tabVisible = await plansTab.first().isVisible({ timeout: 8_000 }).catch(() => false);
+    const tabVisible = await plansTab
+      .first()
+      .isVisible({ timeout: 8_000 })
+      .catch(() => false);
 
     if (tabVisible) {
       await plansTab.first().click();
@@ -241,7 +270,10 @@ test.describe('Journey 2: Create plan → execute → monitor progress', () => {
       const plansContent = page.locator(
         'text=Plans, text=Plan, text=No plans, text=Generate, [data-testid="plan-list"]'
       );
-      const hasPlanContent = await plansContent.first().isVisible({ timeout: 8_000 }).catch(() => false);
+      const hasPlanContent = await plansContent
+        .first()
+        .isVisible({ timeout: 8_000 })
+        .catch(() => false);
       expect(hasPlanContent || tabVisible).toBeTruthy();
     }
   });
@@ -250,8 +282,13 @@ test.describe('Journey 2: Create plan → execute → monitor progress', () => {
     await gotoDashboard(page);
 
     // Navigate to plans tab
-    const plansTab = page.locator('[role="tab"]:has-text("Plans"), button:has-text("Plans")');
-    const tabVisible = await plansTab.first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const plansTab = page.locator(
+      '[role="tab"]:has-text("Plans"), button:has-text("Plans")'
+    );
+    const tabVisible = await plansTab
+      .first()
+      .isVisible({ timeout: 5_000 })
+      .catch(() => false);
     if (tabVisible) {
       await plansTab.first().click();
       await page.waitForTimeout(500);
@@ -284,7 +321,9 @@ test.describe('Journey 2: Create plan → execute → monitor progress', () => {
     // Check that we can still interact with the page
     await page.keyboard.press('Tab');
     const focused = page.locator(':focus');
-    const isFocused = await focused.isVisible({ timeout: 2_000 }).catch(() => false);
+    const isFocused = await focused
+      .isVisible({ timeout: 2_000 })
+      .catch(() => false);
 
     // Page should remain functional
     const mainContent = page.locator('main, [role="main"]').first();
@@ -317,12 +356,16 @@ test.describe('Journey 2: Create plan → execute → monitor progress', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Journey 3: Browse repositories → configure QA gates', () => {
-  test('/repositories page loads and shows repository content', async ({ page }) => {
+  test('/repositories page loads and shows repository content', async ({
+    page,
+  }) => {
     await page.goto('/repositories');
     await waitForAppReady(page);
 
     // Should display the repositories page
-    const heading = page.locator('h1:has-text("Repositories"), h1:has-text("Repository"), text=Repositories');
+    const heading = page.locator(
+      'h1:has-text("Repositories"), h1:has-text("Repository"), text=Repositories'
+    );
     await expect(heading.first()).toBeVisible({ timeout: 8_000 });
   });
 
@@ -334,7 +377,10 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
     const selector = page.locator(
       '[data-testid="repository-selector"], .repository-selector, [aria-label*="repository"]'
     );
-    const selectorVisible = await selector.first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const selectorVisible = await selector
+      .first()
+      .isVisible({ timeout: 5_000 })
+      .catch(() => false);
 
     // Page content should be visible either way
     const mainContent = page.locator('main, [role="main"]').first();
@@ -348,7 +394,10 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
     const qaTab = page.locator(
       '[role="tab"]:has-text("QA"), [role="tab"]:has-text("Gates"), button:has-text("QA"), [data-testid="qa-gates-tab"]'
     );
-    const tabVisible = await qaTab.first().isVisible({ timeout: 8_000 }).catch(() => false);
+    const tabVisible = await qaTab
+      .first()
+      .isVisible({ timeout: 8_000 })
+      .catch(() => false);
 
     if (tabVisible) {
       await qaTab.first().click();
@@ -358,7 +407,10 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
       const qaContent = page.locator(
         'text=QA Gates, text=ESLint, text=TypeScript, text=Configure, [data-testid="qa-gates"]'
       );
-      const hasQAContent = await qaContent.first().isVisible({ timeout: 8_000 }).catch(() => false);
+      const hasQAContent = await qaContent
+        .first()
+        .isVisible({ timeout: 8_000 })
+        .catch(() => false);
       expect(hasQAContent || tabVisible).toBeTruthy();
     }
   });
@@ -372,7 +424,9 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
     await expect(heading).toBeVisible({ timeout: 8_000 });
 
     // QA Gates settings section
-    const qaSection = page.locator('text=QA Gates, text=Auto QA, text=Strict Mode');
+    const qaSection = page.locator(
+      'text=QA Gates, text=Auto QA, text=Strict Mode'
+    );
     await expect(qaSection.first()).toBeVisible({ timeout: 5_000 });
   });
 
@@ -393,7 +447,9 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
     await firstSwitch.click();
     await page.waitForTimeout(200);
 
-    const newChecked = await firstSwitch.isChecked().catch(() => !initialChecked);
+    const newChecked = await firstSwitch
+      .isChecked()
+      .catch(() => !initialChecked);
     // State should have toggled (or remained if controlled externally)
     expect(typeof newChecked).toBe('boolean');
   });
@@ -402,15 +458,25 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
     await gotoDashboard(page);
 
     // Navigate to QA gates tab
-    const qaTab = page.locator('[role="tab"]:has-text("QA"), [role="tab"]:has-text("Gates")');
-    const tabVisible = await qaTab.first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const qaTab = page.locator(
+      '[role="tab"]:has-text("QA"), [role="tab"]:has-text("Gates")'
+    );
+    const tabVisible = await qaTab
+      .first()
+      .isVisible({ timeout: 5_000 })
+      .catch(() => false);
     if (tabVisible) {
       await qaTab.first().click();
       await page.waitForTimeout(800);
 
       // Look for known QA gate types from .autobot.json
-      const gateTypes = page.locator('text=ESLint, text=TypeScript, text=Tests, text=Build, text=Coverage');
-      const hasGateTypes = await gateTypes.first().isVisible({ timeout: 8_000 }).catch(() => false);
+      const gateTypes = page.locator(
+        'text=ESLint, text=TypeScript, text=Tests, text=Build, text=Coverage'
+      );
+      const hasGateTypes = await gateTypes
+        .first()
+        .isVisible({ timeout: 8_000 })
+        .catch(() => false);
 
       // Not failing if no repo is selected - just verifying no crash
       const mainContent = page.locator('main, [role="main"]').first();

@@ -62,9 +62,24 @@ interface ChecklistItem {
 }
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { id: 'qa', label: 'QA gates passed', description: 'All automated quality checks have passed', auto: true },
-  { id: 'diff', label: 'Diff reviewed', description: 'Changes have been reviewed in the diff viewer', auto: false },
-  { id: 'message', label: 'Commit message ready', description: 'Commit message will be generated on approval', auto: true },
+  {
+    id: 'qa',
+    label: 'QA gates passed',
+    description: 'All automated quality checks have passed',
+    auto: true,
+  },
+  {
+    id: 'diff',
+    label: 'Diff reviewed',
+    description: 'Changes have been reviewed in the diff viewer',
+    auto: false,
+  },
+  {
+    id: 'message',
+    label: 'Commit message ready',
+    description: 'Commit message will be generated on approval',
+    auto: true,
+  },
 ];
 
 function PreFlightChecklist({
@@ -78,13 +93,14 @@ function PreFlightChecklist({
 }) {
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+      <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <Shield className="h-3.5 w-3.5" />
         Pre-flight Checklist
       </h4>
       <div className="space-y-1">
         {CHECKLIST_ITEMS.map((item) => {
-          const isChecked = item.id === 'qa' ? qaGatesPassed : (checkedItems[item.id] ?? false);
+          const isChecked =
+            item.id === 'qa' ? qaGatesPassed : (checkedItems[item.id] ?? false);
           const isDisabled = item.id === 'qa';
 
           return (
@@ -93,32 +109,42 @@ function PreFlightChecklist({
               onClick={() => !isDisabled && onToggle(item.id)}
               disabled={isDisabled}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors',
+                'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors',
                 'hover:bg-muted/50',
-                isDisabled && 'cursor-default opacity-80',
+                isDisabled && 'cursor-default opacity-80'
               )}
             >
               <div
                 className={cn(
-                  'h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors',
+                  'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors',
                   isChecked
-                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                    ? 'border-emerald-600 bg-emerald-600 text-white'
                     : 'border-border',
-                  !isChecked && !isDisabled && 'hover:border-muted-foreground',
+                  !isChecked && !isDisabled && 'hover:border-muted-foreground'
                 )}
               >
                 {isChecked && <CheckCircle className="h-3 w-3" />}
               </div>
               <div className="min-w-0 flex-1">
-                <span className={cn('text-sm', isChecked && 'text-muted-foreground line-through')}>
+                <span
+                  className={cn(
+                    'text-sm',
+                    isChecked && 'text-muted-foreground line-through'
+                  )}
+                >
                   {item.label}
                 </span>
                 {item.auto && (
-                  <Badge variant="outline" className="ml-2 text-[10px] px-1 py-0">auto</Badge>
+                  <Badge
+                    variant="outline"
+                    className="ml-2 px-1 py-0 text-[10px]"
+                  >
+                    auto
+                  </Badge>
                 )}
               </div>
               {item.id === 'qa' && !qaGatesPassed && (
-                <XCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                <XCircle className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
               )}
             </button>
           );
@@ -146,36 +172,55 @@ function FileChangeSummary({ filesChanged }: { filesChanged: FileChange[] }) {
   const deletions = filesChanged.reduce((sum, f) => sum + f.deletions, 0);
 
   const byStatus = filesChanged.reduce(
-    (acc, f) => { acc[f.status] = (acc[f.status] || 0) + 1; return acc; },
-    {} as Record<string, number>,
+    (acc, f) => {
+      acc[f.status] = (acc[f.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
   );
 
   return (
     <div className="space-y-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between gap-2 text-left group"
+        className="group flex w-full items-center justify-between gap-2 text-left"
       >
         <div className="flex items-center gap-2">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <FileText className="h-3.5 w-3.5" />
             Files Changed
           </h4>
           <div className="flex items-center gap-3 text-xs">
-            <span className="font-medium">{fileCount} file{fileCount !== 1 ? 's' : ''}</span>
-            <span className="flex items-center gap-0.5 text-emerald-600"><Plus className="h-3 w-3" />{insertions}</span>
-            <span className="flex items-center gap-0.5 text-red-500"><Minus className="h-3 w-3" />{deletions}</span>
+            <span className="font-medium">
+              {fileCount} file{fileCount !== 1 ? 's' : ''}
+            </span>
+            <span className="flex items-center gap-0.5 text-emerald-600">
+              <Plus className="h-3 w-3" />
+              {insertions}
+            </span>
+            <span className="flex items-center gap-0.5 text-red-500">
+              <Minus className="h-3 w-3" />
+              {deletions}
+            </span>
           </div>
         </div>
-        <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        <span className="text-muted-foreground transition-colors group-hover:text-foreground">
+          {expanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </span>
       </button>
 
       {/* Status breakdown badges */}
       <div className="flex flex-wrap gap-1.5">
         {Object.entries(byStatus).map(([status, count]) => (
-          <Badge key={status} variant="outline" className="text-[10px] px-1.5 py-0">
+          <Badge
+            key={status}
+            variant="outline"
+            className="px-1.5 py-0 text-[10px]"
+          >
             {count} {status}
           </Badge>
         ))}
@@ -183,16 +228,29 @@ function FileChangeSummary({ filesChanged }: { filesChanged: FileChange[] }) {
 
       {/* Expanded file list */}
       {expanded && (
-        <div className="space-y-0.5 max-h-48 overflow-y-auto rounded-md border bg-muted/20 p-2">
+        <div className="max-h-48 space-y-0.5 overflow-y-auto rounded-md border bg-muted/20 p-2">
           {filesChanged.map((f) => (
-            <div key={f.path} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-muted/40">
-              <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="truncate flex-1 font-mono text-[11px]" title={f.path}>{f.path}</span>
-              <span className="flex items-center gap-1 text-[10px] tabular-nums flex-shrink-0">
+            <div
+              key={f.path}
+              className="flex items-center gap-2 rounded px-1 py-1 text-xs hover:bg-muted/40"
+            >
+              <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+              <span
+                className="flex-1 truncate font-mono text-[11px]"
+                title={f.path}
+              >
+                {f.path}
+              </span>
+              <span className="flex flex-shrink-0 items-center gap-1 text-[10px] tabular-nums">
                 <span className="text-emerald-600">+{f.additions}</span>
                 <span className="text-red-500">-{f.deletions}</span>
               </span>
-              <span className={cn('text-[10px] px-1 rounded flex-shrink-0', STATUS_COLORS[f.status])}>
+              <span
+                className={cn(
+                  'flex-shrink-0 rounded px-1 text-[10px]',
+                  STATUS_COLORS[f.status]
+                )}
+              >
                 {f.status}
               </span>
             </div>
@@ -229,13 +287,23 @@ function ConfirmApproveDialog({
             Approve Changes
           </DialogTitle>
           <DialogDescription>
-            This will generate a commit message and proceed to committing {fileCount} file{fileCount !== 1 ? 's' : ''}.
+            This will generate a commit message and proceed to committing{' '}
+            {fileCount} file{fileCount !== 1 ? 's' : ''}.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+            Cancel
+          </Button>
           <Button onClick={onConfirm} disabled={isLoading}>
-            {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Generating...</> : 'Confirm Approval'}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Confirm Approval'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -267,12 +335,16 @@ function ConfirmRejectDialog({
             Reject &amp; Revert Changes
           </DialogTitle>
           <DialogDescription>
-            This will revert all changes made by this task. This action cannot be undone.
+            This will revert all changes made by this task. This action cannot
+            be undone.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <label htmlFor="reject-reason" className="text-sm font-medium">
-            Reason <span className="text-muted-foreground font-normal">(optional)</span>
+            Reason{' '}
+            <span className="font-normal text-muted-foreground">
+              (optional)
+            </span>
           </label>
           <Textarea
             id="reject-reason"
@@ -284,9 +356,22 @@ function ConfirmRejectDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>Cancel</Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
-            {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Reverting...</> : 'Reject & Revert'}
+          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Reverting...
+              </>
+            ) : (
+              'Reject & Revert'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -300,13 +385,19 @@ function ConfirmRejectDialog({
 
 function KeyboardShortcuts() {
   return (
-    <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1">
+    <div className="flex items-center gap-3 pt-1 text-[10px] text-muted-foreground">
       <Keyboard className="h-3 w-3" />
       <span className="flex items-center gap-1">
-        <kbd className="px-1 py-0.5 rounded border bg-muted font-mono text-[10px]">A</kbd> Approve
+        <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">
+          A
+        </kbd>{' '}
+        Approve
       </span>
       <span className="flex items-center gap-1">
-        <kbd className="px-1 py-0.5 rounded border bg-muted font-mono text-[10px]">R</kbd> Reject
+        <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">
+          R
+        </kbd>{' '}
+        Reject
       </span>
     </div>
   );
@@ -333,9 +424,9 @@ function ActionButtons({
         variant="outline"
         onClick={onReject}
         disabled={isLoading}
-        className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+        className="flex-1 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
       >
-        <ThumbsDown className="h-4 w-4 mr-2" />
+        <ThumbsDown className="mr-2 h-4 w-4" />
         Reject &amp; Revert
       </Button>
       <Button
@@ -343,7 +434,7 @@ function ActionButtons({
         disabled={isLoading || !canApprove}
         className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
       >
-        <ThumbsUp className="h-4 w-4 mr-2" />
+        <ThumbsUp className="mr-2 h-4 w-4" />
         Approve Changes
       </Button>
     </div>
@@ -356,7 +447,7 @@ function ActionButtons({
 
 function SuccessFeedback({ message }: { message: string }) {
   return (
-    <div className="flex items-center gap-2 p-3 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300">
       <CheckCircle className="h-4 w-4 flex-shrink-0" />
       {message}
     </div>
@@ -365,7 +456,7 @@ function SuccessFeedback({ message }: { message: string }) {
 
 function ErrorFeedback({ message }: { message: string }) {
   return (
-    <div className="flex items-center gap-2 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 text-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
       <XCircle className="h-4 w-4 flex-shrink-0" />
       {message}
     </div>
@@ -394,7 +485,9 @@ function NoChangesPanel({
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch(`/api/tasks/${taskId}/approve`, { method: 'POST' });
+      const res = await fetch(`/api/tasks/${taskId}/approve`, {
+        method: 'POST',
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to complete task');
@@ -433,18 +526,23 @@ function NoChangesPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold flex items-center gap-2">
+        <h3 className="flex items-center gap-2 text-base font-semibold">
           <Eye className="h-5 w-5 text-amber-500" />
           Review Changes
         </h3>
-        <Badge variant="default" className="text-xs bg-emerald-600 hover:bg-emerald-700">
-          <CheckCircle className="h-3 w-3 mr-1" />QA Passed
+        <Badge
+          variant="default"
+          className="bg-emerald-600 text-xs hover:bg-emerald-700"
+        >
+          <CheckCircle className="mr-1 h-3 w-3" />
+          QA Passed
         </Badge>
       </div>
 
-      <div className="flex items-center gap-2 p-3 rounded-md bg-muted/40 border text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
         <FileText className="h-4 w-4 flex-shrink-0" />
-        No file changes were made by this task. You can mark it as complete or reject it.
+        No file changes were made by this task. You can mark it as complete or
+        reject it.
       </div>
 
       {error && <ErrorFeedback message={error} />}
@@ -454,9 +552,9 @@ function NoChangesPanel({
           variant="outline"
           onClick={() => setShowRejectDialog(true)}
           disabled={isLoading}
-          className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+          className="flex-1 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
         >
-          <ThumbsDown className="h-4 w-4 mr-2" />
+          <ThumbsDown className="mr-2 h-4 w-4" />
           Reject
         </Button>
         <Button
@@ -464,7 +562,17 @@ function NoChangesPanel({
           disabled={isLoading}
           className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
         >
-          {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Completing...</> : <><ThumbsUp className="h-4 w-4 mr-2" />Mark as Complete</>}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Completing...
+            </>
+          ) : (
+            <>
+              <ThumbsUp className="mr-2 h-4 w-4" />
+              Mark as Complete
+            </>
+          )}
         </Button>
       </div>
 
@@ -533,9 +641,11 @@ function ApprovalPanelWithChanges({
 
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const allChecksPassed = qaGatesPassed && CHECKLIST_ITEMS
-    .filter((item) => !item.auto)
-    .every((item) => checkedItems[item.id]);
+  const allChecksPassed =
+    qaGatesPassed &&
+    CHECKLIST_ITEMS.filter((item) => !item.auto).every(
+      (item) => checkedItems[item.id]
+    );
 
   const toggleChecklistItem = useCallback((id: string) => {
     setCheckedItems((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -554,7 +664,9 @@ function ApprovalPanelWithChanges({
       setShowApproveDialog(false);
       setCommitMessage(data.commitMessage);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate commit message');
+      setError(
+        err instanceof Error ? err.message : 'Failed to generate commit message'
+      );
       setShowApproveDialog(false);
     } finally {
       setIsLoading(false);
@@ -590,7 +702,12 @@ function ApprovalPanelWithChanges({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger inside input/textarea elements
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      )
+        return;
 
       if (e.key === 'a' || e.key === 'A') {
         e.preventDefault();
@@ -607,7 +724,16 @@ function ApprovalPanelWithChanges({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [commitMessage, showApproveDialog, showRejectDialog, allChecksPassed, qaGatesPassed, isLoading, handleApproveClick, handleRejectClick]);
+  }, [
+    commitMessage,
+    showApproveDialog,
+    showRejectDialog,
+    allChecksPassed,
+    qaGatesPassed,
+    isLoading,
+    handleApproveClick,
+    handleRejectClick,
+  ]);
 
   // --- Commit message editor view ---
   if (commitMessage) {
@@ -616,7 +742,10 @@ function ApprovalPanelWithChanges({
         taskId={taskId}
         initialMessage={commitMessage}
         onCommitted={() => onApproved?.()}
-        onCancel={() => { setCommitMessage(null); setError(null); }}
+        onCancel={() => {
+          setCommitMessage(null);
+          setError(null);
+        }}
       />
     );
   }
@@ -626,7 +755,7 @@ function ApprovalPanelWithChanges({
     <div ref={panelRef} className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold flex items-center gap-2">
+        <h3 className="flex items-center gap-2 text-base font-semibold">
           <Eye className="h-5 w-5 text-amber-500" />
           Review Changes
         </h3>
@@ -634,20 +763,26 @@ function ApprovalPanelWithChanges({
           variant={qaGatesPassed ? 'default' : 'destructive'}
           className={cn(
             'text-xs',
-            qaGatesPassed && 'bg-emerald-600 hover:bg-emerald-700',
+            qaGatesPassed && 'bg-emerald-600 hover:bg-emerald-700'
           )}
         >
           {qaGatesPassed ? (
-            <><CheckCircle className="h-3 w-3 mr-1" />QA Passed</>
+            <>
+              <CheckCircle className="mr-1 h-3 w-3" />
+              QA Passed
+            </>
           ) : (
-            <><XCircle className="h-3 w-3 mr-1" />QA Failed</>
+            <>
+              <XCircle className="mr-1 h-3 w-3" />
+              QA Failed
+            </>
           )}
         </Badge>
       </div>
 
       {/* QA failure warning */}
       {!qaGatesPassed && (
-        <div className="flex items-center gap-2 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 text-sm">
+        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           QA gates have failed. Fix issues before approving.
         </div>
@@ -707,7 +842,13 @@ export function ApprovalPanel({
   onRejected,
 }: ApprovalPanelProps) {
   if (filesChanged.length === 0) {
-    return <NoChangesPanel taskId={taskId} onApproved={onApproved} onRejected={onRejected} />;
+    return (
+      <NoChangesPanel
+        taskId={taskId}
+        onApproved={onApproved}
+        onRejected={onRejected}
+      />
+    );
   }
   return (
     <ApprovalPanelWithChanges

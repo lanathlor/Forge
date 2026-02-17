@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, type JSX } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/tabs';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@/shared/components/ui/tabs';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import {
@@ -81,32 +86,37 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
     icon: <Clock className="h-4 w-4" />,
     label: 'Pending',
     color: 'text-slate-500',
-    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+    badgeClass:
+      'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
   },
   pre_flight: {
     icon: <Sparkles className="h-4 w-4" />,
     label: 'Pre-flight',
     color: 'text-indigo-500',
-    badgeClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+    badgeClass:
+      'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
   },
   running: {
     icon: <Loader2 className="h-4 w-4 animate-spin" />,
     label: 'Running',
     color: 'text-blue-500',
-    badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    badgeClass:
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
     pulseClass: 'animate-pulse',
   },
   waiting_qa: {
     icon: <Pause className="h-4 w-4" />,
     label: 'Waiting QA',
     color: 'text-orange-500',
-    badgeClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+    badgeClass:
+      'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   },
   qa_running: {
     icon: <Loader2 className="h-4 w-4 animate-spin" />,
     label: 'QA Running',
     color: 'text-blue-500',
-    badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    badgeClass:
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
     pulseClass: 'animate-pulse',
   },
   qa_failed: {
@@ -119,19 +129,22 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
     icon: <AlertTriangle className="h-4 w-4" />,
     label: 'Needs Approval',
     color: 'text-amber-500',
-    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    badgeClass:
+      'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   },
   approved: {
     icon: <CheckCircle2 className="h-4 w-4" />,
     label: 'Approved',
     color: 'text-emerald-500',
-    badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    badgeClass:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
   },
   completed: {
     icon: <CheckCircle2 className="h-4 w-4" />,
     label: 'Completed',
     color: 'text-emerald-500',
-    badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    badgeClass:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
   },
   rejected: {
     icon: <Ban className="h-4 w-4" />,
@@ -149,7 +162,8 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
     icon: <Ban className="h-4 w-4" />,
     label: 'Cancelled',
     color: 'text-slate-400',
-    badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    badgeClass:
+      'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
   },
 };
 
@@ -175,7 +189,9 @@ function useElapsedTime(task: Task | null) {
     if (!task) return;
 
     const calculate = () => {
-      const start = task.startedAt ? new Date(task.startedAt) : new Date(task.createdAt);
+      const start = task.startedAt
+        ? new Date(task.startedAt)
+        : new Date(task.createdAt);
       const end = task.completedAt ? new Date(task.completedAt) : new Date();
       setElapsed(formatDuration(start, end));
     };
@@ -183,7 +199,13 @@ function useElapsedTime(task: Task | null) {
     calculate();
 
     // Only tick for active tasks
-    const isActive = ['running', 'qa_running', 'pre_flight', 'pending', 'waiting_qa'].includes(task.status);
+    const isActive = [
+      'running',
+      'qa_running',
+      'pre_flight',
+      'pending',
+      'waiting_qa',
+    ].includes(task.status);
     if (!isActive) return;
 
     const interval = setInterval(calculate, 1000);
@@ -205,10 +227,14 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+      className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title="Copy to clipboard"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-emerald-500" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
     </button>
   );
 }
@@ -231,42 +257,59 @@ function PanelHeader({
   onRetry: () => void;
 }) {
   const cfg = getStatusConfig(task.status);
-  const canCancel = ['pending', 'running', 'pre_flight', 'qa_running'].includes(task.status);
+  const canCancel = ['pending', 'running', 'pre_flight', 'qa_running'].includes(
+    task.status
+  );
   const canRetry = ['failed', 'qa_failed', 'rejected'].includes(task.status);
 
   // Debug logging
-  console.log('TaskDetailPanel - Status:', task.status, 'canRetry:', canRetry, 'canCancel:', canCancel);
+  console.log(
+    'TaskDetailPanel - Status:',
+    task.status,
+    'canRetry:',
+    canRetry,
+    'canCancel:',
+    canCancel
+  );
 
   return (
     <div className="flex-shrink-0 border-b bg-card px-4 py-3 sm:px-5">
       {/* Top row: status + close */}
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={cn(cfg.color, cfg.pulseClass)}>
-            {cfg.icon}
-          </span>
-          <Badge className={cn('text-xs font-medium border-0', cfg.badgeClass)}>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={cn(cfg.color, cfg.pulseClass)}>{cfg.icon}</span>
+          <Badge className={cn('border-0 text-xs font-medium', cfg.badgeClass)}>
             {cfg.label}
           </Badge>
-          <span className="text-xs text-muted-foreground tabular-nums flex items-center gap-1">
+          <span className="flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
             <Clock className="h-3 w-3" />
             {elapsed}
           </span>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1">
           {canRetry && (
-            <Button variant="outline" size="sm" onClick={onRetry} className="h-7 px-2 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRetry}
+              className="h-7 border-blue-200 bg-blue-50 px-2 text-xs text-blue-700 hover:bg-blue-100"
+            >
               Retry
             </Button>
           )}
           {canCancel && (
-            <Button variant="ghost" size="sm" onClick={onCancel} className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+            >
               Cancel
             </Button>
           )}
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -275,7 +318,7 @@ function PanelHeader({
 
       {/* Prompt */}
       <h2
-        className="text-sm font-medium leading-snug line-clamp-2"
+        className="line-clamp-2 text-sm font-medium leading-snug"
         title={task.prompt}
       >
         {task.prompt}
@@ -288,11 +331,23 @@ function PanelHeader({
 // Overview Tab
 // ---------------------------------------------------------------------------
 
-function MetricRow({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
+function MetricRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+}) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-border/50 last:border-0">
-      <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
-      <span className={cn('text-xs text-right', mono && 'font-mono')}>{value}</span>
+    <div className="flex items-start justify-between gap-4 border-b border-border/50 py-2 last:border-0">
+      <span className="flex-shrink-0 text-xs text-muted-foreground">
+        {label}
+      </span>
+      <span className={cn('text-right text-xs', mono && 'font-mono')}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -305,38 +360,57 @@ function FileChangeSummary({ files }: { files: FileChange[] }) {
       acc[f.status] = (acc[f.status] || 0) + 1;
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Files Changed</h4>
+      <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        Files Changed
+      </h4>
       <div className="flex items-center gap-4 text-xs">
-        <span className="font-medium">{files.length} file{files.length !== 1 ? 's' : ''}</span>
-        <span className="flex items-center gap-1 text-emerald-600"><Plus className="h-3 w-3" />{additions}</span>
-        <span className="flex items-center gap-1 text-red-500"><Minus className="h-3 w-3" />{deletions}</span>
+        <span className="font-medium">
+          {files.length} file{files.length !== 1 ? 's' : ''}
+        </span>
+        <span className="flex items-center gap-1 text-emerald-600">
+          <Plus className="h-3 w-3" />
+          {additions}
+        </span>
+        <span className="flex items-center gap-1 text-red-500">
+          <Minus className="h-3 w-3" />
+          {deletions}
+        </span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {Object.entries(byStatus).map(([status, count]) => (
-          <Badge key={status} variant="outline" className="text-[10px] px-1.5 py-0">
+          <Badge
+            key={status}
+            variant="outline"
+            className="px-1.5 py-0 text-[10px]"
+          >
             {count} {status}
           </Badge>
         ))}
       </div>
-      <div className="space-y-1 max-h-40 overflow-y-auto">
+      <div className="max-h-40 space-y-1 overflow-y-auto">
         {files.map((f) => (
-          <div key={f.path} className="flex items-center gap-2 text-xs group">
-            <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <span className="truncate flex-1 font-mono text-[11px]" title={f.path}>
+          <div key={f.path} className="group flex items-center gap-2 text-xs">
+            <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+            <span
+              className="flex-1 truncate font-mono text-[11px]"
+              title={f.path}
+            >
               {f.path}
             </span>
-            <span className={cn(
-              'text-[10px] px-1 rounded flex-shrink-0',
-              f.status === 'added' && 'text-emerald-600 bg-emerald-500/10',
-              f.status === 'modified' && 'text-blue-600 bg-blue-500/10',
-              f.status === 'deleted' && 'text-red-500 bg-red-500/10',
-              f.status === 'renamed' && 'text-amber-600 bg-amber-500/10',
-            )}>
+            <span
+              className={cn(
+                'flex-shrink-0 rounded px-1 text-[10px]',
+                f.status === 'added' && 'bg-emerald-500/10 text-emerald-600',
+                f.status === 'modified' && 'bg-blue-500/10 text-blue-600',
+                f.status === 'deleted' && 'bg-red-500/10 text-red-500',
+                f.status === 'renamed' && 'bg-amber-500/10 text-amber-600'
+              )}
+            >
               {f.status}
             </span>
           </div>
@@ -352,38 +426,63 @@ function OverviewTab({ task }: { task: Task }) {
   const completed = task.completedAt ? new Date(task.completedAt) : null;
 
   return (
-    <div className="space-y-5 p-4 overflow-y-auto h-full">
+    <div className="h-full space-y-5 overflow-y-auto p-4">
       {/* Prompt */}
       <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prompt</h4>
+        <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Prompt
+        </h4>
         <div className="rounded-lg border bg-muted/30 p-3">
-          <p className="text-sm whitespace-pre-wrap break-words">{task.prompt}</p>
+          <p className="whitespace-pre-wrap break-words text-sm">
+            {task.prompt}
+          </p>
         </div>
       </div>
 
       {/* Timestamps */}
       <div className="space-y-1">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Timestamps</h4>
+        <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Timestamps
+        </h4>
         <MetricRow label="Created" value={created.toLocaleString()} mono />
-        {started && <MetricRow label="Started" value={started.toLocaleString()} mono />}
-        {completed && <MetricRow label="Completed" value={completed.toLocaleString()} mono />}
+        {started && (
+          <MetricRow label="Started" value={started.toLocaleString()} mono />
+        )}
+        {completed && (
+          <MetricRow
+            label="Completed"
+            value={completed.toLocaleString()}
+            mono
+          />
+        )}
         {started && completed && (
-          <MetricRow label="Duration" value={formatDuration(started, completed)} mono />
+          <MetricRow
+            label="Duration"
+            value={formatDuration(started, completed)}
+            mono
+          />
         )}
       </div>
 
       {/* Metrics */}
       <div className="space-y-1">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Metrics</h4>
+        <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Metrics
+        </h4>
         {task.currentQAAttempt && (
-          <MetricRow label="QA Attempt" value={`${task.currentQAAttempt} / 3`} />
+          <MetricRow
+            label="QA Attempt"
+            value={`${task.currentQAAttempt} / 3`}
+          />
         )}
         {task.committedSha && (
           <MetricRow
             label="Commit"
             value={
               <span className="flex items-center gap-1">
-                <code className="text-[11px] bg-muted px-1.5 py-0.5 rounded">{task.committedSha.substring(0, 8)}</code>
+                <code className="rounded bg-muted px-1.5 py-0.5 text-[11px]">
+                  {task.committedSha.substring(0, 8)}
+                </code>
                 <CopyButton text={task.committedSha} />
               </span>
             }
@@ -400,9 +499,13 @@ function OverviewTab({ task }: { task: Task }) {
       {/* Rejection reason */}
       {task.rejectionReason && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium text-red-500 uppercase tracking-wider">Rejection Reason</h4>
-          <div className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 p-3">
-            <p className="text-sm text-red-700 dark:text-red-400">{task.rejectionReason}</p>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-red-500">
+            Rejection Reason
+          </h4>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900/40 dark:bg-red-900/10">
+            <p className="text-sm text-red-700 dark:text-red-400">
+              {task.rejectionReason}
+            </p>
           </div>
         </div>
       )}
@@ -422,8 +525,8 @@ function OverviewTab({ task }: { task: Task }) {
 function ChangesTab({ taskId, hasDiff }: { taskId: string; hasDiff: boolean }) {
   if (!hasDiff) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-        <GitBranch className="h-6 w-6 mb-3" />
+      <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+        <GitBranch className="mb-3 h-6 w-6" />
         <p className="text-sm">No changes yet</p>
       </div>
     );
@@ -444,9 +547,20 @@ interface TabConfig {
 }
 
 function getAvailableTabs(task: Task): TabConfig[] {
-  const hasChanges = !!(task.diffContent || (task.filesChanged && task.filesChanged.length > 0));
+  const hasChanges = !!(
+    task.diffContent ||
+    (task.filesChanged && task.filesChanged.length > 0)
+  );
   const showApproval = task.status === 'waiting_approval';
-  const showQA = ['waiting_qa', 'qa_running', 'qa_failed', 'waiting_approval', 'approved', 'completed', 'failed'].includes(task.status);
+  const showQA = [
+    'waiting_qa',
+    'qa_running',
+    'qa_failed',
+    'waiting_approval',
+    'approved',
+    'completed',
+    'failed',
+  ].includes(task.status);
 
   return [
     {
@@ -466,7 +580,10 @@ function getAvailableTabs(task: Task): TabConfig[] {
       label: 'Changes',
       icon: <GitBranch className="h-3.5 w-3.5" />,
       available: true,
-      badge: hasChanges && task.filesChanged ? String(task.filesChanged.length) : undefined,
+      badge:
+        hasChanges && task.filesChanged
+          ? String(task.filesChanged.length)
+          : undefined,
     },
     {
       value: 'qa' as TabValue,
@@ -485,7 +602,8 @@ function getAvailableTabs(task: Task): TabConfig[] {
 
 function getDefaultTab(task: Task): TabValue {
   if (task.status === 'waiting_approval') return 'approval';
-  if (['running', 'qa_running', 'pre_flight'].includes(task.status)) return 'output';
+  if (['running', 'qa_running', 'pre_flight'].includes(task.status))
+    return 'output';
   if (['completed', 'approved'].includes(task.status)) return 'overview';
   return 'overview';
 }
@@ -494,7 +612,12 @@ function getDefaultTab(task: Task): TabValue {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPanelProps) {
+export function TaskDetailPanel({
+  taskId,
+  updates,
+  open,
+  onClose,
+}: TaskDetailPanelProps) {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [output, setOutput] = useState('');
@@ -538,7 +661,9 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
 
   // Process streaming output updates
   useEffect(() => {
-    const outputUpdates = updates.filter((x) => x.type === 'task_output' && x.taskId === taskId);
+    const outputUpdates = updates.filter(
+      (x) => x.type === 'task_output' && x.taskId === taskId
+    );
     const newUpdates = outputUpdates.slice(processedOutputCount.current);
     if (newUpdates.length > 0) {
       const newOutput = newUpdates.map((x) => x.output || '').join('');
@@ -549,12 +674,22 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
 
   // Process status updates
   useEffect(() => {
-    const statusUpdates = updates.filter((x) => x.type === 'task_update' && x.taskId === taskId);
+    const statusUpdates = updates.filter(
+      (x) => x.type === 'task_update' && x.taskId === taskId
+    );
     const last = statusUpdates[statusUpdates.length - 1];
     if (last?.status) {
       const newStatus = last.status as TaskStatus;
       setTask((prev) => (prev ? { ...prev, status: newStatus } : null));
-      if (['waiting_qa', 'waiting_approval', 'qa_failed', 'completed', 'approved'].includes(newStatus)) {
+      if (
+        [
+          'waiting_qa',
+          'waiting_approval',
+          'qa_failed',
+          'completed',
+          'approved',
+        ].includes(newStatus)
+      ) {
         loadTask();
       }
     }
@@ -575,7 +710,9 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
     try {
       const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (res.ok) {
-        setTask((prev) => (prev ? { ...prev, status: 'cancelled' as TaskStatus } : null));
+        setTask((prev) =>
+          prev ? { ...prev, status: 'cancelled' as TaskStatus } : null
+        );
       }
     } catch (e) {
       console.error('Failed to cancel task:', e);
@@ -586,7 +723,9 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
     try {
       const res = await fetch(`/api/tasks/${taskId}/retry`, { method: 'POST' });
       if (res.ok) {
-        setTask((prev) => (prev ? { ...prev, status: 'pending' as TaskStatus } : null));
+        setTask((prev) =>
+          prev ? { ...prev, status: 'pending' as TaskStatus } : null
+        );
         // Clear output and reload task data
         setOutput('');
         processedOutputCount.current = 0;
@@ -607,23 +746,23 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
     <div
       ref={panelRef}
       className={cn(
-        'flex flex-col bg-background h-full',
+        'flex h-full flex-col bg-background',
         // Desktop: inline panel with border, takes ~55-60% of parent flex
-        isDesktop && 'border-l shadow-xl w-[55%] xl:w-[60%] flex-shrink-0',
+        isDesktop && 'w-[55%] flex-shrink-0 border-l shadow-xl xl:w-[60%]',
         // Mobile: full-screen overlay
-        !isDesktop && 'fixed inset-0 z-50',
+        !isDesktop && 'fixed inset-0 z-50'
       )}
     >
       {/* Loading State */}
       {loading && (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       )}
 
       {/* Not Found State */}
       {!loading && !task && (
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6">
+        <div className="flex flex-1 flex-col items-center justify-center p-6 text-muted-foreground">
           <p className="text-sm">Task not found</p>
           <Button variant="ghost" size="sm" onClick={onClose} className="mt-3">
             Close
@@ -645,57 +784,79 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as TabValue)}
-            className="flex-1 flex flex-col overflow-hidden"
+            className="flex flex-1 flex-col overflow-hidden"
           >
             {/* Tab List */}
             <div className="flex-shrink-0 border-b px-2 sm:px-4">
-              <TabsList className="h-9 bg-transparent p-0 gap-0">
-                {tabs.filter((t) => t.available).map((tab) => (
-                  <TabsTrigger
-                    key={tab.value}
-                    value={tab.value}
-                    className={cn(
-                      'relative h-9 rounded-none border-b-2 border-transparent px-3 text-xs font-medium',
-                      'data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none',
-                      'hover:text-foreground transition-colors',
-                    )}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      {tab.icon}
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      {tab.badge && (
-                        <span className="ml-0.5 rounded-full bg-muted px-1.5 py-0 text-[10px] font-medium tabular-nums">
-                          {tab.badge}
-                        </span>
+              <TabsList className="h-9 gap-0 bg-transparent p-0">
+                {tabs
+                  .filter((t) => t.available)
+                  .map((tab) => (
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      className={cn(
+                        'relative h-9 rounded-none border-b-2 border-transparent px-3 text-xs font-medium',
+                        'data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none',
+                        'transition-colors hover:text-foreground'
                       )}
-                    </span>
-                  </TabsTrigger>
-                ))}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {tab.icon}
+                        <span className="hidden sm:inline">{tab.label}</span>
+                        {tab.badge && (
+                          <span className="ml-0.5 rounded-full bg-muted px-1.5 py-0 text-[10px] font-medium tabular-nums">
+                            {tab.badge}
+                          </span>
+                        )}
+                      </span>
+                    </TabsTrigger>
+                  ))}
               </TabsList>
             </div>
 
             {/* Tab Content */}
-            <TabsContent value="overview" className="flex-1 mt-0 overflow-hidden">
+            <TabsContent
+              value="overview"
+              className="mt-0 flex-1 overflow-hidden"
+            >
               <OverviewTab task={task} />
             </TabsContent>
 
-            <TabsContent value="output" className="flex-1 mt-0 overflow-hidden p-3 sm:p-4">
+            <TabsContent
+              value="output"
+              className="mt-0 flex-1 overflow-hidden p-3 sm:p-4"
+            >
               <TaskOutput output={output} status={task.status} />
             </TabsContent>
 
-            <TabsContent value="changes" className="flex-1 mt-0 overflow-hidden">
+            <TabsContent
+              value="changes"
+              className="mt-0 flex-1 overflow-hidden"
+            >
               <ChangesTab
                 taskId={taskId}
-                hasDiff={!!(task.diffContent || (task.filesChanged && task.filesChanged.length > 0))}
+                hasDiff={
+                  !!(
+                    task.diffContent ||
+                    (task.filesChanged && task.filesChanged.length > 0)
+                  )
+                }
               />
             </TabsContent>
 
-            <TabsContent value="qa" className="flex-1 mt-0 overflow-y-auto p-4">
-              <QAGateResults taskId={taskId} attempt={task.currentQAAttempt ?? 1} />
+            <TabsContent value="qa" className="mt-0 flex-1 overflow-y-auto p-4">
+              <QAGateResults
+                taskId={taskId}
+                attempt={task.currentQAAttempt ?? 1}
+              />
             </TabsContent>
 
             {task.status === 'waiting_approval' && (
-              <TabsContent value="approval" className="flex-1 mt-0 overflow-y-auto p-4">
+              <TabsContent
+                value="approval"
+                className="mt-0 flex-1 overflow-y-auto p-4"
+              >
                 <ApprovalPanel
                   taskId={taskId}
                   filesChanged={task.filesChanged ?? []}
@@ -717,7 +878,7 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
       <>
         {/* Backdrop */}
         <div
-          className="fixed inset-0 z-40 bg-black/50 animate-in fade-in duration-200"
+          className="fixed inset-0 z-40 bg-black/50 duration-200 animate-in fade-in"
           onClick={onClose}
         />
         {content}

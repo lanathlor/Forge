@@ -5,8 +5,12 @@ import userEvent from '@testing-library/user-event';
 import { GatePresets } from '../GatePresets';
 
 vi.mock('lucide-react', () => ({
-  PackagePlus: (props: Record<string, unknown>) => <svg data-testid="package-icon" {...props} />,
-  X: (props: Record<string, unknown>) => <svg data-testid="x-icon" {...props} />,
+  PackagePlus: (props: Record<string, unknown>) => (
+    <svg data-testid="package-icon" {...props} />
+  ),
+  X: (props: Record<string, unknown>) => (
+    <svg data-testid="x-icon" {...props} />
+  ),
 }));
 
 describe('GatePresets', () => {
@@ -20,7 +24,9 @@ describe('GatePresets', () => {
 
   it('renders the presets button', () => {
     render(<GatePresets {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /presets/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /presets/i })
+    ).toBeInTheDocument();
   });
 
   it('opens dialog when presets button is clicked', async () => {
@@ -75,7 +81,9 @@ describe('GatePresets', () => {
 
     await user.click(screen.getByRole('button', { name: /presets/i }));
 
-    expect(screen.getByText('ESLint + TypeScript + Tests + Build')).toBeInTheDocument();
+    expect(
+      screen.getByText('ESLint + TypeScript + Tests + Build')
+    ).toBeInTheDocument();
     expect(screen.getByText('ESLint + Tests')).toBeInTheDocument();
     expect(screen.getByText('Ruff + MyPy + Pytest')).toBeInTheDocument();
   });

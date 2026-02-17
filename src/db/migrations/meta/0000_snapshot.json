@@ -82,9 +82,7 @@
       "indexes": {
         "repositories_path_unique": {
           "name": "repositories_path_unique",
-          "columns": [
-            "path"
-          ],
+          "columns": ["path"],
           "isUnique": true
         }
       },
@@ -383,9 +381,7 @@
       "indexes": {
         "qa_gate_configs_name_unique": {
           "name": "qa_gate_configs_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },

@@ -10,7 +10,9 @@ const CACHE_DURATION = 5 * 60 * 1000;
 // Background refresh in progress flag
 let refreshInProgress = false;
 
-async function upsertRepository(repo: Awaited<ReturnType<typeof discoverRepositories>>[0]) {
+async function upsertRepository(
+  repo: Awaited<ReturnType<typeof discoverRepositories>>[0]
+) {
   await db
     .insert(repositories)
     .values({
@@ -74,7 +76,9 @@ async function getCachedRepositories() {
     .orderBy(desc(repositories.lastScanned));
 }
 
-function checkCacheFreshness(cachedRepos: typeof repositories.$inferSelect[]) {
+function checkCacheFreshness(
+  cachedRepos: (typeof repositories.$inferSelect)[]
+) {
   return (
     cachedRepos.length > 0 &&
     cachedRepos[0]?.lastScanned &&
@@ -82,7 +86,7 @@ function checkCacheFreshness(cachedRepos: typeof repositories.$inferSelect[]) {
   );
 }
 
-function returnFreshCache(cachedRepos: typeof repositories.$inferSelect[]) {
+function returnFreshCache(cachedRepos: (typeof repositories.$inferSelect)[]) {
   console.log('Returning fresh cached repositories');
   return NextResponse.json({
     repositories: cachedRepos,
@@ -91,7 +95,7 @@ function returnFreshCache(cachedRepos: typeof repositories.$inferSelect[]) {
   });
 }
 
-function returnStaleCache(cachedRepos: typeof repositories.$inferSelect[]) {
+function returnStaleCache(cachedRepos: (typeof repositories.$inferSelect)[]) {
   console.log('Returning stale cache, triggering background refresh');
 
   // Fire and forget background refresh

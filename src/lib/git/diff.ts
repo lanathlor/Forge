@@ -26,12 +26,22 @@ async function getGitDiffOutputs(containerPath: string, diffBase: string) {
   // Compare against working directory (includes both committed and uncommitted changes)
   // Using just `git diff ${diffBase}` instead of `git diff ${diffBase} HEAD`
   // This captures all changes since the starting commit, even if not committed
-  const [fullDiffResult, statResult, nameStatusResult, untrackedFilesResult] = await Promise.all([
-    execAsync(`git diff ${diffBase}`, { cwd: containerPath, timeout: 30000 }),
-    execAsync(`git diff ${diffBase} --numstat`, { cwd: containerPath, timeout: 30000 }),
-    execAsync(`git diff ${diffBase} --name-status`, { cwd: containerPath, timeout: 30000 }),
-    execAsync(`git ls-files --others --exclude-standard`, { cwd: containerPath, timeout: 30000 }),
-  ]);
+  const [fullDiffResult, statResult, nameStatusResult, untrackedFilesResult] =
+    await Promise.all([
+      execAsync(`git diff ${diffBase}`, { cwd: containerPath, timeout: 30000 }),
+      execAsync(`git diff ${diffBase} --numstat`, {
+        cwd: containerPath,
+        timeout: 30000,
+      }),
+      execAsync(`git diff ${diffBase} --name-status`, {
+        cwd: containerPath,
+        timeout: 30000,
+      }),
+      execAsync(`git ls-files --others --exclude-standard`, {
+        cwd: containerPath,
+        timeout: 30000,
+      }),
+    ]);
   return {
     fullDiff: fullDiffResult.stdout,
     statOutput: statResult.stdout,
@@ -50,11 +60,19 @@ export async function captureDiff(
   const diffBase = getDiffBase(fromCommit);
   console.log(`[captureDiff] Using diff base: ${diffBase}`);
 
-  const { fullDiff, statOutput, nameStatusOutput, untrackedFiles } = await getGitDiffOutputs(containerPath, diffBase);
-  const changedFiles = parseChangedFiles(statOutput, nameStatusOutput, fullDiff, untrackedFiles);
+  const { fullDiff, statOutput, nameStatusOutput, untrackedFiles } =
+    await getGitDiffOutputs(containerPath, diffBase);
+  const changedFiles = parseChangedFiles(
+    statOutput,
+    nameStatusOutput,
+    fullDiff,
+    untrackedFiles
+  );
   const stats = calculateStats(changedFiles);
 
-  console.log(`[captureDiff] Found ${changedFiles.length} changed files (${changedFiles.filter(f => f.status === 'added').length} new, ${changedFiles.filter(f => f.status === 'modified').length} modified, ${changedFiles.filter(f => f.status === 'deleted').length} deleted)`);
+  console.log(
+    `[captureDiff] Found ${changedFiles.length} changed files (${changedFiles.filter((f) => f.status === 'added').length} new, ${changedFiles.filter((f) => f.status === 'modified').length} modified, ${changedFiles.filter((f) => f.status === 'deleted').length} deleted)`
+  );
 
   return { fullDiff, changedFiles, stats };
 }

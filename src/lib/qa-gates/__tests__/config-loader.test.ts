@@ -126,7 +126,9 @@ describe('QA Gate Config Loader', () => {
       mockReadFile.mockResolvedValue('invalid json {');
 
       // Suppress expected error console output
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const result = await loadRepositoryConfig(mockRepoPath);
 
@@ -153,7 +155,9 @@ describe('QA Gate Config Loader', () => {
       mockReadFile.mockResolvedValue(JSON.stringify(invalidConfig));
 
       // Suppress expected error console output
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const result = await loadRepositoryConfig(mockRepoPath);
 

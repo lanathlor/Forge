@@ -38,7 +38,8 @@ export function withErrorBoundary<P extends object>(
 ): ComponentType<P> {
   const WithErrorBoundary = (props: P) => {
     const displayName = Component.displayName || Component.name || 'Component';
-    const boundaryId = config.id || `error-boundary-${displayName.toLowerCase()}`;
+    const boundaryId =
+      config.id || `error-boundary-${displayName.toLowerCase()}`;
 
     return (
       <ErrorBoundary
@@ -74,7 +75,9 @@ export function withErrorBoundary<P extends object>(
  * const SafeComponent = createSafeComponent(MyComponent, { id: 'my-component' });
  * ```
  */
-export function createErrorBoundaryWrapper(defaultConfig: ErrorBoundaryConfig = {}) {
+export function createErrorBoundaryWrapper(
+  defaultConfig: ErrorBoundaryConfig = {}
+) {
   return function <P extends object>(
     Component: ComponentType<P>,
     config: ErrorBoundaryConfig = {}

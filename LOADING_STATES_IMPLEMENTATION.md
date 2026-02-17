@@ -5,6 +5,7 @@ This document summarizes the comprehensive loading states system implemented for
 ## 🎯 Overview
 
 A complete, production-ready loading states system with:
+
 - **Skeleton loaders** that match actual content structure
 - **Progress indicators** for determinate and indeterminate operations
 - **Loading spinners** for actions and async operations
@@ -95,6 +96,7 @@ A complete, production-ready loading states system with:
 ### 1. Component Variants
 
 All components support multiple visual variants:
+
 - `default` - Standard muted appearance
 - `primary` - Brand color (blue)
 - `success` - Green for successful operations
@@ -104,6 +106,7 @@ All components support multiple visual variants:
 ### 2. Size Options
 
 Consistent sizing across components:
+
 - `xs` - Extra small (12px)
 - `sm` - Small (16px)
 - `default` - Default (24px)
@@ -161,11 +164,7 @@ function MyComponent() {
 ### Pattern 2: Button Actions
 
 ```tsx
-<LoadingButton
-  loading={isSaving}
-  loadingText="Saving..."
-  onClick={handleSave}
->
+<LoadingButton loading={isSaving} loadingText="Saving..." onClick={handleSave}>
   Save
 </LoadingButton>
 ```
@@ -173,12 +172,7 @@ function MyComponent() {
 ### Pattern 3: Progress Tracking
 
 ```tsx
-<ProgressBar
-  value={progress}
-  label="Uploading"
-  showPercentage
-  animated
-/>
+<ProgressBar value={progress} label="Uploading" showPercentage animated />
 ```
 
 ### Pattern 4: Lazy Loading
@@ -321,6 +315,7 @@ The loading system integrates seamlessly with existing components:
 ## 🎨 Design Tokens
 
 All components use the design system tokens:
+
 - Colors: `hsl(var(--muted))`, `hsl(var(--accent-primary))`, etc.
 - Spacing: Tailwind spacing scale
 - Animations: CSS variables and Tailwind utilities

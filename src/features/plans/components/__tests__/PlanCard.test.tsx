@@ -14,12 +14,22 @@ vi.mock('@/shared/lib/utils', async (importOriginal) => {
 
 // Mock DropdownMenu to always render children (avoids Radix portal issues in jsdom)
 vi.mock('@/shared/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-    <button onClick={onClick}>{children}</button>
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
   ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) => <button onClick={onClick}>{children}</button>,
   DropdownMenuSeparator: () => <hr />,
 }));
 
@@ -82,7 +92,9 @@ describe('PlanCard', () => {
 
     // Tasks display as "0/5 tasks" in a <span>
     const taskText = screen.getByText((content, element) => {
-      return element?.tagName === 'SPAN' && element?.textContent === '0/5 tasks';
+      return (
+        element?.tagName === 'SPAN' && element?.textContent === '0/5 tasks'
+      );
     });
     expect(taskText).toBeInTheDocument();
   });
@@ -128,11 +140,7 @@ describe('PlanCard', () => {
   it('should show "Pause" button for running status', () => {
     const runningPlan = { ...mockPlan, status: 'running' as const };
     render(
-      <PlanCard
-        plan={runningPlan}
-        onView={mockOnView}
-        onPause={mockOnPause}
-      />
+      <PlanCard plan={runningPlan} onView={mockOnView} onPause={mockOnPause} />
     );
 
     // "Pause" appears in both primary action and dropdown menu
@@ -158,11 +166,7 @@ describe('PlanCard', () => {
   it('should show "Resume" button for paused status', () => {
     const pausedPlan = { ...mockPlan, status: 'paused' as const };
     render(
-      <PlanCard
-        plan={pausedPlan}
-        onView={mockOnView}
-        onResume={mockOnResume}
-      />
+      <PlanCard plan={pausedPlan} onView={mockOnView} onResume={mockOnResume} />
     );
 
     // "Resume" appears in both primary action and dropdown menu
@@ -174,12 +178,7 @@ describe('PlanCard', () => {
 
   it('should not show primary action for completed status', () => {
     const completedPlan = { ...mockPlan, status: 'completed' as const };
-    render(
-      <PlanCard
-        plan={completedPlan}
-        onView={mockOnView}
-      />
-    );
+    render(<PlanCard plan={completedPlan} onView={mockOnView} />);
 
     // Completed plans have no primary action button, but clicking the card calls onView
     fireEvent.click(screen.getByText('Test Plan'));
@@ -188,12 +187,7 @@ describe('PlanCard', () => {
 
   it('should not show primary action for failed status', () => {
     const failedPlan = { ...mockPlan, status: 'failed' as const };
-    render(
-      <PlanCard
-        plan={failedPlan}
-        onView={mockOnView}
-      />
-    );
+    render(<PlanCard plan={failedPlan} onView={mockOnView} />);
 
     // Failed plans have no primary action, clicking card calls onView
     fireEvent.click(screen.getByText('Test Plan'));
@@ -202,11 +196,7 @@ describe('PlanCard', () => {
 
   it('should have delete option in dropdown when onDelete is provided', () => {
     render(
-      <PlanCard
-        plan={mockPlan}
-        onView={mockOnView}
-        onDelete={mockOnDelete}
-      />
+      <PlanCard plan={mockPlan} onView={mockOnView} onDelete={mockOnDelete} />
     );
 
     // With mocked dropdown, Delete is always rendered
@@ -270,13 +260,7 @@ describe('PlanCard', () => {
   });
 
   it('should call onView when list variant card is clicked', () => {
-    render(
-      <PlanCard
-        plan={mockPlan}
-        variant="list"
-        onView={mockOnView}
-      />
-    );
+    render(<PlanCard plan={mockPlan} variant="list" onView={mockOnView} />);
 
     fireEvent.click(screen.getByText('Test Plan'));
     expect(mockOnView).toHaveBeenCalledWith('plan-1');
@@ -355,7 +339,9 @@ describe('PlanCard', () => {
 
   it('should show active border for running plans', () => {
     const runningPlan = { ...mockPlan, status: 'running' as const };
-    const { container } = render(<PlanCard plan={runningPlan} onView={mockOnView} />);
+    const { container } = render(
+      <PlanCard plan={runningPlan} onView={mockOnView} />
+    );
 
     // Card should have the border-l-amber-500 class for active plans
     const card = container.firstChild;
@@ -364,7 +350,9 @@ describe('PlanCard', () => {
 
   it('should show active border for paused plans', () => {
     const pausedPlan = { ...mockPlan, status: 'paused' as const };
-    const { container } = render(<PlanCard plan={pausedPlan} onView={mockOnView} />);
+    const { container } = render(
+      <PlanCard plan={pausedPlan} onView={mockOnView} />
+    );
 
     const card = container.firstChild;
     expect(card).toHaveClass('border-l-2');
@@ -394,7 +382,9 @@ describe('PlanCard', () => {
       completedTasks: 5,
       totalTasks: 5,
     };
-    render(<PlanCard plan={completedPlan} variant="list" onView={mockOnView} />);
+    render(
+      <PlanCard plan={completedPlan} variant="list" onView={mockOnView} />
+    );
 
     expect(screen.getByText('Test Plan')).toBeInTheDocument();
   });
@@ -413,7 +403,13 @@ describe('PlanCard', () => {
 
   it('should not render description in list variant when empty', () => {
     const planWithoutDesc = { ...mockPlan, description: null };
-    render(<PlanCard plan={planWithoutDesc as any} variant="list" onView={mockOnView} />);
+    render(
+      <PlanCard
+        plan={planWithoutDesc as any}
+        variant="list"
+        onView={mockOnView}
+      />
+    );
 
     expect(screen.queryByText('Test description')).not.toBeInTheDocument();
   });

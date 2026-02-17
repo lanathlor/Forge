@@ -1,40 +1,40 @@
-import * as React from "react"
-import { Suspense } from "react"
-import { cn } from "@/shared/lib/utils"
-import { LoadingSpinner } from "./loading"
+import * as React from 'react';
+import { Suspense } from 'react';
+import { cn } from '@/shared/lib/utils';
+import { LoadingSpinner } from './loading';
 import {
   TaskListSkeleton,
   PlanListSkeleton,
   SessionSummarySkeleton,
   QAGatesConfigSkeleton,
   DashboardGridSkeleton,
-} from "./skeleton-loaders"
+} from './skeleton-loaders';
 
 /**
  * Common loading fallback types for React.Suspense
  */
 export type SuspenseFallbackType =
-  | "spinner"
-  | "task-list"
-  | "plan-list"
-  | "session-summary"
-  | "qa-gates"
-  | "dashboard-grid"
-  | "custom"
+  | 'spinner'
+  | 'task-list'
+  | 'plan-list'
+  | 'session-summary'
+  | 'qa-gates'
+  | 'dashboard-grid'
+  | 'custom';
 
 export interface SuspenseWrapperProps {
   /** The content to lazy load */
-  children: React.ReactNode
+  children: React.ReactNode;
   /** Type of loading fallback to show */
-  fallbackType?: SuspenseFallbackType
+  fallbackType?: SuspenseFallbackType;
   /** Custom fallback component (used when fallbackType is "custom") */
-  customFallback?: React.ReactNode
+  customFallback?: React.ReactNode;
   /** Optional className for wrapper */
-  className?: string
+  className?: string;
   /** Loading message for spinner fallback */
-  loadingMessage?: string
+  loadingMessage?: string;
   /** Number of skeleton items to show */
-  skeletonCount?: number
+  skeletonCount?: number;
 }
 
 /**
@@ -49,58 +49,56 @@ export interface SuspenseWrapperProps {
  */
 export function SuspenseWrapper({
   children,
-  fallbackType = "spinner",
+  fallbackType = 'spinner',
   customFallback,
   className,
-  loadingMessage = "Loading...",
+  loadingMessage = 'Loading...',
   skeletonCount = 3,
 }: SuspenseWrapperProps) {
   const getFallback = () => {
     switch (fallbackType) {
-      case "spinner":
+      case 'spinner':
         return (
-          <div className="flex items-center justify-center h-full min-h-[300px]">
+          <div className="flex h-full min-h-[300px] items-center justify-center">
             <div className="flex flex-col items-center gap-3 text-muted-foreground">
               <LoadingSpinner size="lg" variant="primary" />
               <span className="text-sm">{loadingMessage}</span>
             </div>
           </div>
-        )
+        );
 
-      case "task-list":
-        return <TaskListSkeleton count={skeletonCount} />
+      case 'task-list':
+        return <TaskListSkeleton count={skeletonCount} />;
 
-      case "plan-list":
-        return <PlanListSkeleton count={skeletonCount} />
+      case 'plan-list':
+        return <PlanListSkeleton count={skeletonCount} />;
 
-      case "session-summary":
-        return <SessionSummarySkeleton />
+      case 'session-summary':
+        return <SessionSummarySkeleton />;
 
-      case "qa-gates":
-        return <QAGatesConfigSkeleton />
+      case 'qa-gates':
+        return <QAGatesConfigSkeleton />;
 
-      case "dashboard-grid":
-        return <DashboardGridSkeleton columns={3} rows={2} />
+      case 'dashboard-grid':
+        return <DashboardGridSkeleton columns={3} rows={2} />;
 
-      case "custom":
-        return customFallback || null
+      case 'custom':
+        return customFallback || null;
 
       default:
         return (
           <div className="flex items-center justify-center p-8">
             <LoadingSpinner size="lg" />
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <div className={cn(className)}>
-      <Suspense fallback={getFallback()}>
-        {children}
-      </Suspense>
+      <Suspense fallback={getFallback()}>{children}</Suspense>
     </div>
-  )
+  );
 }
 
 /**
@@ -111,9 +109,9 @@ export function SuspenseSpinner({
   message,
   className,
 }: {
-  children: React.ReactNode
-  message?: string
-  className?: string
+  children: React.ReactNode;
+  message?: string;
+  className?: string;
 }) {
   return (
     <SuspenseWrapper
@@ -123,7 +121,7 @@ export function SuspenseSpinner({
     >
       {children}
     </SuspenseWrapper>
-  )
+  );
 }
 
 /**
@@ -134,9 +132,9 @@ export function SuspenseTaskList({
   count = 5,
   className,
 }: {
-  children: React.ReactNode
-  count?: number
-  className?: string
+  children: React.ReactNode;
+  count?: number;
+  className?: string;
 }) {
   return (
     <SuspenseWrapper
@@ -146,7 +144,7 @@ export function SuspenseTaskList({
     >
       {children}
     </SuspenseWrapper>
-  )
+  );
 }
 
 /**
@@ -157,9 +155,9 @@ export function SuspensePlanList({
   count = 3,
   className,
 }: {
-  children: React.ReactNode
-  count?: number
-  className?: string
+  children: React.ReactNode;
+  count?: number;
+  className?: string;
 }) {
   return (
     <SuspenseWrapper
@@ -169,7 +167,7 @@ export function SuspensePlanList({
     >
       {children}
     </SuspenseWrapper>
-  )
+  );
 }
 
 /**
@@ -179,17 +177,14 @@ export function SuspenseDashboard({
   children,
   className,
 }: {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <SuspenseWrapper
-      fallbackType="dashboard-grid"
-      className={className}
-    >
+    <SuspenseWrapper fallbackType="dashboard-grid" className={className}>
       {children}
     </SuspenseWrapper>
-  )
+  );
 }
 
 /**

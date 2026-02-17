@@ -8,7 +8,8 @@ export async function GET() {
   return NextResponse.json({
     message: 'QA gates are now defined per-repository in .autobot.json files',
     documentation: {
-      endpoint: 'Use GET /api/repositories/:id/qa-gates to get gates for a specific repository',
+      endpoint:
+        'Use GET /api/repositories/:id/qa-gates to get gates for a specific repository',
       configFile: '.autobot.json in repository root',
       exampleLocation: '/examples/.autobot.json.*',
       supportedLanguages: ['typescript', 'javascript', 'python', 'go', 'rust'],

@@ -33,18 +33,33 @@ vi.mock('@/features/plans/store/plansApi', () => ({
 
 // Mock DropdownMenu to always render children (avoids Radix portal issues in jsdom)
 vi.mock('@/shared/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-    <button onClick={onClick}>{children}</button>
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
   ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) => <button onClick={onClick}>{children}</button>,
   DropdownMenuSeparator: () => <hr />,
-  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 // Mock confirm
-vi.stubGlobal('confirm', vi.fn(() => true));
+vi.stubGlobal(
+  'confirm',
+  vi.fn(() => true)
+);
 
 // Create a mock store
 const createMockStore = () =>
@@ -128,7 +143,9 @@ describe('PlanList', () => {
 
     renderComponent('repo-1');
     expect(screen.getByText('No plans yet')).toBeInTheDocument();
-    expect(screen.getByText(/Plans help you break down complex tasks/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Plans help you break down complex tasks/)
+    ).toBeInTheDocument();
   });
 
   it('should render plans list', () => {
@@ -230,12 +247,17 @@ describe('PlanList', () => {
     const deleteButton = screen.getByText('Delete');
     fireEvent.click(deleteButton);
 
-    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this plan?');
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Are you sure you want to delete this plan?'
+    );
     expect(mockDeletePlan).toHaveBeenCalledWith('plan-1');
   });
 
   it('should not delete when confirmation is cancelled', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => false));
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => false)
+    );
 
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans: [mockPlan] },
@@ -251,7 +273,10 @@ describe('PlanList', () => {
     expect(mockDeletePlan).not.toHaveBeenCalled();
 
     // Restore
-    vi.stubGlobal('confirm', vi.fn(() => true));
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true)
+    );
   });
 
   it('should call onViewPlan when plan title is clicked', async () => {
@@ -295,8 +320,18 @@ describe('PlanList', () => {
 
   it('should filter plans by search query', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Alpha Plan', description: 'first plan' },
-      { ...mockPlan, id: 'plan-2', title: 'Beta Plan', description: 'second plan' },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Alpha Plan',
+        description: 'first plan',
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Beta Plan',
+        description: 'second plan',
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -306,7 +341,9 @@ describe('PlanList', () => {
 
     renderComponent();
 
-    const searchInput = screen.getByPlaceholderText('Search plans by title or description...');
+    const searchInput = screen.getByPlaceholderText(
+      'Search plans by title or description...'
+    );
     fireEvent.change(searchInput, { target: { value: 'Alpha' } });
 
     expect(screen.getByText('Alpha Plan')).toBeInTheDocument();
@@ -315,7 +352,12 @@ describe('PlanList', () => {
 
   it('should filter by description in search', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Plan A', description: 'unique description' },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Plan A',
+        description: 'unique description',
+      },
       { ...mockPlan, id: 'plan-2', title: 'Plan B', description: 'other' },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
@@ -326,7 +368,9 @@ describe('PlanList', () => {
 
     renderComponent();
 
-    const searchInput = screen.getByPlaceholderText('Search plans by title or description...');
+    const searchInput = screen.getByPlaceholderText(
+      'Search plans by title or description...'
+    );
     fireEvent.change(searchInput, { target: { value: 'unique' } });
 
     expect(screen.getByText('Plan A')).toBeInTheDocument();
@@ -342,7 +386,9 @@ describe('PlanList', () => {
 
     renderComponent();
 
-    const searchInput = screen.getByPlaceholderText('Search plans by title or description...');
+    const searchInput = screen.getByPlaceholderText(
+      'Search plans by title or description...'
+    );
     fireEvent.change(searchInput, { target: { value: 'test' } });
 
     // X button should appear
@@ -355,8 +401,18 @@ describe('PlanList', () => {
 
   it('should filter by status when status tab is clicked', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Draft Plan', status: 'draft' as const },
-      { ...mockPlan, id: 'plan-2', title: 'Completed Plan', status: 'completed' as const },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Draft Plan',
+        status: 'draft' as const,
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Completed Plan',
+        status: 'completed' as const,
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -376,8 +432,18 @@ describe('PlanList', () => {
 
   it('should show paused plans under Running tab', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Active Plan', status: 'running' as const },
-      { ...mockPlan, id: 'plan-2', title: 'Paused Plan', status: 'paused' as const },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Active Plan',
+        status: 'running' as const,
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Paused Plan',
+        status: 'paused' as const,
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -391,7 +457,9 @@ describe('PlanList', () => {
     const runningElements = screen.getAllByText('Running');
     // The first one is the status badge, the filter tab also has "Running"
     // Click the filter tab (which has the count suffix)
-    const runningTab = runningElements.find(el => el.closest('button') && !el.closest('[class*="badge"]'));
+    const runningTab = runningElements.find(
+      (el) => el.closest('button') && !el.closest('[class*="badge"]')
+    );
     fireEvent.click(runningTab!);
 
     expect(screen.getByText('Active Plan')).toBeInTheDocument();
@@ -407,8 +475,12 @@ describe('PlanList', () => {
 
     renderComponent();
 
-    const searchInput = screen.getByPlaceholderText('Search plans by title or description...');
-    fireEvent.change(searchInput, { target: { value: 'nonexistent query xyz' } });
+    const searchInput = screen.getByPlaceholderText(
+      'Search plans by title or description...'
+    );
+    fireEvent.change(searchInput, {
+      target: { value: 'nonexistent query xyz' },
+    });
 
     expect(screen.getByText('No matching plans')).toBeInTheDocument();
     expect(screen.getByText('Clear filters')).toBeInTheDocument();
@@ -423,7 +495,9 @@ describe('PlanList', () => {
 
     renderComponent();
 
-    const searchInput = screen.getByPlaceholderText('Search plans by title or description...');
+    const searchInput = screen.getByPlaceholderText(
+      'Search plans by title or description...'
+    );
     fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
 
     const clearButton = screen.getByText('Clear filters');
@@ -469,8 +543,18 @@ describe('PlanList', () => {
 
   it('should toggle sort direction when same field is clicked', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Alpha', updatedAt: new Date('2024-01-01') },
-      { ...mockPlan, id: 'plan-2', title: 'Beta', updatedAt: new Date('2024-01-02') },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Alpha',
+        updatedAt: new Date('2024-01-01'),
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Beta',
+        updatedAt: new Date('2024-01-02'),
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -491,8 +575,18 @@ describe('PlanList', () => {
 
   it('should sort by title when Title sort is selected', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Zeta Plan', updatedAt: new Date('2024-01-02') },
-      { ...mockPlan, id: 'plan-2', title: 'Alpha Plan', updatedAt: new Date('2024-01-01') },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Zeta Plan',
+        updatedAt: new Date('2024-01-02'),
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Alpha Plan',
+        updatedAt: new Date('2024-01-01'),
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -512,8 +606,18 @@ describe('PlanList', () => {
 
   it('should sort by status', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Draft Plan', status: 'draft' as const },
-      { ...mockPlan, id: 'plan-2', title: 'Running Plan', status: 'running' as const },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Draft Plan',
+        status: 'draft' as const,
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Running Plan',
+        status: 'running' as const,
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -532,8 +636,20 @@ describe('PlanList', () => {
 
   it('should sort by progress', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Low Progress Plan', completedTasks: 1, totalTasks: 10 },
-      { ...mockPlan, id: 'plan-2', title: 'High Progress Plan', completedTasks: 9, totalTasks: 10 },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Low Progress Plan',
+        completedTasks: 1,
+        totalTasks: 10,
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'High Progress Plan',
+        completedTasks: 9,
+        totalTasks: 10,
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -546,7 +662,9 @@ describe('PlanList', () => {
     // "Progress" appears in both sort dropdown and progress bar labels, use getAllByText
     const progressElements = screen.getAllByText('Progress');
     // Find the one in the sort dropdown (inside a button element)
-    const sortButton = progressElements.find(el => el.closest('button') && !el.closest('[class*="px-4"]'));
+    const sortButton = progressElements.find(
+      (el) => el.closest('button') && !el.closest('[class*="px-4"]')
+    );
     fireEvent.click(sortButton!);
 
     expect(screen.getByText('Low Progress Plan')).toBeInTheDocument();
@@ -555,8 +673,18 @@ describe('PlanList', () => {
 
   it('should sort by createdAt', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Old Created Plan', createdAt: new Date('2023-01-01') },
-      { ...mockPlan, id: 'plan-2', title: 'Recent Created Plan', createdAt: new Date('2024-06-01') },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Old Created Plan',
+        createdAt: new Date('2023-01-01'),
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Recent Created Plan',
+        createdAt: new Date('2024-06-01'),
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -585,7 +713,9 @@ describe('PlanList', () => {
 
     renderComponent();
 
-    const searchInput = screen.getByPlaceholderText('Search plans by title or description...');
+    const searchInput = screen.getByPlaceholderText(
+      'Search plans by title or description...'
+    );
     fireEvent.change(searchInput, { target: { value: 'Plan A' } });
 
     expect(screen.getByText('Plan A')).toBeInTheDocument();
@@ -604,8 +734,20 @@ describe('PlanList', () => {
 
   it('should handle plans with zero totalTasks for progress sort', () => {
     const plans = [
-      { ...mockPlan, id: 'plan-1', title: 'Zero Task Plan', totalTasks: 0, completedTasks: 0 },
-      { ...mockPlan, id: 'plan-2', title: 'Some Task Plan', totalTasks: 5, completedTasks: 3 },
+      {
+        ...mockPlan,
+        id: 'plan-1',
+        title: 'Zero Task Plan',
+        totalTasks: 0,
+        completedTasks: 0,
+      },
+      {
+        ...mockPlan,
+        id: 'plan-2',
+        title: 'Some Task Plan',
+        totalTasks: 5,
+        completedTasks: 3,
+      },
     ];
     vi.mocked(useGetPlansQuery).mockReturnValue({
       data: { plans },
@@ -617,7 +759,9 @@ describe('PlanList', () => {
 
     // "Progress" appears in both sort dropdown and progress bar labels, use getAllByText
     const progressElements = screen.getAllByText('Progress');
-    const sortButton = progressElements.find(el => el.closest('button') && !el.closest('[class*="px-4"]'));
+    const sortButton = progressElements.find(
+      (el) => el.closest('button') && !el.closest('[class*="px-4"]')
+    );
     fireEvent.click(sortButton!);
 
     expect(screen.getByText('Zero Task Plan')).toBeInTheDocument();

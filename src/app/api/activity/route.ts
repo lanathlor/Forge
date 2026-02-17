@@ -6,7 +6,11 @@ import { sessions, type SessionStatus } from '@/db/schema/sessions';
 import { plans, type PlanStatus } from '@/db/schema/plans';
 import { qaGateResults, type QAGateStatus } from '@/db/schema/qa-gates';
 import { desc, and, eq, gte, or } from 'drizzle-orm';
-import type { ActivityItem, ActivityType, ActivityStatus } from '@/app/components/RecentActivity';
+import type {
+  ActivityItem,
+  ActivityType,
+  ActivityStatus,
+} from '@/app/components/RecentActivity';
 
 /* ============================================
    TYPES
@@ -66,12 +70,19 @@ function truncateText(text: string, maxLength: number): string {
   return text.length <= maxLength ? text : text.slice(0, maxLength - 3) + '...';
 }
 
-function computeDuration(start: Date | null, end: Date | null): number | undefined {
-  return start && end ? new Date(end).getTime() - new Date(start).getTime() : undefined;
+function computeDuration(
+  start: Date | null,
+  end: Date | null
+): number | undefined {
+  return start && end
+    ? new Date(end).getTime() - new Date(start).getTime()
+    : undefined;
 }
 
 function sortByTimestamp(items: ActivityItem[]): ActivityItem[] {
-  return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return items.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 }
 
 function deduplicateActivities(items: ActivityItem[]): ActivityItem[] {
@@ -87,10 +98,8 @@ function deduplicateActivities(items: ActivityItem[]): ActivityItem[] {
    TASK ACTIVITIES
    ============================================ */
 
-async function fetchTaskActivities(params: ActivityQueryParams): Promise<ActivityItem[]> {
-  const { repositoryId, limit, offset, since } = params;
-
-  const statusFilter = or(
+function buildTaskStatusFilter() {
+  return or(
     eq(tasks.status, 'running'),
     eq(tasks.status, 'completed'),
     eq(tasks.status, 'approved'),
@@ -99,8 +108,42 @@ async function fetchTaskActivities(params: ActivityQueryParams): Promise<Activit
     eq(tasks.status, 'qa_failed'),
     eq(tasks.status, 'cancelled')
   );
+}
 
-  const whereConditions = since ? and(statusFilter, gte(tasks.updatedAt, since)) : statusFilter;
+function mapTaskToActivity(
+  task: Awaited<ReturnType<typeof db.query.tasks.findMany>>[number]
+): ActivityItem[] {
+  const mapping = TASK_STATUS_MAP[task.status];
+  if (!mapping) return [];
+  return [
+    {
+      id: `task-${task.id}`,
+      type: mapping.type,
+      title: truncateText(task.prompt, 60),
+      description: task.claudeOutput
+        ? truncateText(task.claudeOutput, 100)
+        : undefined,
+      timestamp: (task.completedAt ?? task.updatedAt ?? task.createdAt).toISOString(),
+      status: mapping.status,
+      detailsLink: `/tasks/${task.id}`,
+      metadata: {
+        taskId: task.id,
+        sessionId: task.sessionId,
+        repositoryName: undefined,
+        duration: computeDuration(task.startedAt, task.completedAt),
+      },
+    },
+  ];
+}
+
+async function fetchTaskActivities(
+  params: ActivityQueryParams
+): Promise<ActivityItem[]> {
+  const { repositoryId, limit, offset, since } = params;
+  const statusFilter = buildTaskStatusFilter();
+  const whereConditions = since
+    ? and(statusFilter, gte(tasks.updatedAt, since))
+    : statusFilter;
 
   const taskResults = await db.query.tasks.findMany({
     where: whereConditions,
@@ -111,36 +154,19 @@ async function fetchTaskActivities(params: ActivityQueryParams): Promise<Activit
   });
 
   const filtered = repositoryId
-    ? taskResults.filter((t) => t.session?.repository?.id === repositoryId)
+    ? taskResults.filter((t) => (t.session as { repository?: { id?: string } })?.repository?.id === repositoryId)
     : taskResults;
 
-  return filtered.flatMap((task) => {
-    const mapping = TASK_STATUS_MAP[task.status];
-    if (!mapping) return [];
-
-    return [{
-      id: `task-${task.id}`,
-      type: mapping.type,
-      title: truncateText(task.prompt, 60),
-      description: task.claudeOutput ? truncateText(task.claudeOutput, 100) : undefined,
-      timestamp: (task.completedAt ?? task.updatedAt ?? task.createdAt).toISOString(),
-      status: mapping.status,
-      detailsLink: `/tasks/${task.id}`,
-      metadata: {
-        taskId: task.id,
-        sessionId: task.sessionId,
-        repositoryName: task.session?.repository?.name,
-        duration: computeDuration(task.startedAt, task.completedAt),
-      },
-    }];
-  });
+  return filtered.flatMap(mapTaskToActivity);
 }
 
 /* ============================================
    SESSION ACTIVITIES
    ============================================ */
 
-async function fetchSessionActivities(params: ActivityQueryParams): Promise<ActivityItem[]> {
+async function fetchSessionActivities(
+  params: ActivityQueryParams
+): Promise<ActivityItem[]> {
   const { repositoryId, limit, offset, since } = params;
 
   const conditions = [];
@@ -162,16 +188,23 @@ async function fetchSessionActivities(params: ActivityQueryParams): Promise<Acti
       : SESSION_STATUS_MAP[session.status];
     if (!mapping) return [];
 
-    return [{
-      id: `session-${session.id}-${session.status}`,
-      type: mapping.type,
-      title: session.repository?.name ?? 'Unknown Repository',
-      description: isNew ? 'New session started' : `Session ${session.status}`,
-      timestamp: session.updatedAt.toISOString(),
-      status: mapping.status,
-      detailsLink: `/sessions/${session.id}`,
-      metadata: { sessionId: session.id, repositoryName: session.repository?.name },
-    }];
+    return [
+      {
+        id: `session-${session.id}-${session.status}`,
+        type: mapping.type,
+        title: session.repository?.name ?? 'Unknown Repository',
+        description: isNew
+          ? 'New session started'
+          : `Session ${session.status}`,
+        timestamp: session.updatedAt.toISOString(),
+        status: mapping.status,
+        detailsLink: `/sessions/${session.id}`,
+        metadata: {
+          sessionId: session.id,
+          repositoryName: session.repository?.name,
+        },
+      },
+    ];
   });
 }
 
@@ -179,7 +212,9 @@ async function fetchSessionActivities(params: ActivityQueryParams): Promise<Acti
    PLAN ACTIVITIES
    ============================================ */
 
-async function fetchPlanActivities(params: ActivityQueryParams): Promise<ActivityItem[]> {
+async function fetchPlanActivities(
+  params: ActivityQueryParams
+): Promise<ActivityItem[]> {
   const { repositoryId, limit, offset, since } = params;
 
   const conditions = [];
@@ -198,20 +233,22 @@ async function fetchPlanActivities(params: ActivityQueryParams): Promise<Activit
     const mapping = PLAN_STATUS_MAP[plan.status];
     if (!mapping) return [];
 
-    return [{
-      id: `plan-${plan.id}-${plan.status}`,
-      type: mapping.type,
-      title: plan.title,
-      description: plan.description ?? undefined,
-      timestamp: plan.updatedAt.toISOString(),
-      status: mapping.status,
-      detailsLink: `/plans/${plan.id}`,
-      metadata: {
-        planId: plan.id,
-        repositoryName: plan.repository?.name,
-        duration: computeDuration(plan.startedAt, plan.completedAt),
+    return [
+      {
+        id: `plan-${plan.id}-${plan.status}`,
+        type: mapping.type,
+        title: plan.title,
+        description: plan.description ?? undefined,
+        timestamp: plan.updatedAt.toISOString(),
+        status: mapping.status,
+        detailsLink: `/plans/${plan.id}`,
+        metadata: {
+          planId: plan.id,
+          repositoryName: plan.repository?.name,
+          duration: computeDuration(plan.startedAt, plan.completedAt),
+        },
       },
-    }];
+    ];
   });
 }
 
@@ -219,11 +256,18 @@ async function fetchPlanActivities(params: ActivityQueryParams): Promise<Activit
    QA ACTIVITIES
    ============================================ */
 
-async function fetchQAActivities(params: ActivityQueryParams): Promise<ActivityItem[]> {
+async function fetchQAActivities(
+  params: ActivityQueryParams
+): Promise<ActivityItem[]> {
   const { limit, offset, since } = params;
 
-  const statusFilter = or(eq(qaGateResults.status, 'passed'), eq(qaGateResults.status, 'failed'));
-  const whereConditions = since ? and(statusFilter, gte(qaGateResults.completedAt, since)) : statusFilter;
+  const statusFilter = or(
+    eq(qaGateResults.status, 'passed'),
+    eq(qaGateResults.status, 'failed')
+  );
+  const whereConditions = since
+    ? and(statusFilter, gte(qaGateResults.completedAt, since))
+    : statusFilter;
 
   const qaResults = await db.query.qaGateResults.findMany({
     where: whereConditions,
@@ -237,22 +281,24 @@ async function fetchQAActivities(params: ActivityQueryParams): Promise<ActivityI
     const mapping = QA_STATUS_MAP[qa.status];
     if (!mapping) return [];
 
-    return [{
-      id: `qa-${qa.id}`,
-      type: mapping.type,
-      title: qa.gateName,
-      description: qa.output ? truncateText(qa.output, 100) : undefined,
-      timestamp: (qa.completedAt ?? qa.createdAt).toISOString(),
-      status: mapping.status,
-      detailsLink: qa.task ? `/tasks/${qa.taskId}` : undefined,
-      metadata: {
-        taskId: qa.taskId,
-        sessionId: qa.task?.sessionId,
-        repositoryName: qa.task?.session?.repository?.name,
-        duration: qa.duration ?? undefined,
-        qaGateName: qa.gateName,
+    return [
+      {
+        id: `qa-${qa.id}`,
+        type: mapping.type,
+        title: qa.gateName,
+        description: qa.output ? truncateText(qa.output, 100) : undefined,
+        timestamp: (qa.completedAt ?? qa.createdAt).toISOString(),
+        status: mapping.status,
+        detailsLink: qa.task ? `/tasks/${qa.taskId}` : undefined,
+        metadata: {
+          taskId: qa.taskId,
+          sessionId: qa.task?.sessionId,
+          repositoryName: qa.task?.session?.repository?.name,
+          duration: qa.duration ?? undefined,
+          qaGateName: qa.gateName,
+        },
       },
-    }];
+    ];
   });
 }
 
@@ -260,17 +306,25 @@ async function fetchQAActivities(params: ActivityQueryParams): Promise<ActivityI
    FETCH & COMBINE ACTIVITIES
    ============================================ */
 
-async function fetchAllActivities(params: ActivityQueryParams): Promise<ActivityItem[]> {
+async function fetchAllActivities(
+  params: ActivityQueryParams
+): Promise<ActivityItem[]> {
   const perSourceParams = { ...params, limit: Math.ceil(params.limit * 1.5) };
 
-  const [taskActivities, sessionActivities, planActivities, qaActivities] = await Promise.all([
-    fetchTaskActivities(perSourceParams),
-    fetchSessionActivities(perSourceParams),
-    fetchPlanActivities(perSourceParams),
-    fetchQAActivities(perSourceParams),
-  ]);
+  const [taskActivities, sessionActivities, planActivities, qaActivities] =
+    await Promise.all([
+      fetchTaskActivities(perSourceParams),
+      fetchSessionActivities(perSourceParams),
+      fetchPlanActivities(perSourceParams),
+      fetchQAActivities(perSourceParams),
+    ]);
 
-  return [...taskActivities, ...sessionActivities, ...planActivities, ...qaActivities];
+  return [
+    ...taskActivities,
+    ...sessionActivities,
+    ...planActivities,
+    ...qaActivities,
+  ];
 }
 
 function parseQueryParams(searchParams: URLSearchParams): ActivityQueryParams {
@@ -278,7 +332,9 @@ function parseQueryParams(searchParams: URLSearchParams): ActivityQueryParams {
     repositoryId: searchParams.get('repositoryId') ?? undefined,
     limit: Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 100),
     offset: parseInt(searchParams.get('offset') ?? '0', 10),
-    since: searchParams.get('since') ? new Date(searchParams.get('since')!) : undefined,
+    since: searchParams.get('since')
+      ? new Date(searchParams.get('since')!)
+      : undefined,
   };
 }
 
@@ -303,6 +359,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching activity:', error);
-    return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch activity' },
+      { status: 500 }
+    );
   }
 }

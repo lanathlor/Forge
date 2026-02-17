@@ -11,9 +11,5 @@ interface TemplateProps {
  * Automatically wraps all pages for smooth transitions
  */
 export default function Template({ children }: TemplateProps) {
-  return (
-    <div className="h-full animate-slide-up-fade">
-      {children}
-    </div>
-  );
+  return <div className="h-full animate-slide-up-fade">{children}</div>;
 }

@@ -12,7 +12,7 @@ export function RepositoryErrorState({
 }: RepositoryErrorStateProps) {
   return (
     <Card className="p-6">
-      <p className="text-destructive mb-4">Failed to load repositories</p>
+      <p className="mb-4 text-destructive">Failed to load repositories</p>
       <Button variant="outline" onClick={onRescan} disabled={isRescanning}>
         {isRescanning ? 'Rescanning...' : 'Try Again'}
       </Button>

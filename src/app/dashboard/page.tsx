@@ -1,8 +1,16 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAppSelector, useAppDispatch, useMultiRepoStream } from '@/shared/hooks';
-import { setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
+import {
+  useAppSelector,
+  useAppDispatch,
+  useMultiRepoStream,
+} from '@/shared/hooks';
+import {
+  setSidebarCollapsed,
+  setCurrentRepository,
+  setCurrentSession,
+} from '@/features/sessions/store/sessionSlice';
 import { updateSnapshot } from '@/features/sessions/store/repoSnapshotSlice';
 import { useRepositorySession } from '../hooks/useRepositorySession';
 import { useRepoSnapshot } from '../hooks/useRepoSnapshot';
@@ -13,13 +21,18 @@ import { EmptyRepositoryState } from '../components/EmptyRepositoryState';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { NeedsAttention } from '../components/NeedsAttention';
 import { RepoContextSnapshot } from '../components/RepoContextSnapshot';
-import { useOptimisticActiveSession, useOptimisticSession } from '@/shared/hooks/useOptimisticSession';
+import {
+  useOptimisticActiveSession,
+  useOptimisticSession,
+} from '@/shared/hooks/useOptimisticSession';
 import { cn } from '@/shared/lib/utils';
 
 /* eslint-disable max-lines-per-function, complexity */
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
-  const isSidebarCollapsed = useAppSelector(state => state.session.isSidebarCollapsed);
+  const isSidebarCollapsed = useAppSelector(
+    (state) => state.session.isSidebarCollapsed
+  );
   const { selectedRepo, handleSelectRepository } = useRepositorySession();
   const [initialTaskId, setInitialTaskId] = useState<string | null>(null);
 
@@ -27,18 +40,18 @@ export default function DashboardPage() {
   const { repositories } = useMultiRepoStream();
 
   // Repo context snapshot for instant context on repo switch
-  const { snapshot, isDismissed, hasContext, dismiss, resumeTask } = useRepoSnapshot({
-    repositories,
-    currentRepoId: selectedRepo?.id ?? null,
-  });
+  const { snapshot, isDismissed, hasContext, dismiss, resumeTask } =
+    useRepoSnapshot({
+      repositories,
+      currentRepoId: selectedRepo?.id ?? null,
+    });
 
   // Prefetch session data on hover so switching is instant
   const { prefetchSession } = useOptimisticSession();
 
   // Use RTK Query for active session — provides instant cached state on repo switch
-  const { session: activeSession, isLoading: isSessionLoading } = useOptimisticActiveSession(
-    selectedRepo?.id ?? null,
-  );
+  const { session: activeSession, isLoading: isSessionLoading } =
+    useOptimisticActiveSession(selectedRepo?.id ?? null);
 
   // Persist session ID in Redux when it loads
   useEffect(() => {
@@ -48,24 +61,34 @@ export default function DashboardPage() {
   }, [activeSession?.id, dispatch]);
 
   // Track last viewed task in snapshot
-  const handleTaskSelected = useCallback((taskId: string | null) => {
-    if (selectedRepo && taskId) {
-      dispatch(updateSnapshot({
-        repositoryId: selectedRepo.id,
-        lastViewedTaskId: taskId,
-      }));
-    }
-  }, [selectedRepo, dispatch]);
+  const handleTaskSelected = useCallback(
+    (taskId: string | null) => {
+      if (selectedRepo && taskId) {
+        dispatch(
+          updateSnapshot({
+            repositoryId: selectedRepo.id,
+            lastViewedTaskId: taskId,
+          })
+        );
+      }
+    },
+    [selectedRepo, dispatch]
+  );
 
   // Track active tab in snapshot
-  const handleTabChanged = useCallback((tab: 'tasks' | 'plans' | 'qa-gates') => {
-    if (selectedRepo && tab !== 'qa-gates') {
-      dispatch(updateSnapshot({
-        repositoryId: selectedRepo.id,
-        lastViewedTab: tab,
-      }));
-    }
-  }, [selectedRepo, dispatch]);
+  const handleTabChanged = useCallback(
+    (tab: 'tasks' | 'plans' | 'qa-gates') => {
+      if (selectedRepo && tab !== 'qa-gates') {
+        dispatch(
+          updateSnapshot({
+            repositoryId: selectedRepo.id,
+            lastViewedTab: tab,
+          })
+        );
+      }
+    },
+    [selectedRepo, dispatch]
+  );
 
   // Handle resume from snapshot
   const handleResumeTask = useCallback(() => {
@@ -76,20 +99,28 @@ export default function DashboardPage() {
   }, [resumeTask]);
 
   // Handle selecting a task from snapshot events
-  const handleSnapshotSelectTask = useCallback((taskId: string) => {
-    dismiss();
-    setInitialTaskId(taskId);
-  }, [dismiss]);
+  const handleSnapshotSelectTask = useCallback(
+    (taskId: string) => {
+      dismiss();
+      setInitialTaskId(taskId);
+    },
+    [dismiss]
+  );
 
   // Handle navigation to stuck repo from NeedsAttention panel
-  const handleSelectStuckRepo = useCallback((repositoryId: string, sessionId?: string | null) => {
-    dispatch(setCurrentRepository(repositoryId));
-    if (sessionId) {
-      dispatch(setCurrentSession(sessionId));
-    }
-    // Trigger reload of selected repo
-    handleSelectRepository({ id: repositoryId } as Parameters<typeof handleSelectRepository>[0]);
-  }, [dispatch, handleSelectRepository]);
+  const handleSelectStuckRepo = useCallback(
+    (repositoryId: string, sessionId?: string | null) => {
+      dispatch(setCurrentRepository(repositoryId));
+      if (sessionId) {
+        dispatch(setCurrentSession(sessionId));
+      }
+      // Trigger reload of selected repo
+      handleSelectRepository({ id: repositoryId } as Parameters<
+        typeof handleSelectRepository
+      >[0]);
+    },
+    [dispatch, handleSelectRepository]
+  );
 
   // Clear initial task ID after it's been consumed
   const handleInitialTaskConsumed = useCallback(() => {
@@ -97,22 +128,26 @@ export default function DashboardPage() {
   }, []);
 
   // Wrap handleSelectRepository to also trigger prefetch of the new repo's session
-  const handleSelectRepositoryWithPrefetch = useCallback((repo: Parameters<typeof handleSelectRepository>[0]) => {
-    handleSelectRepository(repo);
-    // Prefetch adjacent repos' sessions so switching back is instant
-    prefetchSession(repo.id);
-  }, [handleSelectRepository, prefetchSession]);
+  const handleSelectRepositoryWithPrefetch = useCallback(
+    (repo: Parameters<typeof handleSelectRepository>[0]) => {
+      handleSelectRepository(repo);
+      // Prefetch adjacent repos' sessions so switching back is instant
+      prefetchSession(repo.id);
+    },
+    [handleSelectRepository, prefetchSession]
+  );
 
-  const showSnapshot = hasContext && !isDismissed && selectedRepo && activeSession;
+  const showSnapshot =
+    hasContext && !isDismissed && selectedRepo && activeSession;
 
   return (
     <AppLayout activeNavItem="dashboard">
-      <div className="flex-1 overflow-hidden h-full">
-        <div className="flex flex-col lg:flex-row gap-4 h-full p-4 lg:p-6">
+      <div className="h-full flex-1 overflow-hidden">
+        <div className="flex h-full flex-col gap-4 p-4 lg:flex-row lg:p-6">
           {/* Repository Selector Panel */}
           <div
             className={cn(
-              'flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col gap-4',
+              'flex flex-shrink-0 flex-col gap-4 transition-all duration-300 ease-in-out',
               isSidebarCollapsed ? 'w-16' : 'w-80',
               // Hide on mobile, show as a panel on larger screens
               'hidden lg:block'
@@ -122,7 +157,9 @@ export default function DashboardPage() {
               onSelect={handleSelectRepositoryWithPrefetch}
               onHover={(repoId) => prefetchSession(repoId)}
               isCollapsed={isSidebarCollapsed}
-              onToggleCollapse={() => dispatch(setSidebarCollapsed(!isSidebarCollapsed))}
+              onToggleCollapse={() =>
+                dispatch(setSidebarCollapsed(!isSidebarCollapsed))
+              }
             />
             {/* Needs Attention Panel - shows all stuck repos across the dashboard */}
             {!isSidebarCollapsed && (
@@ -136,7 +173,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 overflow-hidden min-w-0 flex flex-col gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
             {/* Repo Context Snapshot - shows instantly on repo switch */}
             {showSnapshot && snapshot && (
               <div className="flex-shrink-0">
@@ -150,7 +187,7 @@ export default function DashboardPage() {
             )}
 
             {/* Dashboard content */}
-            <div className="flex-1 overflow-hidden min-w-0">
+            <div className="min-w-0 flex-1 overflow-hidden">
               {selectedRepo && activeSession ? (
                 <DashboardLayout
                   sessionId={activeSession.id}

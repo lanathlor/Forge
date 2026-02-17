@@ -4,7 +4,10 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useStuckDetection } from '@/shared/hooks/useStuckDetection';
 import { useStuckDetectionConfig } from '@/shared/hooks/useStuckDetectionConfig';
 import { useStuckToasts } from '@/shared/components/ui/toast';
-import type { StuckAlert, StuckDetectionConfig } from '@/lib/stuck-detection/types';
+import type {
+  StuckAlert,
+  StuckDetectionConfig,
+} from '@/lib/stuck-detection/types';
 
 export interface StuckAlertToastManagerProps {
   /** Callback when user clicks "View" on a stuck alert toast */
@@ -16,7 +19,10 @@ export interface StuckAlertToastManagerProps {
  */
 function playBeepSound(): void {
   try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
     const audioContext = new AudioContextClass();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
@@ -27,7 +33,10 @@ function playBeepSound(): void {
     oscillator.frequency.value = 800;
     oscillator.type = 'sine';
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + 0.3
+    );
 
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
@@ -59,36 +68,71 @@ function useStuckAlertHandlers(
 ) {
   const previousAlertsRef = useRef<Map<string, StuckAlert>>(new Map());
 
-  const handleStuckDetected = useCallback((alert: StuckAlert) => {
-    if (!config?.enableToastNotifications) return;
+  const handleStuckDetected = useCallback(
+    (alert: StuckAlert) => {
+      if (!config?.enableToastNotifications) return;
 
-    const viewAction = onViewAlert ? () => onViewAlert(alert.repositoryId, alert.sessionId) : undefined;
-    showStuckAlert(alert.repositoryId, alert.repositoryName, alert.reason, alert.stuckDurationSeconds, viewAction);
+      const viewAction = onViewAlert
+        ? () => onViewAlert(alert.repositoryId, alert.sessionId)
+        : undefined;
+      showStuckAlert(
+        alert.repositoryId,
+        alert.repositoryName,
+        alert.reason,
+        alert.stuckDurationSeconds,
+        viewAction
+      );
 
-    if (alert.severity === 'critical' || alert.severity === 'high') {
-      playAlertSound();
-    }
+      if (alert.severity === 'critical' || alert.severity === 'high') {
+        playAlertSound();
+      }
 
-    previousAlertsRef.current.set(alert.repositoryId, alert);
-  }, [config?.enableToastNotifications, showStuckAlert, onViewAlert, playAlertSound]);
+      previousAlertsRef.current.set(alert.repositoryId, alert);
+    },
+    [
+      config?.enableToastNotifications,
+      showStuckAlert,
+      onViewAlert,
+      playAlertSound,
+    ]
+  );
 
-  const handleStuckResolved = useCallback((alert: StuckAlert) => {
-    resolveStuckAlert(alert.repositoryId);
-    previousAlertsRef.current.delete(alert.repositoryId);
-  }, [resolveStuckAlert]);
+  const handleStuckResolved = useCallback(
+    (alert: StuckAlert) => {
+      resolveStuckAlert(alert.repositoryId);
+      previousAlertsRef.current.delete(alert.repositoryId);
+    },
+    [resolveStuckAlert]
+  );
 
-  const handleStuckEscalated = useCallback((alert: StuckAlert) => {
-    if (!config?.enableToastNotifications) return;
+  const handleStuckEscalated = useCallback(
+    (alert: StuckAlert) => {
+      if (!config?.enableToastNotifications) return;
 
-    const viewAction = onViewAlert ? () => onViewAlert(alert.repositoryId, alert.sessionId) : undefined;
-    showStuckAlert(alert.repositoryId, alert.repositoryName, alert.reason, alert.stuckDurationSeconds, viewAction);
+      const viewAction = onViewAlert
+        ? () => onViewAlert(alert.repositoryId, alert.sessionId)
+        : undefined;
+      showStuckAlert(
+        alert.repositoryId,
+        alert.repositoryName,
+        alert.reason,
+        alert.stuckDurationSeconds,
+        viewAction
+      );
 
-    if (alert.severity === 'critical') {
-      playAlertSound();
-    }
+      if (alert.severity === 'critical') {
+        playAlertSound();
+      }
 
-    previousAlertsRef.current.set(alert.repositoryId, alert);
-  }, [config?.enableToastNotifications, showStuckAlert, onViewAlert, playAlertSound]);
+      previousAlertsRef.current.set(alert.repositoryId, alert);
+    },
+    [
+      config?.enableToastNotifications,
+      showStuckAlert,
+      onViewAlert,
+      playAlertSound,
+    ]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -104,18 +148,21 @@ function useStuckAlertHandlers(
  *
  * Listens to stuck detection events via SSE and shows instant toast notifications.
  */
-export function StuckAlertToastManager({ onViewAlert }: StuckAlertToastManagerProps) {
+export function StuckAlertToastManager({
+  onViewAlert,
+}: StuckAlertToastManagerProps) {
   const { config } = useStuckDetectionConfig();
   const { showStuckAlert, resolveStuckAlert } = useStuckToasts();
   const playAlertSound = useAlertSound(config);
 
-  const { handleStuckDetected, handleStuckResolved, handleStuckEscalated } = useStuckAlertHandlers(
-    config,
-    showStuckAlert,
-    resolveStuckAlert,
-    onViewAlert,
-    playAlertSound
-  );
+  const { handleStuckDetected, handleStuckResolved, handleStuckEscalated } =
+    useStuckAlertHandlers(
+      config,
+      showStuckAlert,
+      resolveStuckAlert,
+      onViewAlert,
+      playAlertSound
+    );
 
   useStuckDetection({
     onStuckDetected: handleStuckDetected,

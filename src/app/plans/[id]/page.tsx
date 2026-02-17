@@ -6,12 +6,20 @@ import { AppLayout } from '../../components/AppLayout';
 import { Button } from '@/shared/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
-const PlanDetailView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanDetailView })));
-const PlanRefinementChat = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanRefinementChat })));
+const PlanDetailView = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanDetailView,
+  }))
+);
+const PlanRefinementChat = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanRefinementChat,
+  }))
+);
 
 function LoadingFallback() {
   return (
-    <div className="flex items-center justify-center h-full min-h-[300px]">
+    <div className="flex h-full min-h-[300px] items-center justify-center">
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin" />
         <span className="text-sm">Loading plan details...</span>
@@ -28,7 +36,7 @@ export default function PlanDetailPage() {
 
   return (
     <AppLayout activeNavItem="plans">
-      <div className="h-full p-4 lg:p-6 flex flex-col">
+      <div className="flex h-full flex-col p-4 lg:p-6">
         <div className="mb-4">
           <Button
             variant="ghost"
@@ -40,9 +48,9 @@ export default function PlanDetailPage() {
             Back to Plans
           </Button>
         </div>
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex flex-1 overflow-hidden">
           <Suspense fallback={<LoadingFallback />}>
-            <div className="flex-1 overflow-auto min-w-0">
+            <div className="min-w-0 flex-1 overflow-auto">
               <PlanDetailView
                 planId={planId}
                 onBack={() => router.push('/plans')}

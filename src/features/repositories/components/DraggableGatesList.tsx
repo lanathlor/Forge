@@ -74,7 +74,9 @@ export function DraggableGatesList({
             />
           </svg>
         </div>
-        <p className="mb-1 text-base font-semibold">No Quality Gates Configured</p>
+        <p className="mb-1 text-base font-semibold">
+          No Quality Gates Configured
+        </p>
         <p className="mb-4 text-sm text-muted-foreground">
           Add gates to validate your code quality before committing
         </p>
@@ -88,7 +90,9 @@ export function DraggableGatesList({
   return (
     <div className="space-y-2">
       {gates.map((gate, index) => {
-        const execution = runStatus?.gates.find(g => g.gateName === gate.name);
+        const execution = runStatus?.gates.find(
+          (g) => g.gateName === gate.name
+        );
         const isOver = overIndex === index && dragIndex !== index;
 
         return (

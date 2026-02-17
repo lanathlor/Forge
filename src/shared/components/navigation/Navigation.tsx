@@ -36,7 +36,12 @@ import { Button } from '@/shared/components/ui/button';
    ============================================ */
 
 export type NavItemPriority = 'primary' | 'secondary';
-export type NavItemStatus = 'default' | 'active' | 'running' | 'error' | 'success';
+export type NavItemStatus =
+  | 'default'
+  | 'active'
+  | 'running'
+  | 'error'
+  | 'success';
 
 export interface NavItem {
   /** Unique identifier for the nav item */
@@ -147,7 +152,9 @@ export function useNavigation() {
    ============================================ */
 
 function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
-  const [breakpoint, setBreakpoint] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [breakpoint, setBreakpoint] = useState<'mobile' | 'tablet' | 'desktop'>(
+    'desktop'
+  );
 
   useEffect(() => {
     const checkBreakpoint = () => {
@@ -179,7 +186,10 @@ interface StatusIndicatorBadgeProps {
   collapsed?: boolean;
 }
 
-function StatusIndicatorBadge({ indicator, collapsed = false }: StatusIndicatorBadgeProps) {
+function StatusIndicatorBadge({
+  indicator,
+  collapsed = false,
+}: StatusIndicatorBadgeProps) {
   const statusColors = {
     info: 'bg-info text-info-foreground',
     success: 'bg-success text-success-foreground',
@@ -219,11 +229,16 @@ function StatusIndicatorBadge({ indicator, collapsed = false }: StatusIndicatorB
             )}
           />
           <span
-            className={cn('relative inline-flex h-2 w-2 rounded-full', pulseColors[indicator.type])}
+            className={cn(
+              'relative inline-flex h-2 w-2 rounded-full',
+              pulseColors[indicator.type]
+            )}
           />
         </span>
       )}
-      {!collapsed && <span className="sr-only sm:not-sr-only">{indicator.label}:</span>}
+      {!collapsed && (
+        <span className="sr-only sm:not-sr-only">{indicator.label}:</span>
+      )}
       <span className="font-semibold">{indicator.value}</span>
     </div>
   );
@@ -279,7 +294,8 @@ function NavItemButton({
   // Enhanced status styles with priority consideration
   const statusStyles = {
     default: '',
-    active: 'bg-accent-primary-subtle text-accent-primary border-l-2 border-accent-primary',
+    active:
+      'bg-accent-primary-subtle text-accent-primary border-l-2 border-accent-primary',
     running: 'text-info',
     error: 'text-error',
     success: 'text-success',
@@ -305,7 +321,8 @@ function NavItemButton({
     isPrimary ? 'px-3 py-2.5' : 'px-3 py-2',
     item.active
       ? statusStyles.active
-      : statusStyles[item.status || 'default'] || 'text-text-secondary hover:text-text-primary',
+      : statusStyles[item.status || 'default'] ||
+          'text-text-secondary hover:text-text-primary',
     collapsed ? 'justify-center px-2' : 'justify-start',
     item.disabled && 'cursor-not-allowed opacity-50',
     // Priority indicator for primary items
@@ -316,7 +333,10 @@ function NavItemButton({
     <>
       {/* Running indicator pulse */}
       {item.status === 'running' && (
-        <span className="absolute left-1 top-1/2 -translate-y-1/2" aria-hidden="true">
+        <span
+          className="absolute left-1 top-1/2 -translate-y-1/2"
+          aria-hidden="true"
+        >
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-info" />
@@ -326,7 +346,10 @@ function NavItemButton({
 
       {/* Priority indicator dot for active primary items */}
       {isPrimary && item.active && !collapsed && (
-        <span className="absolute -left-0.5 top-1/2 -translate-y-1/2" aria-hidden="true">
+        <span
+          className="absolute -left-0.5 top-1/2 -translate-y-1/2"
+          aria-hidden="true"
+        >
           <Circle className="h-1.5 w-1.5 fill-accent-primary text-accent-primary" />
         </span>
       )}
@@ -336,7 +359,9 @@ function NavItemButton({
         className={cn(
           'flex-shrink-0 transition-colors duration-200',
           isPrimary ? 'h-5 w-5' : 'h-4 w-4',
-          item.active ? iconStatusStyles.active : iconStatusStyles[item.status || 'default']
+          item.active
+            ? iconStatusStyles.active
+            : iconStatusStyles[item.status || 'default']
         )}
       />
 
@@ -344,7 +369,7 @@ function NavItemButton({
       <span
         className={cn(
           'whitespace-nowrap transition-all duration-300 ease-in-out',
-          collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
+          collapsed ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100',
           isPrimary ? 'font-medium' : 'font-normal text-text-secondary'
         )}
       >
@@ -367,10 +392,10 @@ function NavItemButton({
             item.status === 'running'
               ? 'bg-info text-info-foreground'
               : item.status === 'error'
-              ? 'bg-error text-error-foreground'
-              : item.status === 'success'
-              ? 'bg-success text-success-foreground'
-              : 'bg-accent-primary text-accent-primary-foreground'
+                ? 'bg-error text-error-foreground'
+                : item.status === 'success'
+                  ? 'bg-success text-success-foreground'
+                  : 'bg-accent-primary text-accent-primary-foreground'
           )}
         >
           {item.badge}
@@ -382,14 +407,14 @@ function NavItemButton({
         <span
           className={cn(
             'absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
-            'animate-in fade-in zoom-in-95 duration-200',
+            'duration-200 animate-in fade-in zoom-in-95',
             item.status === 'running'
               ? 'bg-info text-info-foreground'
               : item.status === 'error'
-              ? 'bg-error text-error-foreground'
-              : item.status === 'success'
-              ? 'bg-success text-success-foreground'
-              : 'bg-accent-primary text-accent-primary-foreground'
+                ? 'bg-error text-error-foreground'
+                : item.status === 'success'
+                  ? 'bg-success text-success-foreground'
+                  : 'bg-accent-primary text-accent-primary-foreground'
           )}
         >
           {item.badge}
@@ -477,9 +502,13 @@ function Sidebar({
         collapsed ? 'w-16' : 'w-64',
         className
       )}
-      style={{
-        '--sidebar-width': collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
-      } as React.CSSProperties}
+      style={
+        {
+          '--sidebar-width': collapsed
+            ? SIDEBAR_COLLAPSED_WIDTH
+            : SIDEBAR_WIDTH,
+        } as React.CSSProperties
+      }
       role="navigation"
       aria-label="Main navigation"
     >
@@ -514,7 +543,11 @@ function Sidebar({
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-expanded={!collapsed}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
         </Button>
       </div>
 
@@ -528,14 +561,18 @@ function Sidebar({
           )}
         >
           {statusIndicators.map((indicator) => (
-            <StatusIndicatorBadge key={indicator.id} indicator={indicator} collapsed={collapsed} />
+            <StatusIndicatorBadge
+              key={indicator.id}
+              indicator={indicator}
+              collapsed={collapsed}
+            />
           ))}
         </div>
       )}
 
       {/* Primary Navigation */}
       <nav
-        className="flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-hide"
+        className="scrollbar-hide flex-1 overflow-y-auto overflow-x-hidden p-2"
         onKeyDown={onKeyDown}
         aria-label="Primary navigation"
       >
@@ -560,7 +597,11 @@ function Sidebar({
       </nav>
 
       {/* Secondary Navigation (Settings, Help) */}
-      <div className="border-t border-border-default p-2" role="list" aria-label="Secondary navigation">
+      <div
+        className="border-t border-border-default p-2"
+        role="list"
+        aria-label="Secondary navigation"
+      >
         {/* Section label - only visible when not collapsed */}
         {!collapsed && (
           <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
@@ -656,21 +697,24 @@ function MobileDrawer({
     }
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current || touchStartX.current === null) return;
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging.current || touchStartX.current === null) return;
 
-    const touch = e.touches[0];
-    if (!touch) return;
+      const touch = e.touches[0];
+      if (!touch) return;
 
-    const currentX = touch.clientX;
-    const diff = touchStartX.current - currentX;
+      const currentX = touch.clientX;
+      const diff = touchStartX.current - currentX;
 
-    // If swiping left more than 50px, close the drawer
-    if (diff > 50) {
-      isDragging.current = false;
-      onClose();
-    }
-  }, [onClose]);
+      // If swiping left more than 50px, close the drawer
+      if (diff > 50) {
+        isDragging.current = false;
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   const handleTouchEnd = useCallback(() => {
     touchStartX.current = null;
@@ -685,8 +729,8 @@ function MobileDrawer({
           'fixed inset-0 z-overlay bg-black/60 backdrop-blur-sm md:hidden',
           'transition-all duration-300 ease-out',
           open
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none'
+            ? 'pointer-events-auto opacity-100'
+            : 'pointer-events-none opacity-0'
         )}
         onClick={onClose}
         aria-hidden="true"
@@ -697,7 +741,7 @@ function MobileDrawer({
         ref={drawerRef}
         className={cn(
           'fixed inset-y-0 left-0 z-modal flex flex-col bg-surface-raised md:hidden',
-          'shadow-elevation-highest safe-top safe-bottom',
+          'safe-top safe-bottom shadow-elevation-highest',
           'transition-transform duration-300 ease-out will-change-transform',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -713,10 +757,12 @@ function MobileDrawer({
         onTouchEnd={handleTouchEnd}
       >
         {/* Header with close button */}
-        <div className="flex h-14 items-center justify-between border-b border-border-default px-4 flex-shrink-0">
+        <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border-default px-4">
           <div className="flex items-center gap-3">
             {logo || (
-              <span className="text-lg font-semibold text-text-primary">Autobot</span>
+              <span className="text-lg font-semibold text-text-primary">
+                Autobot
+              </span>
             )}
           </div>
           <Button
@@ -726,7 +772,7 @@ function MobileDrawer({
             onClick={onClose}
             className={cn(
               'h-9 w-9 text-text-muted hover:text-text-primary',
-              'focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset'
+              'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focus'
             )}
             aria-label="Close menu"
           >
@@ -736,7 +782,7 @@ function MobileDrawer({
 
         {/* Status Indicators - compact horizontal list */}
         {statusIndicators.length > 0 && (
-          <div className="flex flex-wrap gap-2 border-b border-border-default px-4 py-3 flex-shrink-0">
+          <div className="flex flex-shrink-0 flex-wrap gap-2 border-b border-border-default px-4 py-3">
             {statusIndicators.map((indicator) => (
               <StatusIndicatorBadge key={indicator.id} indicator={indicator} />
             ))}
@@ -745,7 +791,7 @@ function MobileDrawer({
 
         {/* Primary Navigation - scrollable */}
         <nav
-          className="flex-1 overflow-y-auto p-3 scrollbar-hide min-h-0"
+          className="scrollbar-hide min-h-0 flex-1 overflow-y-auto p-3"
           onKeyDown={onKeyDown}
           aria-label="Primary navigation"
         >
@@ -769,7 +815,7 @@ function MobileDrawer({
 
         {/* Secondary Navigation - fixed at bottom */}
         <div
-          className="border-t border-border-default p-3 flex-shrink-0"
+          className="flex-shrink-0 border-t border-border-default p-3"
           role="list"
           aria-label="Secondary navigation"
         >
@@ -793,7 +839,7 @@ function MobileDrawer({
 
         {/* Swipe hint indicator */}
         <div
-          className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-16 bg-border-default rounded-l opacity-50"
+          className="absolute right-0 top-1/2 h-16 w-1 -translate-y-1/2 rounded-l bg-border-default opacity-50"
           aria-hidden="true"
         />
       </div>
@@ -811,13 +857,17 @@ interface MobileHeaderProps {
   header?: ReactNode;
 }
 
-function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProps) {
+function MobileHeader({
+  onMenuOpen,
+  statusIndicators,
+  header,
+}: MobileHeaderProps) {
   // Show only the most important indicators on mobile (max 2)
   const visibleIndicators = statusIndicators.slice(0, 2);
-  const hasRunningIndicator = statusIndicators.some(i => i.pulse);
+  const hasRunningIndicator = statusIndicators.some((i) => i.pulse);
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border-default bg-surface-raised px-4 md:hidden safe-top">
+    <header className="safe-top flex h-14 items-center justify-between border-b border-border-default bg-surface-raised px-4 md:hidden">
       {/* Hamburger menu button with optional running indicator */}
       <div className="relative">
         <Button
@@ -826,7 +876,7 @@ function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProp
           onClick={onMenuOpen}
           className={cn(
             'h-10 w-10 text-text-muted hover:text-text-primary',
-            'focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset'
+            'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focus'
           )}
           aria-label="Open navigation menu"
           aria-expanded="false"
@@ -835,7 +885,10 @@ function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProp
         </Button>
         {/* Running tasks indicator dot */}
         {hasRunningIndicator && (
-          <span className="absolute top-1 right-1 flex h-2.5 w-2.5" aria-hidden="true">
+          <span
+            className="absolute right-1 top-1 flex h-2.5 w-2.5"
+            aria-hidden="true"
+          >
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-info" />
           </span>
@@ -843,16 +896,22 @@ function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProp
       </div>
 
       {/* Center logo/title */}
-      <div className="flex-1 flex justify-center">
+      <div className="flex flex-1 justify-center">
         {header || (
-          <span className="text-lg font-semibold text-text-primary">Autobot</span>
+          <span className="text-lg font-semibold text-text-primary">
+            Autobot
+          </span>
         )}
       </div>
 
       {/* Mobile status indicators (compact) */}
-      <div className="flex items-center gap-1.5 min-w-10 justify-end">
+      <div className="flex min-w-10 items-center justify-end gap-1.5">
         {visibleIndicators.map((indicator) => (
-          <StatusIndicatorBadge key={indicator.id} indicator={indicator} collapsed />
+          <StatusIndicatorBadge
+            key={indicator.id}
+            indicator={indicator}
+            collapsed
+          />
         ))}
       </div>
     </header>
@@ -864,11 +923,42 @@ function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProp
    ============================================ */
 
 export const defaultNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', priority: 'primary' },
-  { id: 'tasks', label: 'Tasks', icon: ListTodo, href: '/tasks', priority: 'primary', badge: 0 },
-  { id: 'plans', label: 'Plans', icon: Map, href: '/plans', priority: 'primary' },
-  { id: 'repositories', label: 'Repositories', icon: FolderGit2, href: '/repositories', priority: 'primary' },
-  { id: 'settings', label: 'Settings', icon: Settings, href: '/settings', priority: 'secondary' },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    href: '/dashboard',
+    priority: 'primary',
+  },
+  {
+    id: 'tasks',
+    label: 'Tasks',
+    icon: ListTodo,
+    href: '/tasks',
+    priority: 'primary',
+    badge: 0,
+  },
+  {
+    id: 'plans',
+    label: 'Plans',
+    icon: Map,
+    href: '/plans',
+    priority: 'primary',
+  },
+  {
+    id: 'repositories',
+    label: 'Repositories',
+    icon: FolderGit2,
+    href: '/repositories',
+    priority: 'primary',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: Settings,
+    href: '/settings',
+    priority: 'secondary',
+  },
   { id: 'help', label: 'Help', icon: HelpCircle, priority: 'secondary' },
 ];
 
@@ -934,7 +1024,10 @@ export function Navigation({
       const itemCount = allItems.length;
 
       // Skip disabled items when navigating
-      const findNextEnabled = (startIndex: number, direction: 1 | -1): number => {
+      const findNextEnabled = (
+        startIndex: number,
+        direction: 1 | -1
+      ): number => {
         let index = startIndex;
         let attempts = 0;
         while (attempts < itemCount) {
@@ -1040,7 +1133,7 @@ export function Navigation({
     <NavigationContext.Provider value={contextValue}>
       <div className={cn('flex h-full', className)}>
         {/* Mobile Header */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-sticky">
+        <div className="fixed left-0 right-0 top-0 z-sticky md:hidden">
           <MobileHeader
             onMenuOpen={() => setMobileMenuOpen(true)}
             statusIndicators={statusIndicators}
@@ -1062,7 +1155,7 @@ export function Navigation({
         />
 
         {/* Desktop/Tablet Sidebar */}
-        <div className="hidden md:block h-full">
+        <div className="hidden h-full md:block">
           <Sidebar
             primaryItems={primaryItems}
             secondaryItems={secondaryItems}

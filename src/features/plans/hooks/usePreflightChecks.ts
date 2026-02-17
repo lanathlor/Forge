@@ -20,14 +20,20 @@ function makeCheck(id: string, label: string): PreflightCheck {
   return { id, label, status: 'checking' };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function checkRepo(repoCheck: PreflightCheck, cleanCheck: PreflightCheck, repo: any) {
+ 
+function checkRepo(
+  repoCheck: PreflightCheck,
+  cleanCheck: PreflightCheck,
+  repo: { name: string; isClean: boolean } | null | undefined
+) {
   repoCheck.status = repo ? 'pass' : 'fail';
   repoCheck.detail = repo ? repo.name : 'Repository not found';
 
   if (repo) {
     cleanCheck.status = repo.isClean ? 'pass' : 'warn';
-    cleanCheck.detail = repo.isClean ? 'No uncommitted changes' : 'Uncommitted changes detected';
+    cleanCheck.detail = repo.isClean
+      ? 'No uncommitted changes'
+      : 'Uncommitted changes detected';
   } else {
     cleanCheck.status = 'fail';
     cleanCheck.detail = 'Cannot check - repo not found';
@@ -41,9 +47,10 @@ async function checkQaGates(gatesCheck: PreflightCheck, repositoryId: string) {
       const qaData = await qaRes.json();
       const gateCount = qaData.config?.qaGates?.length || 0;
       gatesCheck.status = gateCount > 0 ? 'pass' : 'warn';
-      gatesCheck.detail = gateCount > 0
-        ? `${gateCount} gate${gateCount !== 1 ? 's' : ''} active`
-        : 'No QA gates configured';
+      gatesCheck.detail =
+        gateCount > 0
+          ? `${gateCount} gate${gateCount !== 1 ? 's' : ''} active`
+          : 'No QA gates configured';
     } else {
       gatesCheck.status = 'warn';
       gatesCheck.detail = 'Could not load QA config';
@@ -80,12 +87,18 @@ async function checkPlanStatus(planCheck: PreflightCheck, planId: string) {
   }
 }
 
-export function usePreflightChecks({ repositoryId, planId, enabled = true }: UsePreflightChecksOptions) {
+export function usePreflightChecks({
+  repositoryId,
+  planId,
+  enabled = true,
+}: UsePreflightChecksOptions) {
   const [checks, setChecks] = useState<PreflightCheck[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
-  const { data: repoData } = useGetRepositoryQuery(repositoryId, { skip: !enabled });
+  const { data: repoData } = useGetRepositoryQuery(repositoryId, {
+    skip: !enabled,
+  });
 
   const runChecks = useCallback(async () => {
     setIsChecking(true);
@@ -106,7 +119,9 @@ export function usePreflightChecks({ repositoryId, planId, enabled = true }: Use
     await checkPlanStatus(planCheck, planId);
     setChecks([...results]);
 
-    setIsReady(results.every(r => r.status === 'pass' || r.status === 'warn'));
+    setIsReady(
+      results.every((r) => r.status === 'pass' || r.status === 'warn')
+    );
     setIsChecking(false);
   }, [repositoryId, planId, repoData]);
 

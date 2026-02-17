@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
 import { eq } from 'drizzle-orm';
-import { claudeWrapper } from '@/lib/claude/wrapper';
+import { createAIProvider } from '@/lib/ai';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 interface Message {
@@ -30,7 +30,9 @@ export async function POST(
       try {
         // Helper to send data
         const send = (data: Record<string, unknown>) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+          );
         };
 
         // Load plan with all related data
@@ -62,7 +64,10 @@ export async function POST(
           .where(eq(phases.planId, planId))
           .orderBy(phases.order);
 
-        const tasks = await db.select().from(planTasks).where(eq(planTasks.planId, planId));
+        const tasks = await db
+          .select()
+          .from(planTasks)
+          .where(eq(planTasks.planId, planId));
 
         // Build context for Claude
         const planContext = {
@@ -90,7 +95,10 @@ export async function POST(
         // Build prompt for Claude
         const conversationContext = conversationHistory
           .slice(-3)
-          .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+          .map(
+            (msg) =>
+              `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+          )
           .join('\n\n');
 
         const fullPrompt = `You are helping refine a development plan. Current plan structure:
@@ -142,12 +150,19 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
 
         // Call Claude with streaming
         const workingDir = getContainerPath(repository.path);
-        console.log('[PlanIterate] Calling Claude with working dir:', workingDir);
-        console.log('[PlanIterate] SIMULATE_CLAUDE:', process.env.SIMULATE_CLAUDE);
+        console.log(
+          '[PlanIterate] Calling Claude with working dir:',
+          workingDir
+        );
+        console.log(
+          '[PlanIterate] SIMULATE_CLAUDE:',
+          process.env.SIMULATE_CLAUDE
+        );
 
         let response: string;
         try {
-          response = await claudeWrapper.executeWithStream(
+          const aiProvider = createAIProvider();
+          response = await aiProvider.executeWithStream(
             fullPrompt,
             workingDir,
             (chunk) => {
@@ -161,7 +176,8 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
           console.error('[PlanIterate] Error calling Claude:', error);
           send({
             type: 'error',
-            message: error instanceof Error ? error.message : 'Failed to call Claude'
+            message:
+              error instanceof Error ? error.message : 'Failed to call Claude',
           });
           controller.close();
           return;
@@ -177,17 +193,30 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
           try {
             console.log('[PlanIterate] Parsing updates:', updatesMatch[1]);
             const updates = JSON.parse(updatesMatch[1]);
-            console.log('[PlanIterate] Parsed updates:', JSON.stringify(updates, null, 2));
+            console.log(
+              '[PlanIterate] Parsed updates:',
+              JSON.stringify(updates, null, 2)
+            );
 
             send({ type: 'status', message: 'Applying updates...' });
 
             // Apply updates using order-based lookups
             for (const update of updates) {
-              console.log('[PlanIterate] Processing update:', JSON.stringify(update));
+              console.log(
+                '[PlanIterate] Processing update:',
+                JSON.stringify(update)
+              );
 
               if (update.action === 'update_phase') {
-                const targetPhase = planPhases.find((p) => p.order === update.phaseOrder);
-                console.log('[PlanIterate] Found phase:', targetPhase?.id, 'for order:', update.phaseOrder);
+                const targetPhase = planPhases.find(
+                  (p) => p.order === update.phaseOrder
+                );
+                console.log(
+                  '[PlanIterate] Found phase:',
+                  targetPhase?.id,
+                  'for order:',
+                  update.phaseOrder
+                );
                 if (targetPhase) {
                   await db
                     .update(phases)
@@ -200,13 +229,22 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
                   updated = true;
                 }
               } else if (update.action === 'update_task') {
-                const targetPhase = planPhases.find((p) => p.order === update.phaseOrder);
+                const targetPhase = planPhases.find(
+                  (p) => p.order === update.phaseOrder
+                );
                 if (targetPhase) {
                   const phaseTasks = tasks
                     .filter((t) => t.phaseId === targetPhase.id)
                     .sort((a, b) => a.order - b.order);
                   const targetTask = phaseTasks[update.taskOrder - 1];
-                  console.log('[PlanIterate] Found task:', targetTask?.id, 'for phase order:', update.phaseOrder, 'task order:', update.taskOrder);
+                  console.log(
+                    '[PlanIterate] Found task:',
+                    targetTask?.id,
+                    'for phase order:',
+                    update.phaseOrder,
+                    'task order:',
+                    update.taskOrder
+                  );
                   if (targetTask) {
                     await db
                       .update(planTasks)
@@ -220,17 +258,30 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
                   }
                 }
               } else if (update.action === 'create_task') {
-                const targetPhase = planPhases.find((p) => p.order === update.phaseOrder);
-                console.log('[PlanIterate] Creating task in phase:', targetPhase?.id);
+                const targetPhase = planPhases.find(
+                  (p) => p.order === update.phaseOrder
+                );
+                console.log(
+                  '[PlanIterate] Creating task in phase:',
+                  targetPhase?.id
+                );
                 if (targetPhase) {
-                  const phaseTasks = tasks.filter((t) => t.phaseId === targetPhase.id);
-                  const maxOrder = Math.max(...phaseTasks.map((t) => t.order), 0);
-                  const newTask = await db.insert(planTasks).values({
-                    phaseId: targetPhase.id,
-                    planId: planId,
-                    ...update.task,
-                    order: maxOrder + 1,
-                  }).returning();
+                  const phaseTasks = tasks.filter(
+                    (t) => t.phaseId === targetPhase.id
+                  );
+                  const maxOrder = Math.max(
+                    ...phaseTasks.map((t) => t.order),
+                    0
+                  );
+                  const newTask = await db
+                    .insert(planTasks)
+                    .values({
+                      phaseId: targetPhase.id,
+                      planId: planId,
+                      ...update.task,
+                      order: maxOrder + 1,
+                    })
+                    .returning();
                   console.log('[PlanIterate] Created task:', newTask[0]?.id);
                   updated = true;
                 }
@@ -250,18 +301,31 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
               });
 
               // Send details about what was updated
-              const updateSummary = updates.map((u: { action: string; phaseOrder?: number; taskOrder?: number }) => {
-                if (u.action === 'update_phase') {
-                  return `Updated Phase ${u.phaseOrder}`;
-                } else if (u.action === 'update_task') {
-                  return `Updated Phase ${u.phaseOrder}, Task ${u.taskOrder}`;
-                } else if (u.action === 'create_task') {
-                  return `Added new task to Phase ${u.phaseOrder}`;
-                }
-                return 'Made changes';
-              }).join(', ');
+              const updateSummary = updates
+                .map(
+                  (u: {
+                    action: string;
+                    phaseOrder?: number;
+                    taskOrder?: number;
+                  }) => {
+                    if (u.action === 'update_phase') {
+                      return `Updated Phase ${u.phaseOrder}`;
+                    } else if (u.action === 'update_task') {
+                      return `Updated Phase ${u.phaseOrder}, Task ${u.taskOrder}`;
+                    } else if (u.action === 'create_task') {
+                      return `Added new task to Phase ${u.phaseOrder}`;
+                    }
+                    return 'Made changes';
+                  }
+                )
+                .join(', ');
 
-              send({ type: 'updated', value: true, summary: updateSummary, count: updates.length });
+              send({
+                type: 'updated',
+                value: true,
+                summary: updateSummary,
+                count: updates.length,
+              });
             }
           } catch (error) {
             console.error('Failed to parse/apply updates:', error);
@@ -273,9 +337,12 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
         controller.close();
       } catch (error) {
         console.error('Error in plan iteration:', error);
-        const errorDetails = error instanceof Error ? error.message : 'Unknown error';
+        const errorDetails =
+          error instanceof Error ? error.message : 'Unknown error';
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'error', message: errorDetails })}\n\n`)
+          encoder.encode(
+            `data: ${JSON.stringify({ type: 'error', message: errorDetails })}\n\n`
+          )
         );
         controller.close();
       }
@@ -286,7 +353,7 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }

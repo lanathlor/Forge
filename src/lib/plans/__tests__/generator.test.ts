@@ -66,7 +66,12 @@ vi.mock('@/db', () => ({
 vi.mock('@/db/schema', () => ({
   plans: { id: 'id' },
   phases: { id: 'id', planId: 'plan_id', order: 'order' },
-  planTasks: { id: 'id', phaseId: 'phase_id', planId: 'plan_id', order: 'order' },
+  planTasks: {
+    id: 'id',
+    phaseId: 'phase_id',
+    planId: 'plan_id',
+    order: 'order',
+  },
   planIterations: { id: 'id', planId: 'plan_id' },
 }));
 
@@ -361,7 +366,9 @@ describe('plans/generator', () => {
 
       mockDb.query.repositories.findFirst.mockResolvedValueOnce(mockRepository);
       mockValuesReturning.mockResolvedValueOnce([mockPlan]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('invalid json response');
+      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
+        'invalid json response'
+      );
 
       const { generatePlanFromDescription } = await import('../generator');
 
@@ -516,7 +523,11 @@ describe('plans/generator', () => {
       mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(claudeResponse);
       mockSelectOrderBy
         .mockResolvedValueOnce([{ id: 'phase-1' }, { id: 'phase-2' }])
-        .mockResolvedValueOnce([{ id: 'task-1' }, { id: 'task-2' }, { id: 'task-3' }]);
+        .mockResolvedValueOnce([
+          { id: 'task-1' },
+          { id: 'task-2' },
+          { id: 'task-3' },
+        ]);
 
       const { generatePlanFromDescription } = await import('../generator');
       const result = await generatePlanFromDescription(

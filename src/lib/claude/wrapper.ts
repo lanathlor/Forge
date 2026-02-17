@@ -34,8 +34,12 @@ class ClaudeCodeWrapper extends EventEmitter {
       // In production, this would spawn the actual claude-code CLI
       const simulateClaudeCode = process.env.SIMULATE_CLAUDE === 'true';
 
-      console.log(`[ClaudeWrapper] SIMULATE_CLAUDE=${process.env.SIMULATE_CLAUDE}`);
-      console.log(`[ClaudeWrapper] Using ${simulateClaudeCode ? 'simulated' : 'real'} execution`);
+      console.log(
+        `[ClaudeWrapper] SIMULATE_CLAUDE=${process.env.SIMULATE_CLAUDE}`
+      );
+      console.log(
+        `[ClaudeWrapper] Using ${simulateClaudeCode ? 'simulated' : 'real'} execution`
+      );
 
       if (simulateClaudeCode) {
         return this.executeSimulated(taskId, prompt, workingDirectory, resolve);
@@ -57,7 +61,9 @@ class ClaudeCodeWrapper extends EventEmitter {
     workingDirectory: string,
     resolve: (value: ClaudeTaskResult) => void
   ) {
-    console.log(`[ClaudeWrapper] Simulating Claude execution (2 second delay)...`);
+    console.log(
+      `[ClaudeWrapper] Simulating Claude execution (2 second delay)...`
+    );
 
     setTimeout(async () => {
       const mockOutput =
@@ -89,14 +95,17 @@ class ClaudeCodeWrapper extends EventEmitter {
   ) {
     const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
     console.log(`[ClaudeWrapper] Spawning Claude Code at: ${claudeCodePath}`);
-    console.log(`[ClaudeWrapper] Working dir: ${workingDirectory}, Prompt: [${_prompt.length} chars]`);
+    console.log(
+      `[ClaudeWrapper] Working dir: ${workingDirectory}, Prompt: [${_prompt.length} chars]`
+    );
 
     this.process = spawn(
       claudeCodePath,
       [
         '--dangerously-skip-permissions',
         '--print',
-        '--output-format', 'stream-json',
+        '--output-format',
+        'stream-json',
         '--include-partial-messages',
         '--verbose',
       ],
@@ -107,7 +116,9 @@ class ClaudeCodeWrapper extends EventEmitter {
       }
     );
 
-    console.log(`[ClaudeWrapper] Process spawned with PID: ${this.process.pid}`);
+    console.log(
+      `[ClaudeWrapper] Process spawned with PID: ${this.process.pid}`
+    );
     this.setupProcessHandlers(taskId, resolve, reject);
 
     // Write prompt to stdin and close stdin stream
@@ -117,20 +128,41 @@ class ClaudeCodeWrapper extends EventEmitter {
     console.log(`[ClaudeWrapper] Prompt sent, stdin closed`);
   }
 
-  private handleTextDelta(taskId: string, delta: Record<string, unknown>): void {
+  private handleTextDelta(
+    taskId: string,
+    delta: Record<string, unknown>
+  ): void {
     const humanText = delta.text as string;
-    this.emitAndAppend(taskId, humanText, `[Claude Output ${taskId}] ${humanText}`);
+    this.emitAndAppend(
+      taskId,
+      humanText,
+      `[Claude Output ${taskId}] ${humanText}`
+    );
   }
 
-  private handleToolUse(taskId: string, contentBlock: Record<string, unknown>): void {
+  private handleToolUse(
+    taskId: string,
+    contentBlock: Record<string, unknown>
+  ): void {
     const toolName = (contentBlock.name as string) || 'unknown';
     const toolMessage = `\n🔧 Tool: ${toolName}\n`;
-    this.emitAndAppend(taskId, toolMessage, `[Claude Tool ${taskId}] Using tool: ${toolName}`);
+    this.emitAndAppend(
+      taskId,
+      toolMessage,
+      `[Claude Tool ${taskId}] Using tool: ${toolName}`
+    );
   }
 
-  private handleInputJsonDelta(taskId: string, delta: Record<string, unknown>): void {
+  private handleInputJsonDelta(
+    taskId: string,
+    delta: Record<string, unknown>
+  ): void {
     const inputDelta = delta.partial_json as string;
-    this.emitAndAppend(taskId, inputDelta, `[Claude Tool Input ${taskId}] ${inputDelta}`);
+    this.emitAndAppend(
+      taskId,
+      inputDelta,
+      `[Claude Tool Input ${taskId}] ${inputDelta}`
+    );
   }
 
   private handleStreamEvent(
@@ -138,7 +170,9 @@ class ClaudeCodeWrapper extends EventEmitter {
     event: Record<string, unknown>
   ): boolean {
     const delta = event.delta as Record<string, unknown> | undefined;
-    const contentBlock = event.content_block as Record<string, unknown> | undefined;
+    const contentBlock = event.content_block as
+      | Record<string, unknown>
+      | undefined;
 
     if (event.type === 'content_block_delta') {
       if (delta?.type === 'text_delta') {
@@ -151,7 +185,10 @@ class ClaudeCodeWrapper extends EventEmitter {
       }
     }
 
-    if (event.type === 'content_block_start' && contentBlock?.type === 'tool_use') {
+    if (
+      event.type === 'content_block_start' &&
+      contentBlock?.type === 'tool_use'
+    ) {
       this.handleToolUse(taskId, contentBlock);
       return true;
     }
@@ -159,15 +196,25 @@ class ClaudeCodeWrapper extends EventEmitter {
     return false;
   }
 
-  private handleToolResult(taskId: string, parsed: Record<string, unknown>): void {
+  private handleToolResult(
+    taskId: string,
+    parsed: Record<string, unknown>
+  ): void {
     const toolName = (parsed.tool_name as string) || 'unknown';
     const isError = (parsed.is_error as boolean) || false;
     const resultPrefix = isError ? '❌ Tool Error' : '✓ Tool Complete';
     const toolResultMessage = `\n${resultPrefix}: ${toolName}\n`;
-    this.emitAndAppend(taskId, toolResultMessage, `[Claude Tool Result ${taskId}] ${toolName} - ${isError ? 'error' : 'success'}`);
+    this.emitAndAppend(
+      taskId,
+      toolResultMessage,
+      `[Claude Tool Result ${taskId}] ${toolName} - ${isError ? 'error' : 'success'}`
+    );
   }
 
-  private handleParsedEvent(taskId: string, parsed: Record<string, unknown>): void {
+  private handleParsedEvent(
+    taskId: string,
+    parsed: Record<string, unknown>
+  ): void {
     if (parsed.type === 'stream_event') {
       const event = parsed.event as Record<string, unknown> | undefined;
       if (event) {
@@ -181,7 +228,11 @@ class ClaudeCodeWrapper extends EventEmitter {
     }
   }
 
-  private emitAndAppend(taskId: string, output: string, logMessage: string): void {
+  private emitAndAppend(
+    taskId: string,
+    output: string,
+    logMessage: string
+  ): void {
     console.log(logMessage);
     this.emit('output', { taskId, output, timestamp: new Date() });
     this.appendTaskOutput(taskId, output);
@@ -202,7 +253,9 @@ class ClaudeCodeWrapper extends EventEmitter {
     resolve: (value: ClaudeTaskResult) => void,
     reject: (reason: Error) => void
   ) {
-    console.log(`[ClaudeWrapper] Setting up process handlers for task ${taskId}`);
+    console.log(
+      `[ClaudeWrapper] Setting up process handlers for task ${taskId}`
+    );
 
     // Capture stdout
     this.process?.stdout?.on('data', (data) => {
@@ -236,7 +289,9 @@ class ClaudeCodeWrapper extends EventEmitter {
 
     // Handle completion
     this.process?.on('close', (exitCode) => {
-      console.log(`[ClaudeWrapper] Process closed for task ${taskId} with exit code: ${exitCode}`);
+      console.log(
+        `[ClaudeWrapper] Process closed for task ${taskId} with exit code: ${exitCode}`
+      );
 
       const result: ClaudeTaskResult = {
         exitCode: exitCode || 0,
@@ -259,24 +314,33 @@ class ClaudeCodeWrapper extends EventEmitter {
 
     // Handle errors
     this.process?.on('error', (err) => {
-      console.error(`[ClaudeWrapper] Process error for task ${taskId}:`, err.message);
+      console.error(
+        `[ClaudeWrapper] Process error for task ${taskId}:`,
+        err.message
+      );
       this.emit('failed', { taskId, error: err.message });
       reject(err);
       this.cleanup();
     });
 
-    console.log(`[ClaudeWrapper] Process handlers setup complete, waiting for output...`);
+    console.log(
+      `[ClaudeWrapper] Process handlers setup complete, waiting for output...`
+    );
   }
 
   async cancel(taskId: string): Promise<void> {
     if (this.process) {
-      console.log(`[ClaudeWrapper] Cancelling task ${taskId}, sending SIGTERM to PID ${this.process.pid}`);
+      console.log(
+        `[ClaudeWrapper] Cancelling task ${taskId}, sending SIGTERM to PID ${this.process.pid}`
+      );
       this.process.kill('SIGTERM');
       this.emit('cancelled', { taskId });
       this.cleanup();
       console.log(`[ClaudeWrapper] Task ${taskId} cancelled and cleaned up`);
     } else {
-      console.log(`[ClaudeWrapper] No active process to cancel for task ${taskId}`);
+      console.log(
+        `[ClaudeWrapper] No active process to cancel for task ${taskId}`
+      );
     }
   }
 
@@ -300,9 +364,14 @@ class ClaudeCodeWrapper extends EventEmitter {
         })
         .where(eq(tasks.id, taskId));
 
-      console.log(`[ClaudeWrapper] Updated task ${taskId} output (${existingOutput.length} -> ${newLength} chars)`);
+      console.log(
+        `[ClaudeWrapper] Updated task ${taskId} output (${existingOutput.length} -> ${newLength} chars)`
+      );
     } catch (error) {
-      console.error(`[ClaudeWrapper] Failed to append task output for ${taskId}:`, error);
+      console.error(
+        `[ClaudeWrapper] Failed to append task output for ${taskId}:`,
+        error
+      );
     }
   }
 
@@ -330,8 +399,15 @@ class ClaudeCodeWrapper extends EventEmitter {
 
     console.log(`[ClaudeWrapper] executeWithStream called`);
     console.log(`[ClaudeWrapper] Working directory: ${workingDirectory}`);
-    console.log(`[ClaudeWrapper] SIMULATE_CLAUDE env var: "${process.env.SIMULATE_CLAUDE}"`);
-    console.log(`[ClaudeWrapper] All env keys:`, Object.keys(process.env).filter(k => k.includes('CLAUDE') || k.includes('SIMULATE')));
+    console.log(
+      `[ClaudeWrapper] SIMULATE_CLAUDE env var: "${process.env.SIMULATE_CLAUDE}"`
+    );
+    console.log(
+      `[ClaudeWrapper] All env keys:`,
+      Object.keys(process.env).filter(
+        (k) => k.includes('CLAUDE') || k.includes('SIMULATE')
+      )
+    );
 
     // Check if we're in simulation mode
     const simulateClaudeCode = process.env.SIMULATE_CLAUDE === 'true';
@@ -349,7 +425,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       const words = mockResponse.split(' ');
       for (const word of words) {
         onChunk(word + ' ');
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
       return mockResponse;
     }
@@ -367,7 +443,8 @@ class ClaudeCodeWrapper extends EventEmitter {
         [
           '--dangerously-skip-permissions',
           '--print',
-          '--output-format', 'stream-json',
+          '--output-format',
+          'stream-json',
           '--include-partial-messages',
           '--verbose',
         ],
@@ -378,7 +455,9 @@ class ClaudeCodeWrapper extends EventEmitter {
         }
       );
 
-      console.log(`[ClaudeWrapper] Streaming process spawned with PID: ${childProcess.pid}`);
+      console.log(
+        `[ClaudeWrapper] Streaming process spawned with PID: ${childProcess.pid}`
+      );
 
       childProcess.stdout?.on('data', (data) => {
         const text = data.toString();
@@ -389,9 +468,11 @@ class ClaudeCodeWrapper extends EventEmitter {
             const parsed = JSON.parse(line);
 
             // Extract text from text_delta events
-            if (parsed.type === 'stream_event' &&
-                parsed.event?.type === 'content_block_delta' &&
-                parsed.event?.delta?.type === 'text_delta') {
+            if (
+              parsed.type === 'stream_event' &&
+              parsed.event?.type === 'content_block_delta' &&
+              parsed.event?.delta?.type === 'text_delta'
+            ) {
               const humanText = parsed.event.delta.text;
               fullOutput += humanText;
               onChunk(humanText);
@@ -411,12 +492,15 @@ class ClaudeCodeWrapper extends EventEmitter {
 
       childProcess.on('close', (exitCode) => {
         clearTimeout(timeout);
-        console.log(`[ClaudeWrapper] Streaming process closed with exit code: ${exitCode}`);
+        console.log(
+          `[ClaudeWrapper] Streaming process closed with exit code: ${exitCode}`
+        );
 
         if (exitCode === 0) {
           resolve(fullOutput);
         } else {
-          const errorMsg = errorOutput || `Claude Code exited with code ${exitCode}`;
+          const errorMsg =
+            errorOutput || `Claude Code exited with code ${exitCode}`;
           console.error(`[ClaudeWrapper] Error details:`, errorMsg);
           reject(new Error(errorMsg));
         }
@@ -450,7 +534,7 @@ class ClaudeCodeWrapper extends EventEmitter {
 
     if (simulateClaudeCode) {
       console.log(`[ClaudeWrapper] Simulating one-shot execution...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return `feat(example): simulated commit message\n\nThis is a simulated response for testing.`;
     }
 
@@ -469,10 +553,7 @@ class ClaudeCodeWrapper extends EventEmitter {
 
       const childProcess = spawn(
         claudeCodePath,
-        [
-          '--dangerously-skip-permissions',
-          '--print',
-        ],
+        ['--dangerously-skip-permissions', '--print'],
         {
           cwd: workingDirectory,
           env: process.env,
@@ -480,7 +561,9 @@ class ClaudeCodeWrapper extends EventEmitter {
         }
       );
 
-      console.log(`[ClaudeWrapper] One-shot process spawned with PID: ${childProcess.pid}`);
+      console.log(
+        `[ClaudeWrapper] One-shot process spawned with PID: ${childProcess.pid}`
+      );
 
       childProcess.stdout?.on('data', (data) => {
         output += data.toString();
@@ -493,13 +576,18 @@ class ClaudeCodeWrapper extends EventEmitter {
 
       childProcess.on('close', (exitCode) => {
         clearTimeout(timeout);
-        console.log(`[ClaudeWrapper] One-shot process closed with exit code: ${exitCode}`);
+        console.log(
+          `[ClaudeWrapper] One-shot process closed with exit code: ${exitCode}`
+        );
 
         if (exitCode === 0 && output.trim()) {
-          console.log(`[ClaudeWrapper] One-shot output length: ${output.length}`);
+          console.log(
+            `[ClaudeWrapper] One-shot output length: ${output.length}`
+          );
           resolve(output.trim());
         } else {
-          const error = errorOutput || `Claude Code exited with code ${exitCode}`;
+          const error =
+            errorOutput || `Claude Code exited with code ${exitCode}`;
           console.error(`[ClaudeWrapper] One-shot failed: ${error}`);
           reject(new Error(error));
         }

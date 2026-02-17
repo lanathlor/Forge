@@ -34,17 +34,39 @@ vi.mock('@/shared/hooks/useStuckDetection', () => ({
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
-  Search: (props: Record<string, unknown>) => <svg data-testid="search-icon" {...props} />,
-  Zap: (props: Record<string, unknown>) => <svg data-testid="zap-icon" {...props} />,
-  Clock: (props: Record<string, unknown>) => <svg data-testid="clock-icon" {...props} />,
-  AlertTriangle: (props: Record<string, unknown>) => <svg data-testid="alert-icon" {...props} />,
-  Circle: (props: Record<string, unknown>) => <svg data-testid="circle-icon" {...props} />,
-  Pause: (props: Record<string, unknown>) => <svg data-testid="pause-icon" {...props} />,
-  GitBranch: (props: Record<string, unknown>) => <svg data-testid="git-branch-icon" {...props} />,
-  ChevronRight: (props: Record<string, unknown>) => <svg data-testid="chevron-right-icon" {...props} />,
-  Command: (props: Record<string, unknown>) => <svg data-testid="command-icon" {...props} />,
-  RefreshCw: (props: Record<string, unknown>) => <svg data-testid="refresh-icon" {...props} />,
-  Activity: (props: Record<string, unknown>) => <svg data-testid="activity-icon" {...props} />,
+  Search: (props: Record<string, unknown>) => (
+    <svg data-testid="search-icon" {...props} />
+  ),
+  Zap: (props: Record<string, unknown>) => (
+    <svg data-testid="zap-icon" {...props} />
+  ),
+  Clock: (props: Record<string, unknown>) => (
+    <svg data-testid="clock-icon" {...props} />
+  ),
+  AlertTriangle: (props: Record<string, unknown>) => (
+    <svg data-testid="alert-icon" {...props} />
+  ),
+  Circle: (props: Record<string, unknown>) => (
+    <svg data-testid="circle-icon" {...props} />
+  ),
+  Pause: (props: Record<string, unknown>) => (
+    <svg data-testid="pause-icon" {...props} />
+  ),
+  GitBranch: (props: Record<string, unknown>) => (
+    <svg data-testid="git-branch-icon" {...props} />
+  ),
+  ChevronRight: (props: Record<string, unknown>) => (
+    <svg data-testid="chevron-right-icon" {...props} />
+  ),
+  Command: (props: Record<string, unknown>) => (
+    <svg data-testid="command-icon" {...props} />
+  ),
+  RefreshCw: (props: Record<string, unknown>) => (
+    <svg data-testid="refresh-icon" {...props} />
+  ),
+  Activity: (props: Record<string, unknown>) => (
+    <svg data-testid="activity-icon" {...props} />
+  ),
 }));
 
 import { useRepositoryData } from '../../hooks/useRepositoryData';
@@ -79,7 +101,9 @@ describe('RepositorySelector', () => {
     path: '/path/to/another-repo',
   };
 
-  function setupMockData(overrides: Partial<ReturnType<typeof useRepositoryData>> = {}) {
+  function setupMockData(
+    overrides: Partial<ReturnType<typeof useRepositoryData>> = {}
+  ) {
     vi.mocked(useRepositoryData).mockReturnValue({
       repositories: [],
       tree: null,
@@ -195,7 +219,9 @@ describe('RepositorySelector', () => {
     it('has search input', () => {
       setupMockData({ repositories: [mockRepository] });
       render(<RepositorySelector onSelect={mockOnSelect} />);
-      expect(screen.getByPlaceholderText('Search repos...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Search repos...')
+      ).toBeInTheDocument();
     });
 
     it('filters repos on search', () => {

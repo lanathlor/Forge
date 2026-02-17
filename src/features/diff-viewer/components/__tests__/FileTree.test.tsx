@@ -135,7 +135,9 @@ describe('FileTree', () => {
       const deletedButton = screen.getByText('old-file.ts').closest('button');
       expect(deletedButton?.querySelector('svg')).toBeTruthy();
 
-      const renamedButton = screen.getByText('renamed-file.ts').closest('button');
+      const renamedButton = screen
+        .getByText('renamed-file.ts')
+        .closest('button');
       expect(renamedButton?.querySelector('svg')).toBeTruthy();
     });
   });
@@ -183,7 +185,9 @@ describe('FileTree', () => {
       );
 
       // old-file.ts: deleted file with 0 additions, -15
-      const deletedFileButton = screen.getByText('old-file.ts').closest('button');
+      const deletedFileButton = screen
+        .getByText('old-file.ts')
+        .closest('button');
       // +0 is not rendered because additions === 0
       expect(deletedFileButton?.textContent).not.toContain('+0');
       expect(deletedFileButton?.textContent).toContain('-15');
@@ -215,9 +219,7 @@ describe('FileTree', () => {
         />
       );
 
-      const selectedButton = screen
-        .getByText('Button.tsx')
-        .closest('button');
+      const selectedButton = screen.getByText('Button.tsx').closest('button');
       // The new component uses bg-accent-primary/15 for selected state
       expect(selectedButton?.className).toContain('bg-accent-primary');
     });
@@ -321,9 +323,7 @@ describe('FileTree', () => {
         />
       );
 
-      const fileButton = screen
-        .getByText('Button.tsx')
-        .closest('button');
+      const fileButton = screen.getByText('Button.tsx').closest('button');
       expect(fileButton).toHaveClass('w-full');
       expect(fileButton).toHaveClass('text-xs');
       expect(fileButton).toHaveClass('rounded-md');
@@ -465,7 +465,9 @@ describe('FileTree', () => {
         />
       );
 
-      const fileNameSpan = screen.getByText('very-long-filename-that-might-overflow.tsx');
+      const fileNameSpan = screen.getByText(
+        'very-long-filename-that-might-overflow.tsx'
+      );
       expect(fileNameSpan).toHaveClass('truncate');
     });
   });
@@ -481,7 +483,9 @@ describe('FileTree', () => {
       );
 
       // 4 files should not show filter
-      expect(screen.queryByPlaceholderText('Filter files...')).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText('Filter files...')
+      ).not.toBeInTheDocument();
     });
 
     it('should show filter for more than 5 files', () => {
@@ -501,18 +505,56 @@ describe('FileTree', () => {
         />
       );
 
-      expect(screen.getByPlaceholderText('Filter files...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Filter files...')
+      ).toBeInTheDocument();
     });
 
     it('should filter files by path when typing in search', async () => {
       const user = userEvent.setup();
       const manyFiles: FileChange[] = [
-        { path: 'src/components/Button.tsx', status: 'modified', additions: 5, deletions: 2, patch: '' },
-        { path: 'src/utils/helpers.ts', status: 'added', additions: 10, deletions: 0, patch: '' },
-        { path: 'src/hooks/useAuth.ts', status: 'modified', additions: 3, deletions: 1, patch: '' },
-        { path: 'src/hooks/useTheme.ts', status: 'modified', additions: 7, deletions: 4, patch: '' },
-        { path: 'src/types/index.ts', status: 'modified', additions: 2, deletions: 1, patch: '' },
-        { path: 'README.md', status: 'modified', additions: 1, deletions: 0, patch: '' },
+        {
+          path: 'src/components/Button.tsx',
+          status: 'modified',
+          additions: 5,
+          deletions: 2,
+          patch: '',
+        },
+        {
+          path: 'src/utils/helpers.ts',
+          status: 'added',
+          additions: 10,
+          deletions: 0,
+          patch: '',
+        },
+        {
+          path: 'src/hooks/useAuth.ts',
+          status: 'modified',
+          additions: 3,
+          deletions: 1,
+          patch: '',
+        },
+        {
+          path: 'src/hooks/useTheme.ts',
+          status: 'modified',
+          additions: 7,
+          deletions: 4,
+          patch: '',
+        },
+        {
+          path: 'src/types/index.ts',
+          status: 'modified',
+          additions: 2,
+          deletions: 1,
+          patch: '',
+        },
+        {
+          path: 'README.md',
+          status: 'modified',
+          additions: 1,
+          deletions: 0,
+          patch: '',
+        },
       ];
 
       render(
@@ -588,12 +630,48 @@ describe('FileTree', () => {
     it('should show directory path in flat filtered results', async () => {
       const user = userEvent.setup();
       const manyFiles: FileChange[] = [
-        { path: 'src/components/Button.tsx', status: 'modified', additions: 5, deletions: 2, patch: '' },
-        { path: 'src/utils/helpers.ts', status: 'added', additions: 10, deletions: 0, patch: '' },
-        { path: 'src/hooks/useAuth.ts', status: 'modified', additions: 3, deletions: 1, patch: '' },
-        { path: 'src/hooks/useTheme.ts', status: 'modified', additions: 7, deletions: 4, patch: '' },
-        { path: 'src/types/index.ts', status: 'modified', additions: 2, deletions: 1, patch: '' },
-        { path: 'README.md', status: 'modified', additions: 1, deletions: 0, patch: '' },
+        {
+          path: 'src/components/Button.tsx',
+          status: 'modified',
+          additions: 5,
+          deletions: 2,
+          patch: '',
+        },
+        {
+          path: 'src/utils/helpers.ts',
+          status: 'added',
+          additions: 10,
+          deletions: 0,
+          patch: '',
+        },
+        {
+          path: 'src/hooks/useAuth.ts',
+          status: 'modified',
+          additions: 3,
+          deletions: 1,
+          patch: '',
+        },
+        {
+          path: 'src/hooks/useTheme.ts',
+          status: 'modified',
+          additions: 7,
+          deletions: 4,
+          patch: '',
+        },
+        {
+          path: 'src/types/index.ts',
+          status: 'modified',
+          additions: 2,
+          deletions: 1,
+          patch: '',
+        },
+        {
+          path: 'README.md',
+          status: 'modified',
+          additions: 1,
+          deletions: 0,
+          patch: '',
+        },
       ];
 
       render(

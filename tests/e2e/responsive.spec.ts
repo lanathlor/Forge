@@ -16,12 +16,12 @@ import { test, expect, type Page } from '@playwright/test';
 // ---------------------------------------------------------------------------
 
 const VIEWPORTS = {
-  mobileS:  { width: 320,  height: 568  },
-  mobileM:  { width: 375,  height: 667  },
-  mobileL:  { width: 425,  height: 896  },
-  tablet:   { width: 768,  height: 1024 },
-  laptop:   { width: 1024, height: 768  },
-  desktop:  { width: 1440, height: 900  },
+  mobileS: { width: 320, height: 568 },
+  mobileM: { width: 375, height: 667 },
+  mobileL: { width: 425, height: 896 },
+  tablet: { width: 768, height: 1024 },
+  laptop: { width: 1024, height: 768 },
+  desktop: { width: 1440, height: 900 },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -34,7 +34,10 @@ async function gotoAndWait(page: Page, path: string) {
 }
 
 /** Ensures there is no horizontal scroll at the given viewport. */
-async function assertNoHorizontalOverflow(page: Page, viewport: { width: number; height: number }) {
+async function assertNoHorizontalOverflow(
+  page: Page,
+  viewport: { width: number; height: number }
+) {
   const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
   // Allow up to 10px tolerance for scrollbar width etc.
   expect(bodyWidth).toBeLessThanOrEqual(viewport.width + 10);
@@ -43,15 +46,19 @@ async function assertNoHorizontalOverflow(page: Page, viewport: { width: number;
 /** Returns true if sidebar is visible (i.e. desktop layout). */
 async function isSidebarVisible(page: Page): Promise<boolean> {
   // Sidebar is typically rendered as <nav> or a div with `sidebar` in its class
-  const sidebar = page.locator('nav[aria-label*="sidebar"], [data-testid="sidebar"], aside').first();
+  const sidebar = page
+    .locator('nav[aria-label*="sidebar"], [data-testid="sidebar"], aside')
+    .first();
   return sidebar.isVisible({ timeout: 2_000 }).catch(() => false);
 }
 
 /** Returns true if a hamburger / mobile menu button is present. */
 async function hasMobileMenuButton(page: Page): Promise<boolean> {
-  const menuBtn = page.locator(
-    'button[aria-label*="menu" i], button[aria-label*="navigation" i], button[aria-expanded], [data-testid="mobile-menu-button"]'
-  ).first();
+  const menuBtn = page
+    .locator(
+      'button[aria-label*="menu" i], button[aria-label*="navigation" i], button[aria-expanded], [data-testid="mobile-menu-button"]'
+    )
+    .first();
   return menuBtn.isVisible({ timeout: 2_000 }).catch(() => false);
 }
 
@@ -61,7 +68,9 @@ async function hasMobileMenuButton(page: Page): Promise<boolean> {
 
 test.describe('Responsive – Dashboard', () => {
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
-    test(`renders without horizontal overflow at ${name} (${viewport.width}×${viewport.height})`, async ({ page }) => {
+    test(`renders without horizontal overflow at ${name} (${viewport.width}×${viewport.height})`, async ({
+      page,
+    }) => {
       await page.setViewportSize(viewport);
       await gotoAndWait(page, '/dashboard');
       await assertNoHorizontalOverflow(page, viewport);
@@ -81,9 +90,11 @@ test.describe('Responsive – Dashboard', () => {
     await gotoAndWait(page, '/dashboard');
 
     // On mobile the sidebar with class `hidden lg:block` should not be visible
-    const mobileSidebar = page.locator('.hidden.lg\\:block, [class*="hidden lg"]').first();
+    const mobileSidebar = page
+      .locator('.hidden.lg\\:block, [class*="hidden lg"]')
+      .first();
     const isHidden = await mobileSidebar
-      .evaluate(el => {
+      .evaluate((el) => {
         const style = window.getComputedStyle(el);
         return style.display === 'none' || style.visibility === 'hidden';
       })
@@ -98,9 +109,11 @@ test.describe('Responsive – Dashboard', () => {
     await gotoAndWait(page, '/dashboard');
 
     // On desktop the sidebar column should be rendered
-    const sidebarColumn = page.locator('.lg\\:block, [class*="lg:block"]').first();
+    const sidebarColumn = page
+      .locator('.lg\\:block, [class*="lg:block"]')
+      .first();
     const sidebarVisible = await sidebarColumn
-      .evaluate(el => {
+      .evaluate((el) => {
         const style = window.getComputedStyle(el);
         return style.display !== 'none';
       })
@@ -110,7 +123,9 @@ test.describe('Responsive – Dashboard', () => {
   });
 
   // Touch targets: min 44×44px on mobile
-  test('interactive elements have adequate touch targets on mobile', async ({ page }) => {
+  test('interactive elements have adequate touch targets on mobile', async ({
+    page,
+  }) => {
     await page.setViewportSize(VIEWPORTS.mobileM);
     await gotoAndWait(page, '/dashboard');
 
@@ -124,7 +139,9 @@ test.describe('Responsive – Dashboard', () => {
       if (box && (box.height < 36 || box.width < 36)) {
         const text = await btn.textContent().catch(() => '');
         const label = await btn.getAttribute('aria-label').catch(() => '');
-        smallButtons.push(`"${(text || label || 'unnamed').trim()}" (${box.width.toFixed(0)}×${box.height.toFixed(0)})`);
+        smallButtons.push(
+          `"${(text || label || 'unnamed').trim()}" (${box.width.toFixed(0)}×${box.height.toFixed(0)})`
+        );
       }
     }
 
@@ -133,7 +150,9 @@ test.describe('Responsive – Dashboard', () => {
   });
 
   // Tablet: should show mixed layout
-  test('tablet layout (768px) shows content without overflow', async ({ page }) => {
+  test('tablet layout (768px) shows content without overflow', async ({
+    page,
+  }) => {
     await page.setViewportSize(VIEWPORTS.tablet);
     await gotoAndWait(page, '/dashboard');
 
@@ -186,7 +205,9 @@ test.describe('Responsive – Settings', () => {
     await page.setViewportSize(VIEWPORTS.mobileM);
     await gotoAndWait(page, '/settings');
 
-    const cards = page.locator('[class*="card"], .bg-card, [data-testid="settings-card"]');
+    const cards = page.locator(
+      '[class*="card"], .bg-card, [data-testid="settings-card"]'
+    );
     const count = await cards.count();
 
     if (count >= 2) {

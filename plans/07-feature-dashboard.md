@@ -7,6 +7,7 @@ A unified, real-time dashboard that provides a live view of all activities, incl
 ## User Problem
 
 **Without this feature**:
+
 - Manual page refreshes to see updates
 - Can't see Claude working in real-time
 - Missed status changes
@@ -14,6 +15,7 @@ A unified, real-time dashboard that provides a live view of all activities, incl
 - Disconnected workflow
 
 **With this feature**:
+
 - Live updates without refresh
 - Watch Claude work in real-time
 - Instant status notifications
@@ -23,6 +25,7 @@ A unified, real-time dashboard that provides a live view of all activities, incl
 ## User Stories
 
 ### Story 1: Real-time Updates
+
 ```
 AS A developer
 I WANT to see task updates in real-time
@@ -30,6 +33,7 @@ SO THAT I don't have to constantly refresh the page
 ```
 
 ### Story 2: Multi-tasking
+
 ```
 AS A developer
 I WANT to monitor Claude while doing other work
@@ -37,6 +41,7 @@ SO THAT I can be productive during execution
 ```
 
 ### Story 3: Status Overview
+
 ```
 AS A developer
 I WANT to see all tasks and their statuses at a glance
@@ -199,6 +204,7 @@ Widths: 15% | 25% | 60%
 ### Main Content Area (Dynamic)
 
 **State 1: Task Running**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Task: Add error handling to API endpoints          │
@@ -224,6 +230,7 @@ Widths: 15% | 25% | 60%
 ```
 
 **State 2: QA Running**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Task: Add error handling to API endpoints          │
@@ -242,6 +249,7 @@ Widths: 15% | 25% | 60%
 ```
 
 **State 3: Waiting Approval**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Task: Add error handling to API endpoints          │
@@ -285,9 +293,7 @@ export async function GET(request: Request) {
     start(controller) {
       // Send initial connection message
       controller.enqueue(
-        encoder.encode(
-          `data: ${JSON.stringify({ type: 'connected' })}\n\n`
-        )
+        encoder.encode(`data: ${JSON.stringify({ type: 'connected' })}\n\n`)
       );
 
       // Event handlers
@@ -349,7 +355,7 @@ export async function GET(request: Request) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
       'X-Accel-Buffering': 'no', // Disable nginx buffering
     },
   });
@@ -436,9 +442,7 @@ export function useTaskStream(sessionId: string) {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const eventSource = new EventSource(
-      `/api/stream?sessionId=${sessionId}`
-    );
+    const eventSource = new EventSource(`/api/stream?sessionId=${sessionId}`);
 
     eventSource.onopen = () => {
       setConnected(true);
@@ -575,18 +579,23 @@ export default function DashboardPage() {
 ## Edge Cases
 
 ### Scenario: Connection Drops
+
 **Handling**: Auto-reconnect after 3s, show "Reconnecting..." indicator
 
 ### Scenario: Multiple Browser Tabs
+
 **Handling**: Each tab gets its own SSE connection, all receive same updates
 
 ### Scenario: User Closes Tab During Task
+
 **Handling**: Task continues on server, user can reconnect later
 
 ### Scenario: Server Restart
+
 **Handling**: Clients auto-reconnect, resume from database state
 
 ### Scenario: Rapid Status Changes
+
 **Handling**: Debounce UI updates to avoid flickering
 
 ## Acceptance Criteria
@@ -606,11 +615,13 @@ export default function DashboardPage() {
 ## Dependencies
 
 **Required for**:
+
 - User experience
 - Monitoring tasks
 - Quick feedback
 
 **Depends on**:
+
 - SSE endpoint working
 - Event emitters in task orchestrator
 - Client-side EventSource API

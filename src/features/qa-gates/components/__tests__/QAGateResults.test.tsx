@@ -34,7 +34,9 @@ describe('QAGateResults', () => {
 
       renderWithToast(<QAGateResults taskId="task-1" />);
 
-      expect(screen.getByText('Loading QA gate results...')).toBeInTheDocument();
+      expect(
+        screen.getByText('Loading QA gate results...')
+      ).toBeInTheDocument();
     });
   });
 
@@ -110,7 +112,9 @@ describe('QAGateResults', () => {
     });
 
     it('does not show attempt information when all passed', async () => {
-      renderWithToast(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
+      renderWithToast(
+        <QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />
+      );
 
       await waitFor(() => {
         expect(screen.queryByText(/Attempt/)).not.toBeInTheDocument();
@@ -159,14 +163,14 @@ describe('QAGateResults', () => {
       renderWithToast(<QAGateResults taskId="task-1" />);
 
       await waitFor(() => {
-        expect(
-          screen.getByText('❌ FAILED (1/2 passed)')
-        ).toBeInTheDocument();
+        expect(screen.getByText('❌ FAILED (1/2 passed)')).toBeInTheDocument();
       });
     });
 
     it('shows attempt information when failed', async () => {
-      renderWithToast(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
+      renderWithToast(
+        <QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />
+      );
 
       await waitFor(() => {
         expect(screen.getByText('Attempt 2 of 3')).toBeInTheDocument();
@@ -205,7 +209,9 @@ describe('QAGateResults', () => {
     });
 
     it('shows footer when max attempts reached', async () => {
-      renderWithToast(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
+      renderWithToast(
+        <QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />
+      );
 
       await waitFor(() => {
         expect(
@@ -215,7 +221,9 @@ describe('QAGateResults', () => {
     });
 
     it('does not show footer when max attempts not reached', async () => {
-      renderWithToast(<QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />);
+      renderWithToast(
+        <QAGateResults taskId="task-1" attempt={2} maxAttempts={3} />
+      );
 
       await waitFor(() => {
         expect(
@@ -427,7 +435,9 @@ describe('QAGateResults', () => {
     });
 
     it('renders Fix & Re-run button in footer when max attempts reached', async () => {
-      renderWithToast(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
+      renderWithToast(
+        <QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />
+      );
 
       await waitFor(() => {
         expect(screen.getByText('Fix & Re-run')).toBeInTheDocument();
@@ -435,7 +445,9 @@ describe('QAGateResults', () => {
     });
 
     it('renders Override & Approve Anyway button in footer', async () => {
-      renderWithToast(<QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />);
+      renderWithToast(
+        <QAGateResults taskId="task-1" attempt={3} maxAttempts={3} />
+      );
 
       await waitFor(() => {
         expect(

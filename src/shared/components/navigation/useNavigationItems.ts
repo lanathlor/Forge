@@ -60,18 +60,24 @@ export function useNavigationItems(
   const router = useRouter();
 
   // Determine active item based on pathname if not explicitly provided
-  const effectiveActiveItemId = activeItemId ?? (() => {
-    if (pathname === '/dashboard' || pathname === '/') return 'dashboard';
-    if (pathname?.startsWith('/tasks')) return 'tasks';
-    if (pathname?.startsWith('/plans')) return 'plans';
-    if (pathname?.startsWith('/repositories')) return 'repositories';
-    if (pathname?.startsWith('/settings')) return 'settings';
-    return 'dashboard';
-  })();
+  const effectiveActiveItemId =
+    activeItemId ??
+    (() => {
+      if (pathname === '/dashboard' || pathname === '/') return 'dashboard';
+      if (pathname?.startsWith('/tasks')) return 'tasks';
+      if (pathname?.startsWith('/plans')) return 'plans';
+      if (pathname?.startsWith('/repositories')) return 'repositories';
+      if (pathname?.startsWith('/settings')) return 'settings';
+      return 'dashboard';
+    })();
 
   // Get state from Redux
-  const currentSessionId = useSelector((state: RootState) => state.session.currentSessionId);
-  const currentRepositoryId = useSelector((state: RootState) => state.session.currentRepositoryId);
+  const currentSessionId = useSelector(
+    (state: RootState) => state.session.currentSessionId
+  );
+  const currentRepositoryId = useSelector(
+    (state: RootState) => state.session.currentRepositoryId
+  );
 
   // Derive effective session state
   const effectiveHasActiveSession = hasActiveSession || !!currentSessionId;
@@ -90,7 +96,9 @@ export function useNavigationItems(
 
   // Build navigation items
   const items: NavItem[] = useMemo(() => {
-    const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const isMac =
+      typeof navigator !== 'undefined' &&
+      navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const modKey = isMac ? '⌘' : 'Ctrl+';
 
     return [
@@ -108,10 +116,12 @@ export function useNavigationItems(
           ? sessionStatus === 'running'
             ? 'running'
             : sessionStatus === 'error'
-            ? 'error'
-            : 'active'
+              ? 'error'
+              : 'active'
           : 'default',
-        tooltip: effectiveHasActiveSession ? 'Active session in progress' : 'View dashboard',
+        tooltip: effectiveHasActiveSession
+          ? 'Active session in progress'
+          : 'View dashboard',
       },
       {
         id: 'tasks',
@@ -124,7 +134,10 @@ export function useNavigationItems(
         shortcutHint: `${modKey}2`,
         badge: totalTasksCount > 0 ? totalTasksCount : undefined,
         status: runningTasksCount > 0 ? 'running' : 'default',
-        tooltip: totalTasksCount > 0 ? `${totalTasksCount} tasks (${runningTasksCount} running)` : 'No active tasks',
+        tooltip:
+          totalTasksCount > 0
+            ? `${totalTasksCount} tasks (${runningTasksCount} running)`
+            : 'No active tasks',
       },
       {
         id: 'plans',
@@ -147,7 +160,9 @@ export function useNavigationItems(
         onClick: createNavigationHandler('repositories', '/repositories'),
         shortcutHint: `${modKey}4`,
         badge: currentRepositoryId ? undefined : undefined, // Could show count of repos
-        tooltip: currentRepositoryId ? 'Current repository selected' : 'Select a repository',
+        tooltip: currentRepositoryId
+          ? 'Current repository selected'
+          : 'Select a repository',
       },
 
       // Secondary navigation items
@@ -192,8 +207,18 @@ export function useNavigationItems(
       indicators.push({
         id: 'session',
         label: 'Session',
-        value: sessionStatus === 'running' ? 'Running' : sessionStatus === 'paused' ? 'Paused' : 'Active',
-        type: sessionStatus === 'running' ? 'success' : sessionStatus === 'error' ? 'error' : 'info',
+        value:
+          sessionStatus === 'running'
+            ? 'Running'
+            : sessionStatus === 'paused'
+              ? 'Paused'
+              : 'Active',
+        type:
+          sessionStatus === 'running'
+            ? 'success'
+            : sessionStatus === 'error'
+              ? 'error'
+              : 'info',
         pulse: sessionStatus === 'running',
         onClick: onNavigate ? () => onNavigate('sessions') : undefined,
       });
@@ -223,7 +248,13 @@ export function useNavigationItems(
     }
 
     return indicators;
-  }, [effectiveHasActiveSession, sessionStatus, runningTasksCount, pendingTasksCount, onNavigate]);
+  }, [
+    effectiveHasActiveSession,
+    sessionStatus,
+    runningTasksCount,
+    pendingTasksCount,
+    onNavigate,
+  ]);
 
   // Keyboard shortcuts map
   const shortcuts: Record<string, string> = useMemo(

@@ -78,7 +78,10 @@ export function useAnnouncer() {
     };
   }, []);
 
-  const announce = (message: string, politeness: 'polite' | 'assertive' = 'polite') => {
+  const announce = (
+    message: string,
+    politeness: 'polite' | 'assertive' = 'polite'
+  ) => {
     if (announcerRef.current) {
       announcerRef.current.setAttribute('aria-live', politeness);
       announcerRef.current.textContent = message;

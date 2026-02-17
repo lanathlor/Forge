@@ -22,6 +22,7 @@ The following optimizations have been implemented to improve rendering performan
 The following components have been wrapped with `React.memo()` to prevent unnecessary re-renders:
 
 #### Dashboard UI Primitives (`src/shared/components/ui/dashboard-cards.tsx`)
+
 - `Skeleton` - Loading skeleton component
 - `StatCard` - Metric card with trend indicators
 - `StatCardSkeleton` - Loading state for stat cards
@@ -34,12 +35,14 @@ The following components have been wrapped with `React.memo()` to prevent unnece
 - `ChevronRightIcon`, `TrendUpIcon`, `TrendDownIcon` - Icon components
 
 #### Repository Selector (`src/features/repositories/components/RepositorySelector.tsx`)
+
 - `StatusDot` - Live status indicator with animations
 - `ActiveRepoRow` - Active repository row with shortcuts
 - `RepoRow` - Standard repository row
 - `SectionHeader` - Section header component
 
 #### Needs Attention Panel (`src/app/components/NeedsAttention.tsx`)
+
 - `AlertItem` - Alert item with severity indicators
 - `AlertItemHeader`, `AlertItemMeta`, `AlertItemActions` - Alert sub-components
 - `SummaryHeader`, `SummaryHeaderIcon`, `SummaryHeaderTitle` - Summary components
@@ -47,6 +50,7 @@ The following components have been wrapped with `React.memo()` to prevent unnece
 - `AlertList`, `ShowMoreButton` - List management components
 
 #### Previous Optimizations
+
 - `DashboardOverview` - Main dashboard component
 - `MetricsGrid` - Statistics display component
 - `CompactMetricsGrid` - Compact statistics variant
@@ -61,15 +65,18 @@ The following components have been wrapped with `React.memo()` to prevent unnece
 Added strategic `useMemo` and `useCallback` hooks in:
 
 #### DashboardOverview
+
 - `resolvedMetrics` - Memoized metrics computation
 - `handleNewTask` - Memoized callback function
 - `handleNeedsAttentionSelect` - Memoized selection handler
 
 #### MetricsGrid
+
 - `data` - Memoized default metrics fallback
 - `criticalCards` - Memoized filtered card list (CompactMetricsGrid)
 
 #### MultiRepoCommandCenter
+
 - `alertsMap` - Memoized alerts lookup map
 - `sortedRepos` - Memoized sorted repository list
 - `visibleRepos` - Memoized visible repositories with pagination
@@ -78,6 +85,7 @@ Added strategic `useMemo` and `useCallback` hooks in:
 - `renderContent` - Memoized content renderer function
 
 #### MultiSessionOverviewCard
+
 - `stats` - Memoized statistics computation
 - `sortedRepos` - Memoized sorted repository list
 - `visibleRepos` - Memoized visible repositories
@@ -90,7 +98,9 @@ Added strategic `useMemo` and `useCallback` hooks in:
 ### 3. Code Splitting
 
 #### Monaco Editor (DiffViewer)
+
 Created `DiffViewerLazy.tsx` wrapper component that:
+
 - Lazy loads the Monaco editor bundle (~2MB) only when needed
 - Uses `React.lazy()` and `React.Suspense`
 - Shows loading fallback while bundle is being fetched
@@ -99,14 +109,17 @@ Created `DiffViewerLazy.tsx` wrapper component that:
 **Impact**: Reduces initial bundle size by ~2MB. Monaco editor is only loaded when users view diffs.
 
 **Usage**:
+
 ```tsx
 import { DiffViewerLazy } from '@/features/diff-viewer/components/DiffViewerLazy';
 
-<DiffViewerLazy taskId={taskId} />
+<DiffViewerLazy taskId={taskId} />;
 ```
 
 #### Dashboard Heavy Components (`src/app/components/DashboardLayout.tsx`)
+
 Lazy loaded the following tab content to reduce initial bundle:
+
 - `SessionSummary` - Session summary tab (~150KB)
 - `PlanList` - Plan list component (~80KB)
 - `PlanDetailView` - Plan detail view (~120KB)
@@ -116,6 +129,7 @@ Lazy loaded the following tab content to reduce initial bundle:
 - `QAGatesConfig` - QA gates configuration (~70KB)
 
 Each component wrapped with `<Suspense>` and custom loading fallback:
+
 ```tsx
 <Suspense fallback={<LoadingFallback message="Loading plans..." />}>
   <PlanList {...props} />
@@ -127,7 +141,9 @@ Each component wrapped with `<Suspense>` and custom loading fallback:
 ### 4. Lazy Loading Below-the-Fold Content
 
 #### RecentActivitySection
+
 Implemented `LazyLoad` wrapper component using IntersectionObserver API:
+
 - Defers rendering of RecentActivity until it enters the viewport
 - Uses 100px rootMargin for preloading before visibility
 - Shows skeleton placeholder during lazy load
@@ -136,9 +152,10 @@ Implemented `LazyLoad` wrapper component using IntersectionObserver API:
 **Impact**: Reduces initial render time by deferring below-the-fold content.
 
 **Usage in DashboardOverview**:
+
 ```tsx
 <LazyLoad
-  fallback={<div className="h-96 animate-pulse bg-surface-raised rounded-lg" />}
+  fallback={<div className="h-96 animate-pulse rounded-lg bg-surface-raised" />}
   rootMargin="100px"
   height={400}
 >
@@ -149,7 +166,9 @@ Implemented `LazyLoad` wrapper component using IntersectionObserver API:
 ### 5. Performance Monitoring
 
 #### PerformanceProfiler Component
+
 Created reusable profiler component that:
+
 - Wraps components to measure render performance
 - Automatically logs slow renders (>16ms) in development
 - Supports custom onRender callbacks
@@ -158,6 +177,7 @@ Created reusable profiler component that:
 **Impact**: Helps identify performance bottlenecks during development.
 
 **Usage**:
+
 ```tsx
 <PerformanceProfiler id="DashboardLayout">
   <DashboardLayout {...props} />
@@ -165,6 +185,7 @@ Created reusable profiler component that:
 ```
 
 Applied to:
+
 - `DashboardLayout` - Main layout component
 
 ### 6. Performance Utilities
@@ -185,12 +206,14 @@ Created `/src/shared/utils/performance.ts` module with utilities:
 Created performance optimization components in `/src/shared/components/performance/`:
 
 #### LazyLoad Component
+
 - Uses IntersectionObserver API
 - Configurable rootMargin and threshold
 - Supports fallback content
 - Maintains layout with optional height
 
 #### PerformanceProfiler Component
+
 - Wraps React Profiler API
 - Automatic slow render logging
 - Development mode only by default
@@ -199,12 +222,14 @@ Created performance optimization components in `/src/shared/components/performan
 ## Performance Metrics
 
 ### Before Optimizations
+
 - Initial bundle size: ~3.5MB (with Monaco editor loaded upfront)
 - Time to Interactive (TTI): ~3.2s
 - First Contentful Paint (FCP): ~1.8s
 - Dashboard re-renders: ~15-20 per user interaction
 
 ### Expected After Optimizations
+
 - Initial bundle size: ~1.5MB (Monaco editor code-split)
 - Time to Interactive (TTI): ~1.8s (44% improvement)
 - First Contentful Paint (FCP): ~1.2s (33% improvement)
@@ -236,6 +261,7 @@ Created performance optimization components in `/src/shared/components/performan
 ## How to Use
 
 ### Enable Performance Monitoring
+
 Performance monitoring is enabled by default in development mode. To customize:
 
 ```tsx
@@ -245,21 +271,19 @@ Performance monitoring is enabled by default in development mode. To customize:
 ```
 
 ### Lazy Load Components
+
 Wrap any below-the-fold component with LazyLoad:
 
 ```tsx
 import { LazyLoad } from '@/shared/components/performance';
 
-<LazyLoad
-  fallback={<Skeleton />}
-  rootMargin="200px"
-  threshold={0.01}
->
+<LazyLoad fallback={<Skeleton />} rootMargin="200px" threshold={0.01}>
   <HeavyComponent />
-</LazyLoad>
+</LazyLoad>;
 ```
 
 ### Code Split Heavy Components
+
 Use React.lazy and Suspense:
 
 ```tsx
@@ -267,7 +291,7 @@ const HeavyComponent = React.lazy(() => import('./HeavyComponent'));
 
 <React.Suspense fallback={<Loading />}>
   <HeavyComponent />
-</React.Suspense>
+</React.Suspense>;
 ```
 
 ### 8. Bundle Size Analysis
@@ -275,12 +299,14 @@ const HeavyComponent = React.lazy(() => import('./HeavyComponent'));
 Added webpack-bundle-analyzer integration to visualize bundle composition:
 
 **Configuration** (`next.config.js`):
+
 - Enabled via `ANALYZE=true` environment variable
 - Generates separate reports for client and server bundles
 - Opens analysis automatically in browser
 - Static HTML reports saved to `./analyze/` directory
 
 **Usage**:
+
 ```bash
 pnpm build:analyze
 ```
@@ -292,34 +318,40 @@ pnpm build:analyze
 Enhanced `next.config.js` with production optimizations:
 
 #### SWC Minification
+
 ```js
-swcMinify: true
+swcMinify: true;
 ```
+
 - Uses fast Rust-based minifier (7x faster than Terser)
 - Reduces bundle size by 10-15%
 
 #### Console Log Removal
+
 ```js
 compiler: {
   removeConsole: {
-    exclude: ['error', 'warn']
+    exclude: ['error', 'warn'];
   }
 }
 ```
+
 - Removes `console.log` in production builds
 - Keeps error and warning logs
 - Reduces bundle size and improves performance
 
 #### Package Import Optimization
+
 ```js
 experimental: {
   optimizePackageImports: [
     'lucide-react',
     '@radix-ui/react-dialog',
-    '@radix-ui/react-dropdown-menu'
-  ]
+    '@radix-ui/react-dropdown-menu',
+  ];
 }
 ```
+
 - Tree-shakes icon libraries to only include used icons
 - Optimizes Radix UI imports
 - Reduces bundle by ~200KB for icon library alone
@@ -342,12 +374,15 @@ Potential areas for further optimization:
 ## Monitoring Performance
 
 ### Development
+
 - Use React DevTools Profiler tab
 - Check console for slow render warnings (>16ms)
 - Monitor Network tab for bundle sizes
 
 ### Production
+
 Consider implementing:
+
 - Real User Monitoring (RUM)
 - Core Web Vitals tracking
 - Performance budgets

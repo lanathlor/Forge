@@ -1,4 +1,7 @@
-import { handleUpdateTask, handleDeleteTask } from '@/features/plans/api/handlers';
+import {
+  handleUpdateTask,
+  handleDeleteTask,
+} from '@/features/plans/api/handlers';
 import type { NextRequest } from 'next/server';
 
 export async function PATCH(

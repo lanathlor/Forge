@@ -19,9 +19,9 @@
 /* Ensure focus is visible when using keyboard navigation */
 button:focus-visible,
 a:focus-visible,
-[role="button"]:focus-visible,
-[role="tab"]:focus-visible,
-[role="option"]:focus-visible {
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[role='option']:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
@@ -112,7 +112,12 @@ a:focus-visible,
 }
 
 .dark .bg-red-900\/40 {
-  background-color: rgba(127, 29, 29, 0.6); /* More opaque for better contrast */
+  background-color: rgba(
+    127,
+    29,
+    29,
+    0.6
+  ); /* More opaque for better contrast */
 }
 
 .bg-amber-100 {
@@ -191,9 +196,9 @@ a:focus-visible,
 @media (pointer: coarse) {
   button,
   a,
-  [role="button"],
-  [role="tab"],
-  [role="option"] {
+  [role='button'],
+  [role='tab'],
+  [role='option'] {
     min-height: 44px;
     min-width: 44px;
   }
@@ -232,13 +237,13 @@ a:focus-visible,
    ============================================ */
 
 /* Style for screen reader announcements */
-[aria-live="polite"],
-[aria-live="assertive"] {
+[aria-live='polite'],
+[aria-live='assertive'] {
   position: relative;
 }
 
 /* Visual indicator for critical alerts */
-[aria-live="assertive"] {
+[aria-live='assertive'] {
   border-left: 4px solid hsl(var(--destructive));
 }
 
@@ -248,17 +253,17 @@ a:focus-visible,
 
 /* Add patterns/textures in addition to color for status indicators */
 .status-success::before {
-  content: "✓ ";
+  content: '✓ ';
   margin-right: 0.25rem;
 }
 
 .status-error::before {
-  content: "✗ ";
+  content: '✗ ';
   margin-right: 0.25rem;
 }
 
 .status-warning::before {
-  content: "⚠ ";
+  content: '⚠ ';
   margin-right: 0.25rem;
 }
 
@@ -283,7 +288,7 @@ a:hover {
 
 /* Ensure disabled state is clear */
 button:disabled,
-[aria-disabled="true"] {
+[aria-disabled='true'] {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -304,20 +309,20 @@ label {
 
 /* Required field indicator */
 [required] + label::after,
-[aria-required="true"] + label::after {
-  content: " *";
+[aria-required='true'] + label::after {
+  content: ' *';
   color: hsl(var(--destructive));
 }
 
 /* Error state for form fields */
-[aria-invalid="true"],
+[aria-invalid='true'],
 .error {
   border-color: hsl(var(--destructive));
   border-width: 2px;
 }
 
 /* Error message styling */
-[role="alert"] {
+[role='alert'] {
   color: hsl(var(--destructive-foreground));
   background-color: hsl(var(--destructive) / 0.1);
   padding: 0.5rem;
@@ -330,12 +335,12 @@ label {
    ============================================ */
 
 /* Ensure loading states are announced to screen readers */
-[aria-busy="true"] {
+[aria-busy='true'] {
   position: relative;
 }
 
-[aria-busy="true"]::after {
-  content: "";
+[aria-busy='true']::after {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -352,15 +357,15 @@ label {
    ============================================ */
 
 /* Ensure focus trap is visible */
-[role="dialog"],
-[role="alertdialog"] {
+[role='dialog'],
+[role='alertdialog'] {
   outline: 2px solid hsl(var(--ring));
   outline-offset: -2px;
 }
 
 /* Backdrop for modals */
-[role="dialog"]::backdrop,
-[role="alertdialog"]::backdrop {
+[role='dialog']::backdrop,
+[role='alertdialog']::backdrop {
   background-color: rgba(0, 0, 0, 0.5);
 }
 

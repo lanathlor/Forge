@@ -81,12 +81,18 @@ export function handleTabKey(
   const activeElement = document.activeElement as HTMLElement;
 
   // Shift + Tab (backwards)
-  if (event.shiftKey && shouldWrapToLast(activeElement, firstElement, container)) {
+  if (
+    event.shiftKey &&
+    shouldWrapToLast(activeElement, firstElement, container)
+  ) {
     event.preventDefault();
     lastElement?.focus();
   }
   // Tab (forwards)
-  else if (!event.shiftKey && shouldWrapToFirst(activeElement, lastElement, container)) {
+  else if (
+    !event.shiftKey &&
+    shouldWrapToFirst(activeElement, lastElement, container)
+  ) {
     event.preventDefault();
     firstElement?.focus();
   }

@@ -48,7 +48,12 @@ export type ActivityType =
   | 'qa_passed'
   | 'qa_failed';
 
-export type ActivityStatus = 'success' | 'error' | 'warning' | 'info' | 'neutral';
+export type ActivityStatus =
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'neutral';
 
 export interface ActivityItem {
   id: string;
@@ -145,7 +150,10 @@ const ACTIVITY_LABELS: Record<ActivityType, string> = {
   qa_failed: 'QA Failed',
 };
 
-const BADGE_VARIANTS: Record<ActivityStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+const BADGE_VARIANTS: Record<
+  ActivityStatus,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
   success: 'default',
   error: 'destructive',
   warning: 'secondary',
@@ -241,19 +249,23 @@ function ActivityContentBody({ item, showChevron }: ActivityContentBodyProps) {
     <div className="flex items-start gap-3 py-3">
       <ActivityIcon type={item.type} status={item.status} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-text-primary truncate max-w-[200px] sm:max-w-none">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="max-w-[200px] truncate text-sm font-medium text-text-primary sm:max-w-none">
             {item.title}
           </span>
-          <Badge variant={badgeVariant} className="text-xs shrink-0">{label}</Badge>
+          <Badge variant={badgeVariant} className="shrink-0 text-xs">
+            {label}
+          </Badge>
         </div>
         {item.description && (
-          <p className="mt-0.5 text-xs text-text-muted line-clamp-2">{item.description}</p>
+          <p className="mt-0.5 line-clamp-2 text-xs text-text-muted">
+            {item.description}
+          </p>
         )}
         <ActivityMetadata item={item} />
       </div>
       {showChevron && (
-        <ChevronRight className="h-4 w-4 shrink-0 text-text-muted group-hover:text-text-primary transition-colors" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-text-muted transition-colors group-hover:text-text-primary" />
       )}
     </div>
   );
@@ -270,7 +282,7 @@ function ActivityItemContent({ item, onClick }: ActivityItemContentProps) {
       <button
         onClick={onClick}
         className={cn(
-          'group w-full text-left px-4 transition-colors duration-150',
+          'group w-full px-4 text-left transition-colors duration-150',
           'hover:bg-surface-interactive focus-visible:bg-surface-interactive',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
         )}
@@ -289,7 +301,7 @@ function ActivityItemContent({ item, onClick }: ActivityItemContentProps) {
 function ActivitySkeletonItem() {
   return (
     <div className="flex items-start gap-3 px-4 py-3">
-      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+      <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
       <div className="flex-1 space-y-2">
         <div className="flex items-center gap-2">
           <Skeleton className="h-4 w-32" />
@@ -304,13 +316,13 @@ function ActivitySkeletonItem() {
 
 function ActivityEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-12 px-4">
+    <div className="flex flex-col items-center justify-center gap-3 px-4 py-12">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-interactive">
         <Activity className="h-7 w-7 text-text-muted" />
       </div>
       <div className="text-center">
         <p className="text-sm font-medium text-text-primary">No activity yet</p>
-        <p className="mt-1 text-xs text-text-muted max-w-[200px]">
+        <p className="mt-1 max-w-[200px] text-xs text-text-muted">
           Activity from tasks, sessions, plans, and QA gates will appear here
         </p>
       </div>
@@ -345,7 +357,7 @@ interface LoadMoreButtonProps {
 
 function LoadMoreButton({ onClick, loading }: LoadMoreButtonProps) {
   return (
-    <div className="p-4 border-t border-border">
+    <div className="border-t border-border p-4">
       <Button
         variant="outline"
         size="sm"
@@ -355,7 +367,7 @@ function LoadMoreButton({ onClick, loading }: LoadMoreButtonProps) {
       >
         {loading ? (
           <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Loading...
           </>
         ) : (
@@ -373,12 +385,17 @@ interface ActivityHeaderProps {
 
 function ActivityHeader({ onRefresh, loading }: ActivityHeaderProps) {
   return (
-    <div className="flex items-center justify-between p-4 border-b border-border">
+    <div className="flex items-center justify-between border-b border-border p-4">
       <div>
-        <h3 id="recent-activity-heading" className="text-base font-semibold text-text-primary">
+        <h3
+          id="recent-activity-heading"
+          className="text-base font-semibold text-text-primary"
+        >
           Recent Activity
         </h3>
-        <p className="text-xs text-text-muted mt-0.5">Tasks, sessions, plans, and QA results</p>
+        <p className="mt-0.5 text-xs text-text-muted">
+          Tasks, sessions, plans, and QA results
+        </p>
       </div>
       {onRefresh && (
         <Button
@@ -408,7 +425,10 @@ interface ActivityLoadingSkeletonProps {
 
 function ActivityLoadingSkeleton({ className }: ActivityLoadingSkeletonProps) {
   return (
-    <section aria-labelledby="recent-activity-heading" className={cn(CARD_CLASSES, className)}>
+    <section
+      aria-labelledby="recent-activity-heading"
+      className={cn(CARD_CLASSES, className)}
+    >
       <ActivityHeader loading />
       <div className="divide-y divide-border">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -431,16 +451,34 @@ interface ActivityContentSectionProps {
 }
 
 function ActivityContentSection(props: ActivityContentSectionProps) {
-  const { items, loadingMore, hasMore, onLoadMore, onRefresh, onItemClick, maxHeight, className } = props;
+  const {
+    items,
+    loadingMore,
+    hasMore,
+    onLoadMore,
+    onRefresh,
+    onItemClick,
+    maxHeight,
+    className,
+  } = props;
   const isEmpty = !items || items.length === 0;
 
   return (
-    <section aria-labelledby="recent-activity-heading" className={cn(CARD_CLASSES, className)}>
+    <section
+      aria-labelledby="recent-activity-heading"
+      className={cn(CARD_CLASSES, className)}
+    >
       <ActivityHeader onRefresh={onRefresh} loading={loadingMore} />
       <div className="overflow-y-auto" style={{ maxHeight }}>
-        {isEmpty ? <ActivityEmptyState /> : <ActivityList items={items} onItemClick={onItemClick} />}
+        {isEmpty ? (
+          <ActivityEmptyState />
+        ) : (
+          <ActivityList items={items} onItemClick={onItemClick} />
+        )}
       </div>
-      {hasMore && onLoadMore && <LoadMoreButton onClick={onLoadMore} loading={loadingMore} />}
+      {hasMore && onLoadMore && (
+        <LoadMoreButton onClick={onLoadMore} loading={loadingMore} />
+      )}
     </section>
   );
 }
@@ -448,10 +486,17 @@ function ActivityContentSection(props: ActivityContentSectionProps) {
 /** RecentActivity - Comprehensive activity feed with chronological events */
 export function RecentActivity(props: RecentActivityProps) {
   const { loading, maxHeight = 400, className, ...rest } = props;
-  const formattedMaxHeight = typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight;
+  const formattedMaxHeight =
+    typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight;
 
   if (loading) return <ActivityLoadingSkeleton className={className} />;
-  return <ActivityContentSection {...rest} maxHeight={formattedMaxHeight} className={className} />;
+  return (
+    <ActivityContentSection
+      {...rest}
+      maxHeight={formattedMaxHeight}
+      className={className}
+    />
+  );
 }
 
 export default RecentActivity;

@@ -4,7 +4,8 @@ import { useCountUp, easings } from '../useCountUp';
 
 const mockMatchMedia = (prefersReducedMotion: boolean) => {
   vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
-    matches: query === '(prefers-reduced-motion: reduce)' && prefersReducedMotion,
+    matches:
+      query === '(prefers-reduced-motion: reduce)' && prefersReducedMotion,
     media: query,
     onchange: null,
     addListener: vi.fn(),
@@ -185,9 +186,7 @@ describe('useCountUp', () => {
 
     it('should use default duration of 1000', () => {
       // This test verifies the option is accepted
-      const { result } = renderHook(() =>
-        useCountUp({ to: 100 })
-      );
+      const { result } = renderHook(() => useCountUp({ to: 100 }));
       expect(result.current).toBeDefined();
     });
 
@@ -217,25 +216,19 @@ describe('useCountUp', () => {
 
     it('should handle negative target values', () => {
       mockMatchMedia(true);
-      const { result } = renderHook(() =>
-        useCountUp({ to: -50, from: 0 })
-      );
+      const { result } = renderHook(() => useCountUp({ to: -50, from: 0 }));
       expect(result.current.value).toBe(-50);
     });
 
     it('should handle counting down (from > to)', () => {
       mockMatchMedia(true);
-      const { result } = renderHook(() =>
-        useCountUp({ to: 0, from: 100 })
-      );
+      const { result } = renderHook(() => useCountUp({ to: 0, from: 100 }));
       expect(result.current.value).toBe(0);
     });
 
     it('should handle same from and to values', () => {
       mockMatchMedia(true);
-      const { result } = renderHook(() =>
-        useCountUp({ to: 50, from: 50 })
-      );
+      const { result } = renderHook(() => useCountUp({ to: 50, from: 50 }));
       expect(result.current.value).toBe(50);
     });
   });
@@ -280,9 +273,7 @@ describe('useCountUp', () => {
 
   describe('cleanup', () => {
     it('should not throw on unmount', () => {
-      const { unmount } = renderHook(() =>
-        useCountUp({ to: 100, from: 0 })
-      );
+      const { unmount } = renderHook(() => useCountUp({ to: 100, from: 0 }));
 
       expect(() => unmount()).not.toThrow();
     });

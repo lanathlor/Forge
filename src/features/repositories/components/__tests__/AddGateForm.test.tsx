@@ -5,23 +5,51 @@ import userEvent from '@testing-library/user-event';
 import { AddGateForm } from '../AddGateForm';
 
 vi.mock('lucide-react', () => ({
-  Plus: (props: Record<string, unknown>) => <svg data-testid="plus-icon" {...props} />,
-  X: (props: Record<string, unknown>) => <svg data-testid="x-icon" {...props} />,
-  ChevronDown: (props: Record<string, unknown>) => <svg data-testid="chevron-icon" {...props} />,
-  Check: (props: Record<string, unknown>) => <svg data-testid="check-icon" {...props} />,
+  Plus: (props: Record<string, unknown>) => (
+    <svg data-testid="plus-icon" {...props} />
+  ),
+  X: (props: Record<string, unknown>) => (
+    <svg data-testid="x-icon" {...props} />
+  ),
+  ChevronDown: (props: Record<string, unknown>) => (
+    <svg data-testid="chevron-icon" {...props} />
+  ),
+  Check: (props: Record<string, unknown>) => (
+    <svg data-testid="check-icon" {...props} />
+  ),
 }));
 
 vi.mock('@/shared/components/ui/select', () => ({
-  Select: ({ children, value, onValueChange }: { children: React.ReactNode; value: string; onValueChange: (v: string) => void }) => (
-    <div data-testid="select">{children}</div>
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onValueChange: (v: string) => void;
+  }) => <div data-testid="select">{children}</div>,
+  SelectTrigger: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    id?: string;
+  }) => (
+    <button data-testid="select-trigger" {...props}>
+      {children}
+    </button>
   ),
-  SelectTrigger: ({ children, ...props }: { children: React.ReactNode; id?: string }) => (
-    <button data-testid="select-trigger" {...props}>{children}</button>
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
   ),
-  SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => (
-    <option value={value}>{children}</option>
-  ),
+  SelectItem: ({
+    children,
+    value,
+  }: {
+    children: React.ReactNode;
+    value: string;
+  }) => <option value={value}>{children}</option>,
   SelectValue: () => <span>1 min</span>,
 }));
 
@@ -96,7 +124,9 @@ describe('AddGateForm', () => {
     render(<AddGateForm {...defaultProps} />);
 
     const buttons = screen.getAllByRole('button');
-    const closeButton = buttons.find(b => b.querySelector('[data-testid="x-icon"]'));
+    const closeButton = buttons.find((b) =>
+      b.querySelector('[data-testid="x-icon"]')
+    );
     expect(closeButton).toBeDefined();
     await user.click(closeButton!);
 

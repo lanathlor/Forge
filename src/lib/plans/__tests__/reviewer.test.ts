@@ -78,7 +78,12 @@ vi.mock('@/db', () => ({
 vi.mock('@/db/schema', () => ({
   plans: { id: 'id', repositoryId: 'repository_id' },
   phases: { id: 'id', planId: 'plan_id', order: 'order' },
-  planTasks: { id: 'id', phaseId: 'phase_id', planId: 'plan_id', order: 'order' },
+  planTasks: {
+    id: 'id',
+    phaseId: 'phase_id',
+    planId: 'plan_id',
+    order: 'order',
+  },
   planIterations: { id: 'id', planId: 'plan_id' },
 }));
 
@@ -109,7 +114,10 @@ describe('plans/reviewer', () => {
     mockDelete.mockReturnValue({ where: mockDeleteWhere });
     mockSelect.mockReturnValue({ from: mockSelectFrom });
     mockSelectFrom.mockReturnValue({ where: mockSelectWhere });
-    mockSelectWhere.mockReturnValue({ orderBy: mockSelectOrderBy, limit: mockSelectLimit });
+    mockSelectWhere.mockReturnValue({
+      orderBy: mockSelectOrderBy,
+      limit: mockSelectLimit,
+    });
     // mockSelectOrderBy returns a thenable so it can be awaited directly
     mockSelectOrderBy.mockResolvedValue([]);
     mockSelectLimit.mockResolvedValue([]);
@@ -292,7 +300,9 @@ describe('plans/reviewer', () => {
       mockSelectOrderBy
         .mockResolvedValueOnce(mockPhases)
         .mockResolvedValueOnce(mockTasks);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('{"type": "add_task"}');
+      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
+        '{"type": "add_task"}'
+      );
 
       const { reviewPlan } = await import('../reviewer');
 
@@ -361,7 +371,11 @@ describe('plans/reviewer', () => {
             type: 'add_task',
             target: 'Add testing task',
             reasoning: 'Missing test coverage',
-            after: { title: 'Add tests', description: 'Write unit tests', phaseId: 'phase-1' },
+            after: {
+              title: 'Add tests',
+              description: 'Write unit tests',
+              phaseId: 'phase-1',
+            },
           },
           {
             type: 'modify_task',

@@ -18,31 +18,31 @@ export function DiffStats({ stats, className }: DiffStatsProps) {
       <span className="flex items-center gap-1 text-text-secondary">
         <FileText className="h-3 w-3" />
         <span className="font-medium">{stats.filesChanged}</span>
-        <span className="text-text-muted hidden sm:inline">
+        <span className="hidden text-text-muted sm:inline">
           {stats.filesChanged === 1 ? 'file' : 'files'}
         </span>
       </span>
 
-      <span className="flex items-center gap-0.5 text-emerald-500 font-mono tabular-nums">
+      <span className="flex items-center gap-0.5 font-mono tabular-nums text-emerald-500">
         <Plus className="h-3 w-3" />
         {stats.insertions}
       </span>
 
-      <span className="flex items-center gap-0.5 text-red-400 font-mono tabular-nums">
+      <span className="flex items-center gap-0.5 font-mono tabular-nums text-red-400">
         <Minus className="h-3 w-3" />
         {stats.deletions}
       </span>
 
       {/* Mini change bar */}
       {total > 0 && (
-        <div className="hidden sm:flex items-center gap-1 ml-auto">
-          <div className="w-20 h-1.5 rounded-full bg-surface-sunken overflow-hidden flex">
+        <div className="ml-auto hidden items-center gap-1 sm:flex">
+          <div className="flex h-1.5 w-20 overflow-hidden rounded-full bg-surface-sunken">
             <div
-              className="h-full bg-emerald-500 rounded-l-full"
+              className="h-full rounded-l-full bg-emerald-500"
               style={{ width: `${addPct}%` }}
             />
             <div
-              className="h-full bg-red-400 rounded-r-full"
+              className="h-full rounded-r-full bg-red-400"
               style={{ width: `${100 - addPct}%` }}
             />
           </div>

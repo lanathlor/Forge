@@ -146,14 +146,18 @@ function formatElapsedTime(ms: number): string {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
 
-  if (hours > 0) return minutes % 60 > 0 ? `${hours}h ${minutes % 60}m` : `${hours}h`;
-  if (minutes > 0) return seconds % 60 > 0 ? `${minutes}m ${seconds % 60}s` : `${minutes}m`;
+  if (hours > 0)
+    return minutes % 60 > 0 ? `${hours}h ${minutes % 60}m` : `${hours}h`;
+  if (minutes > 0)
+    return seconds % 60 > 0 ? `${minutes}m ${seconds % 60}s` : `${minutes}m`;
   return `${seconds}s`;
 }
 
 function formatLastUpdated(isoString: string | null): string {
   if (!isoString) return 'Never';
-  const diffSecs = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  const diffSecs = Math.floor(
+    (Date.now() - new Date(isoString).getTime()) / 1000
+  );
 
   if (diffSecs < 5) return 'Just now';
   if (diffSecs < 60) return `${diffSecs}s ago`;
@@ -165,14 +169,20 @@ function formatLastUpdated(isoString: string | null): string {
 function sortByPriority(repos: RepoSessionState[]): RepoSessionState[] {
   return [...repos].sort((a, b) => {
     if (a.needsAttention !== b.needsAttention) return a.needsAttention ? -1 : 1;
-    const priorityDiff = CLAUDE_STATUS_CONFIGS[a.claudeStatus].priority - CLAUDE_STATUS_CONFIGS[b.claudeStatus].priority;
+    const priorityDiff =
+      CLAUDE_STATUS_CONFIGS[a.claudeStatus].priority -
+      CLAUDE_STATUS_CONFIGS[b.claudeStatus].priority;
     if (priorityDiff !== 0) return priorityDiff;
-    return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+    return (
+      new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+    );
   });
 }
 
 function truncateText(text: string, maxLength: number): string {
-  return text.length <= maxLength ? text : text.substring(0, maxLength - 3) + '...';
+  return text.length <= maxLength
+    ? text
+    : text.substring(0, maxLength - 3) + '...';
 }
 
 function getAnimationClass(animate?: 'pulse' | 'spin' | 'bounce'): string {
@@ -186,7 +196,10 @@ function getAnimationClass(animate?: 'pulse' | 'spin' | 'bounce'): string {
    STUCK ALERT SEVERITY STYLES
    ============================================ */
 
-const SEVERITY_RING_STYLES: Record<AlertSeverity, { ring: string; glow: string; badge: string }> = {
+const SEVERITY_RING_STYLES: Record<
+  AlertSeverity,
+  { ring: string; glow: string; badge: string }
+> = {
   critical: {
     ring: 'ring-2 ring-red-500 ring-offset-2 ring-offset-background',
     glow: 'shadow-lg shadow-red-500/40',
@@ -212,7 +225,8 @@ const SEVERITY_RING_STYLES: Record<AlertSeverity, { ring: string; glow: string; 
 function formatStuckDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60);
+  const h = Math.floor(seconds / 3600),
+    m = Math.floor((seconds % 3600) / 60);
   return m > 0 ? `${h}h${m}m` : `${h}h`;
 }
 
@@ -226,7 +240,7 @@ function useLiveStuckDuration(alert: StuckAlert | null): number {
       return;
     }
     setDuration(alert?.stuckDurationSeconds ?? 0);
-    const interval = setInterval(() => setDuration(d => d + 1), 1000);
+    const interval = setInterval(() => setDuration((d) => d + 1), 1000);
     return () => clearInterval(interval);
   }, [alertId, alert?.stuckDurationSeconds]);
 
@@ -255,7 +269,11 @@ const SIZE_CLASSES = {
   lg: { icon: 'h-5 w-5', text: 'text-sm', gap: 'gap-2' },
 };
 
-function LiveIndicator({ status, size = 'md', showLabel = true }: LiveIndicatorProps) {
+function LiveIndicator({
+  status,
+  size = 'md',
+  showLabel = true,
+}: LiveIndicatorProps) {
   const config = CLAUDE_STATUS_CONFIGS[status];
   const Icon = config.icon;
   const sizeClasses = SIZE_CLASSES[size];
@@ -263,13 +281,27 @@ function LiveIndicator({ status, size = 'md', showLabel = true }: LiveIndicatorP
   return (
     <div className={cn('flex items-center', sizeClasses.gap)}>
       <div className="relative flex items-center justify-center">
-        <Icon className={cn(sizeClasses.icon, config.color, getAnimationClass(config.animate))} />
+        <Icon
+          className={cn(
+            sizeClasses.icon,
+            config.color,
+            getAnimationClass(config.animate)
+          )}
+        />
         {config.animate && (
-          <span className={cn('absolute -inset-1 rounded-full opacity-30', config.bgColor, 'animate-ping')} />
+          <span
+            className={cn(
+              'absolute -inset-1 rounded-full opacity-30',
+              config.bgColor,
+              'animate-ping'
+            )}
+          />
         )}
       </div>
       {showLabel && (
-        <span className={cn(sizeClasses.text, 'font-medium', config.color)}>{config.shortLabel}</span>
+        <span className={cn(sizeClasses.text, 'font-medium', config.color)}>
+          {config.shortLabel}
+        </span>
       )}
     </div>
   );
@@ -280,34 +312,70 @@ function LiveIndicator({ status, size = 'md', showLabel = true }: LiveIndicatorP
    ============================================ */
 
 function SummaryStats({ repos }: { repos: RepoSessionState[] }) {
-  const stats = useMemo(() => ({
-    stuck: repos.filter(r => r.claudeStatus === 'stuck').length,
-    waiting: repos.filter(r => r.claudeStatus === 'waiting_input').length,
-    active: repos.filter(r => ['thinking', 'writing'].includes(r.claudeStatus)).length,
-    idle: repos.filter(r => ['idle', 'paused'].includes(r.claudeStatus)).length,
-  }), [repos]);
+  const stats = useMemo(
+    () => ({
+      stuck: repos.filter((r) => r.claudeStatus === 'stuck').length,
+      waiting: repos.filter((r) => r.claudeStatus === 'waiting_input').length,
+      active: repos.filter((r) =>
+        ['thinking', 'writing'].includes(r.claudeStatus)
+      ).length,
+      idle: repos.filter((r) => ['idle', 'paused'].includes(r.claudeStatus))
+        .length,
+    }),
+    [repos]
+  );
 
   if (repos.length === 0) return null;
 
   return (
     <div className="flex items-center gap-4 text-xs">
       {stats.stuck > 0 && (
-        <StatItem icon={AlertTriangle} count={stats.stuck} label="stuck" color="text-red-600 dark:text-red-400" />
+        <StatItem
+          icon={AlertTriangle}
+          count={stats.stuck}
+          label="stuck"
+          color="text-red-600 dark:text-red-400"
+        />
       )}
       {stats.waiting > 0 && (
-        <StatItem icon={Clock} count={stats.waiting} label="waiting" color="text-amber-600 dark:text-amber-400" />
+        <StatItem
+          icon={Clock}
+          count={stats.waiting}
+          label="waiting"
+          color="text-amber-600 dark:text-amber-400"
+        />
       )}
       {stats.active > 0 && (
-        <StatItem icon={Zap} count={stats.active} label="active" color="text-emerald-600 dark:text-emerald-400" />
+        <StatItem
+          icon={Zap}
+          count={stats.active}
+          label="active"
+          color="text-emerald-600 dark:text-emerald-400"
+        />
       )}
       {stats.idle > 0 && (
-        <StatItem icon={CircleDot} count={stats.idle} label="idle" color="text-slate-500 dark:text-slate-400" />
+        <StatItem
+          icon={CircleDot}
+          count={stats.idle}
+          label="idle"
+          color="text-slate-500 dark:text-slate-400"
+        />
       )}
     </div>
   );
 }
 
-function StatItem({ icon: Icon, count, label, color }: { icon: LucideIcon; count: number; label: string; color: string }) {
+function StatItem({
+  icon: Icon,
+  count,
+  label,
+  color,
+}: {
+  icon: LucideIcon;
+  count: number;
+  label: string;
+  color: string;
+}) {
   return (
     <div className={cn('flex items-center gap-1.5', color)}>
       <Icon className="h-3.5 w-3.5" />
@@ -321,12 +389,27 @@ function StatItem({ icon: Icon, count, label, color }: { icon: LucideIcon; count
    SUBCOMPONENTS - Connection Status
    ============================================ */
 
-function ConnectionBadge({ connected, error, lastUpdated, onReconnect }: { connected: boolean; error: string | null; lastUpdated: string | null; onReconnect: () => void }) {
-  const [displayTime, setDisplayTime] = useState(formatLastUpdated(lastUpdated));
+function ConnectionBadge({
+  connected,
+  error,
+  lastUpdated,
+  onReconnect,
+}: {
+  connected: boolean;
+  error: string | null;
+  lastUpdated: string | null;
+  onReconnect: () => void;
+}) {
+  const [displayTime, setDisplayTime] = useState(
+    formatLastUpdated(lastUpdated)
+  );
 
   useEffect(() => {
     setDisplayTime(formatLastUpdated(lastUpdated));
-    const interval = setInterval(() => setDisplayTime(formatLastUpdated(lastUpdated)), 1000);
+    const interval = setInterval(
+      () => setDisplayTime(formatLastUpdated(lastUpdated)),
+      1000
+    );
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
@@ -338,13 +421,24 @@ function ConnectionBadge({ connected, error, lastUpdated, onReconnect }: { conne
 
   return (
     <div className="flex items-center gap-2">
-      <div className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-colors', badgeClass)}>
+      <div
+        className={cn(
+          'flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium transition-colors',
+          badgeClass
+        )}
+      >
         <ConnectionIcon connected={connected} error={error} />
         <span>{connected ? 'Live' : error ? 'Offline' : 'Connecting'}</span>
       </div>
       <span className="text-xs text-muted-foreground">{displayTime}</span>
       {!connected && (
-        <Button variant="ghost" size="sm" onClick={onReconnect} className="h-6 w-6 p-0" title="Retry connection">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReconnect}
+          className="h-6 w-6 p-0"
+          title="Retry connection"
+        >
           <RefreshCw className="h-3 w-3" />
         </Button>
       )}
@@ -352,7 +446,13 @@ function ConnectionBadge({ connected, error, lastUpdated, onReconnect }: { conne
   );
 }
 
-function ConnectionIcon({ connected, error }: { connected: boolean; error: string | null }) {
+function ConnectionIcon({
+  connected,
+  error,
+}: {
+  connected: boolean;
+  error: string | null;
+}) {
   if (connected) return <Wifi className="h-3 w-3" />;
   if (error) return <WifiOff className="h-3 w-3" />;
   return <Loader2 className="h-3 w-3 animate-spin" />;
@@ -362,16 +462,32 @@ function ConnectionIcon({ connected, error }: { connected: boolean; error: strin
    SUBCOMPONENTS - Repo Card Parts
    ============================================ */
 
-function RepoCardHeader({ repo, config }: { repo: RepoSessionState; config: StatusConfig }) {
+function RepoCardHeader({
+  repo,
+  config,
+}: {
+  repo: RepoSessionState;
+  config: StatusConfig;
+}) {
   return (
-    <div className="flex items-start justify-between gap-2 mb-3">
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0 border', config.bgColor, config.borderColor)}>
+    <div className="mb-3 flex items-start justify-between gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
+            config.bgColor,
+            config.borderColor
+          )}
+        >
           <GitBranch className={cn('h-4 w-4', config.color)} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-foreground truncate text-sm">{repo.repositoryName}</h3>
-          <p className="text-[10px] text-muted-foreground">{formatElapsedTime(repo.timeElapsed)} elapsed</p>
+          <h3 className="truncate text-sm font-semibold text-foreground">
+            {repo.repositoryName}
+          </h3>
+          <p className="text-[10px] text-muted-foreground">
+            {formatElapsedTime(repo.timeElapsed)} elapsed
+          </p>
         </div>
       </div>
       <LiveIndicator status={repo.claudeStatus} size="sm" showLabel={false} />
@@ -383,57 +499,139 @@ function RepoCardTask({ repo }: { repo: RepoSessionState }) {
   return (
     <div className="mb-3 min-h-[2.5rem]">
       {repo.currentTask ? (
-        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{truncateText(repo.currentTask.prompt, 80)}</p>
+        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {truncateText(repo.currentTask.prompt, 80)}
+        </p>
       ) : (
-        <p className="text-sm text-muted-foreground/60 italic">No active task</p>
+        <p className="text-sm italic text-muted-foreground/60">
+          No active task
+        </p>
       )}
     </div>
   );
 }
 
-function ProgressBar({ progress, status }: { progress: number; status: ClaudeStatus }) {
+function ProgressBar({
+  progress,
+  status,
+}: {
+  progress: number;
+  status: ClaudeStatus;
+}) {
   if (progress <= 0) return null;
   return (
     <div className="mb-3">
-      <div className="flex items-center justify-between text-[10px] mb-1">
+      <div className="mb-1 flex items-center justify-between text-[10px]">
         <span className="text-muted-foreground">Progress</span>
         <span className="font-medium text-foreground">{progress}%</span>
       </div>
-      <div className="h-1 rounded-full bg-muted/50 overflow-hidden">
-        <div className={cn('h-full rounded-full transition-all duration-500', getProgressBarColor(status))} style={{ width: `${progress}%` }} />
+      <div className="h-1 overflow-hidden rounded-full bg-muted/50">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-500',
+            getProgressBarColor(status)
+          )}
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </div>
   );
 }
 
-function RepoCardActions({ canPause, canResume, onPause, onResume, onSelect }: { canPause: boolean; canResume: boolean; onPause?: () => void; onResume?: () => void; onSelect?: () => void }) {
+function RepoCardActions({
+  canPause,
+  canResume,
+  onPause,
+  onResume,
+  onSelect,
+}: {
+  canPause: boolean;
+  canResume: boolean;
+  onPause?: () => void;
+  onResume?: () => void;
+  onSelect?: () => void;
+}) {
   return (
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
       {canPause && onPause && (
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => { e.stopPropagation(); onPause(); }} title="Pause session">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPause();
+          }}
+          title="Pause session"
+        >
           <Pause className="h-3 w-3" />
         </Button>
       )}
       {canResume && onResume && (
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => { e.stopPropagation(); onResume(); }} title="Resume session">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onResume();
+          }}
+          title="Resume session"
+        >
           <Play className="h-3 w-3" />
         </Button>
       )}
-      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => { e.stopPropagation(); onSelect?.(); }} title="View details">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 w-6 p-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect?.();
+        }}
+        title="View details"
+      >
         <Eye className="h-3 w-3" />
       </Button>
-      <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+      <ChevronRight className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-foreground" />
     </div>
   );
 }
 
-function RepoCardFooter({ config, canPause, canResume, onPause, onResume, onSelect }: { config: StatusConfig; canPause: boolean; canResume: boolean; onPause?: () => void; onResume?: () => void; onSelect?: () => void }) {
+function RepoCardFooter({
+  config,
+  canPause,
+  canResume,
+  onPause,
+  onResume,
+  onSelect,
+}: {
+  config: StatusConfig;
+  canPause: boolean;
+  canResume: boolean;
+  onPause?: () => void;
+  onResume?: () => void;
+  onSelect?: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between pt-2 border-t border-current/10">
-      <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5', config.color, 'border-current/30')}>
+    <div className="border-current/10 flex items-center justify-between border-t pt-2">
+      <Badge
+        variant="outline"
+        className={cn(
+          'h-5 px-1.5 py-0 text-[10px]',
+          config.color,
+          'border-current/30'
+        )}
+      >
         {config.shortLabel}
       </Badge>
-      <RepoCardActions canPause={canPause} canResume={canResume} onPause={onPause} onResume={onResume} onSelect={onSelect} />
+      <RepoCardActions
+        canPause={canPause}
+        canResume={canResume}
+        onPause={onPause}
+        onResume={onResume}
+        onSelect={onSelect}
+      />
     </div>
   );
 }
@@ -452,27 +650,39 @@ interface RepoCardProps {
 }
 
 function getSessionPermissions(repo: RepoSessionState) {
-  const hasActiveSession = !!repo.sessionId && (repo.sessionStatus === 'active' || repo.sessionStatus === 'paused');
+  const hasActiveSession =
+    !!repo.sessionId &&
+    (repo.sessionStatus === 'active' || repo.sessionStatus === 'paused');
   return {
     canPause: hasActiveSession && repo.sessionStatus === 'active',
     canResume: hasActiveSession && repo.sessionStatus === 'paused',
   };
 }
 
-function getAlertStyles(alert?: StuckAlert | null): { hasAlert: boolean; ring?: string; glow?: string } {
+function getAlertStyles(alert?: StuckAlert | null): {
+  hasAlert: boolean;
+  ring?: string;
+  glow?: string;
+} {
   const hasAlert = Boolean(alert && !alert.acknowledged);
   if (!hasAlert || !alert?.severity) return { hasAlert: false };
   const styles = SEVERITY_RING_STYLES[alert.severity];
   return { hasAlert: true, ring: styles.ring, glow: styles.glow };
 }
 
-function getCardClass(config: StatusConfig, isSelected: boolean, needsAttention: boolean, alert?: StuckAlert | null) {
+function getCardClass(
+  config: StatusConfig,
+  isSelected: boolean,
+  needsAttention: boolean,
+  alert?: StuckAlert | null
+) {
   const alertStyles = getAlertStyles(alert);
 
   return cn(
     'group relative rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer',
     'hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    config.bgColor, config.borderColor,
+    config.bgColor,
+    config.borderColor,
     isSelected && !alertStyles.hasAlert && 'ring-2 ring-blue-500 ring-offset-2',
     alertStyles.hasAlert && alertStyles.ring,
     alertStyles.hasAlert && alertStyles.glow,
@@ -483,7 +693,10 @@ function getCardClass(config: StatusConfig, isSelected: boolean, needsAttention:
 }
 
 function handleCardKeyDown(e: React.KeyboardEvent, onSelect?: () => void) {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(); }
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onSelect?.();
+  }
 }
 
 function StuckDurationBadge({ alert }: { alert: StuckAlert }) {
@@ -492,11 +705,13 @@ function StuckDurationBadge({ alert }: { alert: StuckAlert }) {
   const severityStyles = SEVERITY_RING_STYLES[alert.severity];
 
   return (
-    <div className={cn(
-      'absolute -top-2 -right-2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shadow-md z-10',
-      severityStyles.badge,
-      isCritical && 'animate-bounce'
-    )}>
+    <div
+      className={cn(
+        'absolute -right-2 -top-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold shadow-md',
+        severityStyles.badge,
+        isCritical && 'animate-bounce'
+      )}
+    >
       <Timer className={cn('h-3 w-3', isCritical && 'animate-pulse')} />
       <span>{formatStuckDuration(duration)}</span>
       {isCritical && <span className="text-[8px]">!</span>}
@@ -510,15 +725,29 @@ function StuckReasonIndicator({ alert }: { alert: StuckAlert }) {
   const isHigh = alert.severity === 'high';
 
   return (
-    <div className={cn(
-      'flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md text-xs',
-      isCritical && 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300',
-      isHigh && !isCritical && 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300',
-      !isCritical && !isHigh && 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
-    )}>
-      <AlertTriangle className={cn('h-3 w-3 shrink-0', isCritical && 'animate-pulse')} />
+    <div
+      className={cn(
+        'mt-2 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
+        isCritical &&
+          'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+        isHigh &&
+          !isCritical &&
+          'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300',
+        !isCritical &&
+          !isHigh &&
+          'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+      )}
+    >
+      <AlertTriangle
+        className={cn('h-3 w-3 shrink-0', isCritical && 'animate-pulse')}
+      />
       <span className="truncate">{alert.description}</span>
-      <span className={cn('font-mono font-semibold shrink-0', isCritical && 'animate-pulse')}>
+      <span
+        className={cn(
+          'shrink-0 font-mono font-semibold',
+          isCritical && 'animate-pulse'
+        )}
+      >
         {formatStuckDuration(duration)}
       </span>
     </div>
@@ -532,31 +761,90 @@ const SEVERITY_BORDER_COLORS: Record<AlertSeverity, string> = {
   low: 'border-yellow-500',
 };
 
-function CardPulsingBorder({ hasAlert, severity, needsAttention, fallbackBorder }: { hasAlert: boolean; severity?: AlertSeverity; needsAttention: boolean; fallbackBorder: string }) {
+function CardPulsingBorder({
+  hasAlert,
+  severity,
+  needsAttention,
+  fallbackBorder,
+}: {
+  hasAlert: boolean;
+  severity?: AlertSeverity;
+  needsAttention: boolean;
+  fallbackBorder: string;
+}) {
   if (hasAlert && severity) {
-    return <div className={cn('absolute inset-0 rounded-xl border-2 animate-ping opacity-30 pointer-events-none', SEVERITY_BORDER_COLORS[severity])} />;
+    return (
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-0 animate-ping rounded-xl border-2 opacity-30',
+          SEVERITY_BORDER_COLORS[severity]
+        )}
+      />
+    );
   }
   if (needsAttention) {
-    return <div className={cn('absolute inset-0 rounded-xl border-2 animate-ping opacity-20 pointer-events-none', fallbackBorder)} />;
+    return (
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-0 animate-ping rounded-xl border-2 opacity-20',
+          fallbackBorder
+        )}
+      />
+    );
   }
   return null;
 }
 
-function RepoCard({ repo, isSelected, alert, onSelect, onPause, onResume }: RepoCardProps) {
+function RepoCard({
+  repo,
+  isSelected,
+  alert,
+  onSelect,
+  onPause,
+  onResume,
+}: RepoCardProps) {
   const config = CLAUDE_STATUS_CONFIGS[repo.claudeStatus];
   const { canPause, canResume } = getSessionPermissions(repo);
-  const cardClass = getCardClass(config, !!isSelected, repo.needsAttention, alert);
+  const cardClass = getCardClass(
+    config,
+    !!isSelected,
+    repo.needsAttention,
+    alert
+  );
   const hasAlert = Boolean(alert && !alert.acknowledged);
 
   return (
-    <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(e) => handleCardKeyDown(e, onSelect)} className={cardClass}>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => handleCardKeyDown(e, onSelect)}
+      className={cardClass}
+    >
       {hasAlert && alert && <StuckDurationBadge alert={alert} />}
-      <CardPulsingBorder hasAlert={hasAlert} severity={alert?.severity} needsAttention={repo.needsAttention} fallbackBorder={config.borderColor} />
+      <CardPulsingBorder
+        hasAlert={hasAlert}
+        severity={alert?.severity}
+        needsAttention={repo.needsAttention}
+        fallbackBorder={config.borderColor}
+      />
       <RepoCardHeader repo={repo} config={config} />
       <RepoCardTask repo={repo} />
       {hasAlert && alert && <StuckReasonIndicator alert={alert} />}
-      {repo.currentTask?.progress !== undefined && <ProgressBar progress={repo.currentTask.progress} status={repo.claudeStatus} />}
-      <RepoCardFooter config={config} canPause={canPause} canResume={canResume} onPause={onPause} onResume={onResume} onSelect={onSelect} />
+      {repo.currentTask?.progress !== undefined && (
+        <ProgressBar
+          progress={repo.currentTask.progress}
+          status={repo.claudeStatus}
+        />
+      )}
+      <RepoCardFooter
+        config={config}
+        canPause={canPause}
+        canResume={canResume}
+        onPause={onPause}
+        onResume={onResume}
+        onSelect={onSelect}
+      />
     </div>
   );
 }
@@ -565,36 +853,92 @@ function RepoCard({ repo, isSelected, alert, onSelect, onPause, onResume }: Repo
    SUBCOMPONENTS - Repo Row Parts (List View)
    ============================================ */
 
-function RepoRowInfo({ repo, config }: { repo: RepoSessionState; config: StatusConfig }) {
+function RepoRowInfo({
+  repo,
+  config,
+}: {
+  repo: RepoSessionState;
+  config: StatusConfig;
+}) {
   return (
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-2 mb-0.5">
-        <h3 className="font-semibold text-foreground truncate text-sm">{repo.repositoryName}</h3>
-        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-4', config.color, 'border-current/30')}>
+    <div className="min-w-0 flex-1">
+      <div className="mb-0.5 flex items-center gap-2">
+        <h3 className="truncate text-sm font-semibold text-foreground">
+          {repo.repositoryName}
+        </h3>
+        <Badge
+          variant="outline"
+          className={cn(
+            'h-4 px-1.5 py-0 text-[10px]',
+            config.color,
+            'border-current/30'
+          )}
+        >
           {config.shortLabel}
         </Badge>
       </div>
-      <p className="text-xs text-muted-foreground truncate">
-        {repo.currentTask ? truncateText(repo.currentTask.prompt, 60) : 'No active task'}
+      <p className="truncate text-xs text-muted-foreground">
+        {repo.currentTask
+          ? truncateText(repo.currentTask.prompt, 60)
+          : 'No active task'}
       </p>
     </div>
   );
 }
 
-function RepoRowActions({ canPause, canResume, onPause, onResume, onSelect }: { canPause: boolean; canResume: boolean; onPause?: () => void; onResume?: () => void; onSelect?: () => void }) {
+function RepoRowActions({
+  canPause,
+  canResume,
+  onPause,
+  onResume,
+  onSelect,
+}: {
+  canPause: boolean;
+  canResume: boolean;
+  onPause?: () => void;
+  onResume?: () => void;
+  onSelect?: () => void;
+}) {
   return (
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
       {canPause && onPause && (
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onPause(); }} title="Pause session">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPause();
+          }}
+          title="Pause session"
+        >
           <Pause className="h-3.5 w-3.5" />
         </Button>
       )}
       {canResume && onResume && (
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onResume(); }} title="Resume session">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onResume();
+          }}
+          title="Resume session"
+        >
           <Play className="h-3.5 w-3.5" />
         </Button>
       )}
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onSelect?.(); }} title="View details">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect?.();
+        }}
+        title="View details"
+      >
         <Eye className="h-3.5 w-3.5" />
       </Button>
     </div>
@@ -605,13 +949,19 @@ function RepoRowActions({ canPause, canResume, onPause, onResume, onSelect }: { 
    SUBCOMPONENTS - Repo Row (List View)
    ============================================ */
 
-function getRowClass(config: StatusConfig, isSelected: boolean, needsAttention: boolean, alert?: StuckAlert | null) {
+function getRowClass(
+  config: StatusConfig,
+  isSelected: boolean,
+  needsAttention: boolean,
+  alert?: StuckAlert | null
+) {
   const alertStyles = getAlertStyles(alert);
 
   return cn(
     'group flex items-center gap-4 px-4 py-3 rounded-lg border-2 transition-all duration-200 cursor-pointer',
     'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    config.bgColor, config.borderColor,
+    config.bgColor,
+    config.borderColor,
     isSelected && !alertStyles.hasAlert && 'ring-2 ring-blue-500 ring-offset-2',
     alertStyles.hasAlert && alertStyles.ring,
     alertStyles.hasAlert && alertStyles.glow,
@@ -621,14 +971,26 @@ function getRowClass(config: StatusConfig, isSelected: boolean, needsAttention: 
   );
 }
 
-function RepoRowProgress({ progress, status }: { progress: number; status: ClaudeStatus }) {
+function RepoRowProgress({
+  progress,
+  status,
+}: {
+  progress: number;
+  status: ClaudeStatus;
+}) {
   return (
-    <div className="w-24 hidden sm:block">
-      <div className="flex items-center justify-between text-[10px] mb-0.5">
+    <div className="hidden w-24 sm:block">
+      <div className="mb-0.5 flex items-center justify-between text-[10px]">
         <span className="font-medium">{progress}%</span>
       </div>
-      <div className="h-1 rounded-full bg-muted/50 overflow-hidden">
-        <div className={cn('h-full rounded-full transition-all duration-500', getProgressBarColor(status))} style={{ width: `${progress}%` }} />
+      <div className="h-1 overflow-hidden rounded-full bg-muted/50">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-500',
+            getProgressBarColor(status)
+          )}
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </div>
   );
@@ -640,11 +1002,13 @@ function StuckDurationCell({ alert }: { alert: StuckAlert }) {
   const severityStyles = SEVERITY_RING_STYLES[alert.severity];
 
   return (
-    <div className={cn(
-      'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold shrink-0',
-      severityStyles.badge,
-      isCritical && 'animate-pulse'
-    )}>
+    <div
+      className={cn(
+        'flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-bold',
+        severityStyles.badge,
+        isCritical && 'animate-pulse'
+      )}
+    >
       <Timer className="h-3 w-3" />
       <span>{formatStuckDuration(duration)}</span>
     </div>
@@ -659,34 +1023,97 @@ const SEVERITY_BG_COLORS: Record<AlertSeverity, string> = {
 };
 
 function AlertIndicatorDot({ severity }: { severity: AlertSeverity }) {
-  return <span className={cn('absolute -top-1 -right-1 h-3 w-3 rounded-full animate-pulse', SEVERITY_BG_COLORS[severity])} />;
+  return (
+    <span
+      className={cn(
+        'absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full',
+        SEVERITY_BG_COLORS[severity]
+      )}
+    />
+  );
 }
 
-function RepoRowIconBox({ config, claudeStatus, alert }: { config: StatusConfig; claudeStatus: ClaudeStatus; alert?: StuckAlert | null }) {
+function RepoRowIconBox({
+  config,
+  claudeStatus,
+  alert,
+}: {
+  config: StatusConfig;
+  claudeStatus: ClaudeStatus;
+  alert?: StuckAlert | null;
+}) {
   const hasAlert = Boolean(alert && !alert.acknowledged);
   return (
-    <div className={cn('relative flex items-center justify-center h-10 w-10 rounded-lg shrink-0 border', config.bgColor, config.borderColor)}>
+    <div
+      className={cn(
+        'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border',
+        config.bgColor,
+        config.borderColor
+      )}
+    >
       <LiveIndicator status={claudeStatus} size="md" showLabel={false} />
-      {hasAlert && alert?.severity && <AlertIndicatorDot severity={alert.severity} />}
+      {hasAlert && alert?.severity && (
+        <AlertIndicatorDot severity={alert.severity} />
+      )}
     </div>
   );
 }
 
-function RepoRow({ repo, isSelected, alert, onSelect, onPause, onResume }: RepoCardProps) {
+function RepoRow({
+  repo,
+  isSelected,
+  alert,
+  onSelect,
+  onPause,
+  onResume,
+}: RepoCardProps) {
   const config = CLAUDE_STATUS_CONFIGS[repo.claudeStatus];
   const { canPause, canResume } = getSessionPermissions(repo);
-  const rowClass = getRowClass(config, !!isSelected, repo.needsAttention, alert);
-  const showProgress = repo.currentTask?.progress !== undefined && repo.currentTask.progress > 0;
+  const rowClass = getRowClass(
+    config,
+    !!isSelected,
+    repo.needsAttention,
+    alert
+  );
+  const showProgress =
+    repo.currentTask?.progress !== undefined && repo.currentTask.progress > 0;
   const hasAlert = Boolean(alert && !alert.acknowledged);
 
   return (
-    <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(e) => handleCardKeyDown(e, onSelect)} className={rowClass}>
-      <RepoRowIconBox config={config} claudeStatus={repo.claudeStatus} alert={alert} />
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => handleCardKeyDown(e, onSelect)}
+      className={rowClass}
+    >
+      <RepoRowIconBox
+        config={config}
+        claudeStatus={repo.claudeStatus}
+        alert={alert}
+      />
       <RepoRowInfo repo={repo} config={config} />
-      {hasAlert && alert ? <StuckDurationCell alert={alert} /> : showProgress && <RepoRowProgress progress={repo.currentTask!.progress!} status={repo.claudeStatus} />}
-      <div className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block">{formatElapsedTime(repo.timeElapsed)}</div>
-      <RepoRowActions canPause={canPause} canResume={canResume} onPause={onPause} onResume={onResume} onSelect={onSelect} />
-      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+      {hasAlert && alert ? (
+        <StuckDurationCell alert={alert} />
+      ) : (
+        showProgress && (
+          <RepoRowProgress
+            progress={repo.currentTask!.progress!}
+            status={repo.claudeStatus}
+          />
+        )
+      )}
+      <div className="hidden whitespace-nowrap text-xs text-muted-foreground sm:block">
+        {formatElapsedTime(repo.timeElapsed)}
+      </div>
+      <RepoRowActions
+        canPause={canPause}
+        canResume={canResume}
+        onPause={onPause}
+        onResume={onResume}
+        onSelect={onSelect}
+      />
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
     </div>
   );
 }
@@ -697,19 +1124,23 @@ function RepoRow({ repo, isSelected, alert, onSelect, onPause, onResume }: RepoC
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="rounded-xl border-2 border-border p-4">
-          <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="mb-3 flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-8 w-8 rounded-lg" />
-              <div><Skeleton className="h-4 w-24 mb-1" /><Skeleton className="h-3 w-16" /></div>
+              <div>
+                <Skeleton className="mb-1 h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
             </div>
             <Skeleton className="h-4 w-4 rounded-full" />
           </div>
-          <Skeleton className="h-10 w-full mb-3" />
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <Skeleton className="h-5 w-16" /><Skeleton className="h-6 w-20" />
+          <Skeleton className="mb-3 h-10 w-full" />
+          <div className="flex items-center justify-between border-t border-border pt-2">
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-6 w-20" />
           </div>
         </div>
       ))}
@@ -721,9 +1152,15 @@ function ListSkeleton() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-4 py-3 rounded-lg border-2 border-border">
+        <div
+          key={i}
+          className="flex items-center gap-4 rounded-lg border-2 border-border px-4 py-3"
+        >
           <Skeleton className="h-10 w-10 rounded-lg" />
-          <div className="flex-1"><Skeleton className="h-4 w-32 mb-1" /><Skeleton className="h-3 w-48" /></div>
+          <div className="flex-1">
+            <Skeleton className="mb-1 h-4 w-32" />
+            <Skeleton className="h-3 w-48" />
+          </div>
           <Skeleton className="h-4 w-16" />
         </div>
       ))}
@@ -734,11 +1171,16 @@ function ListSkeleton() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-muted/50 mb-4">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
         <GitBranch className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="font-semibold text-foreground mb-1">No repositories found</h3>
-      <p className="text-sm text-muted-foreground max-w-sm">Add repositories to start monitoring your multi-repo sessions with live updates.</p>
+      <h3 className="mb-1 font-semibold text-foreground">
+        No repositories found
+      </h3>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        Add repositories to start monitoring your multi-repo sessions with live
+        updates.
+      </p>
     </div>
   );
 }
@@ -747,46 +1189,121 @@ function EmptyState() {
    SUBCOMPONENTS - Header & Toggle
    ============================================ */
 
-function ViewModeToggle({ viewMode, setViewMode }: { viewMode: ViewMode; setViewMode: (mode: ViewMode) => void }) {
+function ViewModeToggle({
+  viewMode,
+  setViewMode,
+}: {
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+}) {
   return (
-    <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50">
-      <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" className="h-7 w-7 p-0" onClick={() => setViewMode('grid')} title="Grid view">
+    <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
+      <Button
+        variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+        size="sm"
+        className="h-7 w-7 p-0"
+        onClick={() => setViewMode('grid')}
+        title="Grid view"
+      >
         <LayoutGrid className="h-4 w-4" />
       </Button>
-      <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" className="h-7 w-7 p-0" onClick={() => setViewMode('list')} title="List view">
+      <Button
+        variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+        size="sm"
+        className="h-7 w-7 p-0"
+        onClick={() => setViewMode('list')}
+        title="List view"
+      >
         <LayoutList className="h-4 w-4" />
       </Button>
     </div>
   );
 }
 
-function CommandCenterHeader({ repos, connected, error, lastUpdated, reconnect, viewMode, setViewMode }: { repos: RepoSessionState[]; connected: boolean; error: string | null; lastUpdated: string | null; reconnect: () => void; viewMode: ViewMode; setViewMode: (mode: ViewMode) => void }) {
+function CommandCenterHeader({
+  repos,
+  connected,
+  error,
+  lastUpdated,
+  reconnect,
+  viewMode,
+  setViewMode,
+}: {
+  repos: RepoSessionState[];
+  connected: boolean;
+  error: string | null;
+  lastUpdated: string | null;
+  reconnect: () => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+}) {
   return (
     <>
       <div className="flex flex-col gap-4 p-6 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-foreground">Command Center</h2>
-            <ConnectionBadge connected={connected} error={error} lastUpdated={lastUpdated} onReconnect={reconnect} />
+            <h2 className="text-lg font-semibold text-foreground">
+              Command Center
+            </h2>
+            <ConnectionBadge
+              connected={connected}
+              error={error}
+              lastUpdated={lastUpdated}
+              onReconnect={reconnect}
+            />
           </div>
-          {repos.length > 0 && <p className="text-sm text-muted-foreground">Monitoring {repos.length} repositor{repos.length === 1 ? 'y' : 'ies'}</p>}
+          {repos.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              Monitoring {repos.length} repositor
+              {repos.length === 1 ? 'y' : 'ies'}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden md:block"><SummaryStats repos={repos} /></div>
+          <div className="hidden md:block">
+            <SummaryStats repos={repos} />
+          </div>
           <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
         </div>
       </div>
-      {repos.length > 0 && <div className="px-6 pb-4 md:hidden"><SummaryStats repos={repos} /></div>}
+      {repos.length > 0 && (
+        <div className="px-6 pb-4 md:hidden">
+          <SummaryStats repos={repos} />
+        </div>
+      )}
     </>
   );
 }
 
-function ShowMoreButton({ hiddenCount, isExpanded, setIsExpanded }: { hiddenCount: number; isExpanded: boolean; setIsExpanded: (expanded: boolean) => void }) {
+function ShowMoreButton({
+  hiddenCount,
+  isExpanded,
+  setIsExpanded,
+}: {
+  hiddenCount: number;
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
+}) {
   if (hiddenCount <= 0) return null;
   return (
     <div className="mt-4 flex justify-center">
-      <Button variant="outline" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="gap-1.5">
-        {isExpanded ? <><ChevronUp className="h-4 w-4" />Show less</> : <><ChevronDown className="h-4 w-4" />Show {hiddenCount} more repositor{hiddenCount === 1 ? 'y' : 'ies'}</>}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="gap-1.5"
+      >
+        {isExpanded ? (
+          <>
+            <ChevronUp className="h-4 w-4" />
+            Show less
+          </>
+        ) : (
+          <>
+            <ChevronDown className="h-4 w-4" />
+            Show {hiddenCount} more repositor{hiddenCount === 1 ? 'y' : 'ies'}
+          </>
+        )}
       </Button>
     </div>
   );
@@ -796,9 +1313,23 @@ function ShowMoreButton({ hiddenCount, isExpanded, setIsExpanded }: { hiddenCoun
    SUBCOMPONENTS - Content Renderers
    ============================================ */
 
-function RepoGrid({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }: { repos: RepoSessionState[]; selectedRepoId?: string; alerts: Map<string, StuckAlert>; onSelect: (id: string) => void; onPause: (repoId: string, sessionId: string) => void; onResume: (repoId: string, sessionId: string) => void }) {
+function RepoGrid({
+  repos,
+  selectedRepoId,
+  alerts,
+  onSelect,
+  onPause,
+  onResume,
+}: {
+  repos: RepoSessionState[];
+  selectedRepoId?: string;
+  alerts: Map<string, StuckAlert>;
+  onSelect: (id: string) => void;
+  onPause: (repoId: string, sessionId: string) => void;
+  onResume: (repoId: string, sessionId: string) => void;
+}) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {repos.map((repo) => (
         <RepoCard
           key={repo.repositoryId}
@@ -806,15 +1337,37 @@ function RepoGrid({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }
           isSelected={repo.repositoryId === selectedRepoId}
           alert={alerts.get(repo.repositoryId)}
           onSelect={() => onSelect(repo.repositoryId)}
-          onPause={repo.sessionId ? () => onPause(repo.repositoryId, repo.sessionId!) : undefined}
-          onResume={repo.sessionId ? () => onResume(repo.repositoryId, repo.sessionId!) : undefined}
+          onPause={
+            repo.sessionId
+              ? () => onPause(repo.repositoryId, repo.sessionId!)
+              : undefined
+          }
+          onResume={
+            repo.sessionId
+              ? () => onResume(repo.repositoryId, repo.sessionId!)
+              : undefined
+          }
         />
       ))}
     </div>
   );
 }
 
-function RepoList({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }: { repos: RepoSessionState[]; selectedRepoId?: string; alerts: Map<string, StuckAlert>; onSelect: (id: string) => void; onPause: (repoId: string, sessionId: string) => void; onResume: (repoId: string, sessionId: string) => void }) {
+function RepoList({
+  repos,
+  selectedRepoId,
+  alerts,
+  onSelect,
+  onPause,
+  onResume,
+}: {
+  repos: RepoSessionState[];
+  selectedRepoId?: string;
+  alerts: Map<string, StuckAlert>;
+  onSelect: (id: string) => void;
+  onPause: (repoId: string, sessionId: string) => void;
+  onResume: (repoId: string, sessionId: string) => void;
+}) {
   return (
     <div className="space-y-2">
       {repos.map((repo) => (
@@ -824,8 +1377,16 @@ function RepoList({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }
           isSelected={repo.repositoryId === selectedRepoId}
           alert={alerts.get(repo.repositoryId)}
           onSelect={() => onSelect(repo.repositoryId)}
-          onPause={repo.sessionId ? () => onPause(repo.repositoryId, repo.sessionId!) : undefined}
-          onResume={repo.sessionId ? () => onResume(repo.repositoryId, repo.sessionId!) : undefined}
+          onPause={
+            repo.sessionId
+              ? () => onPause(repo.repositoryId, repo.sessionId!)
+              : undefined
+          }
+          onResume={
+            repo.sessionId
+              ? () => onResume(repo.repositoryId, repo.sessionId!)
+              : undefined
+          }
         />
       ))}
     </div>
@@ -836,48 +1397,123 @@ function RepoList({ repos, selectedRepoId, alerts, onSelect, onPause, onResume }
    MAIN COMPONENT
    ============================================ */
 
-export const MultiRepoCommandCenter = React.memo(function MultiRepoCommandCenter({ onSelectRepo, onPauseRepo, onResumeRepo, selectedRepoId, maxVisible = 8, className }: MultiRepoCommandCenterProps) {
-  const { repositories, connected, error, reconnect, lastUpdated } = useMultiRepoStream();
-  const { status: stuckStatus } = useStuckDetection();
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [isExpanded, setIsExpanded] = useState(false);
+export const MultiRepoCommandCenter = React.memo(
+  function MultiRepoCommandCenter({
+    onSelectRepo,
+    onPauseRepo,
+    onResumeRepo,
+    selectedRepoId,
+    maxVisible = 8,
+    className,
+  }: MultiRepoCommandCenterProps) {
+    const { repositories, connected, error, reconnect, lastUpdated } =
+      useMultiRepoStream();
+    const { status: stuckStatus } = useStuckDetection();
+    const [viewMode, setViewMode] = useState<ViewMode>('grid');
+    const [isExpanded, setIsExpanded] = useState(false);
 
-  // Create alerts map for quick lookup
-  const alertsMap = useMemo(() => {
-    const map = new Map<string, StuckAlert>();
-    stuckStatus?.alerts.forEach(alert => {
-      if (!alert.acknowledged) {
-        map.set(alert.repositoryId, alert);
-      }
-    });
-    return map;
-  }, [stuckStatus?.alerts]);
+    // Create alerts map for quick lookup
+    const alertsMap = useMemo(() => {
+      const map = new Map<string, StuckAlert>();
+      stuckStatus?.alerts.forEach((alert) => {
+        if (!alert.acknowledged) {
+          map.set(alert.repositoryId, alert);
+        }
+      });
+      return map;
+    }, [stuckStatus?.alerts]);
 
-  const sortedRepos = useMemo(() => sortByPriority(repositories), [repositories]);
-  const visibleRepos = useMemo(() => isExpanded ? sortedRepos : sortedRepos.slice(0, maxVisible), [sortedRepos, maxVisible, isExpanded]);
-  const hiddenCount = useMemo(() => sortedRepos.length - maxVisible, [sortedRepos.length, maxVisible]);
-  const isLoading = useMemo(() => !connected && repositories.length === 0 && !error, [connected, repositories.length, error]);
+    const sortedRepos = useMemo(
+      () => sortByPriority(repositories),
+      [repositories]
+    );
+    const visibleRepos = useMemo(
+      () => (isExpanded ? sortedRepos : sortedRepos.slice(0, maxVisible)),
+      [sortedRepos, maxVisible, isExpanded]
+    );
+    const hiddenCount = useMemo(
+      () => sortedRepos.length - maxVisible,
+      [sortedRepos.length, maxVisible]
+    );
+    const isLoading = useMemo(
+      () => !connected && repositories.length === 0 && !error,
+      [connected, repositories.length, error]
+    );
 
-  const handleSelect = useCallback((repoId: string) => onSelectRepo?.(repoId), [onSelectRepo]);
-  const handlePause = useCallback((repoId: string, sessionId: string) => onPauseRepo?.(repoId, sessionId), [onPauseRepo]);
-  const handleResume = useCallback((repoId: string, sessionId: string) => onResumeRepo?.(repoId, sessionId), [onResumeRepo]);
+    const handleSelect = useCallback(
+      (repoId: string) => onSelectRepo?.(repoId),
+      [onSelectRepo]
+    );
+    const handlePause = useCallback(
+      (repoId: string, sessionId: string) => onPauseRepo?.(repoId, sessionId),
+      [onPauseRepo]
+    );
+    const handleResume = useCallback(
+      (repoId: string, sessionId: string) => onResumeRepo?.(repoId, sessionId),
+      [onResumeRepo]
+    );
 
-  const renderContent = useCallback(() => {
-    if (isLoading) return viewMode === 'grid' ? <GridSkeleton /> : <ListSkeleton />;
-    if (repositories.length === 0) return <EmptyState />;
-    if (viewMode === 'grid') return <RepoGrid repos={visibleRepos} selectedRepoId={selectedRepoId} alerts={alertsMap} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
-    return <RepoList repos={visibleRepos} selectedRepoId={selectedRepoId} alerts={alertsMap} onSelect={handleSelect} onPause={handlePause} onResume={handleResume} />;
-  }, [isLoading, viewMode, repositories.length, visibleRepos, selectedRepoId, alertsMap, handleSelect, handlePause, handleResume]);
+    const renderContent = useCallback(() => {
+      if (isLoading)
+        return viewMode === 'grid' ? <GridSkeleton /> : <ListSkeleton />;
+      if (repositories.length === 0) return <EmptyState />;
+      if (viewMode === 'grid')
+        return (
+          <RepoGrid
+            repos={visibleRepos}
+            selectedRepoId={selectedRepoId}
+            alerts={alertsMap}
+            onSelect={handleSelect}
+            onPause={handlePause}
+            onResume={handleResume}
+          />
+        );
+      return (
+        <RepoList
+          repos={visibleRepos}
+          selectedRepoId={selectedRepoId}
+          alerts={alertsMap}
+          onSelect={handleSelect}
+          onPause={handlePause}
+          onResume={handleResume}
+        />
+      );
+    }, [
+      isLoading,
+      viewMode,
+      repositories.length,
+      visibleRepos,
+      selectedRepoId,
+      alertsMap,
+      handleSelect,
+      handlePause,
+      handleResume,
+    ]);
 
-  return (
-    <Card className={cn('relative overflow-hidden', className)}>
-      <CommandCenterHeader repos={sortedRepos} connected={connected} error={error} lastUpdated={lastUpdated} reconnect={reconnect} viewMode={viewMode} setViewMode={setViewMode} />
-      <CardContent className="pt-0">
-        {renderContent()}
-        {!isLoading && repositories.length > 0 && <ShowMoreButton hiddenCount={hiddenCount} isExpanded={isExpanded} setIsExpanded={setIsExpanded} />}
-      </CardContent>
-    </Card>
-  );
-});
+    return (
+      <Card className={cn('relative overflow-hidden', className)}>
+        <CommandCenterHeader
+          repos={sortedRepos}
+          connected={connected}
+          error={error}
+          lastUpdated={lastUpdated}
+          reconnect={reconnect}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
+        <CardContent className="pt-0">
+          {renderContent()}
+          {!isLoading && repositories.length > 0 && (
+            <ShowMoreButton
+              hiddenCount={hiddenCount}
+              isExpanded={isExpanded}
+              setIsExpanded={setIsExpanded}
+            />
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+);
 
 export default MultiRepoCommandCenter;

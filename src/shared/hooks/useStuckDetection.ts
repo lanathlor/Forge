@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { StuckStatus, StuckAlert, StuckEvent } from '@/lib/stuck-detection/types';
+import type {
+  StuckStatus,
+  StuckAlert,
+  StuckEvent,
+} from '@/lib/stuck-detection/types';
 import { useSSE, useSSESubscription } from '@/shared/contexts/SSEContext';
 
 interface UseStuckDetectionOptions {
@@ -33,7 +37,10 @@ function addAlert(prev: StuckStatus, alert: StuckAlert): StuckStatus {
   return {
     ...prev,
     totalStuckCount: prev.totalStuckCount + 1,
-    alerts: [...prev.alerts.filter(a => a.repositoryId !== alert.repositoryId), alert],
+    alerts: [
+      ...prev.alerts.filter((a) => a.repositoryId !== alert.repositoryId),
+      alert,
+    ],
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -42,7 +49,7 @@ function removeAlert(prev: StuckStatus, repositoryId: string): StuckStatus {
   return {
     ...prev,
     totalStuckCount: Math.max(0, prev.totalStuckCount - 1),
-    alerts: prev.alerts.filter(a => a.repositoryId !== repositoryId),
+    alerts: prev.alerts.filter((a) => a.repositoryId !== repositoryId),
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -50,46 +57,47 @@ function removeAlert(prev: StuckStatus, repositoryId: string): StuckStatus {
 function updateAlert(prev: StuckStatus, alert: StuckAlert): StuckStatus {
   return {
     ...prev,
-    alerts: prev.alerts.map(a => a.repositoryId === alert.repositoryId ? alert : a),
+    alerts: prev.alerts.map((a) =>
+      a.repositoryId === alert.repositoryId ? alert : a
+    ),
     lastUpdated: new Date().toISOString(),
   };
 }
 
-function useStuckEventHandlers(
-  setStatus: React.Dispatch<React.SetStateAction<StuckStatus>>,
-  callbacksRef: React.MutableRefObject<UseStuckDetectionOptions | undefined>
-) {
-  useSSESubscription<{ stuckStatus?: StuckStatus }>('unified', 'connected', (event) => {
-    if (event.data?.stuckStatus) setStatus(event.data.stuckStatus);
-  }, []);
+type SetStatus = React.Dispatch<React.SetStateAction<StuckStatus>>;
+type CallbacksRef = React.MutableRefObject<UseStuckDetectionOptions | undefined>;
 
-  useSSESubscription<{ status?: StuckStatus }>('unified', 'stuck_update', (event) => {
-    if (event.data?.status) setStatus(event.data.status);
-  }, []);
+function useStuckStatusSubscriptions(setStatus: SetStatus) {
+  useSSESubscription<{ stuckStatus?: StuckStatus }>(
+    'unified', 'connected',
+    (event) => { if (event.data?.stuckStatus) setStatus(event.data.stuckStatus); },
+    []
+  );
+  useSSESubscription<{ status?: StuckStatus }>(
+    'unified', 'stuck_update',
+    (event) => { if (event.data?.status) setStatus(event.data.status); },
+    []
+  );
+}
 
+function useStuckAlertSubscriptions(setStatus: SetStatus, callbacksRef: CallbacksRef) {
   useSSESubscription<StuckEvent>('unified', 'stuck_detected', (event) => {
     const { alert } = event.data as StuckEvent;
-    if (alert) {
-      callbacksRef.current?.onStuckDetected?.(alert);
-      setStatus(prev => addAlert(prev, alert));
-    }
+    if (alert) { callbacksRef.current?.onStuckDetected?.(alert); setStatus((prev) => addAlert(prev, alert)); }
   }, []);
-
   useSSESubscription<StuckEvent>('unified', 'stuck_resolved', (event) => {
     const { alert } = event.data as StuckEvent;
-    if (alert) {
-      callbacksRef.current?.onStuckResolved?.(alert);
-      setStatus(prev => removeAlert(prev, alert.repositoryId));
-    }
+    if (alert) { callbacksRef.current?.onStuckResolved?.(alert); setStatus((prev) => removeAlert(prev, alert.repositoryId)); }
   }, []);
-
   useSSESubscription<StuckEvent>('unified', 'stuck_escalated', (event) => {
     const { alert } = event.data as StuckEvent;
-    if (alert) {
-      callbacksRef.current?.onStuckEscalated?.(alert);
-      setStatus(prev => updateAlert(prev, alert));
-    }
+    if (alert) { callbacksRef.current?.onStuckEscalated?.(alert); setStatus((prev) => updateAlert(prev, alert)); }
   }, []);
+}
+
+function useStuckEventHandlers(setStatus: SetStatus, callbacksRef: CallbacksRef) {
+  useStuckStatusSubscriptions(setStatus);
+  useStuckAlertSubscriptions(setStatus, callbacksRef);
 }
 
 async function postAcknowledge(repositoryId: string): Promise<boolean> {
@@ -106,27 +114,37 @@ async function postAcknowledge(repositoryId: string): Promise<boolean> {
   }
 }
 
-export function useStuckDetection(options?: UseStuckDetectionOptions): UseStuckDetectionReturn {
+export function useStuckDetection(
+  options?: UseStuckDetectionOptions
+): UseStuckDetectionReturn {
   const { status: connectionStatus, reconnectAll, isConnected } = useSSE();
   const [status, setStatus] = useState<StuckStatus>(EMPTY_STATUS);
   const callbacksRef = useRef(options);
 
-  useEffect(() => { callbacksRef.current = options; }, [options]);
+  useEffect(() => {
+    callbacksRef.current = options;
+  }, [options]);
   useStuckEventHandlers(setStatus, callbacksRef);
 
-  const acknowledgeAlert = useCallback(async (repositoryId: string): Promise<boolean> => {
-    const success = await postAcknowledge(repositoryId);
-    if (success) {
-      setStatus(prev => ({
-        ...prev,
-        alerts: prev.alerts.map(a => a.repositoryId === repositoryId ? { ...a, acknowledged: true } : a),
-      }));
-    }
-    return success;
-  }, []);
+  const acknowledgeAlert = useCallback(
+    async (repositoryId: string): Promise<boolean> => {
+      const success = await postAcknowledge(repositoryId);
+      if (success) {
+        setStatus((prev) => ({
+          ...prev,
+          alerts: prev.alerts.map((a) =>
+            a.repositoryId === repositoryId ? { ...a, acknowledged: true } : a
+          ),
+        }));
+      }
+      return success;
+    },
+    []
+  );
 
   const getAlertForRepo = useCallback(
-    (repositoryId: string): StuckAlert | null => status.alerts.find(a => a.repositoryId === repositoryId) || null,
+    (repositoryId: string): StuckAlert | null =>
+      status.alerts.find((a) => a.repositoryId === repositoryId) || null,
     [status.alerts]
   );
 

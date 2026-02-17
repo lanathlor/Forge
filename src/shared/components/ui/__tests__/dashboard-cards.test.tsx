@@ -99,25 +99,33 @@ describe('StatCard', () => {
     });
 
     it('should apply primary variant', () => {
-      const { container } = render(<StatCard {...defaultProps} variant="primary" />);
+      const { container } = render(
+        <StatCard {...defaultProps} variant="primary" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('border-accent-primary');
     });
 
     it('should apply success variant', () => {
-      const { container } = render(<StatCard {...defaultProps} variant="success" />);
+      const { container } = render(
+        <StatCard {...defaultProps} variant="success" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('border-success');
     });
 
     it('should apply warning variant', () => {
-      const { container } = render(<StatCard {...defaultProps} variant="warning" />);
+      const { container } = render(
+        <StatCard {...defaultProps} variant="warning" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('border-warning');
     });
 
     it('should apply error variant', () => {
-      const { container } = render(<StatCard {...defaultProps} variant="error" />);
+      const { container } = render(
+        <StatCard {...defaultProps} variant="error" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('border-error');
     });
@@ -187,7 +195,9 @@ describe('StatCard', () => {
     });
 
     it('should pass through HTML attributes', () => {
-      render(<StatCard {...defaultProps} data-testid="stat-card" id="my-stat" />);
+      render(
+        <StatCard {...defaultProps} data-testid="stat-card" id="my-stat" />
+      );
       const card = screen.getByTestId('stat-card');
       expect(card.id).toBe('my-stat');
     });
@@ -212,7 +222,9 @@ describe('ActionCard', () => {
           description="Start a new project from scratch"
         />
       );
-      expect(screen.getByText('Start a new project from scratch')).toBeInTheDocument();
+      expect(
+        screen.getByText('Start a new project from scratch')
+      ).toBeInTheDocument();
     });
 
     it('should render icon when provided', () => {
@@ -257,13 +269,17 @@ describe('ActionCard', () => {
     });
 
     it('should apply primary variant', () => {
-      const { container } = render(<ActionCard {...defaultProps} variant="primary" />);
+      const { container } = render(
+        <ActionCard {...defaultProps} variant="primary" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('hover:border-accent-primary');
     });
 
     it('should apply ghost variant', () => {
-      const { container } = render(<ActionCard {...defaultProps} variant="ghost" />);
+      const { container } = render(
+        <ActionCard {...defaultProps} variant="ghost" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('border-transparent');
     });
@@ -311,7 +327,9 @@ describe('ActionCard', () => {
 
     it('should handle keyboard Enter', () => {
       const onClick = vi.fn();
-      const { container } = render(<ActionCard {...defaultProps} onClick={onClick} />);
+      const { container } = render(
+        <ActionCard {...defaultProps} onClick={onClick} />
+      );
       const card = container.firstChild as HTMLElement;
       fireEvent.keyDown(card, { key: 'Enter' });
       expect(onClick).toHaveBeenCalledTimes(1);
@@ -319,7 +337,9 @@ describe('ActionCard', () => {
 
     it('should handle keyboard Space', () => {
       const onClick = vi.fn();
-      const { container } = render(<ActionCard {...defaultProps} onClick={onClick} />);
+      const { container } = render(
+        <ActionCard {...defaultProps} onClick={onClick} />
+      );
       const card = container.firstChild as HTMLElement;
       fireEvent.keyDown(card, { key: ' ' });
       expect(onClick).toHaveBeenCalledTimes(1);
@@ -369,13 +389,17 @@ describe('ActionCard', () => {
 
   describe('accessibility', () => {
     it('should have button role when interactive', () => {
-      const { container } = render(<ActionCard {...defaultProps} onClick={vi.fn()} />);
+      const { container } = render(
+        <ActionCard {...defaultProps} onClick={vi.fn()} />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.getAttribute('role')).toBe('button');
     });
 
     it('should be focusable when interactive', () => {
-      const { container } = render(<ActionCard {...defaultProps} onClick={vi.fn()} />);
+      const { container } = render(
+        <ActionCard {...defaultProps} onClick={vi.fn()} />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.getAttribute('tabIndex')).toBe('0');
     });
@@ -466,12 +490,7 @@ describe('ListCard', () => {
     });
 
     it('should render custom empty state when provided', () => {
-      render(
-        <ListCard
-          items={[]}
-          emptyState={<div>Nothing here yet!</div>}
-        />
-      );
+      render(<ListCard items={[]} emptyState={<div>Nothing here yet!</div>} />);
       expect(screen.getByText('Nothing here yet!')).toBeInTheDocument();
     });
   });
@@ -500,7 +519,9 @@ describe('ListCard', () => {
 
     it('should disable item when disabled', () => {
       const onClick = vi.fn();
-      const items = [{ id: '1', content: 'Disabled Item', onClick, disabled: true }];
+      const items = [
+        { id: '1', content: 'Disabled Item', onClick, disabled: true },
+      ];
       render(<ListCard items={items} />);
       const button = screen.getByText('Disabled Item');
       expect(button).toBeDisabled();
@@ -520,7 +541,9 @@ describe('ListCard', () => {
       const { container } = render(
         <ListCard items={defaultItems} maxHeight="50vh" />
       );
-      const scrollContainer = container.querySelector('.overflow-y-auto') as HTMLElement;
+      const scrollContainer = container.querySelector(
+        '.overflow-y-auto'
+      ) as HTMLElement;
       expect(scrollContainer.style.maxHeight).toBe('50vh');
     });
   });
@@ -534,7 +557,9 @@ describe('ListCard', () => {
     });
 
     it('should apply bordered variant', () => {
-      const { container } = render(<ListCard items={defaultItems} variant="bordered" />);
+      const { container } = render(
+        <ListCard items={defaultItems} variant="bordered" />
+      );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('border-2');
     });

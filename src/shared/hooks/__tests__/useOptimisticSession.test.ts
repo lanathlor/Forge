@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 const mockDispatch = vi.hoisted(() => vi.fn());
-const mockPrefetch = vi.hoisted(() => vi.fn().mockReturnValue({ type: 'sessions/prefetch' }));
+const mockPrefetch = vi.hoisted(() =>
+  vi.fn().mockReturnValue({ type: 'sessions/prefetch' })
+);
 
 vi.mock('@/shared/hooks', () => ({
   useAppDispatch: () => mockDispatch,
@@ -22,7 +24,10 @@ vi.mock('@/features/sessions/store/sessionsApi', () => ({
   }),
 }));
 
-import { useOptimisticSession, useOptimisticActiveSession } from '../useOptimisticSession';
+import {
+  useOptimisticSession,
+  useOptimisticActiveSession,
+} from '../useOptimisticSession';
 import { useGetActiveSessionQuery } from '@/features/sessions/store/sessionsApi';
 
 describe('useOptimisticSession', () => {
@@ -40,7 +45,9 @@ describe('useOptimisticSession', () => {
     const { result } = renderHook(() => useOptimisticSession());
     result.current.prefetchSession('repo-123');
 
-    expect(mockPrefetch).toHaveBeenCalledWith('getActiveSession', 'repo-123', { ifOlderThan: 60 });
+    expect(mockPrefetch).toHaveBeenCalledWith('getActiveSession', 'repo-123', {
+      ifOlderThan: 60,
+    });
     expect(mockDispatch).toHaveBeenCalledTimes(1);
   });
 
@@ -60,8 +67,12 @@ describe('useOptimisticSession', () => {
     result.current.prefetchSession('repo-2');
 
     expect(mockDispatch).toHaveBeenCalledTimes(2);
-    expect(mockPrefetch).toHaveBeenCalledWith('getActiveSession', 'repo-1', { ifOlderThan: 60 });
-    expect(mockPrefetch).toHaveBeenCalledWith('getActiveSession', 'repo-2', { ifOlderThan: 60 });
+    expect(mockPrefetch).toHaveBeenCalledWith('getActiveSession', 'repo-1', {
+      ifOlderThan: 60,
+    });
+    expect(mockPrefetch).toHaveBeenCalledWith('getActiveSession', 'repo-2', {
+      ifOlderThan: 60,
+    });
   });
 });
 
@@ -84,7 +95,11 @@ describe('useOptimisticActiveSession', () => {
   });
 
   it('should return session when data is available', () => {
-    const mockSession = { id: 'session-1', repositoryId: 'repo-1', status: 'active' };
+    const mockSession = {
+      id: 'session-1',
+      repositoryId: 'repo-1',
+      status: 'active',
+    };
     vi.mocked(useGetActiveSessionQuery).mockReturnValue({
       data: { session: mockSession as never },
       isLoading: false,
@@ -109,7 +124,11 @@ describe('useOptimisticActiveSession', () => {
   });
 
   it('should not show isLoading when loading but has cached data', () => {
-    const mockSession = { id: 'session-1', repositoryId: 'repo-1', status: 'active' };
+    const mockSession = {
+      id: 'session-1',
+      repositoryId: 'repo-1',
+      status: 'active',
+    };
     vi.mocked(useGetActiveSessionQuery).mockReturnValue({
       data: { session: mockSession as never },
       isLoading: true,

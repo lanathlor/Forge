@@ -52,29 +52,43 @@ interface RepoHeaderProps {
 
 function RepoHeader({ repository, onBack, onStartSession }: RepoHeaderProps) {
   return (
-    <div className="rounded-xl border-2 bg-gradient-to-br from-card to-card/50 p-5 sm:p-6 shadow-sm">
+    <div className="rounded-xl border-2 bg-gradient-to-br from-card to-card/50 p-5 shadow-sm sm:p-6">
       {/* Top row: back + actions */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 -ml-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="-ml-2 gap-1.5"
+          >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back</span>
           </Button>
         )}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <RepositoryStatusBadge isClean={repository.isClean} />
         </div>
       </div>
 
       {/* Repo name + path */}
       <div className="mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-text-primary">{repository.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground font-mono truncate">{repository.path}</p>
+        <h1 className="text-xl font-bold text-text-primary sm:text-2xl">
+          {repository.name}
+        </h1>
+        <p className="mt-1 truncate font-mono text-sm text-muted-foreground">
+          {repository.path}
+        </p>
       </div>
 
       {/* Info chips */}
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <InfoChip icon={GitBranch} label="Branch" value={repository.currentBranch ?? 'unknown'} mono />
+        <InfoChip
+          icon={GitBranch}
+          label="Branch"
+          value={repository.currentBranch ?? 'unknown'}
+          mono
+        />
         {repository.lastCommitSha && (
           <InfoChip
             icon={FileText}
@@ -94,11 +108,15 @@ function RepoHeader({ repository, onBack, onStartSession }: RepoHeaderProps) {
 
       {/* Last commit message */}
       {repository.lastCommitMsg && (
-        <div className="mt-4 rounded-lg bg-muted/40 px-3 py-2 border border-border/50">
-          <p className="text-xs text-muted-foreground mb-0.5">Last commit</p>
-          <p className="text-sm text-text-primary line-clamp-2">{repository.lastCommitMsg}</p>
+        <div className="mt-4 rounded-lg border border-border/50 bg-muted/40 px-3 py-2">
+          <p className="mb-0.5 text-xs text-muted-foreground">Last commit</p>
+          <p className="line-clamp-2 text-sm text-text-primary">
+            {repository.lastCommitMsg}
+          </p>
           {repository.lastCommitAuthor && (
-            <p className="text-xs text-muted-foreground mt-1">by {repository.lastCommitAuthor}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              by {repository.lastCommitAuthor}
+            </p>
           )}
         </div>
       )}
@@ -134,7 +152,7 @@ function InfoChip({ icon: Icon, label, value, mono }: InfoChipProps) {
       <span className="text-xs">{label}:</span>
       <span
         className={cn(
-          'text-xs font-medium text-text-primary px-1.5 py-0.5 rounded bg-muted/60 border border-border/50',
+          'rounded border border-border/50 bg-muted/60 px-1.5 py-0.5 text-xs font-medium text-text-primary',
           mono && 'font-mono'
         )}
       >
@@ -156,13 +174,23 @@ interface SessionStatsProps {
 function computeStats(sessions: SessionWithStats[]) {
   const totalSessions = sessions.length;
   const activeSessions = sessions.filter((s) => s.status === 'active').length;
-  const completedSessions = sessions.filter((s) => s.status === 'completed').length;
+  const completedSessions = sessions.filter(
+    (s) => s.status === 'completed'
+  ).length;
   const totalTasks = sessions.reduce((sum, s) => sum + (s.taskCount ?? 0), 0);
 
   const successRate =
-    totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    totalSessions > 0
+      ? Math.round((completedSessions / totalSessions) * 100)
+      : 0;
 
-  return { totalSessions, activeSessions, completedSessions, totalTasks, successRate };
+  return {
+    totalSessions,
+    activeSessions,
+    completedSessions,
+    totalTasks,
+    successRate,
+  };
 }
 
 function SessionStats({ sessions, loading }: SessionStatsProps) {
@@ -170,7 +198,10 @@ function SessionStats({ sessions, loading }: SessionStatsProps) {
 
   return (
     <section aria-labelledby="stats-heading">
-      <h2 id="stats-heading" className="text-base font-semibold text-text-primary mb-3">
+      <h2
+        id="stats-heading"
+        className="mb-3 text-base font-semibold text-text-primary"
+      >
         Statistics
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -210,7 +241,13 @@ function SessionStats({ sessions, loading }: SessionStatsProps) {
           icon={<Shield className="h-5 w-5" />}
           value={`${stats.successRate}%`}
           label="Success Rate"
-          variant={stats.successRate >= 80 ? 'success' : stats.successRate >= 50 ? 'warning' : 'error'}
+          variant={
+            stats.successRate >= 80
+              ? 'success'
+              : stats.successRate >= 50
+                ? 'warning'
+                : 'error'
+          }
           size="sm"
           loading={loading}
         />
@@ -231,7 +268,11 @@ interface SessionHistoryProps {
 
 const SESSION_STATUS_CONFIG: Record<
   string,
-  { icon: React.ComponentType<{ className?: string }>; color: string; label: string }
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    label: string;
+  }
 > = {
   active: { icon: PlayCircle, color: 'text-accent-primary', label: 'Active' },
   paused: { icon: PauseCircle, color: 'text-warning', label: 'Paused' },
@@ -246,7 +287,11 @@ function SessionHistoryItem({
   session: SessionWithStats;
   onClick?: () => void;
 }) {
-  const fallback = { icon: PlayCircle, color: 'text-accent-primary', label: 'Active' };
+  const fallback = {
+    icon: PlayCircle,
+    color: 'text-accent-primary',
+    label: 'Active',
+  };
   const config = SESSION_STATUS_CONFIG[session.status] ?? fallback;
   const StatusIcon = config.icon;
 
@@ -254,8 +299,8 @@ function SessionHistoryItem({
     <button
       onClick={onClick}
       className={cn(
-        'w-full text-left p-3 sm:p-4 rounded-lg border bg-card transition-all duration-150',
-        'hover:bg-surface-interactive hover:border-border-strong hover:shadow-sm',
+        'w-full rounded-lg border bg-card p-3 text-left transition-all duration-150 sm:p-4',
+        'hover:border-border-strong hover:bg-surface-interactive hover:shadow-sm',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
       )}
     >
@@ -263,8 +308,8 @@ function SessionHistoryItem({
         <div className={cn('mt-0.5 shrink-0', config.color)}>
           <StatusIcon className="h-5 w-5" />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-text-primary">
               Session {session.id.slice(0, 8)}
             </span>
@@ -284,7 +329,8 @@ function SessionHistoryItem({
             )}
             <span className="flex items-center gap-1">
               <ListTodo className="h-3 w-3" />
-              {session.taskCount ?? 0} task{(session.taskCount ?? 0) !== 1 ? 's' : ''}
+              {session.taskCount ?? 0} task
+              {(session.taskCount ?? 0) !== 1 ? 's' : ''}
             </span>
             {session.startedAt && (
               <span className="flex items-center gap-1">
@@ -301,13 +347,13 @@ function SessionHistoryItem({
 
 function SessionHistoryEmpty() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-10 px-4">
+    <div className="flex flex-col items-center justify-center gap-3 px-4 py-10">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
         <Clock className="h-6 w-6 text-muted-foreground" />
       </div>
       <div className="text-center">
         <p className="text-sm font-medium text-text-primary">No sessions yet</p>
-        <p className="mt-1 text-xs text-text-muted max-w-[240px]">
+        <p className="mt-1 max-w-[240px] text-xs text-text-muted">
           Start a new session to begin working with this repository
         </p>
       </div>
@@ -319,9 +365,9 @@ function SessionHistorySkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="p-4 rounded-lg border bg-card">
+        <div key={i} className="rounded-lg border bg-card p-4">
           <div className="flex items-start gap-3">
-            <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+            <Skeleton className="mt-0.5 h-5 w-5 rounded-full" />
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-4 w-24" />
@@ -336,11 +382,18 @@ function SessionHistorySkeleton() {
   );
 }
 
-function SessionHistory({ sessions, loading, onSelectSession }: SessionHistoryProps) {
+function SessionHistory({
+  sessions,
+  loading,
+  onSelectSession,
+}: SessionHistoryProps) {
   if (loading) {
     return (
       <section aria-labelledby="session-history-heading">
-        <h2 id="session-history-heading" className="text-base font-semibold text-text-primary mb-3">
+        <h2
+          id="session-history-heading"
+          className="mb-3 text-base font-semibold text-text-primary"
+        >
           Session History
         </h2>
         <SessionHistorySkeleton />
@@ -350,7 +403,10 @@ function SessionHistory({ sessions, loading, onSelectSession }: SessionHistoryPr
 
   return (
     <section aria-labelledby="session-history-heading">
-      <h2 id="session-history-heading" className="text-base font-semibold text-text-primary mb-3">
+      <h2
+        id="session-history-heading"
+        className="mb-3 text-base font-semibold text-text-primary"
+      >
         Session History
       </h2>
       {sessions.length === 0 ? (
@@ -361,7 +417,9 @@ function SessionHistory({ sessions, loading, onSelectSession }: SessionHistoryPr
             <SessionHistoryItem
               key={session.id}
               session={session}
-              onClick={onSelectSession ? () => onSelectSession(session.id) : undefined}
+              onClick={
+                onSelectSession ? () => onSelectSession(session.id) : undefined
+              }
             />
           ))}
         </div>
@@ -381,7 +439,10 @@ interface QAGatesSectionProps {
 function QAGatesSection({ repositoryId }: QAGatesSectionProps) {
   return (
     <section aria-labelledby="qa-gates-heading">
-      <h2 id="qa-gates-heading" className="text-base font-semibold text-text-primary mb-3">
+      <h2
+        id="qa-gates-heading"
+        className="mb-3 text-base font-semibold text-text-primary"
+      >
         QA Gates
       </h2>
       <QAGatesConfig repositoryId={repositoryId} />
@@ -405,7 +466,10 @@ function UncommittedFiles({ files }: UncommittedFilesProps) {
 
   return (
     <section aria-labelledby="uncommitted-heading">
-      <h2 id="uncommitted-heading" className="text-base font-semibold text-text-primary mb-3">
+      <h2
+        id="uncommitted-heading"
+        className="mb-3 text-base font-semibold text-text-primary"
+      >
         Uncommitted Files
         <Badge variant="secondary" className="ml-2 text-xs">
           {files.length}
@@ -416,8 +480,10 @@ function UncommittedFiles({ files }: UncommittedFilesProps) {
           <ul className="space-y-1">
             {visibleFiles.map((file) => (
               <li key={file} className="flex items-center gap-2 text-sm">
-                <FolderOpen className="h-3.5 w-3.5 text-warning shrink-0" />
-                <span className="font-mono text-xs text-text-primary truncate">{file}</span>
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-warning" />
+                <span className="truncate font-mono text-xs text-text-primary">
+                  {file}
+                </span>
               </li>
             ))}
           </ul>
@@ -426,9 +492,11 @@ function UncommittedFiles({ files }: UncommittedFilesProps) {
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(!expanded)}
-              className="mt-2 text-xs w-full"
+              className="mt-2 w-full text-xs"
             >
-              {expanded ? 'Show less' : `Show ${files.length - maxVisible} more`}
+              {expanded
+                ? 'Show less'
+                : `Show ${files.length - maxVisible} more`}
             </Button>
           )}
         </CardContent>
@@ -448,10 +516,11 @@ export function RepositoryDetailView({
   onSelectSession,
   className,
 }: RepositoryDetailViewProps) {
-  const { data: sessionsData, isLoading: sessionsLoading } = useListSessionsQuery({
-    repositoryId: repository.id,
-    limit: 20,
-  });
+  const { data: sessionsData, isLoading: sessionsLoading } =
+    useListSessionsQuery({
+      repositoryId: repository.id,
+      limit: 20,
+    });
 
   const sessions = sessionsData?.sessions ?? [];
 
@@ -478,7 +547,9 @@ export function RepositoryDetailView({
       <SessionStats sessions={sessions} loading={sessionsLoading} />
 
       {/* Uncommitted files (only shown when dirty) */}
-      {uncommittedFiles.length > 0 && <UncommittedFiles files={uncommittedFiles} />}
+      {uncommittedFiles.length > 0 && (
+        <UncommittedFiles files={uncommittedFiles} />
+      )}
 
       {/* Session History */}
       <SessionHistory

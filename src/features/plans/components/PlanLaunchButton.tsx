@@ -3,7 +3,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/utils';
-import { usePreflightChecks, type PreflightCheck } from '../hooks/usePreflightChecks';
+import {
+  usePreflightChecks,
+  type PreflightCheck,
+} from '../hooks/usePreflightChecks';
 import {
   useExecutePlanMutation,
   useUpdatePlanMutation,
@@ -45,9 +48,13 @@ function MiniCheckIcon({ status }: { status: string }) {
 
 function PreflightRow({ checks }: { checks: PreflightCheck[] }) {
   return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground animate-in fade-in slide-in-from-top-1 duration-200">
+    <div className="flex items-center gap-2 text-xs text-muted-foreground duration-200 animate-in fade-in slide-in-from-top-1">
       {checks.map((check) => (
-        <span key={check.id} className="flex items-center gap-1" title={check.detail}>
+        <span
+          key={check.id}
+          className="flex items-center gap-1"
+          title={check.detail}
+        >
           <MiniCheckIcon status={check.status} />
           <span className="hidden sm:inline">{check.label}</span>
         </span>
@@ -80,7 +87,7 @@ function LaunchButtons({
         className={cn(
           'gap-2 font-semibold shadow-md transition-all',
           isLg && 'px-8 text-base',
-          canLaunch && 'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]',
+          canLaunch && 'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]'
         )}
       >
         {isLaunching ? (
@@ -143,27 +150,32 @@ export function PlanLaunchButton({
     }
   }, [showPreflight, canAttemptLaunch, checks.length, isReady, isChecking]);
 
-  const handleLaunch = useCallback(async (switchAfter: boolean) => {
-    setIsLaunching(true);
-    setLaunchError(null);
+  const handleLaunch = useCallback(
+    async (switchAfter: boolean) => {
+      setIsLaunching(true);
+      setLaunchError(null);
 
-    try {
-      if (plan.status === 'draft') {
-        await updatePlan({ id: plan.id, data: { status: 'ready' } }).unwrap();
-      }
-      await executePlan(plan.id).unwrap();
+      try {
+        if (plan.status === 'draft') {
+          await updatePlan({ id: plan.id, data: { status: 'ready' } }).unwrap();
+        }
+        await executePlan(plan.id).unwrap();
 
-      if (switchAfter && onLaunchAndSwitch) {
-        onLaunchAndSwitch(plan.id);
-      } else {
-        onLaunched(plan.id);
+        if (switchAfter && onLaunchAndSwitch) {
+          onLaunchAndSwitch(plan.id);
+        } else {
+          onLaunched(plan.id);
+        }
+      } catch (err) {
+        setLaunchError(
+          err instanceof Error ? err.message : 'Failed to launch plan'
+        );
+      } finally {
+        setIsLaunching(false);
       }
-    } catch (err) {
-      setLaunchError(err instanceof Error ? err.message : 'Failed to launch plan');
-    } finally {
-      setIsLaunching(false);
-    }
-  }, [plan, executePlan, updatePlan, onLaunched, onLaunchAndSwitch]);
+    },
+    [plan, executePlan, updatePlan, onLaunched, onLaunchAndSwitch]
+  );
 
   if (!canAttemptLaunch) return null;
 
@@ -181,7 +193,9 @@ export function PlanLaunchButton({
         canLaunch={canLaunch}
         isLaunching={isLaunching}
         onLaunch={() => handleLaunch(false)}
-        onLaunchSwitch={onLaunchAndSwitch ? () => handleLaunch(true) : undefined}
+        onLaunchSwitch={
+          onLaunchAndSwitch ? () => handleLaunch(true) : undefined
+        }
       />
 
       {isLg && (
@@ -190,13 +204,17 @@ export function PlanLaunchButton({
             <Layers className="h-3 w-3" />
             {plan.totalPhases} phase{plan.totalPhases !== 1 ? 's' : ''}
           </span>
-          <span>{plan.totalTasks} task{plan.totalTasks !== 1 ? 's' : ''}</span>
+          <span>
+            {plan.totalTasks} task{plan.totalTasks !== 1 ? 's' : ''}
+          </span>
         </div>
       )}
 
       {launchError && (
-        <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 px-3 py-1.5">
-          <p className="text-xs text-red-600 dark:text-red-400">{launchError}</p>
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 dark:border-red-900 dark:bg-red-950/20">
+          <p className="text-xs text-red-600 dark:text-red-400">
+            {launchError}
+          </p>
         </div>
       )}
     </div>

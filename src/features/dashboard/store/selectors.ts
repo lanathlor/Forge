@@ -6,8 +6,10 @@ import type { RepoSnapshot } from '@/features/sessions/store/repoSnapshotSlice';
 
 export const selectSession = (state: RootState) => state.session;
 export const selectDashboardUi = (state: RootState) => state.dashboardUi;
-export const selectRepoSnapshots = (state: RootState) => state.repoSnapshot.snapshots;
-export const selectDismissedRepoId = (state: RootState) => state.repoSnapshot.dismissedRepoId;
+export const selectRepoSnapshots = (state: RootState) =>
+  state.repoSnapshot.snapshots;
+export const selectDismissedRepoId = (state: RootState) =>
+  state.repoSnapshot.dismissedRepoId;
 
 // ─── Session selectors ───────────────────────────────────────────────────────
 
@@ -20,8 +22,7 @@ export const selectCurrentSessionId = (state: RootState) =>
 export const selectIsSidebarCollapsed = (state: RootState) =>
   state.session.isSidebarCollapsed;
 
-export const selectIsHydrated = (state: RootState) =>
-  state.session.isHydrated;
+export const selectIsHydrated = (state: RootState) => state.session.isHydrated;
 
 // ─── Dashboard UI selectors ──────────────────────────────────────────────────
 
@@ -34,8 +35,7 @@ export const selectSelectedTaskId = (state: RootState) =>
 export const selectSelectedPlanId = (state: RootState) =>
   state.dashboardUi.selectedPlanId;
 
-export const selectPlanView = (state: RootState) =>
-  state.dashboardUi.planView;
+export const selectPlanView = (state: RootState) => state.dashboardUi.planView;
 
 export const selectReviewPlanId = (state: RootState) =>
   state.dashboardUi.reviewPlanId;
@@ -79,7 +79,8 @@ export const selectAllSnapshotsSorted = createSelector(
   [selectRepoSnapshots],
   (snapshots): RepoSnapshot[] =>
     Object.values(snapshots).sort(
-      (a, b) => new Date(b.lastVisited).getTime() - new Date(a.lastVisited).getTime()
+      (a, b) =>
+        new Date(b.lastVisited).getTime() - new Date(a.lastVisited).getTime()
     )
 );
 
@@ -94,7 +95,10 @@ export const selectSnapshotsNeedingAttention = createSelector(
 export const selectTotalPendingApprovals = createSelector(
   [selectRepoSnapshots],
   (snapshots): number =>
-    Object.values(snapshots).reduce((sum, s) => sum + (s.pendingApprovals ?? 0), 0)
+    Object.values(snapshots).reduce(
+      (sum, s) => sum + (s.pendingApprovals ?? 0),
+      0
+    )
 );
 
 /** Total stuck items across all repositories */

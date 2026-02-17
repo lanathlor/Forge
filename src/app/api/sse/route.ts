@@ -5,8 +5,16 @@ import { sessions } from '@/db/schema/sessions';
 import { tasks } from '@/db/schema/tasks';
 import { eq, desc } from 'drizzle-orm';
 import { taskEvents, type PlanExecutionEvent } from '@/lib/events/task-events';
-import { getStuckDetector, stuckEvents, type StuckEvent, type StuckStatus } from '@/lib/stuck-detection';
-import type { ClaudeStatus, RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
+import {
+  getStuckDetector,
+  stuckEvents,
+  type StuckEvent,
+  type StuckStatus,
+} from '@/lib/stuck-detection';
+import type {
+  ClaudeStatus,
+  RepoSessionState,
+} from '@/shared/hooks/useMultiRepoStream';
 
 /**
  * Unified SSE Endpoint
@@ -29,7 +37,10 @@ const THINKING_STATUSES = ['running', 'pre_flight', 'qa_running'];
 const WRITING_STATUSES = ['waiting_qa', 'approved'];
 const STUCK_STATUSES = ['failed', 'qa_failed'];
 
-function getClaudeStatus(taskStatus: string | null, sessionStatus: string | null): ClaudeStatus {
+function getClaudeStatus(
+  taskStatus: string | null,
+  sessionStatus: string | null
+): ClaudeStatus {
   if (sessionStatus === 'paused') return 'paused';
   if (!taskStatus) return 'idle';
   if (THINKING_STATUSES.includes(taskStatus)) return 'thinking';
@@ -75,7 +86,10 @@ function checkNeedsAttention(status: ClaudeStatus): boolean {
   return status === 'stuck' || status === 'waiting_input';
 }
 
-async function buildRepoSessionState(repo: { id: string; name: string }): Promise<RepoSessionState> {
+async function buildRepoSessionState(repo: {
+  id: string;
+  name: string;
+}): Promise<RepoSessionState> {
   const session = await db.query.sessions.findFirst({
     where: eq(sessions.repositoryId, repo.id),
     orderBy: [desc(sessions.lastActivity)],
@@ -102,7 +116,9 @@ async function getAllRepoStates(): Promise<RepoSessionState[]> {
   const allRepos = await db.query.repositories.findMany({
     columns: { id: true, name: true },
   });
-  const states = await Promise.all(allRepos.map((repo) => buildRepoSessionState(repo)));
+  const states = await Promise.all(
+    allRepos.map((repo) => buildRepoSessionState(repo))
+  );
 
   const detector = getStuckDetector();
   for (const state of states) {
@@ -124,8 +140,14 @@ async function getAllRepoStates(): Promise<RepoSessionState[]> {
    SSE ENCODING
    ============================================ */
 
-function encodeSSE(encoder: TextEncoder, eventType: string, data: object): Uint8Array {
-  return encoder.encode(`event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`);
+function encodeSSE(
+  encoder: TextEncoder,
+  eventType: string,
+  data: object
+): Uint8Array {
+  return encoder.encode(
+    `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`
+  );
 }
 
 // Unused but kept for potential future use with non-named events
@@ -150,7 +172,11 @@ function sendEvent(ctx: StreamContext, eventType: string, data: object) {
   }
 }
 
-function sendConnected(ctx: StreamContext, repoStates: RepoSessionState[], stuckStatus: StuckStatus) {
+function sendConnected(
+  ctx: StreamContext,
+  repoStates: RepoSessionState[],
+  stuckStatus: StuckStatus
+) {
   sendEvent(ctx, 'connected', {
     type: 'connected',
     timestamp: new Date().toISOString(),
@@ -254,7 +280,12 @@ function createStuckStatusHandler(ctx: StreamContext) {
 }
 
 function createQAGateHandler(ctx: StreamContext) {
-  return (data: { sessionId: string; taskId: string; gateName: string; status: string }) => {
+  return (data: {
+    sessionId: string;
+    taskId: string;
+    gateName: string;
+    status: string;
+  }) => {
     sendEvent(ctx, 'qa_gate_update', {
       type: 'qa_gate_update',
       ...data,
@@ -285,7 +316,10 @@ function createPlanExecutionHandler(ctx: StreamContext) {
    INTERVALS
    ============================================ */
 
-function setupIntervals(ctx: StreamContext, detector: ReturnType<typeof getStuckDetector>) {
+function setupIntervals(
+  ctx: StreamContext,
+  detector: ReturnType<typeof getStuckDetector>
+) {
   // Heartbeat every 15 seconds (more frequent for faster stale detection)
   const heartbeatInterval = setInterval(() => sendHeartbeat(ctx), 15000);
 
@@ -306,7 +340,10 @@ function setupIntervals(ctx: StreamContext, detector: ReturnType<typeof getStuck
   const stuckStatusInterval = setInterval(() => {
     try {
       const status = detector.getStatus();
-      sendEvent(ctx, 'stuck_update', { status, timestamp: new Date().toISOString() });
+      sendEvent(ctx, 'stuck_update', {
+        status,
+        timestamp: new Date().toISOString(),
+      });
     } catch {
       // Ignore
     }
@@ -326,8 +363,17 @@ function setupIntervals(ctx: StreamContext, detector: ReturnType<typeof getStuck
 
 interface TaskHandlers {
   onTaskUpdate: (data: { sessionId: string; taskId: string }) => Promise<void>;
-  onTaskOutput: (data: { sessionId: string; taskId: string; output: string }) => void;
-  onQAGateUpdate: (data: { sessionId: string; taskId: string; gateName: string; status: string }) => void;
+  onTaskOutput: (data: {
+    sessionId: string;
+    taskId: string;
+    output: string;
+  }) => void;
+  onQAGateUpdate: (data: {
+    sessionId: string;
+    taskId: string;
+    gateName: string;
+    status: string;
+  }) => void;
   onPlanExecution: (event: PlanExecutionEvent) => void;
 }
 
@@ -392,7 +438,11 @@ function createCleanupHandler(
     stuckEvents.off('stuck:escalated', stuckHandlers.onStuckEscalated);
     stuckEvents.off('stuck:update', stuckHandlers.onStuckUpdate);
 
-    try { controller.close(); } catch { /* Already closed */ }
+    try {
+      controller.close();
+    } catch {
+      /* Already closed */
+    }
   };
 }
 
@@ -416,7 +466,12 @@ export async function GET(request: NextRequest) {
       attachStuckListeners(stuckHandlers);
 
       const intervals = setupIntervals(ctx, detector);
-      const cleanup = createCleanupHandler(intervals, taskHandlers, stuckHandlers, controller);
+      const cleanup = createCleanupHandler(
+        intervals,
+        taskHandlers,
+        stuckHandlers,
+        controller
+      );
       request.signal.addEventListener('abort', cleanup);
     },
   });
@@ -448,7 +503,10 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'acknowledge': {
         if (!repositoryId) {
-          return Response.json({ error: 'Missing repositoryId' }, { status: 400 });
+          return Response.json(
+            { error: 'Missing repositoryId' },
+            { status: 400 }
+          );
         }
         const success = detector.acknowledgeAlert(repositoryId);
         return Response.json({ success, repositoryId });
@@ -461,7 +519,10 @@ export async function POST(request: NextRequest) {
         });
       }
       default:
-        return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
+        return Response.json(
+          { error: `Unknown action: ${action}` },
+          { status: 400 }
+        );
     }
   } catch (error) {
     console.error('[unified-sse] POST error:', error);

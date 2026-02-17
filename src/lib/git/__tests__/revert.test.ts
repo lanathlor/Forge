@@ -62,14 +62,24 @@ describe('git/revert', () => {
   describe('revertTaskChanges', () => {
     it('should revert modified files using git checkout', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/modified.ts', status: 'modified', additions: 10, deletions: 5, patch: '' },
+        {
+          path: 'src/modified.ts',
+          status: 'modified',
+          additions: 10,
+          deletions: 5,
+          patch: '',
+        },
       ];
 
       mockExecAsync
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git checkout
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesReverted).toEqual(['src/modified.ts']);
       expect(result.filesDeleted).toEqual([]);
@@ -84,13 +94,23 @@ describe('git/revert', () => {
 
     it('should delete newly added files using fs.unlink', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/new-file.ts', status: 'added', additions: 50, deletions: 0, patch: '' },
+        {
+          path: 'src/new-file.ts',
+          status: 'added',
+          additions: 50,
+          deletions: 0,
+          patch: '',
+        },
       ];
 
       mockFsUnlink.mockResolvedValueOnce(undefined);
       mockExecAsync.mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesDeleted).toEqual(['src/new-file.ts']);
       expect(result.filesReverted).toEqual([]);
@@ -101,14 +121,24 @@ describe('git/revert', () => {
 
     it('should revert deleted files using git checkout', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/deleted.ts', status: 'deleted', additions: 0, deletions: 30, patch: '' },
+        {
+          path: 'src/deleted.ts',
+          status: 'deleted',
+          additions: 0,
+          deletions: 30,
+          patch: '',
+        },
       ];
 
       mockExecAsync
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git checkout
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesReverted).toEqual(['src/deleted.ts']);
       expect(result.success).toBe(true);
@@ -116,9 +146,27 @@ describe('git/revert', () => {
 
     it('should handle mixed file types', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/modified.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
-        { path: 'src/added.ts', status: 'added', additions: 20, deletions: 0, patch: '' },
-        { path: 'src/deleted.ts', status: 'deleted', additions: 0, deletions: 10, patch: '' },
+        {
+          path: 'src/modified.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
+        {
+          path: 'src/added.ts',
+          status: 'added',
+          additions: 20,
+          deletions: 0,
+          patch: '',
+        },
+        {
+          path: 'src/deleted.ts',
+          status: 'deleted',
+          additions: 0,
+          deletions: 10,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -128,17 +176,36 @@ describe('git/revert', () => {
 
       mockFsUnlink.mockResolvedValueOnce(undefined); // delete added file
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
-      expect(result.filesReverted).toEqual(['src/modified.ts', 'src/deleted.ts']);
+      expect(result.filesReverted).toEqual([
+        'src/modified.ts',
+        'src/deleted.ts',
+      ]);
       expect(result.filesDeleted).toEqual(['src/added.ts']);
       expect(result.success).toBe(true);
     });
 
     it('should collect errors when git checkout fails', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/file1.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
-        { path: 'src/file2.ts', status: 'modified', additions: 10, deletions: 2, patch: '' },
+        {
+          path: 'src/file1.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
+        {
+          path: 'src/file2.ts',
+          status: 'modified',
+          additions: 10,
+          deletions: 2,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -146,31 +213,55 @@ describe('git/revert', () => {
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git checkout succeeds for file2
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesReverted).toEqual(['src/file2.ts']);
       expect(result.success).toBe(false);
-      expect(result.errors).toContain('Failed to revert src/file1.ts: File not found');
+      expect(result.errors).toContain(
+        'Failed to revert src/file1.ts: File not found'
+      );
     });
 
     it('should collect errors when fs.unlink fails', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/new-file.ts', status: 'added', additions: 20, deletions: 0, patch: '' },
+        {
+          path: 'src/new-file.ts',
+          status: 'added',
+          additions: 20,
+          deletions: 0,
+          patch: '',
+        },
       ];
 
       mockFsUnlink.mockRejectedValueOnce(new Error('Permission denied'));
       mockExecAsync.mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesDeleted).toEqual([]);
       expect(result.success).toBe(false);
-      expect(result.errors).toContain('Failed to delete src/new-file.ts: Permission denied');
+      expect(result.errors).toContain(
+        'Failed to delete src/new-file.ts: Permission denied'
+      );
     });
 
     it('should handle git reset failure gracefully', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'src/file.ts', status: 'modified', additions: 5, deletions: 3, patch: '' },
+        {
+          path: 'src/file.ts',
+          status: 'modified',
+          additions: 5,
+          deletions: 3,
+          patch: '',
+        },
       ];
 
       mockExecAsync
@@ -178,7 +269,11 @@ describe('git/revert', () => {
         .mockRejectedValueOnce(new Error('Reset failed')); // git reset HEAD fails
 
       // Should not throw, just log warning
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesReverted).toEqual(['src/file.ts']);
       expect(result.success).toBe(true);
@@ -189,7 +284,11 @@ describe('git/revert', () => {
 
       mockExecAsync.mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.filesReverted).toEqual([]);
       expect(result.filesDeleted).toEqual([]);
@@ -200,14 +299,24 @@ describe('git/revert', () => {
       mockGetContainerPath.mockReturnValueOnce('/container/repo');
 
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          patch: '',
+        },
       ];
 
       mockExecAsync
         .mockResolvedValueOnce({ stdout: '', stderr: '' })
         .mockResolvedValueOnce({ stdout: '', stderr: '' });
 
-      await revertModule.revertTaskChanges('/host/repo', 'abc123', filesChanged);
+      await revertModule.revertTaskChanges(
+        '/host/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(mockGetContainerPath).toHaveBeenCalledWith('/host/repo');
       expect(mockExecAsync).toHaveBeenCalledWith(
@@ -218,7 +327,13 @@ describe('git/revert', () => {
 
     it('should return fatal error when git checkout throws unexpected error', async () => {
       const filesChanged: FileChange[] = [
-        { path: 'file.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+        {
+          path: 'file.ts',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          patch: '',
+        },
       ];
 
       // Make all git operations fail
@@ -226,7 +341,11 @@ describe('git/revert', () => {
         .mockRejectedValueOnce(new Error('Fatal error'))
         .mockRejectedValueOnce(new Error('Reset also failed'));
 
-      const result = await revertModule.revertTaskChanges('/repo', 'abc123', filesChanged);
+      const result = await revertModule.revertTaskChanges(
+        '/repo',
+        'abc123',
+        filesChanged
+      );
 
       expect(result.success).toBe(false);
       expect(result.filesReverted).toEqual([]);
@@ -240,7 +359,13 @@ describe('git/revert', () => {
       prompt: 'Fix bug',
       status: 'waiting_approval',
       filesChanged: [
-        { path: 'src/file.ts', status: 'modified', additions: 10, deletions: 5, patch: '' },
+        {
+          path: 'src/file.ts',
+          status: 'modified',
+          additions: 10,
+          deletions: 5,
+          patch: '',
+        },
       ],
       startingCommit: 'abc123',
       session: {
@@ -256,7 +381,10 @@ describe('git/revert', () => {
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git checkout
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // git reset HEAD
 
-      const result = await revertModule.rejectAndRevertTask('task-123', 'Code quality issues');
+      const result = await revertModule.rejectAndRevertTask(
+        'task-123',
+        'Code quality issues'
+      );
 
       expect(result.filesReverted).toEqual(['src/file.ts']);
       expect(result.success).toBe(true);
@@ -277,8 +405,9 @@ describe('git/revert', () => {
     it('should throw error when task not found', async () => {
       mockDb.query.tasks.findFirst.mockResolvedValueOnce(null);
 
-      await expect(revertModule.rejectAndRevertTask('nonexistent'))
-        .rejects.toThrow('Task not found');
+      await expect(
+        revertModule.rejectAndRevertTask('nonexistent')
+      ).rejects.toThrow('Task not found');
     });
 
     it('should throw error when task status is invalid for rejection', async () => {
@@ -287,8 +416,9 @@ describe('git/revert', () => {
         status: 'approved',
       });
 
-      await expect(revertModule.rejectAndRevertTask('task-123'))
-        .rejects.toThrow('Task cannot be rejected from status: approved');
+      await expect(
+        revertModule.rejectAndRevertTask('task-123')
+      ).rejects.toThrow('Task cannot be rejected from status: approved');
     });
 
     it('should allow rejection from qa_failed status', async () => {
@@ -311,8 +441,9 @@ describe('git/revert', () => {
         startingCommit: null,
       });
 
-      await expect(revertModule.rejectAndRevertTask('task-123'))
-        .rejects.toThrow('Task has no starting commit');
+      await expect(
+        revertModule.rejectAndRevertTask('task-123')
+      ).rejects.toThrow('Task has no starting commit');
     });
 
     it('should throw error when no files changed', async () => {
@@ -321,8 +452,9 @@ describe('git/revert', () => {
         filesChanged: [],
       });
 
-      await expect(revertModule.rejectAndRevertTask('task-123'))
-        .rejects.toThrow('No files changed to revert');
+      await expect(
+        revertModule.rejectAndRevertTask('task-123')
+      ).rejects.toThrow('No files changed to revert');
     });
 
     it('should throw error when filesChanged is null', async () => {
@@ -331,8 +463,9 @@ describe('git/revert', () => {
         filesChanged: null,
       });
 
-      await expect(revertModule.rejectAndRevertTask('task-123'))
-        .rejects.toThrow('No files changed to revert');
+      await expect(
+        revertModule.rejectAndRevertTask('task-123')
+      ).rejects.toThrow('No files changed to revert');
     });
   });
 });

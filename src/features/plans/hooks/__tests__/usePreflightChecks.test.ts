@@ -5,7 +5,8 @@ import { usePreflightChecks } from '../usePreflightChecks';
 // Mock the RTK Query hook
 const mockUseGetRepositoryQuery = vi.fn();
 vi.mock('@/features/repositories/store/repositoriesApi', () => ({
-  useGetRepositoryQuery: (...args: unknown[]) => mockUseGetRepositoryQuery(...args),
+  useGetRepositoryQuery: (...args: unknown[]) =>
+    mockUseGetRepositoryQuery(...args),
 }));
 
 // Mock global fetch
@@ -21,7 +22,11 @@ describe('usePreflightChecks', () => {
 
   it('should initialize with empty checks when disabled', () => {
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: false }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: false,
+      })
     );
 
     expect(result.current.checks).toEqual([]);
@@ -38,20 +43,28 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       if (url.includes('/api/plans/')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 5, totalPhases: 2 } }),
+          json: () =>
+            Promise.resolve({
+              plan: { status: 'ready', totalTasks: 5, totalPhases: 2 },
+            }),
         });
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -67,15 +80,25 @@ describe('usePreflightChecks', () => {
   });
 
   it('should fail repo check when repo not found', async () => {
-    mockUseGetRepositoryQuery.mockReturnValue({ data: { repository: undefined } });
+    mockUseGetRepositoryQuery.mockReturnValue({
+      data: { repository: undefined },
+    });
 
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ config: { qaGates: [] }, plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+      json: () =>
+        Promise.resolve({
+          config: { qaGates: [] },
+          plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+        }),
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -85,7 +108,9 @@ describe('usePreflightChecks', () => {
     expect(result.current.checks[0]!.status).toBe('fail');
     expect(result.current.checks[0]!.detail).toBe('Repository not found');
     expect(result.current.checks[1]!.status).toBe('fail');
-    expect(result.current.checks[1]!.detail).toBe('Cannot check - repo not found');
+    expect(result.current.checks[1]!.detail).toBe(
+      'Cannot check - repo not found'
+    );
     expect(result.current.isReady).toBe(false);
   });
 
@@ -98,17 +123,25 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -116,7 +149,9 @@ describe('usePreflightChecks', () => {
     });
 
     expect(result.current.checks[1]!.status).toBe('warn');
-    expect(result.current.checks[1]!.detail).toBe('Uncommitted changes detected');
+    expect(result.current.checks[1]!.detail).toBe(
+      'Uncommitted changes detected'
+    );
     // warn is still considered ready
     expect(result.current.isReady).toBe(true);
   });
@@ -135,12 +170,19 @@ describe('usePreflightChecks', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -162,12 +204,19 @@ describe('usePreflightChecks', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -189,12 +238,19 @@ describe('usePreflightChecks', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -214,17 +270,25 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'draft', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'draft', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -232,7 +296,9 @@ describe('usePreflightChecks', () => {
     });
 
     expect(result.current.checks[3]!.status).toBe('warn');
-    expect(result.current.checks[3]!.detail).toBe('Plan is still in draft - will be auto-readied');
+    expect(result.current.checks[3]!.detail).toBe(
+      'Plan is still in draft - will be auto-readied'
+    );
   });
 
   it('should fail when plan has unexpected status', async () => {
@@ -244,17 +310,25 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'failed', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'failed', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -275,14 +349,19 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       return Promise.resolve({ ok: false });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -302,14 +381,19 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       return Promise.reject(new Error('Network error'));
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -329,17 +413,25 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
+          json: () =>
+            Promise.resolve({ config: { qaGates: [{ name: 'test' }] } }),
         });
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {
@@ -358,17 +450,29 @@ describe('usePreflightChecks', () => {
       if (url.includes('/qa-gates')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ config: { qaGates: [{ name: 'a' }, { name: 'b' }, { name: 'c' }] } }),
+          json: () =>
+            Promise.resolve({
+              config: {
+                qaGates: [{ name: 'a' }, { name: 'b' }, { name: 'c' }],
+              },
+            }),
         });
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ plan: { status: 'ready', totalTasks: 1, totalPhases: 1 } }),
+        json: () =>
+          Promise.resolve({
+            plan: { status: 'ready', totalTasks: 1, totalPhases: 1 },
+          }),
       });
     });
 
     const { result } = renderHook(() =>
-      usePreflightChecks({ repositoryId: 'repo-1', planId: 'plan-1', enabled: true }),
+      usePreflightChecks({
+        repositoryId: 'repo-1',
+        planId: 'plan-1',
+        enabled: true,
+      })
     );
 
     await waitFor(() => {

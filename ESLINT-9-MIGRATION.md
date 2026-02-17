@@ -8,6 +8,7 @@
 ### 1. Package Upgrades
 
 **Before** (ESLint 8):
+
 ```json
 {
   "eslint": "^8.57.1",
@@ -17,6 +18,7 @@
 ```
 
 **After** (ESLint 9):
+
 ```json
 {
   "eslint": "^9.39.2",
@@ -31,6 +33,7 @@
 ### 2. Configuration Format
 
 **Before** (Legacy `.eslintrc.json`):
+
 ```json
 {
   "extends": [
@@ -46,6 +49,7 @@
 ```
 
 **After** (Flat Config `eslint.config.mjs`):
+
 ```javascript
 import tseslint from "typescript-eslint";
 import js from "@eslint/js";
@@ -67,13 +71,16 @@ export default tseslint.config(
 ### 3. Files Changed
 
 **Deleted**:
+
 - `.eslintrc.json` (old config format)
 - `.eslintignore` (ignores now in config)
 
 **Created**:
+
 - `eslint.config.mjs` (new flat config)
 
 **Modified**:
+
 - `package.json` (package versions)
 - `src/features/repositories/lib/scanner.ts` (unused var fix)
 
@@ -100,6 +107,7 @@ TypeScript ESLint v8 is designed for ESLint 9:
 ### 3. Ignores
 
 **Old**:
+
 ```
 # .eslintignore
 .next/
@@ -107,13 +115,11 @@ node_modules/
 ```
 
 **New**:
+
 ```javascript
 // eslint.config.mjs
 {
-  ignores: [
-    "**/.next/**",
-    "**/node_modules/**"
-  ]
+  ignores: ['**/.next/**', '**/node_modules/**'];
 }
 ```
 
@@ -122,15 +128,13 @@ node_modules/
 For legacy configs (like Next.js), use `FlatCompat`:
 
 ```javascript
-import { FlatCompat } from "@eslint/eslintrc";
+import { FlatCompat } from '@eslint/eslintrc';
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-export default [
-  ...compat.extends("next/core-web-vitals")
-];
+export default [...compat.extends('next/core-web-vitals')];
 ```
 
 ## Migration Steps Performed
@@ -179,17 +183,17 @@ v9.39.2
 ```javascript
 {
   ignores: [
-    "**/node_modules/**",
-    "**/.next/**",
-    "**/out/**",
-    "**/dist/**",
-    "**/build/**",
-    "next-env.d.ts",
-    "eslint.config.mjs",
-    "*.config.js",
-    "*.config.ts",
-    "*.config.mjs",
-  ]
+    '**/node_modules/**',
+    '**/.next/**',
+    '**/out/**',
+    '**/dist/**',
+    '**/build/**',
+    'next-env.d.ts',
+    'eslint.config.mjs',
+    '*.config.js',
+    '*.config.ts',
+    '*.config.mjs',
+  ];
 }
 ```
 
@@ -230,9 +234,10 @@ v9.39.2
 **Error**: Type information required for config file
 
 **Solution**: Add config files to ignores:
+
 ```javascript
 {
-  ignores: ["eslint.config.mjs", "*.config.*"]
+  ignores: ['eslint.config.mjs', '*.config.*'];
 }
 ```
 
@@ -241,6 +246,7 @@ v9.39.2
 **Error**: `extends` is not supported
 
 **Solution**: Use `FlatCompat`:
+
 ```javascript
 import { FlatCompat } from "@eslint/eslintrc";
 const compat = new FlatCompat({...});
@@ -252,6 +258,7 @@ const compat = new FlatCompat({...});
 **Error**: Rules seem to be ignored
 
 **Solution**: Ensure rule config is in separate object after extends:
+
 ```javascript
 export default [
   ...tseslint.configs.recommended,

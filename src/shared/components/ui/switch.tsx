@@ -3,16 +3,30 @@
 import * as React from 'react';
 import { cn } from '@/shared/lib/utils';
 
-interface SwitchProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
+interface SwitchProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onChange'
+> {
   checked?: boolean;
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
 }
 
 const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
-  ({ className, checked, defaultChecked = false, onCheckedChange, disabled, ...props }, ref) => {
+  (
+    {
+      className,
+      checked,
+      defaultChecked = false,
+      onCheckedChange,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const isControlled = checked !== undefined;
-    const [internalChecked, setInternalChecked] = React.useState(defaultChecked);
+    const [internalChecked, setInternalChecked] =
+      React.useState(defaultChecked);
     const isChecked = isControlled ? checked : internalChecked;
 
     const handleClick = () => {

@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { tasks } from '@/db/schema/tasks';
 import { eq } from 'drizzle-orm';
-import { claudeWrapper } from '@/lib/claude/wrapper';
+import { createAIProvider } from '@/lib/ai';
 
 // GET /api/tasks/:id - Get task by ID
 export async function GET(
@@ -29,10 +29,7 @@ export async function GET(
     return Response.json({ task });
   } catch (error) {
     console.error('Failed to fetch task:', error);
-    return Response.json(
-      { error: 'Failed to fetch task' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to fetch task' }, { status: 500 });
   }
 }
 
@@ -44,7 +41,8 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await claudeWrapper.cancel(id);
+    const aiProvider = createAIProvider();
+    await aiProvider.cancel(id);
 
     await db
       .update(tasks)
@@ -54,9 +52,6 @@ export async function DELETE(
     return Response.json({ success: true });
   } catch (error) {
     console.error('Failed to cancel task:', error);
-    return Response.json(
-      { error: 'Failed to cancel task' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to cancel task' }, { status: 500 });
   }
 }

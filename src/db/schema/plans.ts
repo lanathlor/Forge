@@ -5,18 +5,29 @@ import { phases } from './phases';
 import { planTasks } from './plan-tasks';
 import { planIterations } from './plan-iterations';
 
-export type PlanStatus = 'draft' | 'ready' | 'running' | 'paused' | 'completed' | 'failed';
+export type PlanStatus =
+  | 'draft'
+  | 'ready'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed';
 export type PlanCreatedBy = 'user' | 'claude' | 'api';
 
 export const plans = sqliteTable('plans', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   repositoryId: text('repository_id').notNull(),
   title: text('title').notNull(),
   description: text('description'),
   status: text('status').$type<PlanStatus>().notNull().default('draft'),
 
   // Metadata
-  createdBy: text('created_by').$type<PlanCreatedBy>().notNull().default('user'),
+  createdBy: text('created_by')
+    .$type<PlanCreatedBy>()
+    .notNull()
+    .default('user'),
   sourceFile: text('source_file'), // if imported from markdown
 
   // Execution state

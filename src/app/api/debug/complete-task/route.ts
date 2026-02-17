@@ -19,7 +19,10 @@ async function getTaskWithRelations(taskId: string) {
   });
 }
 
-async function updateTaskToWaitingQA(taskId: string, diff: { fullDiff: string; changedFiles: FileChange[] }) {
+async function updateTaskToWaitingQA(
+  taskId: string,
+  diff: { fullDiff: string; changedFiles: FileChange[] }
+) {
   return db
     .update(tasks)
     .set({
@@ -31,7 +34,10 @@ async function updateTaskToWaitingQA(taskId: string, diff: { fullDiff: string; c
     .where(eq(tasks.id, taskId));
 }
 
-async function processTaskCompletion(taskId: string, task: NonNullable<Awaited<ReturnType<typeof getTaskWithRelations>>>) {
+async function processTaskCompletion(
+  taskId: string,
+  task: NonNullable<Awaited<ReturnType<typeof getTaskWithRelations>>>
+) {
   const repoPath = task.session.repository.path;
   const sessionId = task.sessionId;
   const startingCommit = task.startingCommit!;
@@ -48,14 +54,19 @@ async function processTaskCompletion(taskId: string, task: NonNullable<Awaited<R
   // 3. Emit status update
   taskEvents.emit('task:update', { sessionId, taskId, status: 'waiting_qa' });
 
-  console.log(`[Debug] Task ${taskId} updated to waiting_qa, starting QA gates`);
+  console.log(
+    `[Debug] Task ${taskId} updated to waiting_qa, starting QA gates`
+  );
 
   // 4. Run QA gates in background
   runTaskQAGates(taskId).catch((error) => {
     console.error(`QA gates failed for task ${taskId}:`, error);
   });
 
-  return { fileCount: diff.changedFiles.length, hasChanges: diff.fullDiff.length > 0 };
+  return {
+    fileCount: diff.changedFiles.length,
+    hasChanges: diff.fullDiff.length > 0,
+  };
 }
 
 /**
@@ -67,7 +78,10 @@ export async function POST(request: Request) {
     const { taskId } = body;
 
     if (!taskId) {
-      return NextResponse.json({ error: 'taskId is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'taskId is required' },
+        { status: 400 }
+      );
     }
 
     const task = await getTaskWithRelations(taskId);
@@ -84,7 +98,10 @@ export async function POST(request: Request) {
     }
 
     if (!task.startingCommit) {
-      return NextResponse.json({ error: 'Task missing starting commit' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Task missing starting commit' },
+        { status: 400 }
+      );
     }
 
     const diff = await processTaskCompletion(taskId, task);
@@ -96,6 +113,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error completing task:', error);
-    return NextResponse.json({ error: 'Failed to complete task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to complete task' },
+      { status: 500 }
+    );
   }
 }

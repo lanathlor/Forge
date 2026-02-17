@@ -5,7 +5,12 @@ import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 interface RefinementUpdate {
-  action: 'update_phase' | 'update_task' | 'create_task' | 'create_phase' | 'delete_task';
+  action:
+    | 'update_phase'
+    | 'update_task'
+    | 'create_task'
+    | 'create_phase'
+    | 'delete_task';
   phaseOrder?: number;
   taskOrder?: number;
   updates?: Record<string, string>;
@@ -14,8 +19,19 @@ interface RefinementUpdate {
   label: string;
 }
 
-type PhaseRow = { id: string; order: number; title: string; description: string | null };
-type TaskRow = { id: string; phaseId: string; order: number; title: string; description: string };
+type PhaseRow = {
+  id: string;
+  order: number;
+  title: string;
+  description: string | null;
+};
+type TaskRow = {
+  id: string;
+  phaseId: string;
+  order: number;
+  title: string;
+  description: string;
+};
 
 /**
  * POST /api/plans/[id]/refine/apply
@@ -51,7 +67,10 @@ export async function POST(
       .where(eq(phases.planId, planId))
       .orderBy(phases.order);
 
-    const tasks = await db.select().from(planTasks).where(eq(planTasks.planId, planId));
+    const tasks = await db
+      .select()
+      .from(planTasks)
+      .where(eq(planTasks.planId, planId));
 
     let applied = 0;
 
@@ -74,7 +93,10 @@ export async function POST(
   } catch (error) {
     console.error('Error applying refinement changes:', error);
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to apply changes' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to apply changes',
+      },
       { status: 500 }
     );
   }
@@ -99,26 +121,52 @@ async function applyChange(
   switch (change.action) {
     case 'update_phase': {
       if (!targetPhase || !change.updates) return false;
-      await db.update(phases).set({ ...change.updates, updatedAt: new Date() }).where(eq(phases.id, targetPhase.id));
+      await db
+        .update(phases)
+        .set({ ...change.updates, updatedAt: new Date() })
+        .where(eq(phases.id, targetPhase.id));
       return true;
     }
     case 'update_task': {
       if (!targetPhase || !change.taskOrder || !change.updates) return false;
       const task = findPhaseTask(targetPhase, tasks, change.taskOrder);
       if (!task) return false;
-      await db.update(planTasks).set({ ...change.updates, updatedAt: new Date() }).where(eq(planTasks.id, task.id));
+      await db
+        .update(planTasks)
+        .set({ ...change.updates, updatedAt: new Date() })
+        .where(eq(planTasks.id, task.id));
       return true;
     }
     case 'create_task': {
       if (!targetPhase || !change.task) return false;
-      const maxOrder = Math.max(...tasks.filter((t) => t.phaseId === targetPhase.id).map((t) => t.order), 0);
-      await db.insert(planTasks).values({ phaseId: targetPhase.id, planId, ...change.task, order: maxOrder + 1 });
+      const maxOrder = Math.max(
+        ...tasks
+          .filter((t) => t.phaseId === targetPhase.id)
+          .map((t) => t.order),
+        0
+      );
+      await db
+        .insert(planTasks)
+        .values({
+          phaseId: targetPhase.id,
+          planId,
+          ...change.task,
+          order: maxOrder + 1,
+        });
       return true;
     }
     case 'create_phase': {
       if (!change.phase) return false;
       const maxOrder = Math.max(...planPhases.map((p) => p.order), 0);
-      await db.insert(phases).values({ planId, ...change.phase, order: maxOrder + 1, executionMode: 'sequential', pauseAfter: false });
+      await db
+        .insert(phases)
+        .values({
+          planId,
+          ...change.phase,
+          order: maxOrder + 1,
+          executionMode: 'sequential',
+          pauseAfter: false,
+        });
       return true;
     }
     case 'delete_task': {

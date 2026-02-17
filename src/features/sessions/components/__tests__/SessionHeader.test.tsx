@@ -12,7 +12,8 @@ const mockUsePauseSessionMutation = vi.fn();
 const mockUseResumeSessionMutation = vi.fn();
 
 vi.mock('@/features/sessions/store/sessionsApi', () => ({
-  useGetSessionSummaryQuery: (...args: unknown[]) => mockUseGetSessionSummaryQuery(...args),
+  useGetSessionSummaryQuery: (...args: unknown[]) =>
+    mockUseGetSessionSummaryQuery(...args),
   useEndSessionMutation: () => mockUseEndSessionMutation(),
   usePauseSessionMutation: () => mockUsePauseSessionMutation(),
   useResumeSessionMutation: () => mockUseResumeSessionMutation(),
@@ -58,19 +59,25 @@ describe('SessionHeader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseGetSessionSummaryQuery.mockReturnValue({ data: mockSummaryData });
-    mockUseEndSessionMutation.mockReturnValue([mockEndSession, { isLoading: false }]);
-    mockUsePauseSessionMutation.mockReturnValue([mockPauseSession, { isLoading: false }]);
-    mockUseResumeSessionMutation.mockReturnValue([mockResumeSession, { isLoading: false }]);
+    mockUseEndSessionMutation.mockReturnValue([
+      mockEndSession,
+      { isLoading: false },
+    ]);
+    mockUsePauseSessionMutation.mockReturnValue([
+      mockPauseSession,
+      { isLoading: false },
+    ]);
+    mockUseResumeSessionMutation.mockReturnValue([
+      mockResumeSession,
+      { isLoading: false },
+    ]);
     mockConfirm.mockReturnValue(true);
   });
 
   describe('Basic Rendering', () => {
     it('renders repository name', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('test-repo')).toBeInTheDocument();
@@ -78,10 +85,7 @@ describe('SessionHeader', () => {
 
     it('displays active status badge', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('Active')).toBeInTheDocument();
@@ -90,10 +94,7 @@ describe('SessionHeader', () => {
     it('displays paused status badge for paused session', () => {
       const pausedSession = { ...mockSession, status: 'paused' as const };
       render(
-        <SessionHeader
-          session={pausedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={pausedSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('Paused')).toBeInTheDocument();
@@ -102,10 +103,7 @@ describe('SessionHeader', () => {
     it('displays completed status badge for completed session', () => {
       const completedSession = { ...mockSession, status: 'completed' as const };
       render(
-        <SessionHeader
-          session={completedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={completedSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('Completed')).toBeInTheDocument();
@@ -114,10 +112,7 @@ describe('SessionHeader', () => {
     it('displays abandoned status badge for abandoned session', () => {
       const abandonedSession = { ...mockSession, status: 'abandoned' as const };
       render(
-        <SessionHeader
-          session={abandonedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={abandonedSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('Abandoned')).toBeInTheDocument();
@@ -125,10 +120,7 @@ describe('SessionHeader', () => {
 
     it('shows session start time', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText(/Started/)).toBeInTheDocument();
@@ -136,10 +128,7 @@ describe('SessionHeader', () => {
 
     it('shows start branch when provided', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('main')).toBeInTheDocument();
@@ -149,10 +138,7 @@ describe('SessionHeader', () => {
   describe('Stats Display', () => {
     it('displays total tasks count', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('5')).toBeInTheDocument();
@@ -161,10 +147,7 @@ describe('SessionHeader', () => {
 
     it('displays completed tasks count', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('3')).toBeInTheDocument();
@@ -172,10 +155,7 @@ describe('SessionHeader', () => {
 
     it('displays formatted duration', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('1h 0m')).toBeInTheDocument();
@@ -198,10 +178,7 @@ describe('SessionHeader', () => {
 
     it('does not render history button when onOpenHistory is not provided', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const historyButton = screen.queryByRole('button', { name: /history/i });
@@ -228,10 +205,7 @@ describe('SessionHeader', () => {
   describe('Session Controls - Active Session', () => {
     it('renders pause button for active session', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const pauseButton = screen.getByRole('button', { name: /pause/i });
@@ -240,10 +214,7 @@ describe('SessionHeader', () => {
 
     it('renders end session button for active session', () => {
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const endButton = screen.getByRole('button', { name: /end/i });
@@ -253,10 +224,7 @@ describe('SessionHeader', () => {
     it('calls pauseSession when pause button clicked', async () => {
       const user = userEvent.setup();
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const pauseButton = screen.getByRole('button', { name: /pause/i });
@@ -291,10 +259,7 @@ describe('SessionHeader', () => {
       mockConfirm.mockReturnValue(false);
       const user = userEvent.setup();
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const endButton = screen.getByRole('button', { name: /end/i });
@@ -310,10 +275,7 @@ describe('SessionHeader', () => {
 
     it('renders resume button for paused session', () => {
       render(
-        <SessionHeader
-          session={pausedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={pausedSession} repositoryName="test-repo" />
       );
 
       const resumeButton = screen.getByRole('button', { name: /resume/i });
@@ -323,10 +285,7 @@ describe('SessionHeader', () => {
     it('calls resumeSession when resume button clicked', async () => {
       const user = userEvent.setup();
       render(
-        <SessionHeader
-          session={pausedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={pausedSession} repositoryName="test-repo" />
       );
 
       const resumeButton = screen.getByRole('button', { name: /resume/i });
@@ -340,26 +299,29 @@ describe('SessionHeader', () => {
     it('does not render control buttons for completed session', () => {
       const completedSession = { ...mockSession, status: 'completed' as const };
       render(
-        <SessionHeader
-          session={completedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={completedSession} repositoryName="test-repo" />
       );
 
-      expect(screen.queryByRole('button', { name: /pause/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /resume/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /end/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /pause/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /resume/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /end/i })
+      ).not.toBeInTheDocument();
     });
   });
 
   describe('Loading States', () => {
     it('disables pause button when pausing', () => {
-      mockUsePauseSessionMutation.mockReturnValue([mockPauseSession, { isLoading: true }]);
+      mockUsePauseSessionMutation.mockReturnValue([
+        mockPauseSession,
+        { isLoading: true },
+      ]);
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const pauseButton = screen.getByRole('button', { name: /pause/i });
@@ -367,12 +329,12 @@ describe('SessionHeader', () => {
     });
 
     it('disables end button when ending', () => {
-      mockUseEndSessionMutation.mockReturnValue([mockEndSession, { isLoading: true }]);
+      mockUseEndSessionMutation.mockReturnValue([
+        mockEndSession,
+        { isLoading: true },
+      ]);
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       const endButton = screen.getByRole('button', { name: /end/i });
@@ -381,12 +343,12 @@ describe('SessionHeader', () => {
 
     it('disables resume button when resuming', () => {
       const pausedSession = { ...mockSession, status: 'paused' as const };
-      mockUseResumeSessionMutation.mockReturnValue([mockResumeSession, { isLoading: true }]);
+      mockUseResumeSessionMutation.mockReturnValue([
+        mockResumeSession,
+        { isLoading: true },
+      ]);
       render(
-        <SessionHeader
-          session={pausedSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={pausedSession} repositoryName="test-repo" />
       );
 
       const resumeButton = screen.getByRole('button', { name: /resume/i });
@@ -400,10 +362,7 @@ describe('SessionHeader', () => {
         data: { stats: { ...mockSummaryData.stats, duration: 5400000 } }, // 1.5 hours
       });
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('1h 30m')).toBeInTheDocument();
@@ -414,10 +373,7 @@ describe('SessionHeader', () => {
         data: { stats: { ...mockSummaryData.stats, duration: 300000 } }, // 5 minutes
       });
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('5m')).toBeInTheDocument();
@@ -428,10 +384,7 @@ describe('SessionHeader', () => {
         data: { stats: { ...mockSummaryData.stats, duration: 45000 } }, // 45 seconds
       });
       render(
-        <SessionHeader
-          session={mockSession}
-          repositoryName="test-repo"
-        />
+        <SessionHeader session={mockSession} repositoryName="test-repo" />
       );
 
       expect(screen.getByText('45s')).toBeInTheDocument();

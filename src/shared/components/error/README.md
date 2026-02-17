@@ -24,10 +24,11 @@ import { ErrorBoundary } from '@/shared/components/error';
 
 <ErrorBoundary id="user-profile">
   <UserProfile />
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 **Props:**
+
 - `id`: Unique identifier for debugging
 - `children`: Child components to protect
 - `fallback`: Custom fallback UI
@@ -92,7 +93,7 @@ const SafeUserProfile = withErrorBoundary(UserProfile, {
 });
 
 // Use it
-<SafeUserProfile userId="123" />
+<SafeUserProfile userId="123" />;
 ```
 
 ### Create Custom Wrapper
@@ -130,10 +131,11 @@ import { ErrorState } from '@/shared/components/error';
   showRetry={true}
   showReport={true}
   size="md"
-/>
+/>;
 ```
 
 **Props:**
+
 - `type`: Error type (see Error Types below)
 - `title`: Custom title (auto-generated if not provided)
 - `message`: Error message
@@ -195,7 +197,7 @@ import { InlineError } from '@/shared/components/error';
   type="validation"
   message="Email is required"
   onRetry={() => validateForm()}
-/>
+/>;
 ```
 
 ### CardError
@@ -210,7 +212,7 @@ import { CardError } from '@/shared/components/error';
   title="Failed to Load"
   message="Unable to fetch statistics"
   onRetry={() => refetch()}
-/>
+/>;
 ```
 
 ---
@@ -303,13 +305,10 @@ function MyComponent() {
   );
 
   // Wrap sync function
-  const parseData = wrapSync(
-    () => JSON.parse(rawData),
-    {
-      showToast: true,
-      message: 'Failed to parse data',
-    }
-  );
+  const parseData = wrapSync(() => JSON.parse(rawData), {
+    showToast: true,
+    message: 'Failed to parse data',
+  });
 
   // Usage
   const handleClick = async () => {
@@ -395,9 +394,7 @@ function LoginForm() {
   return (
     <form>
       <input name="email" />
-      {errors.email && (
-        <InlineError type="validation" message={errors.email} />
-      )}
+      {errors.email && <InlineError type="validation" message={errors.email} />}
     </form>
   );
 }
@@ -448,16 +445,16 @@ function DataManager() {
 
 ## Error Types
 
-| Type | Description | Use Case |
-|------|-------------|----------|
-| `network` | Connection/network errors | Failed API calls, offline |
-| `timeout` | Request timeout | Long-running requests |
-| `not-found` | Resource not found (404) | Missing data, invalid IDs |
-| `validation` | Input validation errors | Form validation |
-| `server` | Server errors (5xx) | Internal server errors |
-| `unauthorized` | Authentication required (401) | Login required |
-| `forbidden` | Permission denied (403) | Access control |
-| `generic` | General errors | Fallback for unknown errors |
+| Type           | Description                   | Use Case                    |
+| -------------- | ----------------------------- | --------------------------- |
+| `network`      | Connection/network errors     | Failed API calls, offline   |
+| `timeout`      | Request timeout               | Long-running requests       |
+| `not-found`    | Resource not found (404)      | Missing data, invalid IDs   |
+| `validation`   | Input validation errors       | Form validation             |
+| `server`       | Server errors (5xx)           | Internal server errors      |
+| `unauthorized` | Authentication required (401) | Login required              |
+| `forbidden`    | Permission denied (403)       | Access control              |
+| `generic`      | General errors                | Fallback for unknown errors |
 
 ---
 
@@ -492,11 +489,7 @@ Wrap major sections of your app:
 ### 3. Always Provide Retry Actions
 
 ```tsx
-<ErrorState
-  type="network"
-  onRetry={() => refetch()}
-  showRetry={true}
-/>
+<ErrorState type="network" onRetry={() => refetch()} showRetry={true} />
 ```
 
 ### 4. Use Error Handler Hook for Consistency
@@ -504,9 +497,12 @@ Wrap major sections of your app:
 ```tsx
 const { wrapAsync } = useErrorHandler();
 
-const fetchData = wrapAsync(async () => {
-  // ... fetch logic
-}, { showToast: true });
+const fetchData = wrapAsync(
+  async () => {
+    // ... fetch logic
+  },
+  { showToast: true }
+);
 ```
 
 ### 5. Enable Error Reporting
@@ -524,10 +520,7 @@ const fetchData = wrapAsync(async () => {
 ### 6. Show Details in Development
 
 ```tsx
-<ErrorBoundary
-  id="app"
-  showDetails={process.env.NODE_ENV === 'development'}
->
+<ErrorBoundary id="app" showDetails={process.env.NODE_ENV === 'development'}>
   <App />
 </ErrorBoundary>
 ```
@@ -561,7 +554,7 @@ window.errorTracker = {
 // ErrorBoundary will automatically use it
 <ErrorBoundary id="app">
   <App />
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ---
@@ -607,11 +600,7 @@ function DataFetchingComponent() {
 
   if (error) {
     return (
-      <ErrorState
-        type="network"
-        message={error.message}
-        onRetry={fetchData}
-      />
+      <ErrorState type="network" message={error.message} onRetry={fetchData} />
     );
   }
 

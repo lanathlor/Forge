@@ -24,9 +24,7 @@ describe('Card Components', () => {
     });
 
     it('should apply custom className', () => {
-      const { container } = render(
-        <Card className="custom-card">Custom</Card>
-      );
+      const { container } = render(<Card className="custom-card">Custom</Card>);
       const card = container.firstChild as HTMLElement;
       expect(card.className).toContain('custom-card');
       expect(card.className).toContain('rounded-lg');
@@ -133,9 +131,7 @@ describe('Card Components', () => {
 
     it('should forward ref', () => {
       const ref = React.createRef<HTMLParagraphElement>();
-      render(
-        <CardDescription ref={ref}>Ref</CardDescription>
-      );
+      render(<CardDescription ref={ref}>Ref</CardDescription>);
       expect(ref.current).not.toBeNull();
     });
   });

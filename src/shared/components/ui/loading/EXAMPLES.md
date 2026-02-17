@@ -31,7 +31,7 @@ export function TaskList() {
 
   if (error) {
     return (
-      <div className="text-center py-8 text-error">
+      <div className="py-8 text-center text-error">
         Failed to load tasks. Please try again.
       </div>
     );
@@ -39,7 +39,7 @@ export function TaskList() {
 
   if (!data?.tasks.length) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="py-8 text-center text-muted-foreground">
         No tasks found.
       </div>
     );
@@ -66,7 +66,7 @@ export function DashboardStats() {
   const { data, isLoading } = useGetDashboardStatsQuery();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <StatCard
         loading={isLoading}
         icon={<CheckCircle className="h-5 w-5" />}
@@ -186,11 +186,7 @@ export function SettingsForm() {
       {/* Form fields */}
 
       <div className="flex gap-2">
-        <LoadingButton
-          type="submit"
-          loading={isSaving}
-          loadingText="Saving..."
-        >
+        <LoadingButton type="submit" loading={isSaving} loadingText="Saving...">
           Save Changes
         </LoadingButton>
 
@@ -306,8 +302,8 @@ export function FileUploader() {
 
   return (
     <div className="space-y-4">
-      <div className="border-2 border-dashed rounded-lg p-8 text-center">
-        <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+      <div className="rounded-lg border-2 border-dashed p-8 text-center">
+        <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
         <input
           type="file"
           multiple
@@ -341,7 +337,10 @@ export function FileUploader() {
 
 ```tsx
 import { useState } from 'react';
-import { IndeterminateProgress, LoadingButton } from '@/shared/components/ui/loading';
+import {
+  IndeterminateProgress,
+  LoadingButton,
+} from '@/shared/components/ui/loading';
 import { Download } from 'lucide-react';
 
 export function ExportData() {
@@ -364,7 +363,7 @@ export function ExportData() {
         loadingText="Exporting..."
         onClick={handleExport}
       >
-        <Download className="h-4 w-4 mr-2" />
+        <Download className="mr-2 h-4 w-4" />
         Export Data
       </LoadingButton>
 
@@ -393,7 +392,7 @@ export function QuickActions() {
   const { data, isLoading } = useGetQuickActionsQuery();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <ActionCard
         loading={isLoading}
         icon={<Zap className="h-6 w-6" />}
@@ -401,7 +400,7 @@ export function QuickActions() {
         description="Start a new task for this repository"
         variant="primary"
         action={{
-          label: "Create Task",
+          label: 'Create Task',
           onClick: () => handleCreateTask(),
         }}
       />
@@ -412,8 +411,8 @@ export function QuickActions() {
         title="Configure QA Gates"
         description="Set up quality checks for your workflow"
         action={{
-          label: "Configure",
-          href: "/settings/qa-gates",
+          label: 'Configure',
+          href: '/settings/qa-gates',
         }}
       />
     </div>
@@ -478,17 +477,12 @@ import { LoadingSpinner } from '@/shared/components/ui/loading';
 import { TaskListSkeleton } from '@/shared/components/ui/loading';
 
 export function InfiniteTaskList() {
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ['tasks'],
-    queryFn: ({ pageParam = 0 }) => fetchTasks(pageParam),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: ['tasks'],
+      queryFn: ({ pageParam = 0 }) => fetchTasks(pageParam),
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    });
 
   if (isLoading) {
     return <TaskListSkeleton count={10} />;
@@ -497,9 +491,7 @@ export function InfiniteTaskList() {
   return (
     <div className="space-y-2">
       {data?.pages.map((page) =>
-        page.tasks.map((task) => (
-          <TaskItem key={task.id} task={task} />
-        ))
+        page.tasks.map((task) => <TaskItem key={task.id} task={task} />)
       )}
 
       {isFetchingNextPage && (
@@ -530,7 +522,12 @@ export function InfiniteTaskList() {
 
 ```tsx
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog';
 import { LoadingOverlay } from '@/shared/components/ui/loading';
 import { LoadingButton } from '@/shared/components/ui/loading-button';
 
@@ -559,7 +556,7 @@ export function CreatePlanDialog({ open, onOpenChange }) {
         <form onSubmit={handleCreate}>
           {/* Form fields */}
 
-          <div className="flex gap-2 mt-4">
+          <div className="mt-4 flex gap-2">
             <LoadingButton type="submit" loading={isCreating}>
               Create Plan
             </LoadingButton>
@@ -621,7 +618,7 @@ export function Dashboard() {
         <DashboardStats />
       </SuspenseDashboard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <SuspenseTaskList count={5}>
           <RecentTasks />
         </SuspenseTaskList>

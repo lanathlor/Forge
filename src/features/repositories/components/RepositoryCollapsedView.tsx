@@ -16,8 +16,8 @@ export function RepositoryCollapsedView({
   isRescanning,
 }: RepositoryCollapsedViewProps) {
   return (
-    <Card className="h-full flex flex-col">
-      <div className="p-3 border-b flex flex-col items-center gap-2">
+    <Card className="flex h-full flex-col">
+      <div className="flex flex-col items-center gap-2 border-b p-3">
         <Button
           variant="ghost"
           size="icon"
@@ -38,8 +38,8 @@ export function RepositoryCollapsedView({
           />
         </Button>
       </div>
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-xs text-muted-foreground rotate-90 whitespace-nowrap">
+      <div className="flex flex-1 items-center justify-center">
+        <div className="rotate-90 whitespace-nowrap text-xs text-muted-foreground">
           {repoCount} repos
         </div>
       </div>

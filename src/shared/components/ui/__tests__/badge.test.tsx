@@ -17,7 +17,9 @@ describe('Badge Component', () => {
     });
 
     it('should render with secondary variant', () => {
-      const { container } = render(<Badge variant="secondary">Secondary</Badge>);
+      const { container } = render(
+        <Badge variant="secondary">Secondary</Badge>
+      );
       const badge = container.firstChild as HTMLElement;
       expect(badge).toBeInTheDocument();
       expect(screen.getByText('Secondary')).toBeInTheDocument();

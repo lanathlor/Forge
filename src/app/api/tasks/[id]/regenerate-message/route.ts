@@ -21,7 +21,10 @@ function validateTask(task: Awaited<ReturnType<typeof getTaskWithRepository>>) {
     return { error: 'Task not found', status: 404 };
   }
   if (task.status !== 'waiting_approval') {
-    return { error: `Task status is ${task.status}, expected waiting_approval`, status: 400 };
+    return {
+      error: `Task status is ${task.status}, expected waiting_approval`,
+      status: 400,
+    };
   }
   if (!task.filesChanged || task.filesChanged.length === 0) {
     return { error: 'No files changed to commit', status: 400 };
@@ -30,6 +33,18 @@ function validateTask(task: Awaited<ReturnType<typeof getTaskWithRepository>>) {
     return { error: 'No diff content available', status: 400 };
   }
   return null;
+}
+
+async function regenerateForTask(id: string) {
+  const task = await getTaskWithRepository(id);
+  const validationError = validateTask(task);
+  if (validationError) return { validationError };
+
+  const repoPath = task!.session.repository.path;
+  console.log(`[Regenerate Message API] Calling Claude Code to regenerate commit message...`);
+  const commitMessage = await generateCommitMessage(task!.prompt, task!.filesChanged!, task!.diffContent!, repoPath);
+  await db.update(tasks).set({ commitMessage, updatedAt: new Date() }).where(eq(tasks.id, id));
+  return { commitMessage };
 }
 
 /**
@@ -45,28 +60,16 @@ export async function POST(
     const { id } = await params;
     console.log(`[Regenerate Message API] Regenerating commit message for task: ${id}`);
 
-    const task = await getTaskWithRepository(id);
-    const validationError = validateTask(task);
-    if (validationError) {
-      return Response.json({ error: validationError.error }, { status: validationError.status });
+    const result = await regenerateForTask(id);
+    if ('validationError' in result && result.validationError) {
+      return Response.json(
+        { error: result.validationError.error },
+        { status: result.validationError.status }
+      );
     }
 
-    const repoPath = task!.session.repository.path;
-    console.log(`[Regenerate Message API] Calling Claude Code to regenerate commit message...`);
-    const commitMessage = await generateCommitMessage(
-      task!.prompt,
-      task!.filesChanged!,
-      task!.diffContent!,
-      repoPath
-    );
-
-    await db
-      .update(tasks)
-      .set({ commitMessage, updatedAt: new Date() })
-      .where(eq(tasks.id, id));
-
+    const { commitMessage } = result as { commitMessage: string };
     console.log(`[Regenerate Message API] Commit message regenerated successfully`);
-
     return Response.json({ success: true, commitMessage });
   } catch (error) {
     console.error('[Regenerate Message API] Error:', error);

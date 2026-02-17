@@ -15,6 +15,7 @@ All components of Feature 5 have been implemented and integrated into the applic
 ### 1. Backend Components
 
 #### Claude Commit Message Generator
+
 **File:** `src/lib/claude/commit-message.ts`
 
 - Uses Claude Code CLI (same instance already running tasks) to generate commit messages
@@ -24,6 +25,7 @@ All components of Feature 5 have been implemented and integrated into the applic
 - Returns formatted, ready-to-use commit message
 
 **Key Features:**
+
 - No separate API key required - uses existing Claude Code CLI
 - Conventional commits format enforcement
 - Detailed commit message prompting
@@ -34,6 +36,7 @@ All components of Feature 5 have been implemented and integrated into the applic
 #### API Endpoints
 
 **1. Approve Endpoint** - `src/app/api/tasks/[id]/approve/route.ts`
+
 - **Purpose:** Generate commit message for user review
 - **Flow:**
   1. Validates task is in `waiting_approval` status
@@ -43,6 +46,7 @@ All components of Feature 5 have been implemented and integrated into the applic
 - **Does NOT commit changes** - only prepares the message
 
 **2. Commit Endpoint** - `src/app/api/tasks/[id]/commit/route.ts`
+
 - **Purpose:** Actually commit changes to git
 - **Flow:**
   1. Accepts user-edited commit message
@@ -53,6 +57,7 @@ All components of Feature 5 have been implemented and integrated into the applic
 - **Returns:** Commit SHA, message, and files committed
 
 **3. Regenerate Message Endpoint** - `src/app/api/tasks/[id]/regenerate-message/route.ts`
+
 - **Purpose:** Generate a fresh commit message
 - **Use Case:** When user is not satisfied with initial message
 - **Flow:** Same as approve endpoint but can be called multiple times
@@ -60,15 +65,18 @@ All components of Feature 5 have been implemented and integrated into the applic
 ### 2. Frontend Components
 
 #### ApprovalPanel Component
+
 **File:** `src/app/components/ApprovalPanel.tsx`
 
 A comprehensive approval interface that displays:
+
 - ✅ QA gates status indicator
 - 📊 File change statistics (files changed, insertions, deletions)
 - 🔘 Action buttons: "Reject & Revert" and "Approve Changes"
 - ⚠️ Error handling and loading states
 
 **User Flow:**
+
 1. User sees task is ready for approval
 2. Reviews QA gate status and file statistics
 3. Clicks "Approve Changes"
@@ -77,9 +85,11 @@ A comprehensive approval interface that displays:
 6. Transitions to CommitMessageEditor when message is ready
 
 #### CommitMessageEditor Component
+
 **File:** `src/app/components/CommitMessageEditor.tsx`
 
 Interactive commit message editor featuring:
+
 - 📝 Editable textarea with AI-generated message
 - 🔄 "Regenerate Message" button
 - ❌ "Cancel" button (returns to approval panel)
@@ -88,6 +98,7 @@ Interactive commit message editor featuring:
 - 🎉 Success confirmation with commit SHA
 
 **User Flow:**
+
 1. Reviews AI-generated commit message
 2. Can edit the message directly in the textarea
 3. Can regenerate if not satisfied
@@ -97,16 +108,20 @@ Interactive commit message editor featuring:
 7. Auto-reloads task after 2 seconds
 
 #### UI Components
+
 **File:** `src/shared/components/ui/textarea.tsx`
+
 - New textarea component following the existing UI pattern
 - Consistent styling with other form components
 
 ### 3. Integration Points
 
 #### TaskDetailsPanel Updates
+
 **File:** `src/app/components/TaskDetailsPanel.tsx`
 
 **Changes Made:**
+
 - Added new "Approval" tab for tasks in `waiting_approval` status
 - Integrated ApprovalPanel component
 - Removed old simple approve/reject buttons
@@ -114,6 +129,7 @@ Interactive commit message editor featuring:
 - Simplified approval handlers to just reload task
 
 **New Behavior:**
+
 - When task status is `waiting_approval`, shows Approval tab
 - Approval tab is set as default when in waiting state
 - Tab automatically displays ApprovalPanel with full workflow
@@ -121,9 +137,11 @@ Interactive commit message editor featuring:
 ### 4. Configuration
 
 #### Environment Variables
+
 **File:** `.env.example`
 
 Added new required environment variable:
+
 ```bash
 ANTHROPIC_API_KEY="your-anthropic-api-key-here"
 ```
@@ -131,9 +149,11 @@ ANTHROPIC_API_KEY="your-anthropic-api-key-here"
 This API key is required for the commit message generation feature to work.
 
 #### Dependencies
+
 **File:** `package.json`
 
 Added Anthropic SDK:
+
 ```json
 "@anthropic-ai/sdk": "^0.32.1"
 ```
@@ -166,6 +186,7 @@ Added Anthropic SDK:
 4. **Review Commit Message**
    - User sees message in conventional commit format
    - Example:
+
      ```
      feat(api): add error handling to user endpoints
 
@@ -201,6 +222,7 @@ Added Anthropic SDK:
 ### Alternative: Rejection Flow
 
 If user clicks "Reject & Revert":
+
 1. System prompts for rejection reason (optional)
 2. All changes are reverted
 3. New files are deleted
@@ -258,6 +280,7 @@ If user clicks "Reject & Revert":
 ### Database Schema
 
 The existing `tasks` table already has the necessary fields:
+
 - `committedSha` - Stores the git commit SHA
 - `commitMessage` - Stores the final commit message
 - `status` - Task status including `waiting_approval` and `approved`
@@ -271,6 +294,7 @@ No schema migrations were needed.
 ### Prerequisites
 
 1. **Install Dependencies**
+
    ```bash
    pnpm install
    # or
@@ -285,6 +309,7 @@ No schema migrations were needed.
 ### Manual Testing Steps
 
 1. **Start the Application**
+
    ```bash
    pnpm dev
    ```
@@ -331,6 +356,7 @@ No schema migrations were needed.
 ### Expected Behavior
 
 ✅ **Success Criteria:**
+
 - Commit message is generated within 5 seconds
 - Message follows conventional commits format
 - User can edit message before committing
@@ -340,6 +366,7 @@ No schema migrations were needed.
 - Task status updates to `approved`
 
 ❌ **Error Handling:**
+
 - If API key is missing: Shows error message
 - If Claude API fails: Shows error message with retry option
 - If git commit fails: Shows error message
@@ -379,6 +406,7 @@ No schema migrations were needed.
 ### 1. Install Dependencies
 
 Run one of:
+
 ```bash
 pnpm install
 npm install
@@ -388,6 +416,7 @@ yarn install
 ### 2. Ensure Claude Code CLI is Available
 
 The `CLAUDE_CODE_PATH` environment variable should point to your Claude Code CLI:
+
 ```bash
 CLAUDE_CODE_PATH="claude"
 ```
@@ -486,20 +515,25 @@ These were considered but not included in the initial implementation:
 ### Common Issues
 
 **Issue:** "Claude Code CLI not found"
+
 - **Solution:** Verify CLAUDE_CODE_PATH in `.env` file points to correct location
 
 **Issue:** Commit message generation times out
+
 - **Solution:** Check internet connection, verify Claude Code CLI is working
 
 **Issue:** Git commit fails with permission error
+
 - **Solution:** Verify git repository has correct permissions
 
 **Issue:** Changes not appearing in git log
+
 - **Solution:** Verify correct repository path in workspace settings
 
 ### Debug Mode
 
 Enable detailed logging by checking console output in:
+
 - Browser DevTools Console (frontend)
 - Terminal running `pnpm dev` (backend)
 
@@ -508,6 +542,7 @@ Enable detailed logging by checking console output in:
 ## Conclusion
 
 Feature 5 has been successfully implemented with all core functionality:
+
 - ✅ AI-powered commit message generation
 - ✅ User review and editing workflow
 - ✅ Message regeneration capability

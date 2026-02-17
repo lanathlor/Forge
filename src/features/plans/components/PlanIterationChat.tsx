@@ -132,12 +132,18 @@ export function PlanIterationChat({
                 updated = data.value;
                 updateSummary = data.summary || '';
               } else if (data.type === 'error') {
-                console.error('[PlanIterationChat] Server error:', data.message);
+                console.error(
+                  '[PlanIterationChat] Server error:',
+                  data.message
+                );
                 throw new Error(data.message);
               }
             } catch (e) {
               const errorMsg = e instanceof Error ? e.message : 'Unknown error';
-              console.error('[PlanIterationChat] Failed to parse SSE data:', errorMsg);
+              console.error(
+                '[PlanIterationChat] Failed to parse SSE data:',
+                errorMsg
+              );
               throw e;
             }
           }
@@ -150,9 +156,12 @@ export function PlanIterationChat({
         setChangesCount((prev) => prev + 1);
 
         // Wait a bit to ensure DB has been updated
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const result = await refetch();
-        console.log('[PlanIterationChat] Refetch result:', result.isSuccess ? 'success' : 'failed');
+        console.log(
+          '[PlanIterationChat] Refetch result:',
+          result.isSuccess ? 'success' : 'failed'
+        );
 
         // Clean up and add the checkmark message
         setMessages((prev) => {
@@ -160,10 +169,12 @@ export function PlanIterationChat({
           const lastMessage = newMessages[newMessages.length - 1];
           if (lastMessage && lastMessage.role === 'assistant') {
             // Remove the <UPDATES> section from display
-            const cleanContent = lastMessage.content.replace(/<UPDATES>[\s\S]*?<\/UPDATES>/, '').trim();
+            const cleanContent = lastMessage.content
+              .replace(/<UPDATES>[\s\S]*?<\/UPDATES>/, '')
+              .trim();
             const summaryText = updateSummary
               ? `\n\n✅ **Changes applied:** ${updateSummary}\n\n💡 Close this dialog to see the updated plan!`
-              : '\n\n✅ I\'ve updated the plan!\n\n💡 Close this dialog to see the changes!';
+              : "\n\n✅ I've updated the plan!\n\n💡 Close this dialog to see the changes!";
             lastMessage.content = cleanContent + summaryText;
           }
           return newMessages;
@@ -171,7 +182,8 @@ export function PlanIterationChat({
       }
     } catch (error) {
       console.error('Failed to send message:', error);
-      const errorDetails = error instanceof Error ? error.message : 'Unknown error';
+      const errorDetails =
+        error instanceof Error ? error.message : 'Unknown error';
       setMessages((prev) => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
@@ -180,7 +192,9 @@ export function PlanIterationChat({
             lastMessage.content = `Sorry, I encountered an error: ${errorDetails}\n\nPlease try again or rephrase your request.`;
           } else {
             // Clean up any partial <UPDATES> section in case of error
-            const cleanContent = lastMessage.content.replace(/<UPDATES>[\s\S]*?<\/UPDATES>/, '').trim();
+            const cleanContent = lastMessage.content
+              .replace(/<UPDATES>[\s\S]*?<\/UPDATES>/, '')
+              .trim();
             lastMessage.content = cleanContent;
           }
         }
@@ -200,7 +214,7 @@ export function PlanIterationChat({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+      <DialogContent className="flex max-h-[80vh] max-w-3xl flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -212,38 +226,39 @@ export function PlanIterationChat({
             {changesCount > 0 && (
               <Badge variant="default" className="flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3" />
-                {changesCount} {changesCount === 1 ? 'change' : 'changes'} applied
+                {changesCount} {changesCount === 1 ? 'change' : 'changes'}{' '}
+                applied
               </Badge>
             )}
           </div>
         </DialogHeader>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 py-4 min-h-[400px]">
+        <div className="min-h-[400px] flex-1 space-y-4 overflow-y-auto py-4">
           {messages.map((message, idx) => (
             <Card
               key={idx}
               className={`p-4 ${
                 message.role === 'user'
-                  ? 'bg-primary/10 ml-8'
-                  : 'bg-accent mr-8'
+                  ? 'ml-8 bg-primary/10'
+                  : 'mr-8 bg-accent'
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 font-semibold text-sm">
+                <div className="flex-shrink-0 text-sm font-semibold">
                   {message.role === 'user' ? 'You' : 'Claude'}
                 </div>
-                <div className="flex-1 text-sm whitespace-pre-wrap">
+                <div className="flex-1 whitespace-pre-wrap text-sm">
                   {message.content}
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground mt-2 text-right">
+              <div className="mt-2 text-right text-xs text-muted-foreground">
                 {message.timestamp.toLocaleTimeString()}
               </div>
             </Card>
           ))}
           {isLoading && (
-            <Card className="p-4 bg-accent mr-8">
+            <Card className="mr-8 bg-accent p-4">
               <div className="flex items-center gap-3">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm text-muted-foreground">
@@ -256,7 +271,7 @@ export function PlanIterationChat({
         </div>
 
         {/* Input */}
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex gap-2 border-t pt-4">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}

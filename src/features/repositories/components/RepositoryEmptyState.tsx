@@ -12,7 +12,7 @@ export function RepositoryEmptyState({
 }: RepositoryEmptyStateProps) {
   return (
     <Card className="p-6">
-      <p className="text-muted-foreground mb-4">
+      <p className="mb-4 text-muted-foreground">
         No git repositories found in workspace
       </p>
       <Button variant="outline" onClick={onRescan} disabled={isRescanning}>

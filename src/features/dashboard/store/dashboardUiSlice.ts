@@ -113,12 +113,16 @@ export const dashboardUiSlice = createSlice({
 
     setTaskSort: (
       state,
-      action: PayloadAction<{ field: DashboardUiState['taskSortField']; direction?: DashboardUiState['taskSortDirection'] }>
+      action: PayloadAction<{
+        field: DashboardUiState['taskSortField'];
+        direction?: DashboardUiState['taskSortDirection'];
+      }>
     ) => {
       const { field, direction } = action.payload;
       if (state.taskSortField === field && !direction) {
         // Toggle direction when clicking the same field
-        state.taskSortDirection = state.taskSortDirection === 'asc' ? 'desc' : 'asc';
+        state.taskSortDirection =
+          state.taskSortDirection === 'asc' ? 'desc' : 'asc';
       } else {
         state.taskSortField = field;
         state.taskSortDirection = direction ?? 'desc';

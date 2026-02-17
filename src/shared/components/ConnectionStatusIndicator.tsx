@@ -1,9 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { useConnectionStatus, type ConnectionStatus } from '../contexts/SSEContext';
+import {
+  useConnectionStatus,
+  type ConnectionStatus,
+} from '../contexts/SSEContext';
 import { cn } from '../lib/utils';
-import { Wifi, WifiOff, RefreshCw, Loader2, CloudOff, Pause, Activity } from 'lucide-react';
+import {
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Loader2,
+  CloudOff,
+  Pause,
+  Activity,
+} from 'lucide-react';
 
 /* ============================================
    TYPES
@@ -106,12 +117,14 @@ function StatusDot({ color, pulse }: { color: string; pulse?: boolean }) {
       {pulse && (
         <span
           className={cn(
-            'absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping',
+            'absolute inline-flex h-full w-full animate-ping rounded-full opacity-75',
             color
           )}
         />
       )}
-      <span className={cn('relative inline-flex h-2.5 w-2.5 rounded-full', color)} />
+      <span
+        className={cn('relative inline-flex h-2.5 w-2.5 rounded-full', color)}
+      />
     </span>
   );
 }
@@ -133,9 +146,11 @@ interface TooltipProps {
 
 function TooltipHeader({ config }: { config: StatusConfig }) {
   return (
-    <div className="flex items-center gap-2 mb-2">
+    <div className="mb-2 flex items-center gap-2">
       <StatusDot color={config.dotColor} pulse={config.animate} />
-      <span className={cn('font-medium', config.textColor)}>{config.label}</span>
+      <span className={cn('font-medium', config.textColor)}>
+        {config.label}
+      </span>
     </div>
   );
 }
@@ -149,25 +164,37 @@ function TooltipStats({
   averageLatency,
 }: Omit<TooltipProps, 'status' | 'onReconnect'>) {
   return (
-    <div className="space-y-1 text-xs text-muted-foreground border-t border-border pt-2">
+    <div className="space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
       <div className="flex justify-between">
         <span>Network:</span>
-        <span className={cn('font-mono', isOnline ? 'text-emerald-500' : 'text-red-500')}>
+        <span
+          className={cn(
+            'font-mono',
+            isOnline ? 'text-emerald-500' : 'text-red-500'
+          )}
+        >
           {isOnline ? 'Online' : 'Offline'}
         </span>
       </div>
       <div className="flex justify-between">
         <span>Connections:</span>
-        <span className="font-mono">{connectedCount}/{totalConnections}</span>
+        <span className="font-mono">
+          {connectedCount}/{totalConnections}
+        </span>
       </div>
       {averageLatency !== null && (
         <div className="flex justify-between">
           <span>Latency:</span>
-          <span className={cn(
-            'font-mono',
-            averageLatency < 100 ? 'text-emerald-500' :
-            averageLatency < 500 ? 'text-amber-500' : 'text-red-500'
-          )}>
+          <span
+            className={cn(
+              'font-mono',
+              averageLatency < 100
+                ? 'text-emerald-500'
+                : averageLatency < 500
+                  ? 'text-amber-500'
+                  : 'text-red-500'
+            )}
+          >
             {averageLatency}ms
           </span>
         </div>
@@ -200,9 +227,9 @@ function StatusTooltip({
 }: TooltipProps) {
   const { config } = getEffectiveStatus(status, isOnline);
   return (
-    <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-popover border border-border rounded-lg shadow-lg z-50">
+    <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-border bg-popover p-3 shadow-lg">
       <TooltipHeader config={config} />
-      <p className="text-sm text-muted-foreground mb-3">{config.description}</p>
+      <p className="mb-3 text-sm text-muted-foreground">{config.description}</p>
       <TooltipStats
         reconnectAttempts={reconnectAttempts}
         connectedCount={connectedCount}
@@ -212,7 +239,10 @@ function StatusTooltip({
         averageLatency={averageLatency}
       />
       {status !== 'connected' && isOnline && (
-        <button onClick={onReconnect} className="mt-3 w-full px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+        <button
+          onClick={onReconnect}
+          className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
           Reconnect Now
         </button>
       )}
@@ -224,7 +254,14 @@ function StatusTooltip({
    MAIN COMPONENT
    ============================================ */
 
-function StatusButton({ config, status, isReconnecting, isOnline, compact, reconnect }: {
+function StatusButton({
+  config,
+  status,
+  isReconnecting,
+  isOnline,
+  compact,
+  reconnect,
+}: {
   config: StatusConfig;
   status: ConnectionStatus;
   isReconnecting: boolean;
@@ -239,15 +276,24 @@ function StatusButton({ config, status, isReconnecting, isOnline, compact, recon
     <button
       onClick={handleClick}
       className={cn(
-        'inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:bg-muted/50',
+        'inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted/50',
         canReconnect ? 'cursor-pointer' : 'cursor-default'
       )}
       title={config.description}
     >
-      <StatusDot color={config.dotColor} pulse={config.animate || isReconnecting} />
+      <StatusDot
+        color={config.dotColor}
+        pulse={config.animate || isReconnecting}
+      />
       {!compact && (
         <>
-          <Icon className={cn('h-3.5 w-3.5', config.textColor, config.animate && 'animate-spin')} />
+          <Icon
+            className={cn(
+              'h-3.5 w-3.5',
+              config.textColor,
+              config.animate && 'animate-spin'
+            )}
+          />
           <span className={config.textColor}>{config.label}</span>
         </>
       )}
@@ -255,7 +301,11 @@ function StatusButton({ config, status, isReconnecting, isOnline, compact, recon
   );
 }
 
-export function ConnectionStatusIndicator({ showDetails = true, compact = false, className }: ConnectionStatusIndicatorProps) {
+export function ConnectionStatusIndicator({
+  showDetails = true,
+  compact = false,
+  className,
+}: ConnectionStatusIndicatorProps) {
   const {
     status,
     isReconnecting,
@@ -273,8 +323,19 @@ export function ConnectionStatusIndicator({ showDetails = true, compact = false,
   if (totalConnections === 0) return null;
 
   return (
-    <div className={cn('relative inline-flex items-center', className)} onMouseEnter={() => showDetails && setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)}>
-      <StatusButton config={config} status={status} isReconnecting={isReconnecting} isOnline={isOnline} compact={compact} reconnect={reconnect} />
+    <div
+      className={cn('relative inline-flex items-center', className)}
+      onMouseEnter={() => showDetails && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <StatusButton
+        config={config}
+        status={status}
+        isReconnecting={isReconnecting}
+        isOnline={isOnline}
+        compact={compact}
+        reconnect={reconnect}
+      />
       {showDetails && showTooltip && (
         <StatusTooltip
           status={status}
@@ -304,13 +365,16 @@ export function ConnectionStatusDot({ className }: { className?: string }) {
     <button
       onClick={() => canReconnect && reconnect()}
       className={cn(
-        'inline-flex items-center justify-center w-6 h-6 rounded-full',
-        'hover:bg-muted/50 transition-colors',
+        'inline-flex h-6 w-6 items-center justify-center rounded-full',
+        'transition-colors hover:bg-muted/50',
         className
       )}
       title={`${config.label}: ${config.description}`}
     >
-      <StatusDot color={config.dotColor} pulse={config.animate || isReconnecting} />
+      <StatusDot
+        color={config.dotColor}
+        pulse={config.animate || isReconnecting}
+      />
     </button>
   );
 }
@@ -337,12 +401,12 @@ export function ConnectionStatusInline({ className }: { className?: string }) {
       />
       <span className={config.textColor}>{config.label}</span>
       {status === 'connected' && averageLatency !== null && (
-        <span className="text-muted-foreground ml-1">({averageLatency}ms)</span>
+        <span className="ml-1 text-muted-foreground">({averageLatency}ms)</span>
       )}
       {canReconnect && (
         <button
           onClick={reconnect}
-          className="ml-1 text-xs underline hover:no-underline text-muted-foreground"
+          className="ml-1 text-xs text-muted-foreground underline hover:no-underline"
         >
           retry
         </button>
@@ -360,7 +424,10 @@ interface LatencyIndicatorProps {
   showLabel?: boolean;
 }
 
-export function LatencyIndicator({ className, showLabel = false }: LatencyIndicatorProps) {
+export function LatencyIndicator({
+  className,
+  showLabel = false,
+}: LatencyIndicatorProps) {
   const { status, averageLatency } = useConnectionStatus();
 
   if (status !== 'connected' || averageLatency === null) {

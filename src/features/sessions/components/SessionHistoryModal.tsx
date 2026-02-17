@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { format, formatDistanceToNow, isWithinInterval, startOfDay, endOfDay, subWeeks, subMonths } from 'date-fns';
+import {
+  format,
+  formatDistanceToNow,
+  isWithinInterval,
+  startOfDay,
+  endOfDay,
+  subWeeks,
+  subMonths,
+} from 'date-fns';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Input } from '@/shared/components/ui/input';
@@ -84,7 +92,12 @@ const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
 
 const STATUS_CONFIG: Record<
   SessionStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode; color: string }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    icon: React.ReactNode;
+    color: string;
+  }
 > = {
   active: {
     label: 'Active',
@@ -142,7 +155,11 @@ function matchesSearch(s: SessionWithStats, query: string): boolean {
   );
 }
 
-function filterSessions(sessions: SessionWithStats[], searchQuery: string, dateRange: DateRange): SessionWithStats[] {
+function filterSessions(
+  sessions: SessionWithStats[],
+  searchQuery: string,
+  dateRange: DateRange
+): SessionWithStats[] {
   let result = sessions;
 
   if (searchQuery.trim()) {
@@ -153,15 +170,21 @@ function filterSessions(sessions: SessionWithStats[], searchQuery: string, dateR
   const interval = getDateRangeInterval(dateRange);
   if (interval) {
     result = result.filter((s) =>
-      isWithinInterval(new Date(s.startedAt), interval),
+      isWithinInterval(new Date(s.startedAt), interval)
     );
   }
 
   return result;
 }
 
-function checkHasActiveFilters(searchQuery: string, statusFilter: SessionStatus | 'all', dateRange: DateRange): boolean {
-  return searchQuery.trim() !== '' || statusFilter !== 'all' || dateRange !== 'all';
+function checkHasActiveFilters(
+  searchQuery: string,
+  statusFilter: SessionStatus | 'all',
+  dateRange: DateRange
+): boolean {
+  return (
+    searchQuery.trim() !== '' || statusFilter !== 'all' || dateRange !== 'all'
+  );
 }
 
 function toggleCompareId(prev: string[], sessionId: string): string[] {
@@ -174,7 +197,9 @@ function toggleCompareId(prev: string[], sessionId: string): string[] {
   return [...prev, sessionId];
 }
 
-function getDateRangeInterval(range: DateRange): { start: Date; end: Date } | null {
+function getDateRangeInterval(
+  range: DateRange
+): { start: Date; end: Date } | null {
   const now = new Date();
   switch (range) {
     case 'today':
@@ -194,13 +219,13 @@ function getDateRangeInterval(range: DateRange): { start: Date; end: Date } | nu
 
 function SessionCardCompareOverlay({ isSelected }: { isSelected: boolean }) {
   return (
-    <div className="absolute top-3 right-3 z-10">
+    <div className="absolute right-3 top-3 z-10">
       <div
         className={cn(
-          'h-5 w-5 rounded border-2 flex items-center justify-center transition-colors',
+          'flex h-5 w-5 items-center justify-center rounded border-2 transition-colors',
           isSelected
-            ? 'bg-blue-500 border-blue-500 text-white'
-            : 'border-muted-foreground/40 hover:border-blue-500',
+            ? 'border-blue-500 bg-blue-500 text-white'
+            : 'border-muted-foreground/40 hover:border-blue-500'
         )}
       >
         {isSelected && <CheckCircle2 className="h-3 w-3" />}
@@ -231,7 +256,7 @@ function SessionCardActions({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+          className="h-7 w-7 p-0 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -268,13 +293,20 @@ function SessionCardActions({
   );
 }
 
-function getSessionCardClassName(isCurrent: boolean, isSelected: boolean, isActionable: boolean, compareMode: boolean) {
+function getSessionCardClassName(
+  isCurrent: boolean,
+  isSelected: boolean,
+  isActionable: boolean,
+  compareMode: boolean
+) {
   return cn(
     'group relative border rounded-lg transition-all duration-200',
     isCurrent && 'border-primary bg-primary/5 ring-1 ring-primary/20',
-    isSelected && !isCurrent && 'border-blue-500 bg-blue-500/5 ring-1 ring-blue-500/20',
+    isSelected &&
+      !isCurrent &&
+      'border-blue-500 bg-blue-500/5 ring-1 ring-blue-500/20',
     !isCurrent && !isSelected && 'hover:bg-accent/50 hover:border-border/80',
-    (isActionable || compareMode) && 'cursor-pointer',
+    (isActionable || compareMode) && 'cursor-pointer'
   );
 }
 
@@ -302,14 +334,24 @@ function SessionCard({
   isDeleting: boolean;
 }) {
   const statusInfo = STATUS_CONFIG[session.status];
-  const isActionable = session.status === 'active' || session.status === 'paused';
+  const isActionable =
+    session.status === 'active' || session.status === 'paused';
   const startDate = new Date(session.startedAt);
   const endDate = session.endedAt ? new Date(session.endedAt) : null;
-  const handleClick = compareMode ? onToggleCompare : isActionable ? onSelect : undefined;
+  const handleClick = compareMode
+    ? onToggleCompare
+    : isActionable
+      ? onSelect
+      : undefined;
 
   return (
     <div
-      className={getSessionCardClassName(isCurrent, isSelected, isActionable, compareMode)}
+      className={getSessionCardClassName(
+        isCurrent,
+        isSelected,
+        isActionable,
+        compareMode
+      )}
       onClick={handleClick}
     >
       {compareMode && <SessionCardCompareOverlay isSelected={isSelected} />}
@@ -317,18 +359,24 @@ function SessionCard({
       <div className="p-4">
         {/* Top row: status + timestamp + actions */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={statusInfo.variant} className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant={statusInfo.variant}
+              className="flex items-center gap-1"
+            >
               {statusInfo.icon}
               {statusInfo.label}
             </Badge>
             {isCurrent && (
-              <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30">
+              <Badge
+                variant="outline"
+                className="border-primary/30 bg-primary/10 text-xs"
+              >
                 Current
               </Badge>
             )}
             {session.startBranch && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-mono">
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 font-mono text-xs text-muted-foreground">
                 <GitBranch className="h-3 w-3" />
                 {session.startBranch}
               </span>
@@ -351,7 +399,9 @@ function SessionCard({
         <div className="mt-3 flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <FileText className="h-3.5 w-3.5" />
-            <span className="font-medium text-foreground">{session.taskCount}</span>
+            <span className="font-medium text-foreground">
+              {session.taskCount}
+            </span>
             <span>task{session.taskCount !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -381,27 +431,36 @@ function ComparisonColumn({
   session: SessionWithStats;
   label: string;
 }) {
-  const { data: summaryData, isLoading } = useGetSessionSummaryQuery(session.id);
+  const { data: summaryData, isLoading } = useGetSessionSummaryQuery(
+    session.id
+  );
   const stats = summaryData?.stats;
   const statusInfo = STATUS_CONFIG[session.status];
   const startDate = new Date(session.startedAt);
   const endDate = session.endedAt ? new Date(session.endedAt) : null;
 
   return (
-    <div className="flex-1 min-w-0 border rounded-lg overflow-hidden">
+    <div className="min-w-0 flex-1 overflow-hidden rounded-lg border">
       {/* Column header */}
-      <div className="px-4 py-2 bg-muted/50 border-b">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="border-b bg-muted/50 px-4 py-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         {/* Status + ID */}
         <div className="flex items-center gap-2">
-          <Badge variant={statusInfo.variant} className="flex items-center gap-1">
+          <Badge
+            variant={statusInfo.variant}
+            className="flex items-center gap-1"
+          >
             {statusInfo.icon}
             {statusInfo.label}
           </Badge>
-          <span className="font-mono text-xs text-muted-foreground">{session.id.slice(0, 8)}</span>
+          <span className="font-mono text-xs text-muted-foreground">
+            {session.id.slice(0, 8)}
+          </span>
         </div>
 
         {/* Branch */}
@@ -426,7 +485,9 @@ function ComparisonColumn({
           )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Duration</span>
-            <span className="font-medium">{formatDuration(startDate, endDate)}</span>
+            <span className="font-medium">
+              {formatDuration(startDate, endDate)}
+            </span>
           </div>
         </div>
 
@@ -437,31 +498,59 @@ function ComparisonColumn({
           </div>
         ) : stats ? (
           <div className="grid grid-cols-2 gap-2">
-            <StatCell label="Tasks" value={stats.totalTasks} icon={<FileText className="h-3.5 w-3.5" />} />
-            <StatCell label="Completed" value={stats.completedTasks} icon={<CheckCircle2 className="h-3.5 w-3.5 text-green-600" />} />
+            <StatCell
+              label="Tasks"
+              value={stats.totalTasks}
+              icon={<FileText className="h-3.5 w-3.5" />}
+            />
+            <StatCell
+              label="Completed"
+              value={stats.completedTasks}
+              icon={<CheckCircle2 className="h-3.5 w-3.5 text-green-600" />}
+            />
             <StatCell label="Files Changed" value={stats.filesChanged} />
             <StatCell label="Commits" value={stats.commits} />
             {stats.rejectedTasks > 0 && (
-              <StatCell label="Rejected" value={stats.rejectedTasks} icon={<XCircle className="h-3.5 w-3.5 text-yellow-600" />} />
+              <StatCell
+                label="Rejected"
+                value={stats.rejectedTasks}
+                icon={<XCircle className="h-3.5 w-3.5 text-yellow-600" />}
+              />
             )}
             {stats.failedTasks > 0 && (
-              <StatCell label="Failed" value={stats.failedTasks} icon={<AlertTriangle className="h-3.5 w-3.5 text-red-600" />} />
+              <StatCell
+                label="Failed"
+                value={stats.failedTasks}
+                icon={<AlertTriangle className="h-3.5 w-3.5 text-red-600" />}
+              />
             )}
           </div>
         ) : (
-          <div className="text-sm text-muted-foreground text-center py-2">No stats available</div>
+          <div className="py-2 text-center text-sm text-muted-foreground">
+            No stats available
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function StatCell({ label, value, icon }: { label: string; value: number; icon?: React.ReactNode }) {
+function StatCell({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: number;
+  icon?: React.ReactNode;
+}) {
   return (
-    <div className="bg-muted/40 rounded-md p-2.5 text-center">
-      {icon && <div className="flex justify-center mb-1">{icon}</div>}
+    <div className="rounded-md bg-muted/40 p-2.5 text-center">
+      {icon && <div className="mb-1 flex justify-center">{icon}</div>}
       <div className="text-lg font-bold">{value}</div>
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
@@ -470,14 +559,20 @@ function StatCell({ label, value, icon }: { label: string; value: number; icon?:
 // Empty State
 // ---------------------------------------------------------------------------
 
-function EmptyState({ hasFilters, onClearFilters }: { hasFilters: boolean; onClearFilters: () => void }) {
+function EmptyState({
+  hasFilters,
+  onClearFilters,
+}: {
+  hasFilters: boolean;
+  onClearFilters: () => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="relative mb-6">
-        <div className="h-20 w-20 rounded-full bg-muted/60 flex items-center justify-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/60">
           <History className="h-10 w-10 text-muted-foreground/50" />
         </div>
-        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+        <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-muted">
           {hasFilters ? (
             <Filter className="h-4 w-4 text-muted-foreground/60" />
           ) : (
@@ -485,16 +580,21 @@ function EmptyState({ hasFilters, onClearFilters }: { hasFilters: boolean; onCle
           )}
         </div>
       </div>
-      <h3 className="text-base font-medium mb-1">
+      <h3 className="mb-1 text-base font-medium">
         {hasFilters ? 'No matching sessions' : 'No sessions yet'}
       </h3>
-      <p className="text-sm text-muted-foreground max-w-[280px]">
+      <p className="max-w-[280px] text-sm text-muted-foreground">
         {hasFilters
-          ? 'Try adjusting your filters to find what you\'re looking for.'
+          ? "Try adjusting your filters to find what you're looking for."
           : 'Sessions will appear here as you work with this repository.'}
       </p>
       {hasFilters && (
-        <Button variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={onClearFilters}
+        >
           Clear Filters
         </Button>
       )}
@@ -522,14 +622,14 @@ function FilterBar({
   onDateRangeChange: (value: DateRange) => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search by ID or branch..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 h-9"
+          className="h-9 pl-9"
         />
         {searchQuery && (
           <button
@@ -543,10 +643,11 @@ function FilterBar({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 gap-1.5 shrink-0">
+          <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5">
             <Filter className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">
-              {STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ?? 'Status'}
+              {STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ??
+                'Status'}
             </span>
             <ChevronDown className="h-3 w-3 opacity-50" />
           </Button>
@@ -566,10 +667,11 @@ function FilterBar({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 gap-1.5 shrink-0">
+          <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5">
             <CalendarDays className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">
-              {DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.label ?? 'Date'}
+              {DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.label ??
+                'Date'}
             </span>
             <ChevronDown className="h-3 w-3 opacity-50" />
           </Button>
@@ -612,11 +714,11 @@ function ActiveFilterChips({
   onClearAll: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex flex-wrap items-center gap-2">
       {statusFilter !== 'all' && (
         <Badge
           variant="secondary"
-          className="gap-1 cursor-pointer hover:bg-secondary/60"
+          className="cursor-pointer gap-1 hover:bg-secondary/60"
           onClick={onClearStatus}
         >
           Status: {STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label}
@@ -626,7 +728,7 @@ function ActiveFilterChips({
       {dateRange !== 'all' && (
         <Badge
           variant="secondary"
-          className="gap-1 cursor-pointer hover:bg-secondary/60"
+          className="cursor-pointer gap-1 hover:bg-secondary/60"
           onClick={onClearDateRange}
         >
           {DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.label}
@@ -636,16 +738,19 @@ function ActiveFilterChips({
       {searchQuery && (
         <Badge
           variant="secondary"
-          className="gap-1 cursor-pointer hover:bg-secondary/60"
+          className="cursor-pointer gap-1 hover:bg-secondary/60"
           onClick={onClearSearch}
         >
-          Search: {searchQuery.length > 12 ? searchQuery.slice(0, 12) + '...' : searchQuery}
+          Search:{' '}
+          {searchQuery.length > 12
+            ? searchQuery.slice(0, 12) + '...'
+            : searchQuery}
           <X className="h-3 w-3" />
         </Badge>
       )}
       <button
         onClick={onClearAll}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         Clear all
       </button>
@@ -667,16 +772,17 @@ function DeleteConfirmation({
   isDeleting: boolean;
 }) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
-      <div className="bg-background border rounded-lg p-6 shadow-lg max-w-sm mx-4 space-y-4">
+    <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
+      <div className="mx-4 max-w-sm space-y-4 rounded-lg border bg-background p-6 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
             <Trash2 className="h-5 w-5 text-destructive" />
           </div>
           <div>
             <h3 className="font-semibold">Delete Session</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              This will permanently delete the session and all its tasks. This cannot be undone.
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              This will permanently delete the session and all its tasks. This
+              cannot be undone.
             </p>
           </div>
         </div>
@@ -725,12 +831,12 @@ function PaginationFooter({
   onClose: () => void;
 }) {
   return (
-    <div className="px-6 py-3 border-t flex items-center justify-between">
+    <div className="flex items-center justify-between border-t px-6 py-3">
       <div className="text-xs text-muted-foreground">
         {totalFiltered > 0 && (
           <>
-            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalFiltered)} of{' '}
-            {totalFiltered}
+            Showing {page * PAGE_SIZE + 1}–
+            {Math.min((page + 1) * PAGE_SIZE, totalFiltered)} of {totalFiltered}
           </>
         )}
       </div>
@@ -744,13 +850,16 @@ function PaginationFooter({
               disabled={page === 0}
               onClick={() => {
                 onPageChange(page - 1);
-                scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                scrollContainerRef.current?.scrollTo({
+                  top: 0,
+                  behavior: 'smooth',
+                });
               }}
               className="h-8 px-3"
             >
               Prev
             </Button>
-            <span className="text-xs text-muted-foreground px-2">
+            <span className="px-2 text-xs text-muted-foreground">
               {page + 1} / {totalPages}
             </span>
             <Button
@@ -759,7 +868,10 @@ function PaginationFooter({
               disabled={page >= totalPages - 1}
               onClick={() => {
                 onPageChange(page + 1);
-                scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                scrollContainerRef.current?.scrollTo({
+                  top: 0,
+                  behavior: 'smooth',
+                });
               }}
               className="h-8 px-3"
             >
@@ -818,7 +930,10 @@ function SessionListContent({
 }) {
   if (isLoading) {
     return (
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-4">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4"
+      >
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
@@ -826,12 +941,19 @@ function SessionListContent({
     );
   }
 
-  const showComparison = viewMode === 'compare' && compareIds.length === 2 && compareSessionA && compareSessionB;
+  const showComparison =
+    viewMode === 'compare' &&
+    compareIds.length === 2 &&
+    compareSessionA &&
+    compareSessionB;
 
   if (showComparison) {
     return (
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row">
           <ComparisonColumn session={compareSessionA} label="Session A" />
           <ComparisonColumn session={compareSessionB} label="Session B" />
         </div>
@@ -841,8 +963,14 @@ function SessionListContent({
 
   if (filteredSessions.length === 0) {
     return (
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-4">
-        <EmptyState hasFilters={hasActiveFilters} onClearFilters={onClearFilters} />
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4"
+      >
+        <EmptyState
+          hasFilters={hasActiveFilters}
+          onClearFilters={onClearFilters}
+        />
       </div>
     );
   }
@@ -874,13 +1002,19 @@ function SessionListContent({
 // Compare Instructions
 // ---------------------------------------------------------------------------
 
-function CompareInstructions({ viewMode, compareCount }: { viewMode: ViewMode; compareCount: number }) {
+function CompareInstructions({
+  viewMode,
+  compareCount,
+}: {
+  viewMode: ViewMode;
+  compareCount: number;
+}) {
   if (viewMode !== 'compare' || compareCount >= 2) return null;
 
   const remaining = 2 - compareCount;
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-500/5 border border-blue-500/20 rounded-md px-3 py-2">
-      <ArrowLeftRight className="h-4 w-4 text-blue-500 shrink-0" />
+    <div className="flex items-center gap-2 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-2 text-sm text-muted-foreground">
+      <ArrowLeftRight className="h-4 w-4 shrink-0 text-blue-500" />
       Select {remaining} more session{remaining > 1 ? 's' : ''} to compare
     </div>
   );
@@ -900,7 +1034,9 @@ export function SessionHistoryModal({
 }: SessionHistoryModalProps) {
   // State
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>(
+    'all'
+  );
   const [dateRange, setDateRange] = useState<DateRange>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -915,7 +1051,7 @@ export function SessionHistoryModal({
       limit: 100,
       status: statusFilter !== 'all' ? statusFilter : undefined,
     },
-    { skip: !isOpen },
+    { skip: !isOpen }
   );
 
   const [deleteSession, { isLoading: isDeleting }] = useDeleteSessionMutation();
@@ -934,11 +1070,17 @@ export function SessionHistoryModal({
 
   const filteredSessions = useMemo(
     () => filterSessions(allSessions, searchQuery, dateRange),
-    [allSessions, searchQuery, dateRange],
+    [allSessions, searchQuery, dateRange]
   );
 
-  const totalPages = Math.max(1, Math.ceil(filteredSessions.length / PAGE_SIZE));
-  const paginatedSessions = filteredSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSessions.length / PAGE_SIZE)
+  );
+  const paginatedSessions = filteredSessions.slice(
+    page * PAGE_SIZE,
+    (page + 1) * PAGE_SIZE
+  );
 
   useEffect(() => {
     if (page >= totalPages) {
@@ -946,7 +1088,11 @@ export function SessionHistoryModal({
     }
   }, [page, totalPages]);
 
-  const hasActiveFilters = checkHasActiveFilters(searchQuery, statusFilter, dateRange);
+  const hasActiveFilters = checkHasActiveFilters(
+    searchQuery,
+    statusFilter,
+    dateRange
+  );
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
@@ -963,7 +1109,7 @@ export function SessionHistoryModal({
       onSelectSession(sessionId);
       onClose();
     },
-    [resumeSession, onSelectSession, onClose],
+    [resumeSession, onSelectSession, onClose]
   );
 
   const handleDeleteSession = useCallback(
@@ -971,7 +1117,7 @@ export function SessionHistoryModal({
       e.stopPropagation();
       setConfirmDeleteId(sessionId);
     },
-    [],
+    []
   );
 
   const confirmDelete = useCallback(async () => {
@@ -987,7 +1133,7 @@ export function SessionHistoryModal({
       onSelectSession(sessionId);
       onClose();
     },
-    [resumeSession, onSelectSession, onClose],
+    [resumeSession, onSelectSession, onClose]
   );
 
   const handleDuplicate = useCallback(
@@ -995,7 +1141,7 @@ export function SessionHistoryModal({
       onSelectSession(sessionId);
       onClose();
     },
-    [onSelectSession, onClose],
+    [onSelectSession, onClose]
   );
 
   const handleToggleCompare = useCallback((sessionId: string) => {
@@ -1031,21 +1177,22 @@ export function SessionHistoryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col overflow-hidden p-0">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b space-y-4">
+        <div className="space-y-4 border-b px-6 pb-4 pt-6">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-xl">Session History</DialogTitle>
                 <DialogDescription className="mt-1">
-                  {repositoryName} · {filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}
+                  {repositoryName} · {filteredSessions.length} session
+                  {filteredSessions.length !== 1 ? 's' : ''}
                 </DialogDescription>
               </div>
               <Button
                 variant={viewMode === 'compare' ? 'default' : 'outline'}
                 size="sm"
-                className="gap-1.5 hidden sm:flex"
+                className="hidden gap-1.5 sm:flex"
                 onClick={handleToggleViewMode}
               >
                 <ArrowLeftRight className="h-4 w-4" />
@@ -1075,7 +1222,10 @@ export function SessionHistoryModal({
             />
           )}
 
-          <CompareInstructions viewMode={viewMode} compareCount={compareIds.length} />
+          <CompareInstructions
+            viewMode={viewMode}
+            compareCount={compareIds.length}
+          />
         </div>
 
         <SessionListContent

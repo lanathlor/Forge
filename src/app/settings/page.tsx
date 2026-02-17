@@ -1,7 +1,13 @@
 'use client';
 
 import { AppLayout } from '../components/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/card';
 import { Label } from '@/shared/components/ui/label';
 import { Switch } from '@/shared/components/ui/switch';
 
@@ -12,7 +18,12 @@ interface SettingItemProps {
   defaultChecked?: boolean;
 }
 
-function SettingItem({ id, label, description, defaultChecked }: SettingItemProps) {
+function SettingItem({
+  id,
+  label,
+  description,
+  defaultChecked,
+}: SettingItemProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-0.5">
@@ -29,7 +40,9 @@ function GeneralSettings() {
     <Card>
       <CardHeader>
         <CardTitle>General Settings</CardTitle>
-        <CardDescription>Manage your general application settings</CardDescription>
+        <CardDescription>
+          Manage your general application settings
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <SettingItem
@@ -53,7 +66,9 @@ function DisplaySettings() {
     <Card>
       <CardHeader>
         <CardTitle>Display Settings</CardTitle>
-        <CardDescription>Customize how information is displayed</CardDescription>
+        <CardDescription>
+          Customize how information is displayed
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <SettingItem
@@ -77,7 +92,9 @@ function QAGateSettings() {
     <Card>
       <CardHeader>
         <CardTitle>QA Gates</CardTitle>
-        <CardDescription>Configure default QA gate settings for new repositories</CardDescription>
+        <CardDescription>
+          Configure default QA gate settings for new repositories
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <SettingItem
@@ -99,10 +116,10 @@ function QAGateSettings() {
 export default function SettingsPage() {
   return (
     <AppLayout>
-      <div className="h-full p-4 lg:p-6 overflow-auto">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="h-full overflow-auto p-4 lg:p-6">
+        <div className="mx-auto max-w-4xl space-y-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">Settings</h1>
+            <h1 className="mb-2 text-2xl font-bold">Settings</h1>
             <p className="text-muted-foreground">
               Configure your application preferences and settings.
             </p>

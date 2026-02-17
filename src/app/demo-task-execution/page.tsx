@@ -102,37 +102,37 @@ export default function DemoTaskExecutionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="mx-auto max-w-7xl p-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">
             Task Execution Demo
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="mb-4 text-gray-600">
             Feature 2: Send prompts to Claude and monitor execution with
             automatic QA gates
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Prompt Input */}
-          <Card className="lg:col-span-1 p-6">
-            <h2 className="text-lg font-semibold mb-4">Create Task</h2>
+          <Card className="p-6 lg:col-span-1">
+            <h2 className="mb-4 text-lg font-semibold">Create Task</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Session ID
                 </label>
                 <input
                   type="text"
                   value={sessionId}
                   onChange={(e) => setSessionId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Prompt
                 </label>
                 <textarea
@@ -140,7 +140,7 @@ export default function DemoTaskExecutionPage() {
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="What should Claude do?"
                   rows={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -153,7 +153,7 @@ export default function DemoTaskExecutionPage() {
               </Button>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
                   {error}
                 </div>
               )}
@@ -161,13 +161,13 @@ export default function DemoTaskExecutionPage() {
           </Card>
 
           {/* Task Status */}
-          <Card className="lg:col-span-2 p-6">
-            <h2 className="text-lg font-semibold mb-4">Current Task</h2>
+          <Card className="p-6 lg:col-span-2">
+            <h2 className="mb-4 text-lg font-semibold">Current Task</h2>
 
             {!currentTask && (
-              <div className="text-center py-12 text-gray-400">
+              <div className="py-12 text-center text-gray-400">
                 <svg
-                  className="mx-auto h-16 w-16 mb-4"
+                  className="mx-auto mb-4 h-16 w-16"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -188,7 +188,7 @@ export default function DemoTaskExecutionPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(currentTask.status)}`}
+                      className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(currentTask.status)}`}
                     >
                       {currentTask.status.replace('_', ' ').toUpperCase()}
                     </span>
@@ -199,32 +199,33 @@ export default function DemoTaskExecutionPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  <h3 className="mb-2 text-sm font-medium text-gray-700">
                     Prompt
                   </h3>
-                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+                  <p className="rounded-md bg-gray-50 p-3 text-sm text-gray-900">
                     {currentTask.prompt}
                   </p>
                 </div>
 
                 {currentTask.claudeOutput && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    <h3 className="mb-2 text-sm font-medium text-gray-700">
                       Claude Output
                     </h3>
-                    <pre className="text-xs text-gray-900 bg-gray-50 p-3 rounded-md overflow-x-auto max-h-64 overflow-y-auto font-mono whitespace-pre-wrap">
+                    <pre className="max-h-64 overflow-x-auto overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-50 p-3 font-mono text-xs text-gray-900">
                       {currentTask.claudeOutput}
                     </pre>
                   </div>
                 )}
 
-                {currentTask.currentQAAttempt && currentTask.currentQAAttempt > 1 && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-800">
-                      QA Retry Attempt: {currentTask.currentQAAttempt} / 3
-                    </p>
-                  </div>
-                )}
+                {currentTask.currentQAAttempt &&
+                  currentTask.currentQAAttempt > 1 && (
+                    <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3">
+                      <p className="text-sm text-yellow-800">
+                        QA Retry Attempt: {currentTask.currentQAAttempt} / 3
+                      </p>
+                    </div>
+                  )}
               </div>
             )}
           </Card>
@@ -235,7 +236,7 @@ export default function DemoTaskExecutionPage() {
           (currentTask.status === 'waiting_approval' ||
             currentTask.status === 'completed') && (
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Changes Review</h2>
+              <h2 className="mb-4 text-lg font-semibold">Changes Review</h2>
               <div className="h-[600px]">
                 <DiffViewer taskId={currentTask.id} />
               </div>
@@ -243,11 +244,11 @@ export default function DemoTaskExecutionPage() {
           )}
 
         {/* Feature Highlights */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">
+        <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-6">
+          <h2 className="mb-3 text-lg font-semibold text-blue-900">
             Feature Highlights
           </h2>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-blue-800">
+          <ul className="grid grid-cols-1 gap-2 text-blue-800 md:grid-cols-2">
             <li className="flex items-start">
               <span className="mr-2">✓</span>
               <span>Task creation and execution</span>

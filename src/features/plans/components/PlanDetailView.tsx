@@ -67,7 +67,13 @@ interface PlanDetailViewProps {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecution }: PlanDetailViewProps) {
+export function PlanDetailView({
+  planId,
+  onBack,
+  onReview,
+  onLaunch,
+  onViewExecution,
+}: PlanDetailViewProps) {
   const { data, isLoading, error } = useGetPlanQuery(planId, {
     pollingInterval: 2000,
     skipPollingIfUnfocused: true,
@@ -225,7 +231,7 @@ export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecu
   // Loading & error states
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="flex h-full flex-col">
         <PlanDetailSkeleton onBack={onBack} />
       </div>
     );
@@ -233,12 +239,12 @@ export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecu
 
   if (error || !data) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="flex h-full flex-col">
         <Breadcrumb onBack={onBack} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <AlertTriangle className="h-10 w-10 text-destructive mx-auto" />
-            <p className="text-sm text-destructive font-medium">
+        <div className="flex flex-1 items-center justify-center">
+          <div className="space-y-3 text-center">
+            <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
+            <p className="text-sm font-medium text-destructive">
               Failed to load plan
             </p>
             <Button variant="outline" size="sm" onClick={onBack}>
@@ -254,7 +260,7 @@ export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecu
   const allTasks = data.tasks;
 
   return (
-    <div className="h-full flex flex-col gap-4 overflow-auto pb-6">
+    <div className="flex h-full flex-col gap-4 overflow-auto pb-6">
       {/* Breadcrumb */}
       <Breadcrumb onBack={onBack} planTitle={plan.title} />
 
@@ -266,13 +272,17 @@ export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecu
         onToggleEdit={() => setIsEditMode(!isEditMode)}
         onExecute={() => executePlan(planId)}
         onLaunch={onLaunch ? () => onLaunch(planId) : undefined}
-        onViewExecution={onViewExecution ? () => onViewExecution(planId) : undefined}
+        onViewExecution={
+          onViewExecution ? () => onViewExecution(planId) : undefined
+        }
         onPause={() => pausePlan(planId)}
         onResume={() => resumePlan(planId)}
         onCancel={() => {
           if (confirm('Cancel this plan execution?')) cancelPlan(planId);
         }}
-        onMarkReady={() => updatePlan({ id: planId, data: { status: 'ready' } })}
+        onMarkReady={() =>
+          updatePlan({ id: planId, data: { status: 'ready' } })
+        }
         onReview={onReview ? () => onReview(planId) : undefined}
         isExecuting={isExecuting}
         isPausing={isPausing}
@@ -323,7 +333,7 @@ export function PlanDetailView({ planId, onBack, onReview, onLaunch, onViewExecu
           variant="outline"
           className="w-full border-dashed"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Add Phase
         </Button>
       )}
@@ -388,16 +398,16 @@ function PlanHeaderCard({
       )}
     >
       {/* Title row */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="truncate text-lg font-semibold text-foreground sm:text-xl">
               {plan.title}
             </h1>
             <PlanStatusBadge status={plan.status} />
           </div>
           {plan.description && (
-            <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
+            <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
               {plan.description}
             </p>
           )}
@@ -423,7 +433,7 @@ function PlanHeaderCard({
       </div>
 
       {/* Stats row */}
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatPill
           icon={<Layers className="h-3.5 w-3.5" />}
           label="Phases"
@@ -443,7 +453,10 @@ function PlanHeaderCard({
           <StatPill
             icon={<Zap className="h-3.5 w-3.5" />}
             label="Duration"
-            value={formatDuration(new Date(plan.startedAt), new Date(plan.completedAt))}
+            value={formatDuration(
+              new Date(plan.startedAt),
+              new Date(plan.completedAt)
+            )}
           />
         ) : plan.startedAt ? (
           <StatPill
@@ -463,11 +476,11 @@ function PlanHeaderCard({
       {/* Progress bar */}
       {plan.totalTasks > 0 && (
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+          <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
             <span className="font-medium">Overall Progress</span>
             <span className="tabular-nums">{progress}%</span>
           </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+          <div className="h-2 overflow-hidden rounded-full bg-secondary">
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-500',
@@ -485,7 +498,7 @@ function PlanHeaderCard({
 
       {/* Alert banners */}
       {failedTasks.length > 0 && (
-        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span>
             {failedTasks.length} task{failedTasks.length > 1 ? 's' : ''} failed
@@ -494,10 +507,11 @@ function PlanHeaderCard({
       )}
 
       {runningTasks.length > 0 && (
-        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
           <RefreshCw className="h-4 w-4 flex-shrink-0 animate-spin" />
           <span>
-            {runningTasks.length} task{runningTasks.length > 1 ? 's' : ''} running
+            {runningTasks.length} task{runningTasks.length > 1 ? 's' : ''}{' '}
+            running
           </span>
         </div>
       )}
@@ -517,10 +531,10 @@ function Breadcrumb({
   planTitle?: string;
 }) {
   return (
-    <nav className="flex items-center gap-1.5 text-sm flex-shrink-0">
+    <nav className="flex flex-shrink-0 items-center gap-1.5 text-sm">
       <button
         onClick={onBack}
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
         <span className="hidden sm:inline">Plans</span>
@@ -528,7 +542,7 @@ function Breadcrumb({
       {planTitle && (
         <>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-          <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-[400px]">
+          <span className="max-w-[200px] truncate font-medium text-foreground sm:max-w-[400px]">
             {planTitle}
           </span>
         </>
@@ -575,7 +589,7 @@ function ExecutionControls({
   isCancelling: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+    <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
       {/* Draft actions */}
       {status === 'draft' && (
         <>
@@ -586,7 +600,7 @@ function ExecutionControls({
               onClick={onReview}
               className="h-8"
             >
-              <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+              <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Iterate</span>
             </Button>
           )}
@@ -596,7 +610,7 @@ function ExecutionControls({
             onClick={onEdit}
             className="h-8"
           >
-            <Edit2 className="h-3.5 w-3.5 mr-1.5" />
+            <Edit2 className="mr-1.5 h-3.5 w-3.5" />
             {isEditMode ? 'Done' : 'Edit'}
           </Button>
           {onLaunch ? (
@@ -606,7 +620,7 @@ function ExecutionControls({
             </Button>
           ) : (
             <Button size="sm" onClick={onMarkReady} className="h-8">
-              <Shield className="h-3.5 w-3.5 mr-1.5" />
+              <Shield className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Mark</span> Ready
             </Button>
           )}
@@ -623,7 +637,7 @@ function ExecutionControls({
               onClick={onReview}
               className="h-8"
             >
-              <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+              <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Iterate</span>
             </Button>
           )}
@@ -639,7 +653,7 @@ function ExecutionControls({
               disabled={isExecuting}
               className="h-8"
             >
-              <Play className="h-3.5 w-3.5 mr-1.5" />
+              <Play className="mr-1.5 h-3.5 w-3.5" />
               {isExecuting ? 'Starting...' : 'Execute'}
             </Button>
           )}
@@ -650,11 +664,7 @@ function ExecutionControls({
       {status === 'running' && (
         <>
           {onViewExecution && (
-            <Button
-              size="sm"
-              onClick={onViewExecution}
-              className="h-8 gap-1.5"
-            >
+            <Button size="sm" onClick={onViewExecution} className="h-8 gap-1.5">
               <Eye className="h-3.5 w-3.5" />
               Live View
             </Button>
@@ -666,7 +676,7 @@ function ExecutionControls({
             disabled={isPausing}
             className="h-8"
           >
-            <Pause className="h-3.5 w-3.5 mr-1.5" />
+            <Pause className="mr-1.5 h-3.5 w-3.5" />
             {isPausing ? 'Pausing...' : 'Pause'}
           </Button>
           <Button
@@ -676,7 +686,7 @@ function ExecutionControls({
             disabled={isCancelling}
             className="h-8"
           >
-            <Square className="h-3.5 w-3.5 mr-1.5" />
+            <Square className="mr-1.5 h-3.5 w-3.5" />
             {isCancelling ? 'Cancelling...' : 'Cancel'}
           </Button>
         </>
@@ -691,7 +701,7 @@ function ExecutionControls({
             disabled={isResuming}
             className="h-8"
           >
-            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
             {isResuming ? 'Resuming...' : 'Resume'}
           </Button>
           <Button
@@ -701,7 +711,7 @@ function ExecutionControls({
             disabled={isCancelling}
             className="h-8"
           >
-            <Square className="h-3.5 w-3.5 mr-1.5" />
+            <Square className="mr-1.5 h-3.5 w-3.5" />
             {isCancelling ? 'Cancelling...' : 'Cancel'}
           </Button>
         </>
@@ -716,7 +726,7 @@ function ExecutionControls({
             disabled={isResuming}
             className="h-8"
           >
-            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
             {isResuming ? 'Resuming...' : 'Retry'}
           </Button>
         </>
@@ -739,13 +749,13 @@ function StatPill({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 text-xs">
-      <span className="text-muted-foreground flex-shrink-0">{icon}</span>
+    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs">
+      <span className="flex-shrink-0 text-muted-foreground">{icon}</span>
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {label}
         </div>
-        <div className="font-medium text-foreground truncate">{value}</div>
+        <div className="truncate font-medium text-foreground">{value}</div>
       </div>
     </div>
   );
@@ -808,7 +818,9 @@ function PhaseItem({
   onAddTask: () => void;
   onTaskEditsChange: (edits: { title: string; description: string }) => void;
 }) {
-  const completedCount = phaseTasks.filter((t) => t.status === 'completed').length;
+  const completedCount = phaseTasks.filter(
+    (t) => t.status === 'completed'
+  ).length;
   const failedCount = phaseTasks.filter((t) => t.status === 'failed').length;
   const phaseProgress =
     phaseTasks.length > 0
@@ -828,7 +840,7 @@ function PhaseItem({
       {/* Phase Header - always visible, acts as toggle */}
       <button
         className={cn(
-          'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+          'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
           'hover:bg-muted/40',
           isExpanded && 'border-b border-border/50'
         )}
@@ -851,7 +863,7 @@ function PhaseItem({
         />
 
         {/* Phase title & info */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {isEditingPhase ? (
             <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
               <Input
@@ -859,52 +871,63 @@ function PhaseItem({
                 onChange={(e) =>
                   onPhaseEditsChange({ ...phaseEdits, title: e.target.value })
                 }
-                className="font-semibold h-8 text-sm"
+                className="h-8 text-sm font-semibold"
                 autoFocus
               />
               <Textarea
                 value={phaseEdits.description}
                 onChange={(e) =>
-                  onPhaseEditsChange({ ...phaseEdits, description: e.target.value })
+                  onPhaseEditsChange({
+                    ...phaseEdits,
+                    description: e.target.value,
+                  })
                 }
                 rows={2}
                 className="text-xs"
               />
               <div className="flex gap-2">
                 <Button size="sm" onClick={onSavePhase} className="h-7">
-                  <Check className="h-3 w-3 mr-1" />
+                  <Check className="mr-1 h-3 w-3" />
                   Save
                 </Button>
-                <Button size="sm" variant="outline" onClick={onCancelPhaseEdit} className="h-7">
-                  <X className="h-3 w-3 mr-1" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onCancelPhaseEdit}
+                  className="h-7"
+                >
+                  <X className="mr-1 h-3 w-3" />
                   Cancel
                 </Button>
               </div>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-foreground truncate">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="truncate text-sm font-medium text-foreground">
                   {phase.title}
                 </span>
                 <PhaseStatusBadge status={phase.status} />
                 {phase.executionMode !== 'sequential' && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                  <Badge
+                    variant="outline"
+                    className="h-5 px-1.5 py-0 text-[10px]"
+                  >
                     {phase.executionMode}
                   </Badge>
                 )}
                 {phase.pauseAfter && (
                   <Badge
                     variant="outline"
-                    className="text-[10px] px-1.5 py-0 h-5 border-orange-500/30 text-orange-400"
+                    className="h-5 border-orange-500/30 px-1.5 py-0 text-[10px] text-orange-400"
                   >
-                    <Pause className="h-2.5 w-2.5 mr-0.5" />
+                    <Pause className="mr-0.5 h-2.5 w-2.5" />
                     Pause after
                   </Badge>
                 )}
               </div>
               {phase.description && (
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {phase.description}
                 </p>
               )}
@@ -913,9 +936,9 @@ function PhaseItem({
         </div>
 
         {/* Phase stats */}
-        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+        <div className="hidden flex-shrink-0 items-center gap-3 sm:flex">
           <div className="flex items-center gap-2">
-            <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary">
               <div
                 className={cn(
                   'h-full rounded-full transition-all',
@@ -928,12 +951,12 @@ function PhaseItem({
                 style={{ width: `${phaseProgress}%` }}
               />
             </div>
-            <span className="text-xs tabular-nums text-muted-foreground w-12 text-right">
+            <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">
               {completedCount}/{phaseTasks.length}
             </span>
           </div>
           {failedCount > 0 && (
-            <span className="text-xs text-red-400 flex items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-red-400">
               <AlertTriangle className="h-3 w-3" />
               {failedCount}
             </span>
@@ -943,10 +966,15 @@ function PhaseItem({
         {/* Edit/Delete in edit mode */}
         {isEditMode && !isEditingPhase && (
           <div
-            className="flex items-center gap-1 flex-shrink-0"
+            className="flex flex-shrink-0 items-center gap-1"
             onClick={(e) => e.stopPropagation()}
           >
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onStartEditPhase}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={onStartEditPhase}
+            >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
             <Button
@@ -985,21 +1013,23 @@ function PhaseItem({
           </div>
 
           {isEditMode && (
-            <div className="p-3 border-t border-border/30">
+            <div className="border-t border-border/30 p-3">
               <Button
                 onClick={onAddTask}
                 variant="ghost"
                 size="sm"
-                className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                className="h-8 w-full text-xs text-muted-foreground hover:text-foreground"
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Task
               </Button>
             </div>
           )}
 
-          <div className="sm:hidden px-4 py-2 bg-muted/20 text-xs text-muted-foreground flex justify-between">
-            <span>{completedCount}/{phaseTasks.length} tasks completed</span>
+          <div className="flex justify-between bg-muted/20 px-4 py-2 text-xs text-muted-foreground sm:hidden">
+            <span>
+              {completedCount}/{phaseTasks.length} tasks completed
+            </span>
             {failedCount > 0 && (
               <span className="text-red-400">{failedCount} failed</span>
             )}
@@ -1026,7 +1056,7 @@ function PhaseNumberBadge({
   return (
     <div
       className={cn(
-        'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold',
+        'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold',
         status === 'completed' &&
           'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30',
         status === 'running' &&
@@ -1041,11 +1071,7 @@ function PhaseNumberBadge({
             : 'bg-muted text-muted-foreground')
       )}
     >
-      {status === 'completed' ? (
-        <Check className="h-3.5 w-3.5" />
-      ) : (
-        number
-      )}
+      {status === 'completed' ? <Check className="h-3.5 w-3.5" /> : number}
     </div>
   );
 }
@@ -1059,13 +1085,11 @@ function PhaseStatusBadge({ status }: { status: string }) {
     pending: { label: 'Pending', className: 'text-muted-foreground bg-muted' },
     running: {
       label: 'Running',
-      className:
-        'text-amber-400 bg-amber-500/10 border-amber-500/20',
+      className: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
     },
     completed: {
       label: 'Done',
-      className:
-        'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      className: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
     },
     failed: {
       label: 'Failed',
@@ -1073,8 +1097,7 @@ function PhaseStatusBadge({ status }: { status: string }) {
     },
     paused: {
       label: 'Paused',
-      className:
-        'text-orange-400 bg-orange-500/10 border-orange-500/20',
+      className: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
     },
   };
 
@@ -1083,7 +1106,7 @@ function PhaseStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center text-[10px] px-1.5 py-0 h-5 rounded-md border font-medium',
+        'inline-flex h-5 items-center rounded-md border px-1.5 py-0 text-[10px] font-medium',
         c!.className
       )}
     >
@@ -1127,7 +1150,13 @@ function TaskRow({
   const deps: string[] = Array.isArray(rawDeps)
     ? rawDeps
     : typeof rawDeps === 'string' && rawDeps
-      ? (() => { try { return JSON.parse(rawDeps); } catch { return []; } })()
+      ? (() => {
+          try {
+            return JSON.parse(rawDeps);
+          } catch {
+            return [];
+          }
+        })()
       : [];
   const depTasks = deps
     .map((depId) => allTasks.find((t) => t.id === depId))
@@ -1165,7 +1194,7 @@ function TaskRow({
           />
           <div className="flex gap-2">
             <Button size="sm" onClick={onSave} className="h-7">
-              <Check className="h-3 w-3 mr-1" />
+              <Check className="mr-1 h-3 w-3" />
               Save
             </Button>
             <Button
@@ -1174,7 +1203,7 @@ function TaskRow({
               onClick={onCancel}
               className="h-7"
             >
-              <X className="h-3 w-3 mr-1" />
+              <X className="mr-1 h-3 w-3" />
               Cancel
             </Button>
           </div>
@@ -1185,37 +1214,37 @@ function TaskRow({
           <TaskStatusDot status={task.status} />
 
           {/* Task content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-foreground">
                 {task.title}
               </span>
               <TaskStatusLabel status={task.status} />
               {task.attempts > 1 && (
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="text-[10px] tabular-nums text-muted-foreground">
                   Attempt {task.attempts}
                 </span>
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 whitespace-pre-wrap">
+            <p className="mt-0.5 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">
               {task.description}
             </p>
 
             {/* Dependencies */}
             {depTasks.length > 0 && (
-              <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
                 {depTasks.map((dep) => (
                   <span
                     key={dep!.id}
                     className={cn(
-                      'inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md border',
+                      'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px]',
                       dep!.status === 'completed'
-                        ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5'
+                        ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
                         : dep!.status === 'failed'
-                          ? 'border-red-500/20 text-red-400 bg-red-500/5'
-                          : 'border-border text-muted-foreground bg-muted/30'
+                          ? 'border-red-500/20 bg-red-500/5 text-red-400'
+                          : 'border-border bg-muted/30 text-muted-foreground'
                     )}
                   >
                     {dep!.status === 'completed' && (
@@ -1237,14 +1266,14 @@ function TaskRow({
 
             {/* Error */}
             {task.lastError && (
-              <div className="mt-1.5 px-2.5 py-1.5 rounded-md bg-red-500/5 border border-red-500/15 text-xs text-red-400">
+              <div className="mt-1.5 rounded-md border border-red-500/15 bg-red-500/5 px-2.5 py-1.5 text-xs text-red-400">
                 {task.lastError}
               </div>
             )}
           </div>
 
           {/* Task actions */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-1">
             {task.status === 'failed' && (
               <Button
                 size="sm"
@@ -1255,7 +1284,7 @@ function TaskRow({
                   onRetry();
                 }}
               >
-                <RefreshCw className="h-3 w-3 mr-1" />
+                <RefreshCw className="mr-1 h-3 w-3" />
                 Retry
               </Button>
             )}
@@ -1263,7 +1292,7 @@ function TaskRow({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive opacity-0 group-hover:opacity-100"
+                className="h-7 w-7 p-0 text-destructive opacity-0 hover:text-destructive group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
@@ -1288,9 +1317,9 @@ function TaskStatusDot({ status }: { status: string }) {
     <div className="mt-1.5 flex-shrink-0">
       <div
         className={cn(
-          'w-2.5 h-2.5 rounded-full',
+          'h-2.5 w-2.5 rounded-full',
           status === 'completed' && 'bg-emerald-500',
-          status === 'running' && 'bg-amber-500 animate-pulse',
+          status === 'running' && 'animate-pulse bg-amber-500',
           status === 'failed' && 'bg-red-500',
           status === 'skipped' && 'bg-slate-400',
           status === 'pending' && 'bg-muted-foreground/30'
@@ -1332,7 +1361,7 @@ function TaskStatusLabel({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center text-[10px] px-1.5 py-0 h-4 rounded border font-medium',
+        'inline-flex h-4 items-center rounded border px-1.5 py-0 text-[10px] font-medium',
         c!.className
       )}
     >
@@ -1349,34 +1378,34 @@ function PlanDetailSkeleton({ onBack }: { onBack: () => void }) {
   return (
     <>
       <Breadcrumb onBack={onBack} />
-      <div className="space-y-4 mt-4">
+      <div className="mt-4 space-y-4">
         {/* Header skeleton */}
-        <div className="rounded-xl border bg-card p-6 space-y-4 animate-pulse">
+        <div className="animate-pulse space-y-4 rounded-xl border bg-card p-6">
           <div className="flex justify-between">
-            <div className="space-y-2 flex-1">
-              <div className="h-6 w-48 bg-muted rounded" />
-              <div className="h-4 w-72 bg-muted/60 rounded" />
+            <div className="flex-1 space-y-2">
+              <div className="h-6 w-48 rounded bg-muted" />
+              <div className="h-4 w-72 rounded bg-muted/60" />
             </div>
-            <div className="h-8 w-24 bg-muted rounded" />
+            <div className="h-8 w-24 rounded bg-muted" />
           </div>
           <div className="grid grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-14 bg-muted/40 rounded-lg" />
+              <div key={i} className="h-14 rounded-lg bg-muted/40" />
             ))}
           </div>
-          <div className="h-2 bg-muted rounded-full" />
+          <div className="h-2 rounded-full bg-muted" />
         </div>
 
         {/* Phase skeletons */}
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-lg border bg-card animate-pulse">
+          <div key={i} className="animate-pulse rounded-lg border bg-card">
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-7 h-7 rounded-full bg-muted" />
+              <div className="h-7 w-7 rounded-full bg-muted" />
               <div className="flex-1 space-y-1.5">
-                <div className="h-4 w-40 bg-muted rounded" />
-                <div className="h-3 w-64 bg-muted/60 rounded" />
+                <div className="h-4 w-40 rounded bg-muted" />
+                <div className="h-3 w-64 rounded bg-muted/60" />
               </div>
-              <div className="w-16 h-1.5 bg-muted rounded-full" />
+              <div className="h-1.5 w-16 rounded-full bg-muted" />
             </div>
           </div>
         ))}

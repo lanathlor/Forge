@@ -22,7 +22,10 @@ function validateTask(task: Awaited<ReturnType<typeof getTaskWithRepository>>) {
     return { error: 'Task not found', status: 404 };
   }
   if (task.status !== 'waiting_approval') {
-    return { error: `Task status is ${task.status}, expected waiting_approval`, status: 400 };
+    return {
+      error: `Task status is ${task.status}, expected waiting_approval`,
+      status: 400,
+    };
   }
   return null;
 }
@@ -30,12 +33,18 @@ function validateTask(task: Awaited<ReturnType<typeof getTaskWithRepository>>) {
 type Task = NonNullable<Awaited<ReturnType<typeof getTaskWithRepository>>>;
 
 async function approveWithoutChanges(task: Task, id: string) {
-  console.log(`[Approve API] No file changes, marking task as approved without commit`);
+  console.log(
+    `[Approve API] No file changes, marking task as approved without commit`
+  );
   await db
     .update(tasks)
     .set({ status: 'approved', completedAt: new Date(), updatedAt: new Date() })
     .where(eq(tasks.id, id));
-  taskEvents.emit('task:update', { sessionId: task.sessionId, taskId: id, status: 'approved' });
+  taskEvents.emit('task:update', {
+    sessionId: task.sessionId,
+    taskId: id,
+    status: 'approved',
+  });
   return Response.json({ success: true, noChanges: true });
 }
 
@@ -44,14 +53,19 @@ async function approveWithChanges(task: Task, id: string) {
     return Response.json({ error: 'No diff content available', status: 400 });
   }
   const repoPath = task.session.repository.path;
-  console.log(`[Approve API] Calling Claude Code to generate commit message...`);
+  console.log(
+    `[Approve API] Calling Claude Code to generate commit message...`
+  );
   const commitMessage = await generateCommitMessage(
     task.prompt,
     task.filesChanged!,
     task.diffContent,
     repoPath
   );
-  await db.update(tasks).set({ commitMessage, updatedAt: new Date() }).where(eq(tasks.id, id));
+  await db
+    .update(tasks)
+    .set({ commitMessage, updatedAt: new Date() })
+    .where(eq(tasks.id, id));
   console.log(`[Approve API] Commit message generated successfully`);
   return Response.json({
     success: true,
@@ -81,14 +95,24 @@ export async function POST(
     const task = await getTaskWithRepository(id);
     const validationError = validateTask(task);
     if (validationError) {
-      return Response.json({ error: validationError.error }, { status: validationError.status });
+      return Response.json(
+        { error: validationError.error },
+        { status: validationError.status }
+      );
     }
     const hasChanges = task!.filesChanged && task!.filesChanged.length > 0;
-    return hasChanges ? approveWithChanges(task!, id) : approveWithoutChanges(task!, id);
+    return hasChanges
+      ? approveWithChanges(task!, id)
+      : approveWithoutChanges(task!, id);
   } catch (error) {
     console.error('[Approve API] Error:', error);
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate commit message' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate commit message',
+      },
       { status: 500 }
     );
   }

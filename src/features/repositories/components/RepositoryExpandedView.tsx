@@ -24,7 +24,7 @@ export function RepositoryExpandedView({
   isRescanning,
 }: RepositoryExpandedViewProps) {
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="flex h-full flex-col">
       <RepositoryHeader
         repoCount={repoCount}
         onToggleCollapse={onToggleCollapse}
@@ -32,7 +32,11 @@ export function RepositoryExpandedView({
         isRescanning={isRescanning}
       />
       <div className="flex-1 overflow-y-auto p-2">
-        <RepositoryTree node={tree} selectedId={selectedId} onSelect={onSelect} />
+        <RepositoryTree
+          node={tree}
+          selectedId={selectedId}
+          onSelect={onSelect}
+        />
       </div>
     </Card>
   );

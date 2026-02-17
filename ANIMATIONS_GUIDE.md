@@ -5,6 +5,7 @@ This document describes all the animations and micro-interactions implemented in
 ## 🎨 Animation System Overview
 
 The application now features a comprehensive animation system with:
+
 - **Smooth transitions** for all interactive elements
 - **Feedback animations** for user actions
 - **List animations** with stagger effects
@@ -14,7 +15,9 @@ The application now features a comprehensive animation system with:
 ## 📦 Core Files
 
 ### `/src/shared/styles/animations.css`
+
 Central animation definitions with:
+
 - Keyframe animations (fade, slide, scale, shake, bounce, etc.)
 - Animation utility classes
 - Hover effects
@@ -25,7 +28,9 @@ Central animation definitions with:
 - Reduced motion media queries
 
 ### `/src/shared/components/ui/feedback-animations.tsx`
+
 Reusable feedback components:
+
 - `<SuccessCheckmark />` - Animated checkmark for success states
 - `<ErrorIndicator />` - Shake animation for errors
 - `<WarningIndicator />` - Pulse animation for warnings
@@ -39,15 +44,18 @@ Reusable feedback components:
 ## 🎯 Implemented Micro-Interactions
 
 ### 1. **Buttons**
+
 **File:** `src/shared/components/ui/button.tsx`
 
 **Animations:**
+
 - Hover: Lift effect with shadow (`hover:-translate-y-0.5 hover:shadow-md`)
 - Active: Scale down (`active:scale-95`)
 - Focus: Ring animation with offset
 - Smooth transitions for all states
 
 **Usage:**
+
 ```tsx
 <Button variant="default">Click me</Button>
 <Button variant="destructive">Delete</Button>
@@ -55,28 +63,33 @@ Reusable feedback components:
 ```
 
 ### 2. **Dashboard Cards**
+
 **File:** `src/shared/components/ui/dashboard-cards.tsx`
 
 **Animations:**
 
 #### StatCard
+
 - Hover: Subtle lift + scale (`hover:scale-[1.01] hover:-translate-y-0.5`)
 - Colored shadows based on variant (success, warning, error)
 - Smooth transitions (200ms)
 
 #### ActionCard
+
 - Hover: Lift + scale with colored shadow
 - Icon rotation on hover (`group-hover:rotate-3`)
 - Icon scale animation (`group-hover:scale-110`)
 - Active press effect (`active:scale-[0.99]`)
 
 #### ListCard
+
 - List items slide right on hover (`hover:pl-5`)
 - Smooth background transition
 - Active press effect
 - Stagger animation for initial render
 
 **Usage:**
+
 ```tsx
 <StatCard
   variant="success"
@@ -96,9 +109,11 @@ Reusable feedback components:
 ```
 
 ### 3. **Repository Selector**
+
 **File:** `src/features/repositories/components/RepositorySelector.tsx`
 
 **Animations:**
+
 - Rows slide right on hover (`hover:pl-4`)
 - Focused item has slide-in animation (`animate-slide-in-right`)
 - Active repos with needs-attention pulse (`animate-pulse-alert`)
@@ -107,15 +122,18 @@ Reusable feedback components:
 - Search input focus ring animation
 
 **User Experience:**
+
 - Visual feedback when hovering repos
 - Keyboard navigation shows focus clearly
 - Urgent items pulse to draw attention
 - Smooth list transitions
 
 ### 4. **Tabs Navigation**
+
 **File:** `src/app/components/DashboardLayout.tsx`
 
 **Animations:**
+
 - Tab buttons: Scale up on hover (`hover:scale-105`)
 - Active press: Scale down (`active:scale-95`)
 - Tab content: Slide up fade when switching (`animate-slide-up-fade`)
@@ -123,14 +141,17 @@ Reusable feedback components:
 - Plan count badge: Ping animation for active plans
 
 **User Experience:**
+
 - Clear visual feedback when switching tabs
 - Smooth content transitions
 - Attention-grabbing badge for active work
 
 ### 5. **Needs Attention Component**
+
 **File:** `src/app/components/NeedsAttention.tsx`
 
 **Animations:**
+
 - Critical alerts: Pulse + bounce icon (`animate-pulse` + `animate-bounce`)
 - High severity: Ring glow effect
 - Live duration counter updates every second
@@ -138,6 +159,7 @@ Reusable feedback components:
 - Alert items fade in on mount
 
 **User Experience:**
+
 - Critical issues immediately grab attention
 - Clear visual hierarchy by severity
 - Real-time feedback on stuck duration
@@ -147,9 +169,12 @@ Reusable feedback components:
 ### Hover Effects
 
 #### Lift Effect
+
 ```css
 .hover-lift {
-  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  transition:
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out;
 }
 .hover-lift:hover {
   transform: translateY(-2px);
@@ -158,6 +183,7 @@ Reusable feedback components:
 ```
 
 #### Scale Effect
+
 ```css
 .hover-scale:hover {
   transform: scale(1.02);
@@ -165,16 +191,19 @@ Reusable feedback components:
 ```
 
 #### Glow Effect
+
 ```css
 .hover-glow:hover {
-  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2),
-              0 0 16px hsl(var(--primary) / 0.1);
+  box-shadow:
+    0 0 0 2px hsl(var(--primary) / 0.2),
+    0 0 16px hsl(var(--primary) / 0.1);
 }
 ```
 
 ### Feedback Animations
 
 #### Success Flash
+
 ```tsx
 <SuccessFlash trigger={saved}>
   <div>Content saved!</div>
@@ -182,11 +211,13 @@ Reusable feedback components:
 ```
 
 #### Error Shake
+
 ```tsx
 <ErrorIndicator show={hasError} size="md" />
 ```
 
 #### Warning Pulse
+
 ```tsx
 <WarningIndicator show={needsAttention} size="lg" />
 ```
@@ -194,13 +225,17 @@ Reusable feedback components:
 ### List Animations
 
 #### Stagger Effect
+
 ```tsx
 <div className="stagger-children">
-  {items.map(item => <Item key={item.id} {...item} />)}
+  {items.map((item) => (
+    <Item key={item.id} {...item} />
+  ))}
 </div>
 ```
 
 #### Enter/Exit
+
 ```tsx
 <div className="list-item-enter">Item content</div>
 <div className="list-item-exit">Removing...</div>
@@ -209,19 +244,17 @@ Reusable feedback components:
 ### Modal/Panel Animations
 
 #### Modal Fade + Scale
+
 ```tsx
 <div className="modal-backdrop-enter">
-  <div className="modal-content-enter">
-    Modal content
-  </div>
+  <div className="modal-content-enter">Modal content</div>
 </div>
 ```
 
 #### Panel Slide
+
 ```tsx
-<div className="panel-slide-in-right">
-  Panel content
-</div>
+<div className="panel-slide-in-right">Panel content</div>
 ```
 
 ## ♿ Accessibility
@@ -246,6 +279,7 @@ All animations respect the user's motion preferences:
 ### Focus Indicators
 
 Enhanced focus states for keyboard navigation:
+
 - 2px ring with offset
 - Clear visual indication
 - Consistent across all components
@@ -254,6 +288,7 @@ Enhanced focus states for keyboard navigation:
 ### ARIA Support
 
 All animated components include proper ARIA attributes:
+
 - `role="status"` for live regions
 - `aria-live="polite"` for updates
 - `aria-label` for icon-only buttons
@@ -280,6 +315,7 @@ All animated components include proper ARIA attributes:
 ## 🎨 Design Tokens
 
 ### Durations
+
 - `--duration-instant`: 0ms
 - `--duration-fast`: 100ms (quick feedback)
 - `--duration-normal`: 200ms (most UI interactions)
@@ -288,6 +324,7 @@ All animated components include proper ARIA attributes:
 - `--duration-slowest`: 700ms
 
 ### Easing Functions
+
 - `--ease-linear`: Linear motion
 - `--ease-in`: Accelerating
 - `--ease-out`: Decelerating (most common)
@@ -297,6 +334,7 @@ All animated components include proper ARIA attributes:
 ## 🔮 Future Enhancements
 
 Potential additions:
+
 - [ ] Loading skeleton shimmer effect for empty states
 - [ ] Progress bar indeterminate animation
 - [ ] Toast notification slide-ins

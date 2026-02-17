@@ -1,5 +1,9 @@
 import { db } from '@/db';
-import { sessions, type Session, type SessionStatus } from '@/db/schema/sessions';
+import {
+  sessions,
+  type Session,
+  type SessionStatus,
+} from '@/db/schema/sessions';
 import { tasks, type Task, type FileChange } from '@/db/schema/tasks';
 import { repositories } from '@/db/schema/repositories';
 import { qaGateResults, type QAGateResult } from '@/db/schema/qa-gates';
@@ -297,7 +301,12 @@ export interface EnhancedSessionSummary extends SessionSummary {
   };
   timeline: Array<{
     timestamp: string;
-    type: 'session_start' | 'task_start' | 'task_complete' | 'task_fail' | 'session_end';
+    type:
+      | 'session_start'
+      | 'task_start'
+      | 'task_complete'
+      | 'task_fail'
+      | 'session_end';
     label: string;
     taskId?: string;
   }>;
@@ -305,7 +314,9 @@ export interface EnhancedSessionSummary extends SessionSummary {
   totalDeletions: number;
 }
 
-function groupQaByTask(allQaResults: QAGateResult[]): Map<string, QAGateResult[]> {
+function groupQaByTask(
+  allQaResults: QAGateResult[]
+): Map<string, QAGateResult[]> {
   const qaByTask = new Map<string, QAGateResult[]>();
   for (const result of allQaResults) {
     const existing = qaByTask.get(result.taskId) ?? [];
@@ -363,7 +374,10 @@ function buildTimeline(
       });
     }
     if (t.completedAt) {
-      const isFailed = t.status === 'failed' || t.status === 'qa_failed' || t.status === 'rejected';
+      const isFailed =
+        t.status === 'failed' ||
+        t.status === 'qa_failed' ||
+        t.status === 'rejected';
       timeline.push({
         timestamp: t.completedAt.toISOString(),
         type: isFailed ? 'task_fail' : 'task_complete',
@@ -381,11 +395,16 @@ function buildTimeline(
     });
   }
 
-  timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  timeline.sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
   return timeline;
 }
 
-function computeCodeChangeStats(sessionTasks: Task[]): { totalAdditions: number; totalDeletions: number } {
+function computeCodeChangeStats(sessionTasks: Task[]): {
+  totalAdditions: number;
+  totalDeletions: number;
+} {
   let totalAdditions = 0;
   let totalDeletions = 0;
   for (const t of sessionTasks) {
@@ -411,11 +430,12 @@ export async function getEnhancedSessionSummary(
   });
 
   const taskIds = sessionTasks.map((t) => t.id);
-  const allQaResults: QAGateResult[] = taskIds.length > 0
-    ? await db.query.qaGateResults.findMany({
-        where: inArray(qaGateResults.taskId, taskIds),
-      })
-    : [];
+  const allQaResults: QAGateResult[] =
+    taskIds.length > 0
+      ? await db.query.qaGateResults.findMany({
+          where: inArray(qaGateResults.taskId, taskIds),
+        })
+      : [];
 
   const qaByTask = groupQaByTask(allQaResults);
   const enhancedTasks = buildEnhancedTasks(sessionTasks, qaByTask);
@@ -426,7 +446,8 @@ export async function getEnhancedSessionSummary(
   const passRate = totalRuns > 0 ? Math.round((passed / totalRuns) * 100) : 0;
 
   const timeline = buildTimeline(baseSummary.session, sessionTasks);
-  const { totalAdditions, totalDeletions } = computeCodeChangeStats(sessionTasks);
+  const { totalAdditions, totalDeletions } =
+    computeCodeChangeStats(sessionTasks);
 
   return {
     ...baseSummary,
@@ -500,7 +521,10 @@ export async function abandonInactiveSessions(
   const threshold = new Date(Date.now() - inactivityThresholdMs);
 
   const inactiveSessions = await db.query.sessions.findMany({
-    where: and(eq(sessions.status, 'active'), lt(sessions.lastActivity, threshold)),
+    where: and(
+      eq(sessions.status, 'active'),
+      lt(sessions.lastActivity, threshold)
+    ),
   });
 
   for (const session of inactiveSessions) {

@@ -25,18 +25,27 @@ export class PlanExecutor {
       .select()
       .from(sessionTasks)
       .where(
-        inArray(sessionTasks.status, ['running', 'pre_flight', 'waiting_qa', 'qa_running'])
+        inArray(sessionTasks.status, [
+          'running',
+          'pre_flight',
+          'waiting_qa',
+          'qa_running',
+        ])
       );
 
     if (stuckTasks.length > 0) {
-      console.log(`[PlanExecutor] Found ${stuckTasks.length} stuck tasks, marking as failed`);
+      console.log(
+        `[PlanExecutor] Found ${stuckTasks.length} stuck tasks, marking as failed`
+      );
 
       for (const task of stuckTasks) {
         await db
           .update(sessionTasks)
           .set({
             status: 'failed',
-            claudeOutput: (task.claudeOutput || '') + '\n\n❌ Task interrupted by server restart',
+            claudeOutput:
+              (task.claudeOutput || '') +
+              '\n\n❌ Task interrupted by server restart',
             updatedAt: new Date(),
           })
           .where(eq(sessionTasks.id, task.id));
@@ -50,7 +59,9 @@ export class PlanExecutor {
       .where(eq(planTasks.status, 'running'));
 
     if (stuckPlanTasks.length > 0) {
-      console.log(`[PlanExecutor] Found ${stuckPlanTasks.length} stuck plan tasks, marking as failed`);
+      console.log(
+        `[PlanExecutor] Found ${stuckPlanTasks.length} stuck plan tasks, marking as failed`
+      );
 
       for (const planTask of stuckPlanTasks) {
         await db
@@ -71,7 +82,9 @@ export class PlanExecutor {
       .where(eq(plans.status, 'running'));
 
     if (stuckPlans.length > 0) {
-      console.log(`[PlanExecutor] Found ${stuckPlans.length} stuck plans, marking as paused`);
+      console.log(
+        `[PlanExecutor] Found ${stuckPlans.length} stuck plans, marking as paused`
+      );
 
       for (const plan of stuckPlans) {
         await db
@@ -111,7 +124,11 @@ export class PlanExecutor {
       })
       .where(eq(plans.id, planId));
 
-    emitPlanEvent({ planId, type: 'plan_started', timestamp: new Date().toISOString() });
+    emitPlanEvent({
+      planId,
+      type: 'plan_started',
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       // Get phases in order
@@ -147,7 +164,11 @@ export class PlanExecutor {
         })
         .where(eq(plans.id, planId));
 
-      emitPlanEvent({ planId, type: 'plan_completed', timestamp: new Date().toISOString() });
+      emitPlanEvent({
+        planId,
+        type: 'plan_completed',
+        timestamp: new Date().toISOString(),
+      });
       console.log(`[PlanExecutor] Plan ${planId} completed successfully`);
     } catch (error) {
       console.error(`[PlanExecutor] Plan ${planId} failed:`, error);
@@ -160,7 +181,12 @@ export class PlanExecutor {
         })
         .where(eq(plans.id, planId));
 
-      emitPlanEvent({ planId, type: 'plan_failed', error: error instanceof Error ? error.message : 'Unknown error', timestamp: new Date().toISOString() });
+      emitPlanEvent({
+        planId,
+        type: 'plan_failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      });
       throw error;
     }
   }
@@ -202,7 +228,12 @@ export class PlanExecutor {
       })
       .where(eq(plans.id, planId));
 
-    emitPlanEvent({ planId, type: 'phase_started', phaseId, timestamp: new Date().toISOString() });
+    emitPlanEvent({
+      planId,
+      type: 'phase_started',
+      phaseId,
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       // Get tasks for this phase
@@ -243,7 +274,12 @@ export class PlanExecutor {
       // Update plan stats
       await this.updatePlanCompletedPhases(planId);
 
-      emitPlanEvent({ planId, type: 'phase_completed', phaseId, timestamp: new Date().toISOString() });
+      emitPlanEvent({
+        planId,
+        type: 'phase_completed',
+        phaseId,
+        timestamp: new Date().toISOString(),
+      });
       console.log(`[PlanExecutor] Phase ${phase.order} completed`);
     } catch (error) {
       console.error(`[PlanExecutor] Phase ${phase.order} failed:`, error);
@@ -256,7 +292,13 @@ export class PlanExecutor {
         })
         .where(eq(phases.id, phaseId));
 
-      emitPlanEvent({ planId, type: 'phase_failed', phaseId, error: error instanceof Error ? error.message : 'Unknown error', timestamp: new Date().toISOString() });
+      emitPlanEvent({
+        planId,
+        type: 'phase_failed',
+        phaseId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      });
       throw error;
     }
   }
@@ -295,7 +337,9 @@ export class PlanExecutor {
 
         // Check dependencies
         const deps = task.dependsOn
-          ? (typeof task.dependsOn === 'string' ? JSON.parse(task.dependsOn) : task.dependsOn)
+          ? typeof task.dependsOn === 'string'
+            ? JSON.parse(task.dependsOn)
+            : task.dependsOn
           : [];
         return deps.every((depId: string) => completed.has(depId));
       });
@@ -410,7 +454,9 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
       throw new Error('Failed to create session task');
     }
 
-    console.log(`[PlanExecutor] Created session task ${sessionTask.id} for plan task ${task.title}`);
+    console.log(
+      `[PlanExecutor] Created session task ${sessionTask.id} for plan task ${task.title}`
+    );
 
     // Update plan task with session and task IDs
     await db
@@ -434,15 +480,27 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
       })
       .where(eq(plans.id, task.planId));
 
-    emitPlanEvent({ planId: task.planId, type: 'task_started', phaseId: task.phaseId, taskId, sessionTaskId: sessionTask.id, timestamp: new Date().toISOString() });
+    emitPlanEvent({
+      planId: task.planId,
+      type: 'task_started',
+      phaseId: task.phaseId,
+      taskId,
+      sessionTaskId: sessionTask.id,
+      timestamp: new Date().toISOString(),
+    });
 
     // Execute the task asynchronously (fire and forget)
     // This prevents timeout issues and allows the UI to track progress
     executeTask(sessionTask.id).catch((error) => {
-      console.error(`[PlanExecutor] Task ${sessionTask.id} execution failed:`, error);
+      console.error(
+        `[PlanExecutor] Task ${sessionTask.id} execution failed:`,
+        error
+      );
     });
 
-    console.log(`[PlanExecutor] Started async execution of task ${sessionTask.id}`);
+    console.log(
+      `[PlanExecutor] Started async execution of task ${sessionTask.id}`
+    );
 
     // Poll for task completion with activity-based timeout
     // Instead of a fixed 10-minute timeout, we track activity (Claude output, QA gates, etc.)
@@ -452,7 +510,7 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
 
     try {
       while (true) {
-        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
         const [completedSessionTask] = await db
           .select()
@@ -468,11 +526,21 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
         activityTracker.recordActivity(taskId, 'status_change');
 
         // Emit progress event so the UI can show what the session task is doing
-        emitPlanEvent({ planId: task.planId, type: 'task_progress', phaseId: task.phaseId, taskId, sessionTaskId: sessionTask.id, status: completedSessionTask.status, timestamp: new Date().toISOString() });
+        emitPlanEvent({
+          planId: task.planId,
+          type: 'task_progress',
+          phaseId: task.phaseId,
+          taskId,
+          sessionTaskId: sessionTask.id,
+          status: completedSessionTask.status,
+          timestamp: new Date().toISOString(),
+        });
 
         const timeUntilTimeout = activityTracker.getTimeUntilTimeout(taskId);
-        console.log(`[PlanExecutor] Poll: Task status = ${completedSessionTask.status}, ` +
-          `time until potential timeout: ${timeUntilTimeout?.toFixed(0)}s`);
+        console.log(
+          `[PlanExecutor] Poll: Task status = ${completedSessionTask.status}, ` +
+            `time until potential timeout: ${timeUntilTimeout?.toFixed(0)}s`
+        );
 
         // Check if task is in a terminal state
         if (completedSessionTask.status === 'completed') {
@@ -487,7 +555,13 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
             .where(eq(planTasks.id, taskId));
 
           await this.updatePlanCompletedTasks(task.planId);
-          emitPlanEvent({ planId: task.planId, type: 'task_completed', phaseId: task.phaseId, taskId, timestamp: new Date().toISOString() });
+          emitPlanEvent({
+            planId: task.planId,
+            type: 'task_completed',
+            phaseId: task.phaseId,
+            taskId,
+            timestamp: new Date().toISOString(),
+          });
           console.log(`[PlanExecutor] Task completed: ${task.title}`);
           return;
         } else if (completedSessionTask.status === 'approved') {
@@ -503,8 +577,16 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
             .where(eq(planTasks.id, taskId));
 
           await this.updatePlanCompletedTasks(task.planId);
-          emitPlanEvent({ planId: task.planId, type: 'task_completed', phaseId: task.phaseId, taskId, timestamp: new Date().toISOString() });
-          console.log(`[PlanExecutor] Task manually approved and completed: ${task.title}`);
+          emitPlanEvent({
+            planId: task.planId,
+            type: 'task_completed',
+            phaseId: task.phaseId,
+            taskId,
+            timestamp: new Date().toISOString(),
+          });
+          console.log(
+            `[PlanExecutor] Task manually approved and completed: ${task.title}`
+          );
           return;
         } else if (completedSessionTask.status === 'failed') {
           // Permanent failure (pre-flight, Claude crash, etc.)
@@ -519,7 +601,14 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
             })
             .where(eq(planTasks.id, taskId));
 
-          emitPlanEvent({ planId: task.planId, type: 'task_failed', phaseId: task.phaseId, taskId, error: errorMsg, timestamp: new Date().toISOString() });
+          emitPlanEvent({
+            planId: task.planId,
+            type: 'task_failed',
+            phaseId: task.phaseId,
+            taskId,
+            error: errorMsg,
+            timestamp: new Date().toISOString(),
+          });
           await this.pausePlan(task.planId, 'task_failed', taskId);
           throw new Error(errorMsg);
         } else if (completedSessionTask.status === 'qa_failed') {
@@ -531,7 +620,9 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
           });
 
           if (currentPlanTask?.status !== 'failed') {
-            console.log(`[PlanExecutor] QA failed - marking plan task as failed, pausing plan`);
+            console.log(
+              `[PlanExecutor] QA failed - marking plan task as failed, pausing plan`
+            );
             await db
               .update(planTasks)
               .set({
@@ -567,7 +658,9 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
         // Check for activity-based timeout
         const timeoutError = activityTracker.checkTimeout(taskId);
         if (timeoutError) {
-          console.log(`[PlanExecutor] Activity timeout detected: ${timeoutError}`);
+          console.log(
+            `[PlanExecutor] Activity timeout detected: ${timeoutError}`
+          );
 
           await db
             .update(planTasks)
@@ -609,7 +702,12 @@ IMPORTANT: Make the code changes but DO NOT commit them. The system will automat
       })
       .where(eq(plans.id, planId));
 
-    emitPlanEvent({ planId, type: 'plan_paused', taskId: contextTaskId, timestamp: new Date().toISOString() });
+    emitPlanEvent({
+      planId,
+      type: 'plan_paused',
+      taskId: contextTaskId,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**

@@ -61,7 +61,8 @@ export function useKeyboardShortcuts() {
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const target = event.target as HTMLElement;
     const tagName = target.tagName;
-    const isInput = tagName === 'INPUT' || tagName === 'TEXTAREA' || target.isContentEditable;
+    const isInput =
+      tagName === 'INPUT' || tagName === 'TEXTAREA' || target.isContentEditable;
 
     for (const shortcut of shortcutsRef.current.values()) {
       if (isInput && shortcut.excludeInputs) continue;
@@ -72,7 +73,8 @@ export function useKeyboardShortcuts() {
       const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey;
       const altMatch = shortcut.alt ? event.altKey : !event.altKey;
       const ctrlOrMeta = event.ctrlKey || event.metaKey;
-      const ctrlMetaMatch = (shortcut.ctrl || shortcut.meta) ? ctrlOrMeta : !ctrlOrMeta;
+      const ctrlMetaMatch =
+        shortcut.ctrl || shortcut.meta ? ctrlOrMeta : !ctrlOrMeta;
 
       if (ctrlMetaMatch && shiftMatch && altMatch) {
         if (shortcut.preventDefault !== false) {

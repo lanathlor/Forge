@@ -17,7 +17,14 @@ import { DraggableGatesList } from './DraggableGatesList';
 import { AddGateForm } from './AddGateForm';
 import { GatePresets } from './GatePresets';
 import { ImportExportConfig } from './ImportExportConfig';
-import { Plus, Save, Shield, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import {
+  Plus,
+  Save,
+  Shield,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+} from 'lucide-react';
 import type {
   QAGatesConfigProps,
   QAGate,
@@ -64,7 +71,8 @@ function StatusAlert({
       <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-950/20">
         <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
-          Configure your QA gates below, then run them to validate your code quality.
+          Configure your QA gates below, then run them to validate your code
+          quality.
         </AlertDescription>
       </Alert>
     );
@@ -75,7 +83,8 @@ function StatusAlert({
       <Alert className="border-amber-200 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/20">
         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
-          You have unsaved changes. Save your configuration before running QA gates.
+          You have unsaved changes. Save your configuration before running QA
+          gates.
         </AlertDescription>
       </Alert>
     );
@@ -98,8 +107,8 @@ function StatusAlert({
       <Alert className="border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-950/20">
         <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
         <AlertDescription className="text-sm text-red-900 dark:text-red-200">
-          {failedGates.length} gate{failedGates.length > 1 ? 's' : ''} failed. Review the
-          output below to fix issues.
+          {failedGates.length} gate{failedGates.length > 1 ? 's' : ''} failed.
+          Review the output below to fix issues.
         </AlertDescription>
       </Alert>
     );
@@ -140,7 +149,9 @@ function PipelineHeader({
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold">QA Gates Configuration</CardTitle>
+              <CardTitle className="text-2xl font-bold">
+                QA Gates Configuration
+              </CardTitle>
               <CardDescription className="text-sm">
                 {repositoryName} &middot; v{version}
               </CardDescription>
@@ -150,7 +161,9 @@ function PipelineHeader({
             {/* Stats pills */}
             <div className="flex items-center gap-2 text-sm">
               <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
-                <span className="font-bold text-green-600 dark:text-green-400">{enabledCount}</span>
+                <span className="font-bold text-green-600 dark:text-green-400">
+                  {enabledCount}
+                </span>
                 <span className="text-muted-foreground">active</span>
               </Badge>
               {totalCount - enabledCount > 0 && (
@@ -280,7 +293,10 @@ export function QAGatesConfig({ repositoryId }: QAGatesConfigProps) {
     return JSON.stringify(config.config.qaGates) !== JSON.stringify(gates);
   }, [config, gates]);
 
-  const enabledCount = useMemo(() => gates.filter(g => g.enabled).length, [gates]);
+  const enabledCount = useMemo(
+    () => gates.filter((g) => g.enabled).length,
+    [gates]
+  );
 
   if (isLoading) return <LoadingState />;
   if (error) return <ErrorState error={error} />;

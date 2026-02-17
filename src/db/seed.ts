@@ -28,7 +28,7 @@ const defaultGates = [
   },
 ];
 
-async function upsertGate(gate: typeof defaultGates[0]) {
+async function upsertGate(gate: (typeof defaultGates)[0]) {
   await db
     .insert(qaGateConfigs)
     .values(gate)

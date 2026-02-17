@@ -1,4 +1,4 @@
-import { claudeWrapper } from '@/lib/claude/wrapper';
+import { createAIProvider } from '@/lib/ai';
 import { runPreFlightChecks } from '@/lib/git/pre-flight';
 import { captureDiff } from '@/lib/git/diff';
 import { runTaskQAGates } from '@/lib/qa-gates/task-qa-service';
@@ -9,6 +9,9 @@ import { eq } from 'drizzle-orm';
 import { taskEvents } from '@/lib/events/task-events';
 
 const MAX_QA_ATTEMPTS = 3;
+
+// Create AI provider instance
+const aiProvider = createAIProvider();
 
 async function emitAndAppendOutput(
   taskId: string,
@@ -33,30 +36,40 @@ async function invokeClaudeForRetry(
   containerPath: string,
   retryPrompt: string
 ): Promise<void> {
-  const outputHandler = (data: { taskId: string; output?: string; data?: string }) => {
+  const outputHandler = (data: {
+    taskId: string;
+    output?: string;
+    data?: string;
+  }) => {
     if (data.taskId === taskId) {
       const output = data.output || data.data || '';
       taskEvents.emit('task:output', { sessionId, taskId, output });
     }
   };
 
-  claudeWrapper.on('output', outputHandler);
+  aiProvider.on('output', outputHandler);
 
-  console.log(`[Task ${taskId}] Invoking Claude for retry with prompt length: ${retryPrompt.length} chars`);
+  console.log(
+    `[Task ${taskId}] Invoking Claude for retry with prompt length: ${retryPrompt.length} chars`
+  );
 
   try {
-    await claudeWrapper.executeTask({
+    await aiProvider.executeTask({
       workingDirectory: containerPath,
       prompt: retryPrompt,
       taskId,
     });
 
     const retryCompleteMessage = `\n✓ Claude retry execution completed\n`;
-    taskEvents.emit('task:output', { sessionId, taskId, output: retryCompleteMessage });
+    taskEvents.emit('task:output', {
+      sessionId,
+      taskId,
+      output: retryCompleteMessage,
+    });
 
     console.log(`[Task ${taskId}] Claude retry execution completed`);
   } finally {
-    claudeWrapper.off('output', outputHandler);
+    aiProvider.off('output', outputHandler);
   }
 }
 
@@ -90,7 +103,10 @@ async function runQAGatesWithRetry(
 
     const qaResultMessage = passed
       ? `\n✅ QA gates PASSED on attempt ${attempt}\n`
-      : `\n❌ QA gates FAILED on attempt ${attempt}\n${results.filter(r => r.status === 'failed').map(r => `  • ${r.gateName}: ${r.errors?.join(', ') || r.output}`).join('\n')}\n`;
+      : `\n❌ QA gates FAILED on attempt ${attempt}\n${results
+          .filter((r) => r.status === 'failed')
+          .map((r) => `  • ${r.gateName}: ${r.errors?.join(', ') || r.output}`)
+          .join('\n')}\n`;
 
     await emitAndAppendOutput(taskId, sessionId, qaResultMessage);
 
@@ -104,7 +120,11 @@ async function runQAGatesWithRetry(
     // If this was the last attempt, give up
     if (attempt >= MAX_QA_ATTEMPTS) {
       const failMessage = `\n🚫 Maximum QA attempts (${MAX_QA_ATTEMPTS}) reached. Task failed.\n`;
-      taskEvents.emit('task:output', { sessionId, taskId, output: failMessage });
+      taskEvents.emit('task:output', {
+        sessionId,
+        taskId,
+        output: failMessage,
+      });
       console.log(`[Task ${taskId}] Max QA attempts reached, task failed`);
       return;
     }
@@ -115,7 +135,9 @@ async function runQAGatesWithRetry(
 
     const retryStartMessage = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔄 RETRY ATTEMPT ${attempt + 1}/${MAX_QA_ATTEMPTS}\nInvoking Claude to fix QA failures...\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    console.log(`[Task ${taskId}] Invoking Claude to fix QA failures (attempt ${attempt + 1})`);
+    console.log(
+      `[Task ${taskId}] Invoking Claude to fix QA failures (attempt ${attempt + 1})`
+    );
 
     await emitAndAppendOutput(taskId, sessionId, retryStartMessage);
 
@@ -130,7 +152,9 @@ async function runQAGatesWithRetry(
     await invokeClaudeForRetry(taskId, sessionId, containerPath, retryPrompt);
 
     // Capture new diff
-    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    const task = await db.query.tasks.findFirst({
+      where: eq(tasks.id, taskId),
+    });
 
     if (!task) {
       throw new Error('Task not found after retry');
@@ -232,7 +256,11 @@ export async function manualQARetry(taskId: string): Promise<void> {
   // Build retry prompt with failure details
   const failedGates = results.filter((r) => r.status === 'failed');
   const currentAttempt = task.currentQAAttempt || 1;
-  const retryPrompt = buildRetryPrompt(task.prompt, failedGates, currentAttempt);
+  const retryPrompt = buildRetryPrompt(
+    task.prompt,
+    failedGates,
+    currentAttempt
+  );
 
   const retryStartMessage = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔄 MANUAL FIX & RE-RUN\nInvoking Claude to fix QA failures...\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
@@ -244,7 +272,7 @@ export async function manualQARetry(taskId: string): Promise<void> {
     .set({
       status: 'running',
       currentQAAttempt: currentAttempt + 1,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     })
     .where(eq(tasks.id, taskId));
 
@@ -253,7 +281,9 @@ export async function manualQARetry(taskId: string): Promise<void> {
   await invokeClaudeForRetry(taskId, sessionId, containerPath, retryPrompt);
 
   // Capture new diff
-  const updatedTask = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+  const updatedTask = await db.query.tasks.findFirst({
+    where: eq(tasks.id, taskId),
+  });
 
   if (!updatedTask) {
     throw new Error('Task not found after retry');
@@ -315,13 +345,18 @@ export async function executeTask(taskId: string): Promise<void> {
       status: 'pre_flight',
     });
 
-    console.log(`[Task ${taskId}] Running pre-flight checks for path: ${repoPath}`);
+    console.log(
+      `[Task ${taskId}] Running pre-flight checks for path: ${repoPath}`
+    );
     console.log(`[Task ${taskId}] Container path: ${containerPath}`);
 
     const preFlightResult = await runPreFlightChecks(repoPath);
 
     if (!preFlightResult.passed) {
-      console.error(`[Task ${taskId}] Pre-flight check failed:`, preFlightResult.error);
+      console.error(
+        `[Task ${taskId}] Pre-flight check failed:`,
+        preFlightResult.error
+      );
 
       await db
         .update(tasks)
@@ -340,7 +375,9 @@ export async function executeTask(taskId: string): Promise<void> {
       return;
     }
 
-    console.log(`[Task ${taskId}] Pre-flight checks passed. Commit: ${preFlightResult.currentCommit}, Branch: ${preFlightResult.currentBranch}`);
+    console.log(
+      `[Task ${taskId}] Pre-flight checks passed. Commit: ${preFlightResult.currentCommit}, Branch: ${preFlightResult.currentBranch}`
+    );
 
     // Store these values as we'll need them later
     const startingCommit = preFlightResult.currentCommit!;
@@ -373,13 +410,21 @@ export async function executeTask(taskId: string): Promise<void> {
     });
 
     // Forward Claude output events to task events
-    const outputHandler = (data: { taskId: string; output?: string; data?: string }) => {
+    const outputHandler = (data: {
+      taskId: string;
+      output?: string;
+      data?: string;
+    }) => {
       try {
-        console.log(`[Orchestrator] Received output event for task ${data.taskId}, expecting ${taskId}`);
+        console.log(
+          `[Orchestrator] Received output event for task ${data.taskId}, expecting ${taskId}`
+        );
         const output = data.output || data.data || '';
         console.log(`[Orchestrator] Output extracted: "${output}"`);
         console.log(`[Orchestrator] About to emit to sessionId: ${sessionId}`);
-        console.log(`[Orchestrator] taskEvents listener count for 'task:output': ${taskEvents.listenerCount('task:output')}`);
+        console.log(
+          `[Orchestrator] taskEvents listener count for 'task:output': ${taskEvents.listenerCount('task:output')}`
+        );
         taskEvents.emit('task:output', {
           sessionId,
           taskId,
@@ -392,12 +437,14 @@ export async function executeTask(taskId: string): Promise<void> {
     };
 
     console.log(`[Orchestrator] Registering output handler for task ${taskId}`);
-    claudeWrapper.on('output', outputHandler);
+    aiProvider.on('output', outputHandler);
 
-    console.log(`[Task ${taskId}] Invoking Claude with prompt: "${task.prompt.substring(0, 100)}..."`);
+    console.log(
+      `[Task ${taskId}] Invoking Claude with prompt: "${task.prompt.substring(0, 100)}..."`
+    );
 
     try {
-      await claudeWrapper.executeTask({
+      await aiProvider.executeTask({
         workingDirectory: containerPath,
         prompt: task.prompt,
         taskId: task.id,
@@ -407,7 +454,9 @@ export async function executeTask(taskId: string): Promise<void> {
       console.error(`[Task ${taskId}] Claude execution failed:`, error);
 
       // Get current output to append error message
-      const currentTask = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+      const currentTask = await db.query.tasks.findFirst({
+        where: eq(tasks.id, taskId),
+      });
       const currentOutput = currentTask?.claudeOutput || '';
 
       // Update task status to failed
@@ -415,7 +464,9 @@ export async function executeTask(taskId: string): Promise<void> {
         .update(tasks)
         .set({
           status: 'failed',
-          claudeOutput: currentOutput + `\n\n❌ Claude execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          claudeOutput:
+            currentOutput +
+            `\n\n❌ Claude execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           updatedAt: new Date(),
         })
         .where(eq(tasks.id, taskId));
@@ -428,11 +479,13 @@ export async function executeTask(taskId: string): Promise<void> {
 
       throw error; // Re-throw to exit the orchestrator
     } finally {
-      claudeWrapper.off('output', outputHandler);
+      aiProvider.off('output', outputHandler);
     }
 
     // 5. Capture diff
-    console.log(`[Task ${taskId}] Capturing diff from commit: ${startingCommit}`);
+    console.log(
+      `[Task ${taskId}] Capturing diff from commit: ${startingCommit}`
+    );
     const diff = await captureDiff(repoPath, startingCommit);
 
     await db
@@ -452,7 +505,13 @@ export async function executeTask(taskId: string): Promise<void> {
     });
 
     // 6. Run QA gates with retry loop
-    await runQAGatesWithRetry(taskId, repoPath, containerPath, sessionId, task.prompt);
+    await runQAGatesWithRetry(
+      taskId,
+      repoPath,
+      containerPath,
+      sessionId,
+      task.prompt
+    );
   } catch (error) {
     // Get sessionId from task if possible
     const failedTask = await db.query.tasks.findFirst({
@@ -463,8 +522,7 @@ export async function executeTask(taskId: string): Promise<void> {
       .update(tasks)
       .set({
         status: 'failed',
-        claudeOutput:
-          error instanceof Error ? error.message : 'Unknown error',
+        claudeOutput: error instanceof Error ? error.message : 'Unknown error',
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, taskId));

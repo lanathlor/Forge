@@ -32,13 +32,20 @@ import {
 
 function getSessionTaskLabel(status: string | undefined): string {
   switch (status) {
-    case 'pre_flight': return 'Pre-flight checks';
-    case 'running': return 'Claude is coding';
-    case 'waiting_qa': return 'Preparing QA';
-    case 'qa_running': return 'Running QA gates';
-    case 'waiting_approval': return 'Waiting for approval';
-    case 'approved': return 'Committing';
-    default: return '';
+    case 'pre_flight':
+      return 'Pre-flight checks';
+    case 'running':
+      return 'Claude is coding';
+    case 'waiting_qa':
+      return 'Preparing QA';
+    case 'qa_running':
+      return 'Running QA gates';
+    case 'waiting_approval':
+      return 'Waiting for approval';
+    case 'approved':
+      return 'Committing';
+    default:
+      return '';
   }
 }
 
@@ -65,9 +72,10 @@ function RunningPlanCard({
     enabled: isRunning || isPaused,
   });
 
-  const progress = plan.totalTasks > 0
-    ? Math.round((plan.completedTasks / plan.totalTasks) * 100)
-    : 0;
+  const progress =
+    plan.totalTasks > 0
+      ? Math.round((plan.completedTasks / plan.totalTasks) * 100)
+      : 0;
 
   const currentActivity = useMemo(() => {
     if (!latestEvent) return null;
@@ -88,9 +96,9 @@ function RunningPlanCard({
   return (
     <div
       className={cn(
-        'group px-3 py-2.5 rounded-lg border transition-all cursor-pointer hover:bg-muted/40',
+        'group cursor-pointer rounded-lg border px-3 py-2.5 transition-all hover:bg-muted/40',
         isRunning && 'border-l-2 border-l-blue-500',
-        isPaused && 'border-l-2 border-l-amber-500',
+        isPaused && 'border-l-2 border-l-amber-500'
       )}
       onClick={() => onViewExecution(plan.id)}
     >
@@ -98,24 +106,29 @@ function RunningPlanCard({
         {/* Status indicator */}
         {isRunning && (
           <span className="relative flex h-2 w-2 flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
           </span>
         )}
-        {isPaused && (
-          <Pause className="h-3 w-3 text-amber-500 flex-shrink-0" />
-        )}
+        {isPaused && <Pause className="h-3 w-3 flex-shrink-0 text-amber-500" />}
 
         {/* Title */}
-        <span className="text-sm font-medium truncate flex-1">{plan.title}</span>
+        <span className="flex-1 truncate text-sm font-medium">
+          {plan.title}
+        </span>
 
         {/* Live badge */}
         {connected && isRunning && (
-          <span className="text-[10px] text-emerald-600 font-medium flex-shrink-0">LIVE</span>
+          <span className="flex-shrink-0 text-[10px] font-medium text-emerald-600">
+            LIVE
+          </span>
         )}
 
         {/* Quick controls */}
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={e => e.stopPropagation()}>
+        <div
+          className="flex flex-shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             variant="ghost"
             size="sm"
@@ -163,16 +176,18 @@ function RunningPlanCard({
 
       {/* Progress bar */}
       <div className="mt-2">
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
-          <span>{plan.completedTasks}/{plan.totalTasks} tasks</span>
+        <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>
+            {plan.completedTasks}/{plan.totalTasks} tasks
+          </span>
           <span className="font-medium">{progress}%</span>
         </div>
-        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
           <div
             className={cn(
               'h-full rounded-full transition-all duration-500',
               isPaused ? 'bg-amber-500' : 'bg-blue-500',
-              isRunning && 'animate-pulse',
+              isRunning && 'animate-pulse'
             )}
             style={{ width: `${progress}%` }}
           />
@@ -181,19 +196,25 @@ function RunningPlanCard({
 
       {/* Current activity */}
       {currentActivity && isRunning && (
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <Zap className="h-3 w-3 text-blue-500 animate-pulse flex-shrink-0" />
-          <span className="text-xs text-muted-foreground truncate">{currentActivity}</span>
-          <ArrowRight className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-[10px] text-blue-600 font-medium flex-shrink-0">View</span>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <Zap className="h-3 w-3 flex-shrink-0 animate-pulse text-blue-500" />
+          <span className="truncate text-xs text-muted-foreground">
+            {currentActivity}
+          </span>
+          <ArrowRight className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground" />
+          <span className="flex-shrink-0 text-[10px] font-medium text-blue-600">
+            View
+          </span>
         </div>
       )}
 
       {/* Paused message */}
       {isPaused && (
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <Pause className="h-3 w-3 text-amber-500 flex-shrink-0" />
-          <span className="text-xs text-amber-600">Paused - click to resume</span>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <Pause className="h-3 w-3 flex-shrink-0 text-amber-500" />
+          <span className="text-xs text-amber-600">
+            Paused - click to resume
+          </span>
         </div>
       )}
     </div>
@@ -215,18 +236,23 @@ function CompletedPlanCard({
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:bg-muted/40 transition-colors"
+      className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-muted/40"
       onClick={() => onView(plan.id)}
     >
       {isFailed ? (
-        <XCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+        <XCircle className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
       ) : (
-        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+        <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
       )}
-      <span className={cn('text-sm truncate flex-1', isFailed && 'text-red-600')}>
+      <span
+        className={cn('flex-1 truncate text-sm', isFailed && 'text-red-600')}
+      >
         {plan.title}
       </span>
-      <Badge variant={isFailed ? 'destructive' : 'default'} className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+      <Badge
+        variant={isFailed ? 'destructive' : 'default'}
+        className="h-4 flex-shrink-0 px-1.5 py-0 text-[10px]"
+      >
         {isFailed ? 'failed' : 'done'}
       </Badge>
     </div>
@@ -263,15 +289,24 @@ export function LivePlanMonitor({
 
   const activePlans = useMemo(() => {
     if (!data?.plans) return [];
-    return data.plans.filter(p => p.status === 'running' || p.status === 'paused');
+    return data.plans.filter(
+      (p) => p.status === 'running' || p.status === 'paused'
+    );
   }, [data]);
 
   const recentCompleted = useMemo(() => {
     if (!data?.plans) return [];
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     return data.plans
-      .filter(p => (p.status === 'completed' || p.status === 'failed') && new Date(p.updatedAt).getTime() > oneDayAgo)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .filter(
+        (p) =>
+          (p.status === 'completed' || p.status === 'failed') &&
+          new Date(p.updatedAt).getTime() > oneDayAgo
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
       .slice(0, 3);
   }, [data]);
 
@@ -281,28 +316,31 @@ export function LivePlanMonitor({
   }
 
   return (
-    <Card className={cn(
-      'overflow-hidden transition-all',
-      activePlans.length > 0 && 'border-blue-200 dark:border-blue-900 shadow-sm',
-      className,
-    )}>
+    <Card
+      className={cn(
+        'overflow-hidden transition-all',
+        activePlans.length > 0 &&
+          'border-blue-200 shadow-sm dark:border-blue-900',
+        className
+      )}
+    >
       {/* Header */}
       <button
-        className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
+        className="flex w-full items-center justify-between px-3 py-2 transition-colors hover:bg-muted/30"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-2">
           {activePlans.length > 0 && (
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
             </span>
           )}
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Plan Monitor
           </span>
           {activePlans.length > 0 && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+            <Badge variant="secondary" className="h-4 px-1.5 py-0 text-[10px]">
               {activePlans.length} active
             </Badge>
           )}
@@ -316,7 +354,7 @@ export function LivePlanMonitor({
 
       {/* Content */}
       {!isCollapsed && (
-        <div className="px-2 pb-2 space-y-1.5">
+        <div className="space-y-1.5 px-2 pb-2">
           {/* Active plans */}
           {activePlans.map((plan) => (
             <RunningPlanCard
@@ -331,14 +369,10 @@ export function LivePlanMonitor({
 
           {/* Recently completed */}
           {recentCompleted.length > 0 && activePlans.length > 0 && (
-            <div className="border-t my-1" />
+            <div className="my-1 border-t" />
           )}
           {recentCompleted.map((plan) => (
-            <CompletedPlanCard
-              key={plan.id}
-              plan={plan}
-              onView={onViewPlan}
-            />
+            <CompletedPlanCard key={plan.id} plan={plan} onView={onViewPlan} />
           ))}
         </div>
       )}

@@ -49,7 +49,10 @@ const {
   const mockSelectLimit = vi.fn() as ReturnType<typeof vi.fn>;
   const mockSelectOrderBy = vi.fn() as ReturnType<typeof vi.fn>;
   const mockSelectWhere = vi.fn() as ReturnType<typeof vi.fn>;
-  const mockSelectFrom = vi.fn(() => ({ where: mockSelectWhere, orderBy: mockSelectOrderBy }));
+  const mockSelectFrom = vi.fn(() => ({
+    where: mockSelectWhere,
+    orderBy: mockSelectOrderBy,
+  }));
   const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
 
   const mockDb = {
@@ -84,7 +87,12 @@ vi.mock('@/db', () => ({
 vi.mock('@/db/schema', () => ({
   plans: { id: 'id', repositoryId: 'repository_id', createdAt: 'created_at' },
   phases: { id: 'id', planId: 'plan_id', order: 'order' },
-  planTasks: { id: 'id', phaseId: 'phase_id', planId: 'plan_id', order: 'order' },
+  planTasks: {
+    id: 'id',
+    phaseId: 'phase_id',
+    planId: 'plan_id',
+    order: 'order',
+  },
   planIterations: { id: 'id', planId: 'plan_id', createdAt: 'created_at' },
 }));
 
@@ -117,9 +125,15 @@ describe('plans/api/handlers', () => {
     mockWhere.mockReturnValue({ returning: mockValuesReturning });
     mockDelete.mockReturnValue({ where: mockDeleteWhere });
     mockSelect.mockReturnValue({ from: mockSelectFrom });
-    mockSelectFrom.mockReturnValue({ where: mockSelectWhere, orderBy: mockSelectOrderBy });
+    mockSelectFrom.mockReturnValue({
+      where: mockSelectWhere,
+      orderBy: mockSelectOrderBy,
+    });
     // Make mockSelectWhere both chainable and thenable (for enrichPlanWithCalculatedMetadata which awaits .where() directly)
-    const selectWhereResult = Object.assign(Promise.resolve([]), { orderBy: mockSelectOrderBy, limit: mockSelectLimit });
+    const selectWhereResult = Object.assign(Promise.resolve([]), {
+      orderBy: mockSelectOrderBy,
+      limit: mockSelectLimit,
+    });
     mockSelectWhere.mockReturnValue(selectWhereResult);
     mockSelectOrderBy.mockReturnValue({ limit: mockSelectLimit });
     mockSelectLimit.mockResolvedValue([]);
@@ -134,7 +148,13 @@ describe('plans/api/handlers', () => {
       const result = await handleGetPlans();
 
       // Plans are enriched with calculated metadata (0 counts since mock DB returns empty arrays)
-      const enrichedPlans = mockPlans.map(p => ({ ...p, totalPhases: 0, completedPhases: 0, totalTasks: 0, completedTasks: 0 }));
+      const enrichedPlans = mockPlans.map((p) => ({
+        ...p,
+        totalPhases: 0,
+        completedPhases: 0,
+        totalTasks: 0,
+        completedTasks: 0,
+      }));
       expect((result as any).data).toEqual({ plans: enrichedPlans });
     });
 
@@ -145,7 +165,13 @@ describe('plans/api/handlers', () => {
       const { handleGetPlans } = await import('../handlers');
       const result = await handleGetPlans('repo-1');
 
-      const enrichedPlans = mockPlans.map(p => ({ ...p, totalPhases: 0, completedPhases: 0, totalTasks: 0, completedTasks: 0 }));
+      const enrichedPlans = mockPlans.map((p) => ({
+        ...p,
+        totalPhases: 0,
+        completedPhases: 0,
+        totalTasks: 0,
+        completedTasks: 0,
+      }));
       expect((result as any).data).toEqual({ plans: enrichedPlans });
     });
 
@@ -179,7 +205,13 @@ describe('plans/api/handlers', () => {
 
       // Plan is enriched with calculated metadata (0 counts since mock DB returns empty arrays for enrichment queries)
       expect((result as any).data).toEqual({
-        plan: { ...mockPlan, totalPhases: 0, completedPhases: 0, totalTasks: 0, completedTasks: 0 },
+        plan: {
+          ...mockPlan,
+          totalPhases: 0,
+          completedPhases: 0,
+          totalTasks: 0,
+          completedTasks: 0,
+        },
         phases: mockPhases,
         tasks: mockTasks,
         iterations: mockIterations,
@@ -263,7 +295,9 @@ describe('plans/api/handlers', () => {
     });
 
     it('should return error when generation fails', async () => {
-      mockGeneratePlanFromDescription.mockRejectedValueOnce(new Error('Generation failed'));
+      mockGeneratePlanFromDescription.mockRejectedValueOnce(
+        new Error('Generation failed')
+      );
 
       const { handleGeneratePlan } = await import('../handlers');
       const result = await handleGeneratePlan({
@@ -283,7 +317,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([mockPlan]);
 
       const { handleUpdatePlan } = await import('../handlers');
-      const result = await handleUpdatePlan('plan-1', { title: 'Updated Plan' });
+      const result = await handleUpdatePlan('plan-1', {
+        title: 'Updated Plan',
+      });
 
       expect((result as any).data).toEqual({ plan: mockPlan });
     });
@@ -292,7 +328,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([]);
 
       const { handleUpdatePlan } = await import('../handlers');
-      const result = await handleUpdatePlan('nonexistent', { title: 'New Title' });
+      const result = await handleUpdatePlan('nonexistent', {
+        title: 'New Title',
+      });
 
       expect((result as any).status).toBe(404);
     });
@@ -385,7 +423,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([mockPhase]);
 
       const { handleUpdatePhase } = await import('../handlers');
-      const result = await handleUpdatePhase('phase-1', { title: 'Updated Phase' });
+      const result = await handleUpdatePhase('phase-1', {
+        title: 'Updated Phase',
+      });
 
       expect((result as any).data).toEqual({ phase: mockPhase });
     });
@@ -394,7 +434,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([]);
 
       const { handleUpdatePhase } = await import('../handlers');
-      const result = await handleUpdatePhase('nonexistent', { title: 'New Title' });
+      const result = await handleUpdatePhase('nonexistent', {
+        title: 'New Title',
+      });
 
       expect((result as any).status).toBe(404);
     });
@@ -408,7 +450,10 @@ describe('plans/api/handlers', () => {
       // First call to mockSelectWhere returns limit chain for the phase query
       // Second call returns remaining phases directly (thenable)
       mockSelectWhere
-        .mockReturnValueOnce({ orderBy: mockSelectOrderBy, limit: mockSelectLimit })
+        .mockReturnValueOnce({
+          orderBy: mockSelectOrderBy,
+          limit: mockSelectLimit,
+        })
         .mockResolvedValueOnce([]); // remaining phases query
 
       const { handleDeletePhase } = await import('../handlers');
@@ -494,7 +539,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([mockTask]);
 
       const { handleUpdateTask } = await import('../handlers');
-      const result = await handleUpdateTask('task-1', { title: 'Updated Task' });
+      const result = await handleUpdateTask('task-1', {
+        title: 'Updated Task',
+      });
 
       expect((result as any).data).toEqual({ task: mockTask });
     });
@@ -503,7 +550,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([]);
 
       const { handleUpdateTask } = await import('../handlers');
-      const result = await handleUpdateTask('nonexistent', { title: 'New Title' });
+      const result = await handleUpdateTask('nonexistent', {
+        title: 'New Title',
+      });
 
       expect((result as any).status).toBe(404);
     });
@@ -513,7 +562,9 @@ describe('plans/api/handlers', () => {
       mockValuesReturning.mockResolvedValueOnce([mockTask]);
 
       const { handleUpdateTask } = await import('../handlers');
-      const result = await handleUpdateTask('task-1', { dependsOn: ['task-0'] });
+      const result = await handleUpdateTask('task-1', {
+        dependsOn: ['task-0'],
+      });
 
       expect((result as any).data).toEqual({ task: mockTask });
     });
@@ -696,7 +747,9 @@ describe('plans/api/handlers', () => {
     });
 
     it('should return error on failure', async () => {
-      mockPlanExecutor.cancelPlan.mockRejectedValueOnce(new Error('Cancel failed'));
+      mockPlanExecutor.cancelPlan.mockRejectedValueOnce(
+        new Error('Cancel failed')
+      );
 
       const { handleCancelPlan } = await import('../handlers');
       const result = await handleCancelPlan('plan-1');

@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
 import { eq } from 'drizzle-orm';
-import { claudeWrapper } from '@/lib/claude/wrapper';
+import { createAIProvider } from '@/lib/ai';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 interface GeneratedPlanStructure {
@@ -62,7 +62,8 @@ export async function generatePlanFromDescription(
 
     // Call Claude to generate plan structure
     const workingDir = getContainerPath(repository.path);
-    const response = await claudeWrapper.executeOneShot(
+    const aiProvider = createAIProvider();
+    const response = await aiProvider.executeOneShot(
       prompt,
       workingDir,
       300000 // 5 minute timeout - plan generation can take time
@@ -93,7 +94,8 @@ export async function generatePlanFromDescription(
       .where(eq(plans.id, planId));
 
     // Provide a more helpful error message
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to generate plan: ${errorMessage}`);
   }
 }
@@ -175,9 +177,17 @@ function parseClaudeResponse(response: string): GeneratedPlanStructure {
     return parsed;
   } catch (error) {
     console.error('[PlanGenerator] Failed to parse Claude response.');
-    console.error('[PlanGenerator] Cleaned response:', cleaned.substring(0, 500));
-    console.error('[PlanGenerator] Full response:', response.substring(0, 1000));
-    throw new Error(`Failed to parse plan structure: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(
+      '[PlanGenerator] Cleaned response:',
+      cleaned.substring(0, 500)
+    );
+    console.error(
+      '[PlanGenerator] Full response:',
+      response.substring(0, 1000)
+    );
+    throw new Error(
+      `Failed to parse plan structure: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

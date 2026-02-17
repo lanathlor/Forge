@@ -277,7 +277,7 @@ function TaskList() {
 
   return (
     <div>
-      {data.tasks.map(task => (
+      {data.tasks.map((task) => (
         <TaskItem key={task.id} task={task} />
       ))}
     </div>
@@ -409,10 +409,7 @@ function ConfirmDialog({ open, onConfirm }) {
   return (
     <Dialog open={open}>
       <DialogContent className="relative">
-        <LoadingOverlay
-          visible={isProcessing}
-          label="Processing..."
-        />
+        <LoadingOverlay visible={isProcessing} label="Processing..." />
 
         {/* Dialog content */}
         <DialogActions>
@@ -434,18 +431,14 @@ Use skeleton loaders that match your actual content structure:
 
 ```tsx
 // Good: Skeleton matches actual content
-{isLoading ? (
-  <TaskListSkeleton count={5} />
-) : (
-  <TaskList tasks={tasks} />
-)}
+{
+  isLoading ? <TaskListSkeleton count={5} /> : <TaskList tasks={tasks} />;
+}
 
 // Avoid: Generic spinner for complex content
-{isLoading ? (
-  <LoadingSpinner centered />
-) : (
-  <ComplexDashboard data={data} />
-)}
+{
+  isLoading ? <LoadingSpinner centered /> : <ComplexDashboard data={data} />;
+}
 ```
 
 ### 2. Provide Context
@@ -532,12 +525,15 @@ useEffect(() => {
 }, [isLoading]);
 
 // Only show skeleton after 200ms
-{showLoading && <TaskListSkeleton />}
+{
+  showLoading && <TaskListSkeleton />;
+}
 ```
 
 ## Animation System
 
 All loading components use the animation system defined in:
+
 - `/src/shared/styles/animations.css` - Core animation keyframes
 - `/tailwind.config.ts` - Tailwind animation utilities
 

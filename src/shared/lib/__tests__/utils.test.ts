@@ -27,7 +27,13 @@ describe('Utils', () => {
 
     it('should filter out falsy values', () => {
       const shouldInclude = false;
-      const result = cn('class1', shouldInclude && 'class2', null, undefined, 'class3');
+      const result = cn(
+        'class1',
+        shouldInclude && 'class2',
+        null,
+        undefined,
+        'class3'
+      );
       expect(result).toContain('class1');
       expect(result).not.toContain('class2');
       expect(result).toContain('class3');

@@ -15,7 +15,7 @@ export function ScenarioSection({
 }: ScenarioSectionProps) {
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">{title}</h2>
+      <h2 className="mb-4 text-xl font-semibold">{title}</h2>
       <QAGateResults
         taskId={taskId}
         attempt={attempt}

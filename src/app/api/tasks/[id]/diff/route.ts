@@ -16,11 +16,20 @@ async function getTaskWithRepository(id: string) {
   });
 }
 
-function hasCachedDiff(task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepository>>>) {
-  return task.diffContent && task.filesChanged && Array.isArray(task.filesChanged) && task.filesChanged.length > 0;
+function hasCachedDiff(
+  task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepository>>>
+) {
+  return (
+    task.diffContent &&
+    task.filesChanged &&
+    Array.isArray(task.filesChanged) &&
+    task.filesChanged.length > 0
+  );
 }
 
-function buildCachedResponse(task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepository>>>) {
+function buildCachedResponse(
+  task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepository>>>
+) {
   return {
     fullDiff: task.diffContent,
     changedFiles: task.filesChanged,
@@ -30,6 +39,17 @@ function buildCachedResponse(task: NonNullable<Awaited<ReturnType<typeof getTask
       deletions: task.filesChanged!.reduce((sum, f) => sum + f.deletions, 0),
     },
   };
+}
+
+async function generateAndSaveDiff(
+  task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepository>>>
+) {
+  const repoPath = task.session.repository.path;
+  console.log(`[Diff API] Generating fresh diff for task ${task.id} from commit ${task.startingCommit}`);
+  const diff = await captureDiff(repoPath, task.startingCommit!);
+  console.log(`[Diff API] Generated diff with ${diff.changedFiles.length} changed files`);
+  await db.update(tasks).set({ diffContent: diff.fullDiff, filesChanged: diff.changedFiles }).where(eq(tasks.id, task.id));
+  return diff;
 }
 
 export async function GET(
@@ -57,17 +77,7 @@ export async function GET(
       return Response.json({ error: 'Task has no starting commit' }, { status: 400 });
     }
 
-    console.log(`[Diff API] Generating fresh diff for task ${id} from commit ${task.startingCommit}`);
-    const repoPath = task.session.repository.path;
-    const diff = await captureDiff(repoPath, task.startingCommit);
-
-    console.log(`[Diff API] Generated diff with ${diff.changedFiles.length} changed files`);
-
-    await db
-      .update(tasks)
-      .set({ diffContent: diff.fullDiff, filesChanged: diff.changedFiles })
-      .where(eq(tasks.id, task.id));
-
+    const diff = await generateAndSaveDiff(task);
     return Response.json(diff);
   } catch (error) {
     console.error('[Diff API] Error generating diff:', error);

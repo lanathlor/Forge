@@ -47,7 +47,10 @@ function handleNavKey(key: string, options: ListNavigationOptions): boolean {
   return false;
 }
 
-export function handleListNavigation(event: KeyboardEvent, options: ListNavigationOptions) {
+export function handleListNavigation(
+  event: KeyboardEvent,
+  options: ListNavigationOptions
+) {
   const { enabled, itemCount, focusedIndex, onSelect } = options;
 
   if (!enabled || itemCount === 0) return;
@@ -57,7 +60,12 @@ export function handleListNavigation(event: KeyboardEvent, options: ListNavigati
     return;
   }
 
-  if (event.key === 'Enter' && onSelect && focusedIndex >= 0 && focusedIndex < itemCount) {
+  if (
+    event.key === 'Enter' &&
+    onSelect &&
+    focusedIndex >= 0 &&
+    focusedIndex < itemCount
+  ) {
     event.preventDefault();
     onSelect(focusedIndex);
   }
@@ -78,7 +86,10 @@ type GridNavigationOptions = {
 };
 
 // eslint-disable-next-line complexity
-function handleGridNavKey(key: string, options: GridNavigationOptions): boolean {
+function handleGridNavKey(
+  key: string,
+  options: GridNavigationOptions
+): boolean {
   const { rows, columns, focusedPosition, onFocusChange, loop } = options;
   const [row, col] = focusedPosition;
 
@@ -113,7 +124,10 @@ function handleGridNavKey(key: string, options: GridNavigationOptions): boolean 
   return false;
 }
 
-export function handleGridNavigationKeys(event: KeyboardEvent, options: GridNavigationOptions) {
+export function handleGridNavigationKeys(
+  event: KeyboardEvent,
+  options: GridNavigationOptions
+) {
   const { enabled, rows, columns, focusedPosition, onSelect } = options;
 
   if (!enabled || rows === 0 || columns === 0) return;

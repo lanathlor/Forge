@@ -106,7 +106,9 @@ describe('Dialog Components', () => {
         </Dialog>
       );
 
-      expect(screen.getByRole('button', { name: 'Open Dialog' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Open Dialog' })
+      ).toBeInTheDocument();
     });
 
     it('renders children when asChild is true', () => {
@@ -282,7 +284,9 @@ describe('Dialog Components', () => {
         <Dialog open={true}>
           <DialogContent>
             <DialogTitle>Title</DialogTitle>
-            <DialogDescription className="custom-desc">Description</DialogDescription>
+            <DialogDescription className="custom-desc">
+              Description
+            </DialogDescription>
           </DialogContent>
         </Dialog>
       );
@@ -385,7 +389,9 @@ describe('Dialog Components', () => {
       // Verify all parts render
       await waitFor(() => {
         expect(screen.getByText('Edit Profile')).toBeInTheDocument();
-        expect(screen.getByText('Make changes to your profile here.')).toBeInTheDocument();
+        expect(
+          screen.getByText('Make changes to your profile here.')
+        ).toBeInTheDocument();
         expect(screen.getByPlaceholderText('Name')).toBeInTheDocument();
         expect(screen.getByText('Cancel')).toBeInTheDocument();
         expect(screen.getByText('Save changes')).toBeInTheDocument();

@@ -41,7 +41,9 @@ async function resetTaskForRetry(id: string) {
     .where(eq(tasks.id, id));
 }
 
-async function validateRetry(task: Awaited<ReturnType<typeof getTaskWithRelations>>) {
+async function validateRetry(
+  task: Awaited<ReturnType<typeof getTaskWithRelations>>
+) {
   if (!task) {
     return { error: 'Task not found', status: 404 };
   }
@@ -71,7 +73,10 @@ export async function POST(
     const validationError = await validateRetry(task);
 
     if (validationError) {
-      return NextResponse.json({ error: validationError.error }, { status: validationError.status });
+      return NextResponse.json(
+        { error: validationError.error },
+        { status: validationError.status }
+      );
     }
 
     await resetTaskForRetry(id);
@@ -81,9 +86,15 @@ export async function POST(
       console.error(`Background task execution failed for ${id}:`, error);
     });
 
-    return NextResponse.json({ success: true, message: 'Task retry initiated' });
+    return NextResponse.json({
+      success: true,
+      message: 'Task retry initiated',
+    });
   } catch (error) {
     console.error('Error retrying task:', error);
-    return NextResponse.json({ error: 'Failed to retry task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to retry task' },
+      { status: 500 }
+    );
   }
 }

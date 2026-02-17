@@ -50,6 +50,12 @@ interface AnimationState {
   hasStartedRef: React.MutableRefObject<boolean>;
 }
 
+interface AnimationCallbacks {
+  animate: (timestamp: number) => void;
+  start: () => void;
+  reset: () => void;
+}
+
 interface ValueSyncConfig {
   to: number;
   from: number;
@@ -58,7 +64,9 @@ interface ValueSyncConfig {
   prefersReducedMotion: boolean;
 }
 
-function cancelAnimation(animationRef: React.MutableRefObject<number | null>): void {
+function cancelAnimation(
+  animationRef: React.MutableRefObject<number | null>
+): void {
   if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
 }
 
@@ -74,7 +82,11 @@ function useCleanup(animationRef: React.MutableRefObject<number | null>): void {
   useEffect(() => () => cancelAnimation(animationRef), [animationRef]);
 }
 
-function useAutoStart(autoStart: boolean, hasStartedRef: React.MutableRefObject<boolean>, start: () => void): void {
+function useAutoStart(
+  autoStart: boolean,
+  hasStartedRef: React.MutableRefObject<boolean>,
+  start: () => void
+): void {
   useEffect(() => {
     if (autoStart && !hasStartedRef.current) {
       hasStartedRef.current = true;
@@ -83,11 +95,63 @@ function useAutoStart(autoStart: boolean, hasStartedRef: React.MutableRefObject<
   }, [autoStart, start, hasStartedRef]);
 }
 
-function useValueSync(config: ValueSyncConfig, setValue: (value: number) => void): void {
+function useValueSync(
+  config: ValueSyncConfig,
+  setValue: (value: number) => void
+): void {
   const { to, from, isAnimating, autoStart, prefersReducedMotion } = config;
   useEffect(() => {
     if (!isAnimating && !autoStart) setValue(prefersReducedMotion ? to : from);
   }, [to, from, isAnimating, autoStart, prefersReducedMotion, setValue]);
+}
+
+interface AnimationParams {
+  from: number;
+  to: number;
+  duration: number;
+  easing: (t: number) => number;
+  delay: number;
+  prefersReducedMotion: boolean;
+  onComplete?: () => void;
+}
+
+function useAnimationCallbacks(
+  params: AnimationParams,
+  state: AnimationState,
+  setValue: (v: number) => void,
+  setIsAnimating: (v: boolean) => void
+): AnimationCallbacks {
+  const { from, to, duration, easing, delay, prefersReducedMotion, onComplete } = params;
+
+  const animate = useCallback(
+    (timestamp: number) => {
+      if (state.startTimeRef.current === null) state.startTimeRef.current = timestamp;
+      const progress = Math.min((timestamp - state.startTimeRef.current) / duration, 1);
+      setValue(from + (to - from) * easing(progress));
+      if (progress < 1) state.animationRef.current = requestAnimationFrame(animate);
+      else { setValue(to); setIsAnimating(false); onComplete?.(); }
+    },
+    [from, to, duration, easing, onComplete, state, setValue, setIsAnimating]
+  );
+
+  const start = useCallback(() => {
+    if (prefersReducedMotion) { setValue(to); onComplete?.(); return; }
+    cancelAnimation(state.animationRef);
+    state.startTimeRef.current = null;
+    setValue(from);
+    setIsAnimating(true);
+    setTimeout(() => { state.animationRef.current = requestAnimationFrame(animate); }, delay);
+  }, [prefersReducedMotion, to, from, delay, animate, onComplete, state, setValue, setIsAnimating]);
+
+  const reset = useCallback(() => {
+    cancelAnimation(state.animationRef);
+    state.startTimeRef.current = null;
+    setIsAnimating(false);
+    setValue(prefersReducedMotion ? to : from);
+    state.hasStartedRef.current = false;
+  }, [prefersReducedMotion, from, to, state, setValue, setIsAnimating]);
+
+  return { animate, start, reset };
 }
 
 /**
@@ -105,31 +169,10 @@ export function useCountUp(options: UseCountUpOptions): UseCountUpReturn {
   const state = useAnimationState();
 
   const formatValue = useCallback((val: number): string => val.toFixed(decimals), [decimals]);
-
-  const animate = useCallback((timestamp: number) => {
-    if (state.startTimeRef.current === null) state.startTimeRef.current = timestamp;
-    const progress = Math.min((timestamp - state.startTimeRef.current) / duration, 1);
-    setValue(from + (to - from) * easing(progress));
-    if (progress < 1) state.animationRef.current = requestAnimationFrame(animate);
-    else { setValue(to); setIsAnimating(false); onComplete?.(); }
-  }, [from, to, duration, easing, onComplete, state]);
-
-  const start = useCallback(() => {
-    if (prefersReducedMotion) { setValue(to); onComplete?.(); return; }
-    cancelAnimation(state.animationRef);
-    state.startTimeRef.current = null;
-    setValue(from);
-    setIsAnimating(true);
-    setTimeout(() => { state.animationRef.current = requestAnimationFrame(animate); }, delay);
-  }, [prefersReducedMotion, to, from, delay, animate, onComplete, state]);
-
-  const reset = useCallback(() => {
-    cancelAnimation(state.animationRef);
-    state.startTimeRef.current = null;
-    setIsAnimating(false);
-    setValue(prefersReducedMotion ? to : from);
-    state.hasStartedRef.current = false;
-  }, [prefersReducedMotion, from, to, state]);
+  const { start, reset } = useAnimationCallbacks(
+    { from, to, duration, easing, delay, prefersReducedMotion, onComplete },
+    state, setValue, setIsAnimating
+  );
 
   useAutoStart(autoStart, state.hasStartedRef, start);
   useValueSync({ to, from, isAnimating, autoStart, prefersReducedMotion }, setValue);

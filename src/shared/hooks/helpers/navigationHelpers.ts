@@ -7,7 +7,9 @@ interface NavigationKeys {
   prevKey: string;
 }
 
-export function getNavigationKeys(orientation: 'vertical' | 'horizontal'): NavigationKeys {
+export function getNavigationKeys(
+  orientation: 'vertical' | 'horizontal'
+): NavigationKeys {
   const isVertical = orientation === 'vertical';
   return {
     nextKey: isVertical ? 'ArrowDown' : 'ArrowRight',

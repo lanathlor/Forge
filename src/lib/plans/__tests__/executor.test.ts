@@ -68,7 +68,13 @@ vi.mock('@/db', () => ({
 vi.mock('@/db/schema', () => ({
   plans: { id: 'id', status: 'status' },
   phases: { id: 'id', planId: 'plan_id', order: 'order', status: 'status' },
-  planTasks: { id: 'id', phaseId: 'phase_id', planId: 'plan_id', order: 'order', status: 'status' },
+  planTasks: {
+    id: 'id',
+    phaseId: 'phase_id',
+    planId: 'plan_id',
+    order: 'order',
+    status: 'status',
+  },
   tasks: { id: 'id', sessionId: 'session_id' },
 }));
 
@@ -107,7 +113,8 @@ describe('plans/executor', () => {
     const createThenableWithChain = (resolvedValue: unknown[] = []) => ({
       orderBy: mockSelectOrderBy,
       limit: mockSelectLimit,
-      then: (resolve: (value: unknown[]) => void) => Promise.resolve(resolvedValue).then(resolve),
+      then: (resolve: (value: unknown[]) => void) =>
+        Promise.resolve(resolvedValue).then(resolve),
     });
     mockSelectWhere.mockReturnValue(createThenableWithChain([]));
     mockSelectOrderBy.mockReturnValue({ limit: mockSelectLimit });
@@ -147,7 +154,9 @@ describe('plans/executor', () => {
       await executor.executePlan('plan-1');
 
       expect(mockUpdate).toHaveBeenCalled();
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'running' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'running' })
+      );
     });
 
     it('should execute phases in order and mark completed', async () => {
@@ -193,7 +202,10 @@ describe('plans/executor', () => {
       mockSelectWhere.mockReturnValue({
         orderBy: mockSelectOrderBy,
         limit: mockSelectLimit,
-        then: (resolve: (value: unknown[]) => void) => Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(resolve),
+        then: (resolve: (value: unknown[]) => void) =>
+          Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(
+            resolve
+          ),
       });
 
       const { PlanExecutor } = await import('../executor');
@@ -234,7 +246,9 @@ describe('plans/executor', () => {
       await executor.executePlan('plan-1');
 
       // Plan should be marked as completed
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'completed' })
+      );
     });
 
     it('should mark plan as failed on error', async () => {
@@ -261,7 +275,9 @@ describe('plans/executor', () => {
       const executor = new PlanExecutor();
 
       await expect(executor.executePlan('plan-1')).rejects.toThrow();
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed' })
+      );
     });
   });
 
@@ -282,7 +298,9 @@ describe('plans/executor', () => {
 
       await executor.resumePlan('plan-1');
 
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'running' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'running' })
+      );
     });
   });
 
@@ -294,7 +312,9 @@ describe('plans/executor', () => {
       await executor.cancelPlan('plan-1');
 
       expect(mockUpdate).toHaveBeenCalled();
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed' })
+      );
     });
   });
 
@@ -349,7 +369,10 @@ describe('plans/executor', () => {
       mockSelectWhere.mockReturnValue({
         orderBy: mockSelectOrderBy,
         limit: mockSelectLimit,
-        then: (resolve: (value: unknown[]) => void) => Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(resolve),
+        then: (resolve: (value: unknown[]) => void) =>
+          Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(
+            resolve
+          ),
       });
 
       const { PlanExecutor } = await import('../executor');
@@ -411,7 +434,10 @@ describe('plans/executor', () => {
       mockSelectWhere.mockReturnValue({
         orderBy: mockSelectOrderBy,
         limit: mockSelectLimit,
-        then: (resolve: (value: unknown[]) => void) => Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(resolve),
+        then: (resolve: (value: unknown[]) => void) =>
+          Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(
+            resolve
+          ),
       });
 
       const { PlanExecutor } = await import('../executor');
@@ -420,7 +446,9 @@ describe('plans/executor', () => {
       await executor.executePlan('plan-1');
 
       // Both tasks are already completed, plan should complete
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'completed' })
+      );
     });
   });
 
@@ -467,7 +495,9 @@ describe('plans/executor', () => {
       await executor.executePlan('plan-1');
 
       // Plan should be paused for manual approval
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'paused' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'paused' })
+      );
     });
   });
 
@@ -500,7 +530,9 @@ describe('plans/executor', () => {
       const { PlanExecutor } = await import('../executor');
       const executor = new PlanExecutor();
 
-      await expect(executor.executePlan('plan-1')).rejects.toThrow('Unknown execution mode');
+      await expect(executor.executePlan('plan-1')).rejects.toThrow(
+        'Unknown execution mode'
+      );
     });
   });
 
@@ -532,7 +564,9 @@ describe('plans/executor', () => {
       const { PlanExecutor } = await import('../executor');
       const executor = new PlanExecutor();
 
-      await expect(executor.executePlan('plan-1')).rejects.toThrow('Phase not found');
+      await expect(executor.executePlan('plan-1')).rejects.toThrow(
+        'Phase not found'
+      );
     });
   });
 
@@ -578,7 +612,10 @@ describe('plans/executor', () => {
       mockSelectWhere.mockReturnValue({
         orderBy: mockSelectOrderBy,
         limit: mockSelectLimit,
-        then: (resolve: (value: unknown[]) => void) => Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(resolve),
+        then: (resolve: (value: unknown[]) => void) =>
+          Promise.resolve([{ ...mockPhase, status: 'completed' }]).then(
+            resolve
+          ),
       });
 
       const { PlanExecutor } = await import('../executor');
@@ -587,7 +624,9 @@ describe('plans/executor', () => {
       await executor.executePlan('plan-1');
 
       // Plan should be paused
-      expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'paused' }));
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'paused' })
+      );
     });
   });
 });

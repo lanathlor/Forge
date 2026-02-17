@@ -3,7 +3,10 @@ import fs from 'fs';
 import path from 'path';
 
 const dbPath = process.env.DATABASE_URL || './dev.db';
-const migrationFile = path.join(__dirname, 'migrations/0000_right_killmonger.sql');
+const migrationFile = path.join(
+  __dirname,
+  'migrations/0000_right_killmonger.sql'
+);
 
 console.log('📦 Initializing database...');
 

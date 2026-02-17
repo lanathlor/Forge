@@ -6,7 +6,10 @@ import { tasks } from '@/db/schema/tasks';
 import { eq, desc } from 'drizzle-orm';
 import { taskEvents } from '@/lib/events/task-events';
 import { getStuckDetector } from '@/lib/stuck-detection';
-import type { ClaudeStatus, RepoSessionState } from '@/shared/hooks/useMultiRepoStream';
+import type {
+  ClaudeStatus,
+  RepoSessionState,
+} from '@/shared/hooks/useMultiRepoStream';
 
 /**
  * Status mappings for task status to Claude status
@@ -79,7 +82,10 @@ function checkNeedsAttention(status: ClaudeStatus): boolean {
 /**
  * Build repository session state from database records
  */
-async function buildRepoSessionState(repo: { id: string; name: string }): Promise<RepoSessionState> {
+async function buildRepoSessionState(repo: {
+  id: string;
+  name: string;
+}): Promise<RepoSessionState> {
   const session = await db.query.sessions.findFirst({
     where: eq(sessions.repositoryId, repo.id),
     orderBy: [desc(sessions.lastActivity)],
@@ -109,7 +115,9 @@ async function getAllRepoStates(): Promise<RepoSessionState[]> {
   const allRepos = await db.query.repositories.findMany({
     columns: { id: true, name: true },
   });
-  const states = await Promise.all(allRepos.map((repo) => buildRepoSessionState(repo)));
+  const states = await Promise.all(
+    allRepos.map((repo) => buildRepoSessionState(repo))
+  );
 
   // Update stuck detector with all repo states
   const detector = getStuckDetector();
@@ -134,22 +142,53 @@ function encodeSSE(encoder: TextEncoder, data: object): Uint8Array {
 }
 
 /** Send connected event */
-function sendConnected(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
-  controller.enqueue(encodeSSE(encoder, { type: 'connected', timestamp: new Date().toISOString() }));
+function sendConnected(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder
+) {
+  controller.enqueue(
+    encodeSSE(encoder, {
+      type: 'connected',
+      timestamp: new Date().toISOString(),
+    })
+  );
 }
 
 /** Send bulk update event */
-function sendBulkUpdate(controller: ReadableStreamDefaultController, encoder: TextEncoder, states: RepoSessionState[]) {
-  controller.enqueue(encodeSSE(encoder, { type: 'bulk_update', repositories: states, timestamp: new Date().toISOString() }));
+function sendBulkUpdate(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+  states: RepoSessionState[]
+) {
+  controller.enqueue(
+    encodeSSE(encoder, {
+      type: 'bulk_update',
+      repositories: states,
+      timestamp: new Date().toISOString(),
+    })
+  );
 }
 
 /** Send repo update event */
-function sendRepoUpdate(controller: ReadableStreamDefaultController, encoder: TextEncoder, state: RepoSessionState) {
-  controller.enqueue(encodeSSE(encoder, { type: 'repo_update', repository: state, timestamp: new Date().toISOString() }));
+function sendRepoUpdate(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+  state: RepoSessionState
+) {
+  controller.enqueue(
+    encodeSSE(encoder, {
+      type: 'repo_update',
+      repository: state,
+      timestamp: new Date().toISOString(),
+    })
+  );
 }
 
 /** Create task update handler */
-function createTaskUpdateHandler(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+function createTaskUpdateHandler(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder
+) {
   return async (data: { sessionId: string; taskId: string }) => {
     try {
       const session = await db.query.sessions.findFirst({
@@ -185,7 +224,10 @@ function createTaskUpdateHandler(controller: ReadableStreamDefaultController, en
 }
 
 /** Setup intervals for keep-alive and refresh */
-function setupIntervals(controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+function setupIntervals(
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder
+) {
   const keepAliveInterval = setInterval(() => {
     try {
       controller.enqueue(encoder.encode(': keep-alive\n\n'));
@@ -222,14 +264,21 @@ export async function GET(request: NextRequest) {
       taskEvents.on('task:update', onTaskUpdate);
       taskEvents.on('task:output', onTaskUpdate);
 
-      const { keepAliveInterval, refreshInterval } = setupIntervals(controller, encoder);
+      const { keepAliveInterval, refreshInterval } = setupIntervals(
+        controller,
+        encoder
+      );
 
       request.signal.addEventListener('abort', () => {
         clearInterval(keepAliveInterval);
         clearInterval(refreshInterval);
         taskEvents.off('task:update', onTaskUpdate);
         taskEvents.off('task:output', onTaskUpdate);
-        try { controller.close(); } catch { /* already closed */ }
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
       });
     },
   });

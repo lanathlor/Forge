@@ -60,7 +60,9 @@ describe('useQAGatesData', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/repositories/repo-1/qa-gates');
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/repositories/repo-1/qa-gates'
+      );
       expect(result.current.config).toEqual(mockConfig);
       expect(result.current.error).toBeNull();
     });
@@ -77,7 +79,9 @@ describe('useQAGatesData', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.error).toBe('Failed to fetch QA gates configuration');
+      expect(result.current.error).toBe(
+        'Failed to fetch QA gates configuration'
+      );
       expect(result.current.config).toBeNull();
     });
 
@@ -176,11 +180,13 @@ describe('useQAGatesData', () => {
       renderHook(() => useQAGatesData('repo-1'));
 
       // Wait a bit
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Should only have called config endpoint
       expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(mockFetch).toHaveBeenCalledWith('/api/repositories/repo-1/qa-gates');
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/repositories/repo-1/qa-gates'
+      );
     });
 
     it('handles status fetch errors silently', async () => {
@@ -608,9 +614,30 @@ describe('useQAGatesData', () => {
           version: '1.0.0',
           maxRetries: 2,
           qaGates: [
-            { name: 'gate1', command: 'test1', timeout: 1000, enabled: true, failOnError: true, order: 1 },
-            { name: 'gate2', command: 'test2', timeout: 1000, enabled: true, failOnError: true, order: 2 },
-            { name: 'gate3', command: 'test3', timeout: 1000, enabled: true, failOnError: true, order: 3 },
+            {
+              name: 'gate1',
+              command: 'test1',
+              timeout: 1000,
+              enabled: true,
+              failOnError: true,
+              order: 1,
+            },
+            {
+              name: 'gate2',
+              command: 'test2',
+              timeout: 1000,
+              enabled: true,
+              failOnError: true,
+              order: 2,
+            },
+            {
+              name: 'gate3',
+              command: 'test3',
+              timeout: 1000,
+              enabled: true,
+              failOnError: true,
+              order: 3,
+            },
           ],
         },
       };
@@ -713,7 +740,9 @@ describe('useQAGatesData', () => {
       await result.current.runQAGates();
 
       await waitFor(() => {
-        expect(result.current.error).toBe('Request timed out - please try again');
+        expect(result.current.error).toBe(
+          'Request timed out - please try again'
+        );
       });
     });
   });
@@ -787,7 +816,9 @@ describe('useQAGatesData', () => {
         expect(result.current.config?.repository.id).toBe('repo-2');
       });
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/repositories/repo-2/qa-gates');
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/repositories/repo-2/qa-gates'
+      );
     });
   });
 });

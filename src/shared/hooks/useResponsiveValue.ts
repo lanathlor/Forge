@@ -27,7 +27,14 @@ export type ResponsiveValue<T> = {
 /**
  * Array of breakpoint keys in ascending order
  */
-const BREAKPOINT_ORDER: (BreakpointKey | 'base')[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl'];
+const BREAKPOINT_ORDER: (BreakpointKey | 'base')[] = [
+  'base',
+  'sm',
+  'md',
+  'lg',
+  'xl',
+  '2xl',
+];
 
 /**
  * Hook to get a value that changes based on the current breakpoint.
@@ -51,7 +58,10 @@ const BREAKPOINT_ORDER: (BreakpointKey | 'base')[] = ['base', 'sm', 'md', 'lg', 
  * // Responsive columns
  * const columns = useResponsiveValue({ base: 1, sm: 2, lg: 3, xl: 4 }, 1);
  */
-export function useResponsiveValue<T>(values: ResponsiveValue<T>, fallback?: T): T | undefined {
+export function useResponsiveValue<T>(
+  values: ResponsiveValue<T>,
+  fallback?: T
+): T | undefined {
   const isSm = useMediaQuery(`(min-width: ${BREAKPOINTS.sm}px)`);
   const isMd = useMediaQuery(`(min-width: ${BREAKPOINTS.md}px)`);
   const isLg = useMediaQuery(`(min-width: ${BREAKPOINTS.lg}px)`);
@@ -61,17 +71,26 @@ export function useResponsiveValue<T>(values: ResponsiveValue<T>, fallback?: T):
   return useMemo(() => {
     // Determine the highest matching breakpoint
     let currentBreakpointIndex: number;
-    if (is2xl) currentBreakpointIndex = 5; // '2xl'
-    else if (isXl) currentBreakpointIndex = 4; // 'xl'
-    else if (isLg) currentBreakpointIndex = 3; // 'lg'
-    else if (isMd) currentBreakpointIndex = 2; // 'md'
-    else if (isSm) currentBreakpointIndex = 1; // 'sm'
+    if (is2xl)
+      currentBreakpointIndex = 5; // '2xl'
+    else if (isXl)
+      currentBreakpointIndex = 4; // 'xl'
+    else if (isLg)
+      currentBreakpointIndex = 3; // 'lg'
+    else if (isMd)
+      currentBreakpointIndex = 2; // 'md'
+    else if (isSm)
+      currentBreakpointIndex = 1; // 'sm'
     else currentBreakpointIndex = 0; // 'base'
 
     // Find the value for the current breakpoint or cascade down to smaller breakpoints
     for (let i = currentBreakpointIndex; i >= 0; i--) {
       const key = BREAKPOINT_ORDER[i];
-      if (key && key in values && values[key as keyof ResponsiveValue<T>] !== undefined) {
+      if (
+        key &&
+        key in values &&
+        values[key as keyof ResponsiveValue<T>] !== undefined
+      ) {
         return values[key as keyof ResponsiveValue<T>];
       }
     }
@@ -91,7 +110,10 @@ export function useResponsiveValue<T>(values: ResponsiveValue<T>, fallback?: T):
  * const size = useResponsiveValueWithFallback({ base: 'sm', lg: 'lg' }, 'md');
  * // size is guaranteed to be a string, never undefined
  */
-export function useResponsiveValueWithFallback<T>(values: ResponsiveValue<T>, fallback: T): T {
+export function useResponsiveValueWithFallback<T>(
+  values: ResponsiveValue<T>,
+  fallback: T
+): T {
   const result = useResponsiveValue(values, fallback);
   return result ?? fallback;
 }
@@ -99,4 +121,5 @@ export function useResponsiveValueWithFallback<T>(values: ResponsiveValue<T>, fa
 /**
  * Utility type to extract the value type from a ResponsiveValue
  */
-export type ExtractResponsiveValue<T> = T extends ResponsiveValue<infer U> ? U : never;
+export type ExtractResponsiveValue<T> =
+  T extends ResponsiveValue<infer U> ? U : never;

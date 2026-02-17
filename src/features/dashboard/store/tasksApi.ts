@@ -66,7 +66,9 @@ export const tasksApi = api.injectEndpoints({
         url: `/tasks/${taskId}/qa-gates/run`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, taskId) => [{ type: 'Task', id: taskId }],
+      invalidatesTags: (result, error, taskId) => [
+        { type: 'Task', id: taskId },
+      ],
     }),
   }),
 });
@@ -84,11 +86,17 @@ const tasksApiWithApprovals = tasksApi.injectEndpoints({
         const patch = dispatch(
           tasksApi.util.updateQueryData('getTask', taskId, (draft) => {
             if (draft.task) draft.task.status = 'approved' as Task['status'];
-          }),
+          })
         );
-        try { await queryFulfilled; } catch { patch.undo(); }
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
       },
-      invalidatesTags: (result, error, { taskId }) => [{ type: 'Task', id: taskId }],
+      invalidatesTags: (result, error, { taskId }) => [
+        { type: 'Task', id: taskId },
+      ],
     }),
     rejectTask: builder.mutation<{ task: Task }, RejectTaskRequest>({
       query: ({ taskId, reason }) => ({
@@ -100,11 +108,17 @@ const tasksApiWithApprovals = tasksApi.injectEndpoints({
         const patch = dispatch(
           tasksApi.util.updateQueryData('getTask', taskId, (draft) => {
             if (draft.task) draft.task.status = 'rejected' as Task['status'];
-          }),
+          })
         );
-        try { await queryFulfilled; } catch { patch.undo(); }
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
       },
-      invalidatesTags: (result, error, { taskId }) => [{ type: 'Task', id: taskId }],
+      invalidatesTags: (result, error, { taskId }) => [
+        { type: 'Task', id: taskId },
+      ],
     }),
   }),
 });
@@ -121,11 +135,17 @@ const tasksApiWithActions = tasksApi.injectEndpoints({
         const patch = dispatch(
           tasksApi.util.updateQueryData('getTask', taskId, (draft) => {
             if (draft.task) draft.task.status = 'queued' as Task['status'];
-          }),
+          })
         );
-        try { await queryFulfilled; } catch { patch.undo(); }
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
       },
-      invalidatesTags: (result, error, taskId) => [{ type: 'Task', id: taskId }],
+      invalidatesTags: (result, error, taskId) => [
+        { type: 'Task', id: taskId },
+      ],
     }),
     cancelTask: builder.mutation<{ success: boolean }, string>({
       query: (taskId) => ({
@@ -136,11 +156,17 @@ const tasksApiWithActions = tasksApi.injectEndpoints({
         const patch = dispatch(
           tasksApi.util.updateQueryData('getTask', taskId, (draft) => {
             if (draft.task) draft.task.status = 'cancelled' as Task['status'];
-          }),
+          })
         );
-        try { await queryFulfilled; } catch { patch.undo(); }
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
       },
-      invalidatesTags: (result, error, taskId) => [{ type: 'Task', id: taskId }],
+      invalidatesTags: (result, error, taskId) => [
+        { type: 'Task', id: taskId },
+      ],
     }),
   }),
 });
@@ -152,5 +178,7 @@ export const {
   useRunTaskQAGatesMutation,
 } = tasksApi;
 
-export const { useApproveTaskMutation, useRejectTaskMutation } = tasksApiWithApprovals;
-export const { useRetryTaskMutation, useCancelTaskMutation } = tasksApiWithActions;
+export const { useApproveTaskMutation, useRejectTaskMutation } =
+  tasksApiWithApprovals;
+export const { useRetryTaskMutation, useCancelTaskMutation } =
+  tasksApiWithActions;

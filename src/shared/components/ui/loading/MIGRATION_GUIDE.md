@@ -19,13 +19,14 @@ This guide shows how to add loading states to your existing components with mini
 ### Pattern 1: Simple Component → With Skeleton
 
 **Before:**
+
 ```tsx
 function TaskList() {
   const { data } = useGetTasksQuery();
 
   return (
     <div>
-      {data?.tasks.map(task => (
+      {data?.tasks.map((task) => (
         <TaskItem key={task.id} task={task} />
       ))}
     </div>
@@ -34,6 +35,7 @@ function TaskList() {
 ```
 
 **After:**
+
 ```tsx
 import { TaskListSkeleton } from '@/shared/components/ui/loading';
 
@@ -47,7 +49,7 @@ function TaskList() {
 
   return (
     <div>
-      {data?.tasks.map(task => (
+      {data?.tasks.map((task) => (
         <TaskItem key={task.id} task={task} />
       ))}
     </div>
@@ -56,6 +58,7 @@ function TaskList() {
 ```
 
 **Changes:**
+
 1. Import `TaskListSkeleton`
 2. Destructure `isLoading` from query
 3. Add early return with skeleton
@@ -65,6 +68,7 @@ function TaskList() {
 ### Pattern 2: Dashboard Cards → With Loading Prop
 
 **Before:**
+
 ```tsx
 function DashboardStats() {
   const { data } = useGetStatsQuery();
@@ -82,6 +86,7 @@ function DashboardStats() {
 ```
 
 **After:**
+
 ```tsx
 function DashboardStats() {
   const { data, isLoading } = useGetStatsQuery(); // ✨ Add isLoading
@@ -100,6 +105,7 @@ function DashboardStats() {
 ```
 
 **Changes:**
+
 1. Destructure `isLoading`
 2. Add `loading={isLoading}` prop to StatCard
 
@@ -108,6 +114,7 @@ function DashboardStats() {
 ### Pattern 3: Button → LoadingButton
 
 **Before:**
+
 ```tsx
 function SettingsForm() {
   const [isSaving, setIsSaving] = useState(false);
@@ -121,6 +128,7 @@ function SettingsForm() {
 ```
 
 **After:**
+
 ```tsx
 import { LoadingButton } from '@/shared/components/ui/loading-button'; // ✨ Import
 
@@ -140,6 +148,7 @@ function SettingsForm() {
 ```
 
 **Changes:**
+
 1. Import `LoadingButton`
 2. Replace `Button` with `LoadingButton`
 3. Use `loading` prop instead of `disabled`
@@ -151,6 +160,7 @@ function SettingsForm() {
 ### Pattern 4: Modal/Dialog → With LoadingOverlay
 
 **Before:**
+
 ```tsx
 function EditDialog({ open }) {
   const [isSaving, setIsSaving] = useState(false);
@@ -174,6 +184,7 @@ function EditDialog({ open }) {
 ```
 
 **After:**
+
 ```tsx
 import { LoadingOverlay } from '@/shared/components/ui/loading'; // ✨ Import
 import { LoadingButton } from '@/shared/components/ui/loading-button';
@@ -183,12 +194,13 @@ function EditDialog({ open }) {
 
   return (
     <Dialog open={open}>
-      <DialogContent className="relative"> {/* ✨ Add relative */}
+      <DialogContent className="relative">
+        {' '}
+        {/* ✨ Add relative */}
         <LoadingOverlay // ✨ Add overlay
           visible={isSaving}
           label="Saving changes..."
         />
-
         <DialogHeader>
           <DialogTitle>Edit Item</DialogTitle>
         </DialogHeader>
@@ -208,6 +220,7 @@ function EditDialog({ open }) {
 ```
 
 **Changes:**
+
 1. Import `LoadingOverlay` and `LoadingButton`
 2. Add `className="relative"` to DialogContent
 3. Add `LoadingOverlay` as first child
@@ -218,6 +231,7 @@ function EditDialog({ open }) {
 ### Pattern 5: Lazy Component → With Suspense
 
 **Before:**
+
 ```tsx
 import { lazy } from 'react';
 
@@ -229,6 +243,7 @@ function TasksTab() {
 ```
 
 **After:**
+
 ```tsx
 import { lazy } from 'react';
 import { SuspenseTaskList } from '@/shared/components/ui/suspense-wrapper'; // ✨ Import
@@ -237,7 +252,9 @@ const TaskList = lazy(() => import('./TaskList'));
 
 function TasksTab() {
   return (
-    <SuspenseTaskList count={5}> {/* ✨ Wrap with Suspense */}
+    <SuspenseTaskList count={5}>
+      {' '}
+      {/* ✨ Wrap with Suspense */}
       <TaskList />
     </SuspenseTaskList>
   );
@@ -245,6 +262,7 @@ function TasksTab() {
 ```
 
 **Changes:**
+
 1. Import `SuspenseTaskList`
 2. Wrap lazy component with `SuspenseTaskList`
 3. Specify skeleton `count` if needed
@@ -254,6 +272,7 @@ function TasksTab() {
 ### Pattern 6: File Upload → With Progress
 
 **Before:**
+
 ```tsx
 function FileUploader() {
   const handleUpload = async (files: FileList) => {
@@ -269,6 +288,7 @@ function FileUploader() {
 ```
 
 **After:**
+
 ```tsx
 import { ProgressBar } from '@/shared/components/ui/loading'; // ✨ Import
 
@@ -308,6 +328,7 @@ function FileUploader() {
 ```
 
 **Changes:**
+
 1. Import `ProgressBar`
 2. Add `progress` and `isUploading` state
 3. Update progress in upload callback
@@ -319,6 +340,7 @@ function FileUploader() {
 ### Pattern 7: Table → With TableSkeleton
 
 **Before:**
+
 ```tsx
 function DataTable() {
   const { data } = useGetDataQuery();
@@ -332,7 +354,7 @@ function DataTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data?.items.map(item => (
+        {data?.items.map((item) => (
           <TableRow key={item.id}>
             <TableCell>{item.name}</TableCell>
             <TableCell>{item.status}</TableCell>
@@ -345,6 +367,7 @@ function DataTable() {
 ```
 
 **After:**
+
 ```tsx
 import { TableSkeleton } from '@/shared/components/ui/loading'; // ✨ Import
 
@@ -365,7 +388,7 @@ function DataTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data?.items.map(item => (
+        {data?.items.map((item) => (
           <TableRow key={item.id}>
             <TableCell>{item.name}</TableCell>
             <TableCell>{item.status}</TableCell>
@@ -378,6 +401,7 @@ function DataTable() {
 ```
 
 **Changes:**
+
 1. Import `TableSkeleton`
 2. Add `isLoading` from query
 3. Return `TableSkeleton` when loading
@@ -533,12 +557,9 @@ function DataDisplay() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-error mb-4">Failed to load data</p>
-        <LoadingButton
-          onClick={() => refetch()}
-          loading={isLoading}
-        >
+      <div className="py-8 text-center">
+        <p className="mb-4 text-error">Failed to load data</p>
+        <LoadingButton onClick={() => refetch()} loading={isLoading}>
           Retry
         </LoadingButton>
       </div>
@@ -595,17 +616,17 @@ function DataDisplay() {
 
 ## 🎯 Quick Reference
 
-| Component Type | Import | Component |
-|---------------|--------|-----------|
-| Task List | `loading` | `TaskListSkeleton` |
-| Plan List | `loading` | `PlanListSkeleton` |
-| Dashboard Stats | `dashboard-cards` | `StatCard` with `loading` prop |
-| Action Cards | `dashboard-cards` | `ActionCard` with `loading` prop |
-| Tables | `loading` | `TableSkeleton` |
-| Buttons | `loading-button` | `LoadingButton` |
-| Modals | `loading` | `LoadingOverlay` |
-| Progress | `loading` | `ProgressBar` |
-| Lazy Components | `suspense-wrapper` | `SuspenseWrapper` variants |
+| Component Type  | Import             | Component                        |
+| --------------- | ------------------ | -------------------------------- |
+| Task List       | `loading`          | `TaskListSkeleton`               |
+| Plan List       | `loading`          | `PlanListSkeleton`               |
+| Dashboard Stats | `dashboard-cards`  | `StatCard` with `loading` prop   |
+| Action Cards    | `dashboard-cards`  | `ActionCard` with `loading` prop |
+| Tables          | `loading`          | `TableSkeleton`                  |
+| Buttons         | `loading-button`   | `LoadingButton`                  |
+| Modals          | `loading`          | `LoadingOverlay`                 |
+| Progress        | `loading`          | `ProgressBar`                    |
+| Lazy Components | `suspense-wrapper` | `SuspenseWrapper` variants       |
 
 ---
 
@@ -645,6 +666,7 @@ function DataDisplay() {
 ## 🎉 You're Done!
 
 Your component now has professional loading states. Users will see:
+
 - Smooth skeleton animations during load
 - Clear progress indicators
 - Proper disabled states

@@ -98,7 +98,10 @@ describe('Navigation Component', () => {
 
     it('should render custom logo', () => {
       render(
-        <Navigation items={testNavItems} logo={<span data-testid="custom-logo">Custom Logo</span>} />
+        <Navigation
+          items={testNavItems}
+          logo={<span data-testid="custom-logo">Custom Logo</span>}
+        />
       );
       const sidebar = getDesktopSidebar();
       expect(within(sidebar).getByTestId('custom-logo')).toBeInTheDocument();
@@ -106,7 +109,9 @@ describe('Navigation Component', () => {
 
     it('should have proper navigation role', () => {
       render(<Navigation items={testNavItems} />);
-      expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('navigation', { name: /main navigation/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -115,7 +120,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       expect(sessionsButton).toHaveAttribute('aria-current', 'page');
     });
 
@@ -123,7 +130,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const plansButton = within(sidebar).getByRole('button', { name: 'Plans' });
+      const plansButton = within(sidebar).getByRole('button', {
+        name: 'Plans',
+      });
       expect(plansButton).not.toHaveAttribute('aria-current');
     });
   });
@@ -133,7 +142,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const collapseButton = within(sidebar).getByRole('button', { name: /collapse sidebar/i });
+      const collapseButton = within(sidebar).getByRole('button', {
+        name: /collapse sidebar/i,
+      });
       expect(collapseButton).toBeInTheDocument();
     });
 
@@ -142,17 +153,23 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const collapseButton = within(sidebar).getByRole('button', { name: /collapse sidebar/i });
+      const collapseButton = within(sidebar).getByRole('button', {
+        name: /collapse sidebar/i,
+      });
       await user.click(collapseButton);
 
-      expect(within(sidebar).getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument();
+      expect(
+        within(sidebar).getByRole('button', { name: /expand sidebar/i })
+      ).toBeInTheDocument();
     });
 
     it('should start collapsed when defaultCollapsed is true', () => {
       render(<Navigation items={testNavItems} defaultCollapsed />);
 
       const sidebar = getDesktopSidebar();
-      expect(within(sidebar).getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument();
+      expect(
+        within(sidebar).getByRole('button', { name: /expand sidebar/i })
+      ).toBeInTheDocument();
     });
 
     it('should call onCollapsedChange when toggled', async () => {
@@ -160,11 +177,16 @@ describe('Navigation Component', () => {
       const onCollapsedChange = vi.fn();
 
       render(
-        <Navigation items={testNavItems} onCollapsedChange={onCollapsedChange} />
+        <Navigation
+          items={testNavItems}
+          onCollapsedChange={onCollapsedChange}
+        />
       );
 
       const sidebar = getDesktopSidebar();
-      const collapseButton = within(sidebar).getByRole('button', { name: /collapse sidebar/i });
+      const collapseButton = within(sidebar).getByRole('button', {
+        name: /collapse sidebar/i,
+      });
       await user.click(collapseButton);
 
       expect(onCollapsedChange).toHaveBeenCalledWith(true);
@@ -176,18 +198,33 @@ describe('Navigation Component', () => {
       );
 
       const sidebar = getDesktopSidebar();
-      expect(within(sidebar).getByRole('button', { name: /collapse sidebar/i })).toBeInTheDocument();
+      expect(
+        within(sidebar).getByRole('button', { name: /collapse sidebar/i })
+      ).toBeInTheDocument();
 
       rerender(<Navigation items={testNavItems} collapsed={true} />);
 
-      expect(within(sidebar).getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument();
+      expect(
+        within(sidebar).getByRole('button', { name: /expand sidebar/i })
+      ).toBeInTheDocument();
     });
   });
 
   describe('status indicators', () => {
     const statusIndicators = [
-      { id: 'session', label: 'Session', value: 'Active', type: 'success' as const },
-      { id: 'tasks', label: 'Running', value: 3, type: 'info' as const, pulse: true },
+      {
+        id: 'session',
+        label: 'Session',
+        value: 'Active',
+        type: 'success' as const,
+      },
+      {
+        id: 'tasks',
+        label: 'Running',
+        value: 3,
+        type: 'info' as const,
+        pulse: true,
+      },
     ];
 
     it('should render status indicators', () => {
@@ -235,7 +272,9 @@ describe('Navigation Component', () => {
 
       const sidebar = getDesktopSidebar();
       // Sessions has no badge - check the button doesn't contain badge styling
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       // Badge would have min-w-5 class, check it's not there
       expect(sessionsButton.querySelector('.min-w-5')).toBeNull();
     });
@@ -246,7 +285,7 @@ describe('Navigation Component', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      const itemsWithClick: NavItem[] = testNavItems.map(item => ({
+      const itemsWithClick: NavItem[] = testNavItems.map((item) => ({
         ...item,
         onClick: item.id === 'sessions' ? onClick : undefined,
       }));
@@ -254,7 +293,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={itemsWithClick} />);
 
       const sidebar = getDesktopSidebar();
-      await user.click(within(sidebar).getByRole('button', { name: 'Sessions' }));
+      await user.click(
+        within(sidebar).getByRole('button', { name: 'Sessions' })
+      );
       expect(onClick).toHaveBeenCalledTimes(1);
     });
 
@@ -262,7 +303,7 @@ describe('Navigation Component', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      const itemsWithDisabled: NavItem[] = testNavItems.map(item => ({
+      const itemsWithDisabled: NavItem[] = testNavItems.map((item) => ({
         ...item,
         onClick: item.id === 'sessions' ? onClick : undefined,
         disabled: item.id === 'sessions',
@@ -271,7 +312,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={itemsWithDisabled} />);
 
       const sidebar = getDesktopSidebar();
-      await user.click(within(sidebar).getByRole('button', { name: 'Sessions' }));
+      await user.click(
+        within(sidebar).getByRole('button', { name: 'Sessions' })
+      );
       expect(onClick).not.toHaveBeenCalled();
     });
   });
@@ -282,13 +325,17 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       sessionsButton.focus();
 
       await user.keyboard('{ArrowDown}');
 
       await waitFor(() => {
-        expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Plans' }));
+        expect(document.activeElement).toBe(
+          within(sidebar).getByRole('button', { name: 'Plans' })
+        );
       });
     });
 
@@ -297,14 +344,18 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       sessionsButton.focus();
 
       // Navigate up from first item, should wrap to last
       await user.keyboard('{ArrowUp}');
 
       await waitFor(() => {
-        expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Help' }));
+        expect(document.activeElement).toBe(
+          within(sidebar).getByRole('button', { name: 'Help' })
+        );
       });
     });
 
@@ -313,13 +364,17 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const plansButton = within(sidebar).getByRole('button', { name: 'Plans' });
+      const plansButton = within(sidebar).getByRole('button', {
+        name: 'Plans',
+      });
       plansButton.focus();
 
       await user.keyboard('{Home}');
 
       await waitFor(() => {
-        expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Sessions' }));
+        expect(document.activeElement).toBe(
+          within(sidebar).getByRole('button', { name: 'Sessions' })
+        );
       });
     });
 
@@ -328,13 +383,17 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       sessionsButton.focus();
 
       await user.keyboard('{End}');
 
       await waitFor(() => {
-        expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Help' }));
+        expect(document.activeElement).toBe(
+          within(sidebar).getByRole('button', { name: 'Help' })
+        );
       });
     });
 
@@ -342,7 +401,7 @@ describe('Navigation Component', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      const itemsWithClick: NavItem[] = testNavItems.map(item => ({
+      const itemsWithClick: NavItem[] = testNavItems.map((item) => ({
         ...item,
         onClick: item.id === 'sessions' ? onClick : undefined,
       }));
@@ -350,7 +409,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={itemsWithClick} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       sessionsButton.focus();
 
       await user.keyboard('{Enter}');
@@ -361,7 +422,7 @@ describe('Navigation Component', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      const itemsWithClick: NavItem[] = testNavItems.map(item => ({
+      const itemsWithClick: NavItem[] = testNavItems.map((item) => ({
         ...item,
         onClick: item.id === 'sessions' ? onClick : undefined,
       }));
@@ -369,7 +430,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={itemsWithClick} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       sessionsButton.focus();
 
       await user.keyboard(' ');
@@ -379,7 +442,7 @@ describe('Navigation Component', () => {
 
   describe('shortcut hints', () => {
     it('should display shortcut hints when provided', () => {
-      const itemsWithShortcuts: NavItem[] = testNavItems.map(item => ({
+      const itemsWithShortcuts: NavItem[] = testNavItems.map((item) => ({
         ...item,
         shortcutHint: item.id === 'sessions' ? '⌘1' : undefined,
       }));
@@ -405,12 +468,16 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      expect(within(sidebar).getByLabelText(/primary navigation/i)).toBeInTheDocument();
-      expect(within(sidebar).getByLabelText(/secondary navigation/i)).toBeInTheDocument();
+      expect(
+        within(sidebar).getByLabelText(/primary navigation/i)
+      ).toBeInTheDocument();
+      expect(
+        within(sidebar).getByLabelText(/secondary navigation/i)
+      ).toBeInTheDocument();
     });
 
     it('should mark disabled items with aria-disabled', () => {
-      const itemsWithDisabled: NavItem[] = testNavItems.map(item => ({
+      const itemsWithDisabled: NavItem[] = testNavItems.map((item) => ({
         ...item,
         disabled: item.id === 'sessions',
       }));
@@ -418,7 +485,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={itemsWithDisabled} />);
 
       const sidebar = getDesktopSidebar();
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const sessionsButton = within(sidebar).getByRole('button', {
+        name: 'Sessions',
+      });
       expect(sessionsButton).toHaveAttribute('aria-disabled', 'true');
     });
 
@@ -426,7 +495,9 @@ describe('Navigation Component', () => {
       render(<Navigation items={testNavItems} />);
 
       const sidebar = getDesktopSidebar();
-      const collapseButton = within(sidebar).getByRole('button', { name: /collapse sidebar/i });
+      const collapseButton = within(sidebar).getByRole('button', {
+        name: /collapse sidebar/i,
+      });
       expect(collapseButton).toHaveAttribute('aria-expanded', 'true');
     });
   });
@@ -443,7 +514,9 @@ describe('Navigation with mobile viewport', () => {
 
     // Mobile header should show the hamburger menu button
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /open navigation menu/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /open navigation menu/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -451,12 +524,16 @@ describe('Navigation with mobile viewport', () => {
     const user = userEvent.setup();
     render(<Navigation items={testNavItems} />);
 
-    const hamburgerButton = screen.getByRole('button', { name: /open navigation menu/i });
+    const hamburgerButton = screen.getByRole('button', {
+      name: /open navigation menu/i,
+    });
     await user.click(hamburgerButton);
 
     // Drawer should be open - use queryBy to get the element
     await waitFor(() => {
-      const drawer = document.querySelector('[role="dialog"][aria-label="Navigation menu"]');
+      const drawer = document.querySelector(
+        '[role="dialog"][aria-label="Navigation menu"]'
+      );
       expect(drawer).toHaveAttribute('data-state', 'open');
     });
   });
@@ -466,11 +543,15 @@ describe('Navigation with mobile viewport', () => {
     render(<Navigation items={testNavItems} />);
 
     // Open drawer
-    await user.click(screen.getByRole('button', { name: /open navigation menu/i }));
+    await user.click(
+      screen.getByRole('button', { name: /open navigation menu/i })
+    );
 
     // Wait for drawer to open
     await waitFor(() => {
-      const drawer = document.querySelector('[role="dialog"][aria-label="Navigation menu"]');
+      const drawer = document.querySelector(
+        '[role="dialog"][aria-label="Navigation menu"]'
+      );
       expect(drawer).toHaveAttribute('data-state', 'open');
     });
 
@@ -479,7 +560,9 @@ describe('Navigation with mobile viewport', () => {
 
     // Drawer should be closed
     await waitFor(() => {
-      const drawer = document.querySelector('[role="dialog"][aria-label="Navigation menu"]');
+      const drawer = document.querySelector(
+        '[role="dialog"][aria-label="Navigation menu"]'
+      );
       expect(drawer).toHaveAttribute('data-state', 'closed');
     });
   });
@@ -524,7 +607,9 @@ describe('Navigation priority indicators', () => {
   it('should render section labels when sidebar is expanded', () => {
     render(<Navigation items={testNavItems} />);
 
-    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const sidebar = screen.getByRole('navigation', {
+      name: /main navigation/i,
+    });
     expect(within(sidebar).getByText('Main')).toBeInTheDocument();
     expect(within(sidebar).getByText('More')).toBeInTheDocument();
   });
@@ -532,11 +617,17 @@ describe('Navigation priority indicators', () => {
   it('should apply data-priority attribute to nav items', () => {
     render(<Navigation items={testNavItems} />);
 
-    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-    const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+    const sidebar = screen.getByRole('navigation', {
+      name: /main navigation/i,
+    });
+    const sessionsButton = within(sidebar).getByRole('button', {
+      name: 'Sessions',
+    });
     expect(sessionsButton).toHaveAttribute('data-priority', 'primary');
 
-    const settingsButton = within(sidebar).getByRole('button', { name: 'Settings' });
+    const settingsButton = within(sidebar).getByRole('button', {
+      name: 'Settings',
+    });
     expect(settingsButton).toHaveAttribute('data-priority', 'secondary');
   });
 
@@ -562,7 +653,9 @@ describe('Navigation priority indicators', () => {
 
     render(<Navigation items={itemsWithStatus} />);
 
-    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const sidebar = screen.getByRole('navigation', {
+      name: /main navigation/i,
+    });
 
     // Check running badge has info styling
     const runningBadge = within(sidebar).getByText('5');
@@ -585,13 +678,21 @@ describe('Navigation keyboard navigation enhancements', () => {
 
     const itemsWithDisabled: NavItem[] = [
       { id: 'first', label: 'First', icon: Activity, priority: 'primary' },
-      { id: 'disabled', label: 'Disabled', icon: Map, priority: 'primary', disabled: true },
+      {
+        id: 'disabled',
+        label: 'Disabled',
+        icon: Map,
+        priority: 'primary',
+        disabled: true,
+      },
       { id: 'third', label: 'Third', icon: Settings, priority: 'secondary' },
     ];
 
     render(<Navigation items={itemsWithDisabled} />);
 
-    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const sidebar = screen.getByRole('navigation', {
+      name: /main navigation/i,
+    });
     const firstButton = within(sidebar).getByRole('button', { name: 'First' });
     firstButton.focus();
 
@@ -599,7 +700,9 @@ describe('Navigation keyboard navigation enhancements', () => {
     await user.keyboard('{ArrowDown}');
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Third' }));
+      expect(document.activeElement).toBe(
+        within(sidebar).getByRole('button', { name: 'Third' })
+      );
     });
   });
 
@@ -607,14 +710,20 @@ describe('Navigation keyboard navigation enhancements', () => {
     const user = userEvent.setup();
     render(<Navigation items={testNavItems} />);
 
-    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-    const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+    const sidebar = screen.getByRole('navigation', {
+      name: /main navigation/i,
+    });
+    const sessionsButton = within(sidebar).getByRole('button', {
+      name: 'Sessions',
+    });
     sessionsButton.focus();
 
     await user.keyboard('{ArrowRight}');
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Plans' }));
+      expect(document.activeElement).toBe(
+        within(sidebar).getByRole('button', { name: 'Plans' })
+      );
     });
   });
 
@@ -622,14 +731,18 @@ describe('Navigation keyboard navigation enhancements', () => {
     const user = userEvent.setup();
     render(<Navigation items={testNavItems} />);
 
-    const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+    const sidebar = screen.getByRole('navigation', {
+      name: /main navigation/i,
+    });
     const plansButton = within(sidebar).getByRole('button', { name: 'Plans' });
     plansButton.focus();
 
     await user.keyboard('{ArrowLeft}');
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(within(sidebar).getByRole('button', { name: 'Sessions' }));
+      expect(document.activeElement).toBe(
+        within(sidebar).getByRole('button', { name: 'Sessions' })
+      );
     });
   });
 });

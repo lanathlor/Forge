@@ -45,7 +45,8 @@ export function useArrowKeyNavigation({
   orientation = 'vertical',
 }: UseArrowKeyNavigationOptions) {
   const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => { // eslint-disable-line complexity -- Navigation logic requires checking multiple keys
+    // eslint-disable-next-line complexity
+    (event: KeyboardEvent) => {
       if (!enabled || itemCount === 0) return;
 
       const isVertical = orientation === 'vertical';
@@ -64,18 +65,32 @@ export function useArrowKeyNavigation({
       } else if (event.key === 'End') {
         event.preventDefault();
         onFocusChange(itemCount - 1);
-      } else if (event.key === 'Enter' && onSelect && focusedIndex >= 0 && focusedIndex < itemCount) {
+      } else if (
+        event.key === 'Enter' &&
+        onSelect &&
+        focusedIndex >= 0 &&
+        focusedIndex < itemCount
+      ) {
         event.preventDefault();
         onSelect(focusedIndex);
       }
     },
-    [enabled, itemCount, focusedIndex, onFocusChange, onSelect, loop, orientation]
+    [
+      enabled,
+      itemCount,
+      focusedIndex,
+      onFocusChange,
+      onSelect,
+      loop,
+      orientation,
+    ]
   );
 
   useEffect(() => {
     const container = containerRef?.current || document;
     container.addEventListener('keydown', handleKeyDown as EventListener);
-    return () => container.removeEventListener('keydown', handleKeyDown as EventListener);
+    return () =>
+      container.removeEventListener('keydown', handleKeyDown as EventListener);
   }, [handleKeyDown, containerRef]);
 
   // Auto-scroll focused item into view
@@ -125,7 +140,8 @@ export function useGridNavigation({
   enabled = true,
 }: UseGridNavigationOptions) {
   const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => { // eslint-disable-line complexity -- Grid navigation logic requires checking multiple keys
+    // eslint-disable-next-line complexity
+    (event: KeyboardEvent) => {
       if (!enabled || rows === 0 || columns === 0) return;
 
       const [row, col] = focusedPosition;

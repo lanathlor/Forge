@@ -4,41 +4,41 @@ This document describes all keyboard shortcuts available in the Autobot dashboar
 
 ## General
 
-| Shortcut | Description |
-|----------|-------------|
+| Shortcut    | Description                        |
+| ----------- | ---------------------------------- |
 | `Shift + ?` | Show keyboard shortcuts cheatsheet |
-| `Escape` | Close modals, panels, and dialogs |
+| `Escape`    | Close modals, panels, and dialogs  |
 
 ## Navigation
 
-| Shortcut | Description |
-|----------|-------------|
-| `Ctrl/⌘ + 1` | Go to Tasks tab |
-| `Ctrl/⌘ + 2` | Go to Plans tab |
-| `Ctrl/⌘ + 3` | Go to QA Gates tab |
-| `Ctrl/⌘ + 4` | Go to Summary tab |
-| `Ctrl/⌘ + K` | Focus search (in Repository Selector) |
-| `Tab` | Navigate between interactive elements |
-| `Shift + Tab` | Navigate backwards between elements |
+| Shortcut      | Description                           |
+| ------------- | ------------------------------------- |
+| `Ctrl/⌘ + 1`  | Go to Tasks tab                       |
+| `Ctrl/⌘ + 2`  | Go to Plans tab                       |
+| `Ctrl/⌘ + 3`  | Go to QA Gates tab                    |
+| `Ctrl/⌘ + 4`  | Go to Summary tab                     |
+| `Ctrl/⌘ + K`  | Focus search (in Repository Selector) |
+| `Tab`         | Navigate between interactive elements |
+| `Shift + Tab` | Navigate backwards between elements   |
 
 ## Lists & Navigation
 
-| Shortcut | Description |
-|----------|-------------|
-| `↑` / `↓` | Navigate up/down in lists |
-| `Enter` | Select/activate focused item |
-| `Home` | Jump to first item in list |
-| `End` | Jump to last item in list |
+| Shortcut  | Description                  |
+| --------- | ---------------------------- |
+| `↑` / `↓` | Navigate up/down in lists    |
+| `Enter`   | Select/activate focused item |
+| `Home`    | Jump to first item in list   |
+| `End`     | Jump to last item in list    |
 
 ## Repository Selector
 
-| Shortcut | Description |
-|----------|-------------|
-| `Ctrl/⌘ + 1-9` | Quick switch to repository 1-9 |
-| `Ctrl/⌘ + K` | Focus repository search |
-| `↑` / `↓` | Navigate repository list |
-| `Enter` | Select repository |
-| `Escape` | Clear search or blur search input |
+| Shortcut       | Description                       |
+| -------------- | --------------------------------- |
+| `Ctrl/⌘ + 1-9` | Quick switch to repository 1-9    |
+| `Ctrl/⌘ + K`   | Focus repository search           |
+| `↑` / `↓`      | Navigate repository list          |
+| `Enter`        | Select repository                 |
+| `Escape`       | Clear search or blur search input |
 
 ## Focus Management
 

@@ -8,7 +8,12 @@ global.fetch = mockFetch;
 
 // Mock CommitMessageEditor component
 vi.mock('../CommitMessageEditor', () => ({
-  CommitMessageEditor: ({ taskId, initialMessage, onCommitted, onCancel }: {
+  CommitMessageEditor: ({
+    taskId,
+    initialMessage,
+    onCommitted,
+    onCancel,
+  }: {
     taskId: string;
     initialMessage: string;
     onCommitted: () => void;
@@ -27,8 +32,18 @@ describe('ApprovalPanel', () => {
   const defaultProps = {
     taskId: 'task-123',
     filesChanged: [
-      { path: 'src/index.ts', status: 'modified' as const, additions: 10, deletions: 5 },
-      { path: 'src/utils.ts', status: 'added' as const, additions: 20, deletions: 0 },
+      {
+        path: 'src/index.ts',
+        status: 'modified' as const,
+        additions: 10,
+        deletions: 5,
+      },
+      {
+        path: 'src/utils.ts',
+        status: 'added' as const,
+        additions: 20,
+        deletions: 0,
+      },
     ],
     qaGatesPassed: true,
   };
@@ -56,7 +71,12 @@ describe('ApprovalPanel', () => {
     const singleFileProps = {
       ...defaultProps,
       filesChanged: [
-        { path: 'src/index.ts', status: 'modified' as const, additions: 5, deletions: 3 },
+        {
+          path: 'src/index.ts',
+          status: 'modified' as const,
+          additions: 5,
+          deletions: 3,
+        },
       ],
     };
 
@@ -78,13 +98,17 @@ describe('ApprovalPanel', () => {
     render(<ApprovalPanel {...defaultProps} qaGatesPassed={false} />);
 
     expect(screen.getByText('QA Failed')).toBeInTheDocument();
-    expect(screen.getByText('QA gates have failed. Fix issues before approving.')).toBeInTheDocument();
+    expect(
+      screen.getByText('QA gates have failed. Fix issues before approving.')
+    ).toBeInTheDocument();
   });
 
   it('should disable approve button when QA gates failed', () => {
     render(<ApprovalPanel {...defaultProps} qaGatesPassed={false} />);
 
-    const approveButton = screen.getByRole('button', { name: /Approve Changes/i });
+    const approveButton = screen.getByRole('button', {
+      name: /Approve Changes/i,
+    });
     expect(approveButton).toBeDisabled();
   });
 
@@ -92,7 +116,9 @@ describe('ApprovalPanel', () => {
     render(<ApprovalPanel {...defaultProps} qaGatesPassed={true} />);
 
     // Approve should be disabled because "Diff reviewed" is unchecked
-    const approveButton = screen.getByRole('button', { name: /Approve Changes/i });
+    const approveButton = screen.getByRole('button', {
+      name: /Approve Changes/i,
+    });
     expect(approveButton).toBeDisabled();
   });
 
@@ -103,7 +129,9 @@ describe('ApprovalPanel', () => {
     const diffItem = screen.getByText('Diff reviewed');
     fireEvent.click(diffItem);
 
-    const approveButton = screen.getByRole('button', { name: /Approve Changes/i });
+    const approveButton = screen.getByRole('button', {
+      name: /Approve Changes/i,
+    });
     expect(approveButton).not.toBeDisabled();
   });
 
@@ -117,8 +145,12 @@ describe('ApprovalPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /Approve Changes/i }));
 
     // Confirmation dialog should appear
-    expect(screen.getByText(/This will generate a commit message/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Confirm Approval' })).toBeInTheDocument();
+    expect(
+      screen.getByText(/This will generate a commit message/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Confirm Approval' })
+    ).toBeInTheDocument();
   });
 
   it('should call approve API after confirming in dialog', async () => {
@@ -142,8 +174,12 @@ describe('ApprovalPanel', () => {
       expect(screen.getByTestId('commit-message-editor')).toBeInTheDocument();
     });
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/tasks/task-123/approve', { method: 'POST' });
-    expect(screen.getByTestId('initial-message')).toHaveTextContent('feat: add new feature');
+    expect(mockFetch).toHaveBeenCalledWith('/api/tasks/task-123/approve', {
+      method: 'POST',
+    });
+    expect(screen.getByTestId('initial-message')).toHaveTextContent(
+      'feat: add new feature'
+    );
   });
 
   it('should show error message when approve API fails', async () => {
@@ -169,8 +205,14 @@ describe('ApprovalPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Reject & Revert/i }));
 
-    expect(screen.getByText(/This will revert all changes/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Describe why these changes are being rejected...')).toBeInTheDocument();
+    expect(
+      screen.getByText(/This will revert all changes/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(
+        'Describe why these changes are being rejected...'
+      )
+    ).toBeInTheDocument();
   });
 
   it('should call reject API with reason after confirming', async () => {
@@ -186,14 +228,18 @@ describe('ApprovalPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /Reject & Revert/i }));
 
     // Type reason
-    const textarea = screen.getByPlaceholderText('Describe why these changes are being rejected...');
+    const textarea = screen.getByPlaceholderText(
+      'Describe why these changes are being rejected...'
+    );
     fireEvent.change(textarea, { target: { value: 'Code quality issues' } });
 
     // Confirm rejection
-    const confirmButtons = screen.getAllByRole('button', { name: /Reject & Revert/i });
+    const confirmButtons = screen.getAllByRole('button', {
+      name: /Reject & Revert/i,
+    });
     // The dialog's confirm button is the destructive one
-    const dialogConfirmButton = confirmButtons.find(
-      (btn) => btn.closest('[role="dialog"]')
+    const dialogConfirmButton = confirmButtons.find((btn) =>
+      btn.closest('[role="dialog"]')
     );
     fireEvent.click(dialogConfirmButton!);
 
@@ -216,9 +262,11 @@ describe('ApprovalPanel', () => {
 
     // Click reject and confirm
     fireEvent.click(screen.getByRole('button', { name: /Reject & Revert/i }));
-    const confirmButtons = screen.getAllByRole('button', { name: /Reject & Revert/i });
-    const dialogConfirmButton = confirmButtons.find(
-      (btn) => btn.closest('[role="dialog"]')
+    const confirmButtons = screen.getAllByRole('button', {
+      name: /Reject & Revert/i,
+    });
+    const dialogConfirmButton = confirmButtons.find((btn) =>
+      btn.closest('[role="dialog"]')
     );
     fireEvent.click(dialogConfirmButton!);
 
@@ -298,15 +346,21 @@ describe('ApprovalPanel', () => {
     const diffItem = screen.getByText('Diff reviewed');
 
     // Initially unchecked - approve should be disabled
-    expect(screen.getByRole('button', { name: /Approve Changes/i })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /Approve Changes/i })
+    ).toBeDisabled();
 
     // Check it
     fireEvent.click(diffItem);
-    expect(screen.getByRole('button', { name: /Approve Changes/i })).not.toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /Approve Changes/i })
+    ).not.toBeDisabled();
 
     // Uncheck it
     fireEvent.click(diffItem);
-    expect(screen.getByRole('button', { name: /Approve Changes/i })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /Approve Changes/i })
+    ).toBeDisabled();
   });
 
   it('should handle keyboard shortcut A to open approve dialog', () => {
@@ -319,7 +373,9 @@ describe('ApprovalPanel', () => {
     fireEvent.keyDown(document, { key: 'a' });
 
     // Approval dialog should appear
-    expect(screen.getByRole('button', { name: 'Confirm Approval' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Confirm Approval' })
+    ).toBeInTheDocument();
   });
 
   it('should handle keyboard shortcut R to open reject dialog', () => {
@@ -329,7 +385,9 @@ describe('ApprovalPanel', () => {
     fireEvent.keyDown(document, { key: 'r' });
 
     // Reject dialog should appear
-    expect(screen.getByText(/This will revert all changes/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/This will revert all changes/)
+    ).toBeInTheDocument();
   });
 
   it('should not trigger keyboard shortcuts when typing in a textarea', () => {
@@ -338,13 +396,17 @@ describe('ApprovalPanel', () => {
     // Open reject dialog to get a textarea
     fireEvent.click(screen.getByRole('button', { name: /Reject & Revert/i }));
 
-    const textarea = screen.getByPlaceholderText('Describe why these changes are being rejected...');
+    const textarea = screen.getByPlaceholderText(
+      'Describe why these changes are being rejected...'
+    );
 
     // Type 'r' in the textarea - should not trigger shortcut
     fireEvent.keyDown(textarea, { key: 'r' });
 
     // The dialog should still be open (not a duplicate)
-    expect(screen.getByText(/This will revert all changes/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/This will revert all changes/)
+    ).toBeInTheDocument();
   });
 
   it('should default qaGatesPassed to true', () => {

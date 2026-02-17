@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useResponsiveValue, useResponsiveValueWithFallback } from '../useResponsiveValue';
+import {
+  useResponsiveValue,
+  useResponsiveValueWithFallback,
+} from '../useResponsiveValue';
 import { BREAKPOINTS } from '../useBreakpoint';
 
 function mockMatchMedia(width: number) {
@@ -40,7 +43,9 @@ describe('useResponsiveValue', () => {
   it('should return sm value on small screens when base is not provided', () => {
     mockMatchMedia(650); // Above sm (640px), below md (768px)
 
-    const { result } = renderHook(() => useResponsiveValue({ sm: 'small', lg: 'large' }));
+    const { result } = renderHook(() =>
+      useResponsiveValue({ sm: 'small', lg: 'large' })
+    );
 
     expect(result.current).toBe('small');
   });
@@ -88,8 +93,8 @@ describe('useResponsiveValue', () => {
   it('should cascade down when value is not defined for current breakpoint', () => {
     mockMatchMedia(1100); // lg breakpoint
 
-    const { result } = renderHook(() =>
-      useResponsiveValue({ base: 'small', md: 'medium' }) // No lg value defined
+    const { result } = renderHook(
+      () => useResponsiveValue({ base: 'small', md: 'medium' }) // No lg value defined
     );
 
     // Should cascade down to md value
@@ -99,8 +104,8 @@ describe('useResponsiveValue', () => {
   it('should cascade all the way down to base when no intermediate values', () => {
     mockMatchMedia(1600); // 2xl breakpoint
 
-    const { result } = renderHook(() =>
-      useResponsiveValue({ base: 'only-base' }) // Only base defined
+    const { result } = renderHook(
+      () => useResponsiveValue({ base: 'only-base' }) // Only base defined
     );
 
     expect(result.current).toBe('only-base');
@@ -109,8 +114,8 @@ describe('useResponsiveValue', () => {
   it('should return fallback when no values match', () => {
     mockMatchMedia(400); // Below sm
 
-    const { result } = renderHook(() =>
-      useResponsiveValue({ md: 'medium', lg: 'large' }, 'fallback') // No base or sm
+    const { result } = renderHook(
+      () => useResponsiveValue({ md: 'medium', lg: 'large' }, 'fallback') // No base or sm
     );
 
     expect(result.current).toBe('fallback');
@@ -119,8 +124,8 @@ describe('useResponsiveValue', () => {
   it('should return undefined when no values match and no fallback', () => {
     mockMatchMedia(400); // Below sm
 
-    const { result } = renderHook(() =>
-      useResponsiveValue({ md: 'medium', lg: 'large' }) // No base, sm, or fallback
+    const { result } = renderHook(
+      () => useResponsiveValue({ md: 'medium', lg: 'large' }) // No base, sm, or fallback
     );
 
     expect(result.current).toBeUndefined();
@@ -164,21 +169,30 @@ describe('useResponsiveValue', () => {
     // Test compact on mobile
     mockMatchMedia(400);
     const { result: mobileResult } = renderHook(() =>
-      useResponsiveValue({ base: 'compact', md: 'comfortable', lg: 'expanded' }, 'compact')
+      useResponsiveValue(
+        { base: 'compact', md: 'comfortable', lg: 'expanded' },
+        'compact'
+      )
     );
     expect(mobileResult.current).toBe('compact');
 
     // Test comfortable on tablet
     mockMatchMedia(800);
     const { result: tabletResult } = renderHook(() =>
-      useResponsiveValue({ base: 'compact', md: 'comfortable', lg: 'expanded' }, 'compact')
+      useResponsiveValue(
+        { base: 'compact', md: 'comfortable', lg: 'expanded' },
+        'compact'
+      )
     );
     expect(tabletResult.current).toBe('comfortable');
 
     // Test expanded on desktop
     mockMatchMedia(1100);
     const { result: desktopResult } = renderHook(() =>
-      useResponsiveValue({ base: 'compact', md: 'comfortable', lg: 'expanded' }, 'compact')
+      useResponsiveValue(
+        { base: 'compact', md: 'comfortable', lg: 'expanded' },
+        'compact'
+      )
     );
     expect(desktopResult.current).toBe('expanded');
   });

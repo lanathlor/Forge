@@ -3,10 +3,17 @@ import { relations } from 'drizzle-orm';
 import { plans } from './plans';
 import { phases } from './phases';
 
-export type PlanTaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type PlanTaskStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'skipped';
 
 export const planTasks = sqliteTable('plan_tasks', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   phaseId: text('phase_id').notNull(),
   planId: text('plan_id').notNull(), // denormalized for easier queries
   order: integer('order').notNull(), // 1, 2, 3... within phase
@@ -16,7 +23,9 @@ export const planTasks = sqliteTable('plan_tasks', {
 
   // Dependencies & parallelization
   dependsOn: text('depends_on', { mode: 'json' }).$type<string[]>(),
-  canRunInParallel: integer('can_run_in_parallel', { mode: 'boolean' }).notNull().default(false),
+  canRunInParallel: integer('can_run_in_parallel', { mode: 'boolean' })
+    .notNull()
+    .default(false),
 
   // Execution tracking
   attempts: integer('attempts').notNull().default(0),

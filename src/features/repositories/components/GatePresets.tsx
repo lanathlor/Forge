@@ -31,10 +31,38 @@ const PRESETS: PresetInfo[] = [
     label: 'TypeScript',
     description: 'ESLint + TypeScript + Tests + Build',
     gates: [
-      { name: 'ESLint', enabled: true, command: 'pnpm eslint . --ext .ts,.tsx', timeout: 60000, failOnError: true, order: 1 },
-      { name: 'TypeScript', enabled: true, command: 'pnpm tsc --noEmit', timeout: 120000, failOnError: true, order: 2 },
-      { name: 'Tests', enabled: true, command: 'pnpm test --run', timeout: 300000, failOnError: false, order: 3 },
-      { name: 'Build', enabled: false, command: 'pnpm build', timeout: 180000, failOnError: true, order: 4 },
+      {
+        name: 'ESLint',
+        enabled: true,
+        command: 'pnpm eslint . --ext .ts,.tsx',
+        timeout: 60000,
+        failOnError: true,
+        order: 1,
+      },
+      {
+        name: 'TypeScript',
+        enabled: true,
+        command: 'pnpm tsc --noEmit',
+        timeout: 120000,
+        failOnError: true,
+        order: 2,
+      },
+      {
+        name: 'Tests',
+        enabled: true,
+        command: 'pnpm test --run',
+        timeout: 300000,
+        failOnError: false,
+        order: 3,
+      },
+      {
+        name: 'Build',
+        enabled: false,
+        command: 'pnpm build',
+        timeout: 180000,
+        failOnError: true,
+        order: 4,
+      },
     ],
   },
   {
@@ -42,8 +70,22 @@ const PRESETS: PresetInfo[] = [
     label: 'JavaScript',
     description: 'ESLint + Tests',
     gates: [
-      { name: 'ESLint', enabled: true, command: 'npm run lint', timeout: 60000, failOnError: true, order: 1 },
-      { name: 'Tests', enabled: true, command: 'npm test', timeout: 300000, failOnError: true, order: 2 },
+      {
+        name: 'ESLint',
+        enabled: true,
+        command: 'npm run lint',
+        timeout: 60000,
+        failOnError: true,
+        order: 1,
+      },
+      {
+        name: 'Tests',
+        enabled: true,
+        command: 'npm test',
+        timeout: 300000,
+        failOnError: true,
+        order: 2,
+      },
     ],
   },
   {
@@ -51,9 +93,30 @@ const PRESETS: PresetInfo[] = [
     label: 'Python',
     description: 'Ruff + MyPy + Pytest',
     gates: [
-      { name: 'Ruff', enabled: true, command: 'ruff check .', timeout: 60000, failOnError: true, order: 1 },
-      { name: 'MyPy', enabled: true, command: 'mypy .', timeout: 120000, failOnError: true, order: 2 },
-      { name: 'Pytest', enabled: true, command: 'pytest', timeout: 300000, failOnError: false, order: 3 },
+      {
+        name: 'Ruff',
+        enabled: true,
+        command: 'ruff check .',
+        timeout: 60000,
+        failOnError: true,
+        order: 1,
+      },
+      {
+        name: 'MyPy',
+        enabled: true,
+        command: 'mypy .',
+        timeout: 120000,
+        failOnError: true,
+        order: 2,
+      },
+      {
+        name: 'Pytest',
+        enabled: true,
+        command: 'pytest',
+        timeout: 300000,
+        failOnError: false,
+        order: 3,
+      },
     ],
   },
   {
@@ -61,9 +124,30 @@ const PRESETS: PresetInfo[] = [
     label: 'Go',
     description: 'Fmt + Vet + Test',
     gates: [
-      { name: 'Go Fmt', enabled: true, command: 'go fmt ./...', timeout: 30000, failOnError: true, order: 1 },
-      { name: 'Go Vet', enabled: true, command: 'go vet ./...', timeout: 60000, failOnError: true, order: 2 },
-      { name: 'Go Test', enabled: true, command: 'go test ./...', timeout: 300000, failOnError: true, order: 3 },
+      {
+        name: 'Go Fmt',
+        enabled: true,
+        command: 'go fmt ./...',
+        timeout: 30000,
+        failOnError: true,
+        order: 1,
+      },
+      {
+        name: 'Go Vet',
+        enabled: true,
+        command: 'go vet ./...',
+        timeout: 60000,
+        failOnError: true,
+        order: 2,
+      },
+      {
+        name: 'Go Test',
+        enabled: true,
+        command: 'go test ./...',
+        timeout: 300000,
+        failOnError: true,
+        order: 3,
+      },
     ],
   },
   {
@@ -71,9 +155,30 @@ const PRESETS: PresetInfo[] = [
     label: 'Rust',
     description: 'Clippy + Fmt + Test',
     gates: [
-      { name: 'Clippy', enabled: true, command: 'cargo clippy -- -D warnings', timeout: 120000, failOnError: true, order: 1 },
-      { name: 'Rust Format', enabled: true, command: 'cargo fmt --check', timeout: 30000, failOnError: true, order: 2 },
-      { name: 'Cargo Test', enabled: true, command: 'cargo test', timeout: 300000, failOnError: true, order: 3 },
+      {
+        name: 'Clippy',
+        enabled: true,
+        command: 'cargo clippy -- -D warnings',
+        timeout: 120000,
+        failOnError: true,
+        order: 1,
+      },
+      {
+        name: 'Rust Format',
+        enabled: true,
+        command: 'cargo fmt --check',
+        timeout: 30000,
+        failOnError: true,
+        order: 2,
+      },
+      {
+        name: 'Cargo Test',
+        enabled: true,
+        command: 'cargo test',
+        timeout: 300000,
+        failOnError: true,
+        order: 3,
+      },
     ],
   },
 ];
@@ -96,9 +201,12 @@ export function GatePresets({ onApplyPreset }: GatePresetsProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Load Preset Configuration</DialogTitle>
+          <DialogTitle className="text-xl">
+            Load Preset Configuration
+          </DialogTitle>
           <DialogDescription>
-            Quick-start with pre-configured quality gates for your tech stack. This will replace your current configuration.
+            Quick-start with pre-configured quality gates for your tech stack.
+            This will replace your current configuration.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 pt-2">
@@ -110,7 +218,9 @@ export function GatePresets({ onApplyPreset }: GatePresetsProps) {
             >
               <div className="flex-1">
                 <div className="mb-1 text-lg font-semibold">{preset.label}</div>
-                <div className="text-sm text-muted-foreground">{preset.description}</div>
+                <div className="text-sm text-muted-foreground">
+                  {preset.description}
+                </div>
               </div>
               <div className="ml-4 flex flex-col items-end gap-2">
                 <Badge variant="secondary" className="px-3 py-1">

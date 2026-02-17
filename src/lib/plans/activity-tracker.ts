@@ -24,13 +24,13 @@ export const DEFAULT_ACTIVITY_CONFIG: ActivityTimeoutConfig = {
  * Activity sources that can update the last activity timestamp
  */
 export type ActivitySource =
-  | 'claude_output'      // Claude is producing output
-  | 'status_change'      // Task status changed
-  | 'qa_gate_running'    // QA gate is executing
-  | 'qa_gate_result'     // QA gate produced result
-  | 'diff_captured'      // Diff was captured
-  | 'claude_retry'       // Claude retry was invoked
-  | 'manual';            // Manual activity ping
+  | 'claude_output' // Claude is producing output
+  | 'status_change' // Task status changed
+  | 'qa_gate_running' // QA gate is executing
+  | 'qa_gate_result' // QA gate produced result
+  | 'diff_captured' // Diff was captured
+  | 'claude_retry' // Claude retry was invoked
+  | 'manual'; // Manual activity ping
 
 interface TaskActivityState {
   taskId: string;
@@ -60,6 +60,19 @@ export class ActivityTracker {
     this.config = { ...DEFAULT_ACTIVITY_CONFIG, ...config };
   }
 
+  private createTaskHandlers(planTaskId: string, sessionTaskId: string) {
+    const outputHandler = (data: { taskId: string; output?: string }) => {
+      if (data.taskId === sessionTaskId && data.output) this.recordActivity(planTaskId, 'claude_output');
+    };
+    const updateHandler = (data: { taskId: string; status?: string }) => {
+      if (data.taskId === sessionTaskId) this.recordActivity(planTaskId, 'status_change');
+    };
+    const qaHandler = (data: { taskId: string; gateName?: string; status?: string }) => {
+      if (data.taskId === sessionTaskId) this.recordActivity(planTaskId, 'qa_gate_result');
+    };
+    return { outputHandler, updateHandler, qaHandler };
+  }
+
   /**
    * Start tracking activity for a task
    */
@@ -75,32 +88,12 @@ export class ActivityTracker {
       isActive: true,
     });
 
-    // Set up event listener for Claude output
-    const outputHandler = (data: { taskId: string; output?: string }) => {
-      if (data.taskId === sessionTaskId && data.output) {
-        this.recordActivity(planTaskId, 'claude_output');
-      }
-    };
-
-    // Set up event listener for task status updates
-    const updateHandler = (data: { taskId: string; status?: string }) => {
-      if (data.taskId === sessionTaskId) {
-        this.recordActivity(planTaskId, 'status_change');
-      }
-    };
-
-    // Set up event listener for QA gate results
-    const qaHandler = (data: { taskId: string; gateName?: string; status?: string }) => {
-      if (data.taskId === sessionTaskId) {
-        this.recordActivity(planTaskId, 'qa_gate_result');
-      }
-    };
+    const { outputHandler, updateHandler, qaHandler } = this.createTaskHandlers(planTaskId, sessionTaskId);
 
     taskEvents.on('task:output', outputHandler);
     taskEvents.on('task:update', updateHandler);
     taskEvents.on('qa:update', qaHandler);
 
-    // Store cleanup function
     this.eventListenerCleanups.set(planTaskId, () => {
       taskEvents.off('task:output', outputHandler);
       taskEvents.off('task:update', updateHandler);
@@ -139,7 +132,9 @@ export class ActivityTracker {
       state.lastActivitySource = source;
       // Only log non-output activities to reduce noise
       if (source !== 'claude_output') {
-        console.log(`[ActivityTracker] Activity recorded for ${planTaskId}: ${source}`);
+        console.log(
+          `[ActivityTracker] Activity recorded for ${planTaskId}: ${source}`
+        );
       }
     }
   }
@@ -169,10 +164,12 @@ export class ActivityTracker {
       const inactiveMinutes = Math.floor(inactivitySeconds / 60);
       const inactiveSeconds = Math.floor(inactivitySeconds % 60);
 
-      return `Task timed out due to inactivity. ` +
+      return (
+        `Task timed out due to inactivity. ` +
         `No activity for ${inactiveMinutes}m ${inactiveSeconds}s ` +
         `(last activity: ${state.lastActivitySource}). ` +
-        `Total runtime: ${totalMinutes} minutes.`;
+        `Total runtime: ${totalMinutes} minutes.`
+      );
     }
 
     return null;
@@ -198,7 +195,10 @@ export class ActivityTracker {
     }
 
     // Return remaining time before inactivity timeout
-    return Math.max(0, this.config.inactivityThresholdSeconds - inactivitySeconds);
+    return Math.max(
+      0,
+      this.config.inactivityThresholdSeconds - inactivitySeconds
+    );
   }
 
   /**
@@ -227,7 +227,9 @@ export class ActivityTracker {
 // Singleton instance
 let activityTrackerInstance: ActivityTracker | null = null;
 
-export function getActivityTracker(config?: Partial<ActivityTimeoutConfig>): ActivityTracker {
+export function getActivityTracker(
+  config?: Partial<ActivityTimeoutConfig>
+): ActivityTracker {
   if (!activityTrackerInstance) {
     activityTrackerInstance = new ActivityTracker(config);
     console.log('[ActivityTracker] Created singleton instance');

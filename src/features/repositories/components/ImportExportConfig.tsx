@@ -12,7 +12,12 @@ interface ImportExportConfigProps {
   onImport: (gates: QAGate[]) => void;
 }
 
-export function ImportExportConfig({ gates, version, maxRetries, onImport }: ImportExportConfigProps) {
+export function ImportExportConfig({
+  gates,
+  version,
+  maxRetries,
+  onImport,
+}: ImportExportConfigProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleExport() {
@@ -21,7 +26,9 @@ export function ImportExportConfig({ gates, version, maxRetries, onImport }: Imp
       maxRetries,
       qaGates: gates,
     };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

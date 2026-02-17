@@ -48,7 +48,9 @@ describe('usePrefersReducedMotion', () => {
   it('should use correct media query', () => {
     const matchMediaSpy = vi.spyOn(window, 'matchMedia');
     renderHook(() => usePrefersReducedMotion());
-    expect(matchMediaSpy).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+    expect(matchMediaSpy).toHaveBeenCalledWith(
+      '(prefers-reduced-motion: reduce)'
+    );
   });
 });
 

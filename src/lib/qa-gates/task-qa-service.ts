@@ -66,8 +66,13 @@ async function autoResumePlanIfNeeded(planTaskId: string) {
   const plan = planTask.plan;
 
   // Check if plan is paused/failed and this was the blocking task
-  if ((plan.status === 'paused' || plan.status === 'failed') && plan.currentTaskId === planTaskId) {
-    console.log(`[AutoResume] Plan ${plan.id} was ${plan.status} on task ${planTaskId}, resuming...`);
+  if (
+    (plan.status === 'paused' || plan.status === 'failed') &&
+    plan.currentTaskId === planTaskId
+  ) {
+    console.log(
+      `[AutoResume] Plan ${plan.id} was ${plan.status} on task ${planTaskId}, resuming...`
+    );
 
     // IMPORTANT: Change plan status from failed → running BEFORE resuming
     await db
@@ -78,7 +83,9 @@ async function autoResumePlanIfNeeded(planTaskId: string) {
       })
       .where(eq(plans.id, plan.id));
 
-    console.log(`[AutoResume] Changed plan ${plan.id} status from '${plan.status}' to 'running'`);
+    console.log(
+      `[AutoResume] Changed plan ${plan.id} status from '${plan.status}' to 'running'`
+    );
 
     // Import dynamically to avoid circular dependency
     const { PlanExecutor } = await import('@/lib/plans/executor');
@@ -95,7 +102,11 @@ async function autoResumePlanIfNeeded(planTaskId: string) {
 async function markTaskCompleted(taskId: string) {
   await db
     .update(tasks)
-    .set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() })
+    .set({
+      status: 'completed',
+      completedAt: new Date(),
+      updatedAt: new Date(),
+    })
     .where(eq(tasks.id, taskId));
 
   // Sync plan task status
@@ -113,7 +124,9 @@ async function markTaskCompleted(taskId: string) {
       })
       .where(eq(planTasks.id, planTask.id));
 
-    console.log(`[TaskComplete] Plan task ${planTask.id} synced to 'completed' status`);
+    console.log(
+      `[TaskComplete] Plan task ${planTask.id} synced to 'completed' status`
+    );
 
     // Auto-resume plan if it was paused on this task
     await autoResumePlanIfNeeded(planTask.id);
@@ -123,22 +136,40 @@ async function markTaskCompleted(taskId: string) {
 /**
  * Handle failed auto-commit by falling back to waiting_approval
  */
-async function handleCommitFailure(taskId: string, sessionId: string, error: unknown) {
+async function handleCommitFailure(
+  taskId: string,
+  sessionId: string,
+  error: unknown
+) {
   console.error(`[AutoApprove] Failed to auto-approve task ${taskId}:`, error);
   await db
     .update(tasks)
     .set({ status: 'waiting_approval', updatedAt: new Date() })
     .where(eq(tasks.id, taskId));
-  taskEvents.emit('task:update', { sessionId, taskId, status: 'waiting_approval' });
+  taskEvents.emit('task:update', {
+    sessionId,
+    taskId,
+    status: 'waiting_approval',
+  });
+}
+
+async function syncPlanTaskOnCommit(taskId: string, sha: string) {
+  const planTask = await db.query.planTasks.findFirst({ where: eq(planTasks.taskId, taskId) });
+  if (!planTask) return;
+  await db.update(planTasks).set({ status: 'completed', commitSha: sha, completedAt: new Date(), updatedAt: new Date() }).where(eq(planTasks.id, planTask.id));
+  console.log(`[AutoApprove] Plan task ${planTask.id} synced to 'completed' status`);
+  await autoResumePlanIfNeeded(planTask.id);
 }
 
 /**
  * Commit changes and update task/plan records
  */
-async function commitAndRecord(task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepo>>>, taskId: string, repoPath: string) {
-  const commitMessage = await generateCommitMessage(
-    task.prompt, task.filesChanged!, task.diffContent || '', repoPath
-  );
+async function commitAndRecord(
+  task: NonNullable<Awaited<ReturnType<typeof getTaskWithRepo>>>,
+  taskId: string,
+  repoPath: string
+) {
+  const commitMessage = await generateCommitMessage(task.prompt, task.filesChanged!, task.diffContent || '', repoPath);
   const result = await commitTaskChanges(repoPath, task.filesChanged!, commitMessage);
 
   await db
@@ -152,26 +183,7 @@ async function commitAndRecord(task: NonNullable<Awaited<ReturnType<typeof getTa
     })
     .where(eq(tasks.id, taskId));
 
-  const planTask = await db.query.planTasks.findFirst({
-    where: eq(planTasks.taskId, taskId),
-  });
-
-  if (planTask) {
-    await db
-      .update(planTasks)
-      .set({
-        status: 'completed',
-        commitSha: result.sha,
-        completedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(planTasks.id, planTask.id));
-    console.log(`[AutoApprove] Plan task ${planTask.id} synced to 'completed' status`);
-
-    // Auto-resume plan if it was paused on this task
-    await autoResumePlanIfNeeded(planTask.id);
-  }
-
+  await syncPlanTaskOnCommit(taskId, result.sha);
   return result;
 }
 
@@ -192,7 +204,9 @@ async function autoApproveAndCommit(taskId: string, sessionId: string) {
   try {
     const result = await commitAndRecord(task, taskId, repoPath);
     taskEvents.emit('task:update', { sessionId, taskId, status: 'completed' });
-    console.log(`[AutoApprove] Plan task ${taskId} auto-approved and committed: ${result.sha}`);
+    console.log(
+      `[AutoApprove] Plan task ${taskId} auto-approved and committed: ${result.sha}`
+    );
   } catch (error) {
     await handleCommitFailure(taskId, sessionId, error);
   }

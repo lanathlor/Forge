@@ -40,7 +40,9 @@ vi.mock('@/lib/claude/commit-message', () => ({
 }));
 
 vi.mock('@/lib/git/commit', () => ({
-  commitTaskChanges: vi.fn().mockResolvedValue({ sha: 'abc123', message: 'feat: auto commit' }),
+  commitTaskChanges: vi
+    .fn()
+    .mockResolvedValue({ sha: 'abc123', message: 'feat: auto commit' }),
 }));
 
 describe('Task QA Service', () => {
@@ -256,7 +258,7 @@ describe('Task QA Service', () => {
       vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
       // First call: isPlanTask check, second call: getTaskWithRepo in autoApproveAndCommit
       vi.mocked(db.query.planTasks.findFirst)
-        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any)  // isPlanTask
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any) // isPlanTask
         .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any); // commitAndRecord planTask lookup
 
       // getTaskWithRepo in autoApproveAndCommit
@@ -287,7 +289,7 @@ describe('Task QA Service', () => {
 
       vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
       vi.mocked(db.query.planTasks.findFirst)
-        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any)  // isPlanTask
+        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any) // isPlanTask
         .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any); // markTaskCompleted planTask lookup
 
       // getTaskWithRepo returns task with no files
@@ -314,8 +316,10 @@ describe('Task QA Service', () => {
       };
 
       vi.mocked(db.update).mockReturnValue(mockUpdateChain as any);
-      vi.mocked(db.query.planTasks.findFirst)
-        .mockResolvedValueOnce({ id: 'pt-1', taskId: 'task-1' } as any); // isPlanTask
+      vi.mocked(db.query.planTasks.findFirst).mockResolvedValueOnce({
+        id: 'pt-1',
+        taskId: 'task-1',
+      } as any); // isPlanTask
 
       // getTaskWithRepo in autoApproveAndCommit
       vi.mocked(db.query.tasks.findFirst).mockResolvedValue({
@@ -331,7 +335,9 @@ describe('Task QA Service', () => {
 
       // Make commitTaskChanges throw
       const { commitTaskChanges } = await import('@/lib/git/commit');
-      vi.mocked(commitTaskChanges).mockRejectedValueOnce(new Error('Commit failed'));
+      vi.mocked(commitTaskChanges).mockRejectedValueOnce(
+        new Error('Commit failed')
+      );
 
       await updateTaskStatus('task-1', true, 'session-1');
 

@@ -1,4 +1,5 @@
 # Gatekeeper - Implementation Roadmap
+
 **From Zero to Feature Complete**
 
 This is a linear, step-by-step plan using Drizzle ORM, RTK Query, and shadcn/ui. Follow in order.
@@ -23,6 +24,7 @@ This is a linear, step-by-step plan using Drizzle ORM, RTK Query, and shadcn/ui.
 ### Morning: Create Project (2 hours)
 
 **Step 1.1: Initialize Next.js**
+
 ```bash
 cd /home/lanath/Work/lanath
 pnpx create-next-app@latest gatekeeper \
@@ -36,6 +38,7 @@ cd gatekeeper
 ```
 
 **Step 1.2: Install Core Dependencies**
+
 ```bash
 # Database
 pnpm add drizzle-orm better-sqlite3 @paralleldrive/cuid2
@@ -60,6 +63,7 @@ pnpm add -D tsx vitest @playwright/test
 **Step 1.3: Configure TypeScript (strict mode)**
 
 Edit `tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -68,7 +72,7 @@ Edit `tsconfig.json`:
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true
     // ... rest from create-next-app
   }
 }
@@ -77,17 +81,22 @@ Edit `tsconfig.json`:
 **Step 1.4: Setup ESLint & Prettier**
 
 Create `.eslintrc.json`:
+
 ```json
 {
   "extends": ["next/core-web-vitals"],
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_" }
+    ],
     "@typescript-eslint/consistent-type-imports": "error"
   }
 }
 ```
 
 Create `prettier.config.js`:
+
 ```javascript
 module.exports = {
   semi: true,
@@ -100,6 +109,7 @@ module.exports = {
 ```
 
 Install:
+
 ```bash
 pnpm add -D prettier prettier-plugin-tailwindcss
 ```
@@ -107,6 +117,7 @@ pnpm add -D prettier prettier-plugin-tailwindcss
 **Step 1.5: Create Environment File**
 
 Create `.env`:
+
 ```bash
 DATABASE_URL="./dev.db"
 WORKSPACE_ROOT="/home/lanath/Work"
@@ -116,6 +127,7 @@ PORT="3000"
 ```
 
 Create `.env.example`:
+
 ```bash
 DATABASE_URL="./dev.db"
 WORKSPACE_ROOT="/path/to/workspace"
@@ -133,6 +145,7 @@ PORT="3000"
 **Step 1.6: Create Drizzle Config**
 
 Create `drizzle.config.ts` at project root:
+
 ```typescript
 import type { Config } from 'drizzle-kit';
 
@@ -147,6 +160,7 @@ export default {
 ```
 
 **Step 1.7: Create Database Directory Structure**
+
 ```bash
 mkdir -p src/db/{schema,migrations}
 touch src/db/index.ts
@@ -155,6 +169,7 @@ touch src/db/index.ts
 **Step 1.8: Create Database Client**
 
 Create `src/db/index.ts`:
+
 ```typescript
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
@@ -166,11 +181,14 @@ export const db = drizzle(sqlite);
 **Step 1.9: Create First Schema - Repositories**
 
 Create `src/db/schema/repositories.ts`:
+
 ```typescript
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const repositories = sqliteTable('repositories', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   path: text('path').notNull().unique(),
   currentBranch: text('current_branch'),
@@ -195,6 +213,7 @@ export type NewRepository = typeof repositories.$inferInsert;
 **Step 1.10: Create Sessions Schema**
 
 Create `src/db/schema/sessions.ts`:
+
 ```typescript
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
@@ -203,7 +222,9 @@ import { repositories } from './repositories';
 export type SessionStatus = 'active' | 'paused' | 'completed' | 'abandoned';
 
 export const sessions = sqliteTable('sessions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   repositoryId: text('repository_id').notNull(),
   status: text('status').$type<SessionStatus>().notNull().default('active'),
   startBranch: text('start_branch'),
@@ -237,6 +258,7 @@ export type NewSession = typeof sessions.$inferInsert;
 **Step 1.11: Create Tasks Schema**
 
 Create `src/db/schema/tasks.ts`:
+
 ```typescript
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
@@ -257,7 +279,9 @@ export type TaskStatus =
   | 'cancelled';
 
 export const tasks = sqliteTable('tasks', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   sessionId: text('session_id').notNull(),
   prompt: text('prompt').notNull(),
   status: text('status').$type<TaskStatus>().notNull().default('pending'),
@@ -307,13 +331,16 @@ export type NewTask = typeof tasks.$inferInsert;
 **Step 1.12: Create QA Gates Schema**
 
 Create `src/db/schema/qa-gates.ts`:
+
 ```typescript
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 import { tasks } from './tasks';
 
 export const qaGateConfigs = sqliteTable('qa_gate_configs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull().unique(),
   enabled: integer('enabled', { mode: 'boolean' }).default(true),
   command: text('command').notNull(),
@@ -328,10 +355,17 @@ export const qaGateConfigs = sqliteTable('qa_gate_configs', {
     .$defaultFn(() => new Date()),
 });
 
-export type QAGateStatus = 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
+export type QAGateStatus =
+  | 'pending'
+  | 'running'
+  | 'passed'
+  | 'failed'
+  | 'skipped';
 
 export const qaGateResults = sqliteTable('qa_gate_results', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   taskId: text('task_id').notNull(),
   gateName: text('gate_name').notNull(),
   status: text('status').$type<QAGateStatus>().notNull(),
@@ -360,6 +394,7 @@ export type NewQAGateResult = typeof qaGateResults.$inferInsert;
 **Step 1.13: Create Index File**
 
 Create `src/db/schema/index.ts`:
+
 ```typescript
 export * from './repositories';
 export * from './sessions';
@@ -368,6 +403,7 @@ export * from './qa-gates';
 ```
 
 **Step 1.14: Generate and Push Initial Migration**
+
 ```bash
 pnpm drizzle-kit generate:sqlite
 pnpm drizzle-kit push:sqlite
@@ -376,6 +412,7 @@ pnpm drizzle-kit push:sqlite
 **Step 1.15: Add Package.json Scripts**
 
 Add to `package.json`:
+
 ```json
 {
   "scripts": {
@@ -397,6 +434,7 @@ Add to `package.json`:
 **Step 1.16: Create Seed Script**
 
 Create `src/db/seed.ts`:
+
 ```typescript
 import { db } from './index';
 import { qaGateConfigs } from './schema';
@@ -439,6 +477,7 @@ seed().catch(console.error);
 ```
 
 Add script to `package.json`:
+
 ```json
 {
   "scripts": {
@@ -448,6 +487,7 @@ Add script to `package.json`:
 ```
 
 Run seed:
+
 ```bash
 pnpm db:seed
 ```
@@ -461,6 +501,7 @@ pnpm db:seed
 **Step 1.17: Create Dockerfile**
 
 Create `Dockerfile`:
+
 ```dockerfile
 FROM node:20-alpine AS base
 
@@ -486,6 +527,7 @@ CMD ["pnpm", "dev"]
 **Step 1.18: Create Docker Compose**
 
 Create `docker-compose.yml`:
+
 ```yaml
 version: '3.8'
 
@@ -495,7 +537,7 @@ services:
       context: .
       target: dev
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - .:/app
       - /app/node_modules
@@ -512,6 +554,7 @@ services:
 **Step 1.19: Create .dockerignore**
 
 Create `.dockerignore`:
+
 ```
 node_modules
 .next
@@ -522,6 +565,7 @@ node_modules
 ```
 
 **Step 1.20: Test Docker**
+
 ```bash
 docker-compose up
 ```
@@ -537,16 +581,19 @@ Visit http://localhost:3000 - should see Next.js default page.
 ### Morning: UI Foundation (3 hours)
 
 **Step 2.1: Initialize shadcn/ui**
+
 ```bash
 pnpx shadcn-ui@latest init
 ```
 
 Answer prompts:
+
 - Style: Default
 - Base color: Slate
 - CSS variables: Yes
 
 **Step 2.2: Install Required Components**
+
 ```bash
 pnpx shadcn-ui@latest add button
 pnpx shadcn-ui@latest add card
@@ -559,6 +606,7 @@ pnpx shadcn-ui@latest add dropdown-menu
 ```
 
 **Step 2.3: Install Monaco Editor**
+
 ```bash
 pnpm add @monaco-editor/react
 ```
@@ -566,6 +614,7 @@ pnpm add @monaco-editor/react
 **Step 2.4: Create Mobile-First Layout**
 
 Update `src/app/layout.tsx`:
+
 ```typescript
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -598,6 +647,7 @@ export default function RootLayout({
 **Step 2.5: Create Mobile Navigation**
 
 Create `src/components/layout/MobileNav.tsx`:
+
 ```typescript
 'use client';
 
@@ -646,6 +696,7 @@ export function MobileNav() {
 **Step 2.6: Create Desktop Sidebar**
 
 Create `src/components/layout/Sidebar.tsx`:
+
 ```typescript
 'use client';
 
@@ -698,6 +749,7 @@ export function Sidebar() {
 **Step 2.7: Create Main Layout Component**
 
 Create `src/components/layout/MainLayout.tsx`:
+
 ```typescript
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
@@ -720,6 +772,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 **Step 2.8: Update Home Page**
 
 Update `src/app/page.tsx`:
+
 ```typescript
 import { MainLayout } from '@/components/layout/MainLayout';
 
@@ -761,6 +814,7 @@ export default function HomePage() {
 **Step 2.9: Update Global Styles for Mobile**
 
 Update `src/app/globals.css` - add after Tailwind directives:
+
 ```css
 @layer base {
   /* Mobile-first touch targets */
@@ -799,6 +853,7 @@ Update `src/app/globals.css` - add after Tailwind directives:
 **Step 2.10: Create Types**
 
 Create `src/types/index.ts`:
+
 ```typescript
 export interface FileChange {
   path: string;
@@ -823,6 +878,7 @@ export interface DiffResult {
 **Step 2.11: Create Utilities**
 
 Create `src/lib/utils.ts`:
+
 ```typescript
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -859,6 +915,7 @@ export function generateId(): string {
 **Checkpoint 2.2**: ✅ Day 2 complete
 
 Test app:
+
 ```bash
 pnpm dev
 ```
@@ -874,6 +931,7 @@ Visit http://localhost:3000 - should see mobile-responsive dashboard!
 **Step 3.1: Create Workspace Types**
 
 Create `src/lib/workspace/types.ts`:
+
 ```typescript
 export interface DiscoveredRepository {
   id: string;
@@ -894,6 +952,7 @@ export interface DiscoveredRepository {
 **Step 3.2: Create Git Scanner**
 
 Create `src/lib/workspace/scanner.ts`:
+
 ```typescript
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -1028,6 +1087,7 @@ async function getUncommittedFiles(repoPath: string): Promise<string[]> {
 **Step 3.3: Create Repository API Route**
 
 Create `src/app/api/repositories/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -1085,6 +1145,7 @@ export async function GET() {
 **Step 3.4: Create Repository Selector Component**
 
 Create `src/components/dashboard/RepositorySelector.tsx`:
+
 ```typescript
 'use client';
 
@@ -1177,6 +1238,7 @@ export function RepositorySelector() {
 **Step 3.5: Update Home Page**
 
 Update `src/app/page.tsx`:
+
 ```typescript
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RepositorySelector } from '@/components/dashboard/RepositorySelector';
@@ -1220,6 +1282,7 @@ Test: Visit dashboard, should see your repos!
 **Step 4.1: Create Session Manager**
 
 Create `src/lib/sessions/manager.ts`:
+
 ```typescript
 import { db } from '@/db';
 import { sessions, type Session } from '@/db/schema';
@@ -1303,6 +1366,7 @@ export async function endSession(sessionId: string): Promise<Session> {
 **Step 4.2: Create Session API Routes**
 
 Create `src/app/api/sessions/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -1379,6 +1443,7 @@ export async function POST(request: Request) {
 ```
 
 Create `src/app/api/sessions/[id]/end/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { endSession } from '@/lib/sessions/manager';
@@ -1411,6 +1476,7 @@ export async function POST(
 **Step 5.1: Create Claude Types**
 
 Create `src/lib/claude/types.ts`:
+
 ```typescript
 export interface ClaudeTaskOptions {
   workingDirectory: string;
@@ -1428,6 +1494,7 @@ export interface ClaudeTaskResult {
 **Step 5.2: Create Claude Wrapper**
 
 Create `src/lib/claude/wrapper.ts`:
+
 ```typescript
 import { spawn, type ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
@@ -1516,6 +1583,7 @@ export const claudeWrapper = new ClaudeCodeWrapper();
 **Step 5.3: Create Pre-flight Checks**
 
 Create `src/lib/git/pre-flight.ts`:
+
 ```typescript
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -1547,7 +1615,8 @@ export async function runPreFlightChecks(
         currentCommit: '',
         currentBranch: '',
         isClean: false,
-        error: 'Repository has uncommitted changes. Please commit or stash them.',
+        error:
+          'Repository has uncommitted changes. Please commit or stash them.',
       };
     }
 
@@ -1582,6 +1651,7 @@ export async function runPreFlightChecks(
 **Step 5.4: Create Diff Capture**
 
 Create `src/lib/git/diff.ts`:
+
 ```typescript
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -1685,6 +1755,7 @@ function extractFilePatch(fullDiff: string, filePath: string): string {
 **Step 6.1: Create QA Gate Runner with Retry**
 
 Create `src/lib/qa-gates/runner.ts`:
+
 ```typescript
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -1912,6 +1983,7 @@ I'll continue with Days 7-12 in the next file to keep this manageable. Should I 
 ### Morning: Diff Viewer (3 hours)
 
 **Step 7.1: Install Monaco Editor (if not done)**
+
 ```bash
 pnpm add @monaco-editor/react
 ```
@@ -1919,6 +1991,7 @@ pnpm add @monaco-editor/react
 **Step 7.2: Create Diff Viewer Component**
 
 Create `src/components/dashboard/DiffViewer.tsx`:
+
 ```typescript
 'use client';
 
@@ -2068,6 +2141,7 @@ function getLanguageFromPath(path: string): string {
 **Step 7.3: Create Diff API Routes**
 
 Create `src/app/api/tasks/[id]/diff/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -2095,15 +2169,13 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error getting diff:', error);
-    return NextResponse.json(
-      { error: 'Failed to get diff' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get diff' }, { status: 500 });
   }
 }
 ```
 
 Create `src/app/api/tasks/[id]/files/[path]/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -2178,6 +2250,7 @@ async function getFileContent(
 **Step 7.4: Create Commit Message Generator**
 
 Create `src/lib/claude/commit-message.ts`:
+
 ```typescript
 import { claudeWrapper } from './wrapper';
 
@@ -2216,6 +2289,7 @@ Generate ONLY the commit message, nothing else.`;
 **Step 7.5: Create Commit Logic**
 
 Create `src/lib/git/commit.ts`:
+
 ```typescript
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -2249,6 +2323,7 @@ export async function commitChanges(
 **Step 7.6: Create Approval Panel Component**
 
 Create `src/components/dashboard/ApprovalPanel.tsx`:
+
 ```typescript
 'use client';
 
@@ -2375,6 +2450,7 @@ export function ApprovalPanel({ taskId, qaStatus }: ApprovalPanelProps) {
 **Step 7.7: Create Approval API Routes**
 
 Create `src/app/api/tasks/[id]/approve/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -2404,10 +2480,7 @@ export async function POST(
       );
     }
 
-    const message = await generateCommitMessage(
-      task.diffContent!,
-      task.prompt
-    );
+    const message = await generateCommitMessage(task.diffContent!, task.prompt);
 
     await db
       .update(tasks)
@@ -2426,6 +2499,7 @@ export async function POST(
 ```
 
 Create `src/app/api/tasks/[id]/commit/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -2492,6 +2566,7 @@ export async function POST(
 **Step 8.1: Create Revert Logic**
 
 Create `src/lib/git/revert.ts`:
+
 ```typescript
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -2505,7 +2580,11 @@ export async function revertChanges(
   repoPath: string,
   startingCommit: string,
   changedFiles: FileChange[]
-): Promise<{ success: boolean; filesReverted: string[]; filesDeleted: string[] }> {
+): Promise<{
+  success: boolean;
+  filesReverted: string[];
+  filesDeleted: string[];
+}> {
   const filesReverted: string[] = [];
   const filesDeleted: string[] = [];
 
@@ -2542,6 +2621,7 @@ export async function revertChanges(
 **Step 8.2: Create Reject API Route**
 
 Create `src/app/api/tasks/[id]/reject/route.ts`:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
@@ -2607,11 +2687,14 @@ export async function POST(
 **Step 9.1: Create Plan Schema**
 
 Create `src/db/schema/plans.ts`:
+
 ```typescript
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const plans = sqliteTable('plans', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   repositoryId: text('repository_id').notNull(),
   filePath: text('file_path').notNull(),
   title: text('title').notNull(),
@@ -2622,7 +2705,9 @@ export const plans = sqliteTable('plans', {
 });
 
 export const planExecutions = sqliteTable('plan_executions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   planId: text('plan_id').notNull(),
   repositoryId: text('repository_id').notNull(),
   status: text('status').notNull(), // pending, running, completed, failed
@@ -2636,7 +2721,9 @@ export const planExecutions = sqliteTable('plan_executions', {
 });
 
 export const planStepExecutions = sqliteTable('plan_step_executions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   planExecutionId: text('plan_execution_id').notNull(),
   stepNumber: integer('step_number').notNull(),
   stepTitle: text('step_title').notNull(),
@@ -2650,11 +2737,13 @@ export const planStepExecutions = sqliteTable('plan_step_executions', {
 ```
 
 Add to `src/db/schema/index.ts`:
+
 ```typescript
 export * from './plans';
 ```
 
 Regenerate migrations:
+
 ```bash
 pnpm db:generate
 pnpm db:push
@@ -2663,6 +2752,7 @@ pnpm db:push
 **Step 9.2: Create Plan Parser**
 
 Create `src/lib/plans/parser.ts`:
+
 ```typescript
 export interface PlanStep {
   stepNumber: number;
@@ -2747,11 +2837,14 @@ export function parsePlanFile(
 **Step 10.1: Create Notification Schema**
 
 Create `src/db/schema/notifications.ts`:
+
 ```typescript
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const notificationConfig = sqliteTable('notification_config', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   discordWebhookUrl: text('discord_webhook_url'),
   taskCompleted: integer('task_completed', { mode: 'boolean' }).default(true),
   qaFailed: integer('qa_failed', { mode: 'boolean' }).default(true),
@@ -2765,6 +2858,7 @@ export const notificationConfig = sqliteTable('notification_config', {
 **Step 10.2: Create Discord Notifier**
 
 Create `src/lib/notifications/discord.ts`:
+
 ```typescript
 export class DiscordNotifier {
   private webhookUrl: string;
@@ -2796,21 +2890,25 @@ export class DiscordNotifier {
 ### Day 11: Mobile Testing & Polish
 
 **Step 11.1: Test on Real Mobile Devices**
+
 - iOS Safari
 - Android Chrome
 - Tablet views
 
 **Step 11.2: Touch Optimizations**
+
 - Increase tap targets to 44x44px minimum
 - Add touch feedback
 - Test swipe gestures
 
 **Step 11.3: Performance**
+
 - Lazy load Monaco Editor
 - Optimize images
 - Reduce bundle size
 
 **Step 11.4: Accessibility**
+
 - Add ARIA labels
 - Test keyboard navigation
 - Check color contrast
@@ -2820,11 +2918,13 @@ export class DiscordNotifier {
 ### Day 12: E2E Testing & Documentation
 
 **Step 12.1: Write E2E Tests**
+
 ```bash
 pnpm create playwright
 ```
 
 Create `tests/e2e/task-workflow.spec.ts`:
+
 ```typescript
 import { test, expect } from '@playwright/test';
 
@@ -2864,12 +2964,14 @@ test('complete task workflow', async ({ page }) => {
 **Step 12.2: Write README**
 
 Create comprehensive `README.md`:
+
 ```markdown
 # Gatekeeper
 
 Claude Code oversight with QA gates, mobile-first dashboard, and Discord notifications.
 
 ## Features
+
 - Multi-repo workspace discovery
 - Automated QA gates with 3-retry logic
 - Mobile-responsive UI
@@ -2877,6 +2979,7 @@ Claude Code oversight with QA gates, mobile-first dashboard, and Discord notific
 - Discord notifications
 
 ## Quick Start
+
 \`\`\`bash
 pnpm install
 pnpm db:generate
@@ -2886,6 +2989,7 @@ pnpm dev
 \`\`\`
 
 ## Configuration
+
 See `.env.example` for required environment variables.
 ```
 

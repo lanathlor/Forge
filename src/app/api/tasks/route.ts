@@ -27,10 +27,7 @@ export async function POST(request: Request) {
       .returning();
 
     if (!task) {
-      return Response.json(
-        { error: 'Failed to create task' },
-        { status: 500 }
-      );
+      return Response.json({ error: 'Failed to create task' }, { status: 500 });
     }
 
     // Start execution (async, don't await)
@@ -41,10 +38,7 @@ export async function POST(request: Request) {
     return Response.json({ task });
   } catch (error) {
     console.error('Failed to create task:', error);
-    return Response.json(
-      { error: 'Failed to create task' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to create task' }, { status: 500 });
   }
 }
 
@@ -85,9 +79,6 @@ export async function GET(request: Request) {
     return Response.json({ tasks: tasksList });
   } catch (error) {
     console.error('Failed to fetch tasks:', error);
-    return Response.json(
-      { error: 'Failed to fetch tasks' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to fetch tasks' }, { status: 500 });
   }
 }

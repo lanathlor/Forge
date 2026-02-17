@@ -231,7 +231,9 @@ describe('Run Orchestrator', () => {
 
   it('should handle errors during execution', async () => {
     const { db } = await import('@/db');
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     // Mock executeGate to throw an error
     vi.spyOn(gateExecutor, 'executeGate').mockRejectedValue(
@@ -305,27 +307,21 @@ describe('Run Orchestrator', () => {
       gates: mockGates,
     });
 
-    expect(executionOrder).toEqual([
-      'TypeScript Check',
-      'ESLint',
-      'Tests',
-    ]);
+    expect(executionOrder).toEqual(['TypeScript Check', 'ESLint', 'Tests']);
   });
 
   it('should measure total duration correctly', async () => {
     const { db } = await import('@/db');
 
-    vi.spyOn(gateExecutor, 'executeGate').mockImplementation(
-      async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        return {
-          id: 'exec-id',
-          gateName: 'Test Gate',
-          status: 'passed',
-          duration: 50,
-        };
-      }
-    );
+    vi.spyOn(gateExecutor, 'executeGate').mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      return {
+        id: 'exec-id',
+        gateName: 'Test Gate',
+        status: 'passed',
+        duration: 50,
+      };
+    });
 
     await orchestrateQAGates({
       runId: 'run-123',

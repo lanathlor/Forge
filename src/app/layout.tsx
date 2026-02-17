@@ -23,7 +23,11 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Providers>
-          <div id="main-content" className="min-h-screen bg-background" role="main">
+          <div
+            id="main-content"
+            className="min-h-screen bg-background"
+            role="main"
+          >
             {children}
           </div>
         </Providers>

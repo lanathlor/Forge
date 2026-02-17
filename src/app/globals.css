@@ -48,19 +48,19 @@
     --space-96: 384px;
 
     /* ----- Typography Scale (1.25 ratio - Major Third) ----- */
-    --font-size-xs: 0.75rem;      /* 12px */
-    --font-size-sm: 0.875rem;     /* 14px */
-    --font-size-base: 1rem;       /* 16px */
-    --font-size-lg: 1.125rem;     /* 18px */
-    --font-size-xl: 1.25rem;      /* 20px */
-    --font-size-2xl: 1.5rem;      /* 24px */
-    --font-size-3xl: 1.875rem;    /* 30px */
-    --font-size-4xl: 2.25rem;     /* 36px */
-    --font-size-5xl: 3rem;        /* 48px */
-    --font-size-6xl: 3.75rem;     /* 60px */
-    --font-size-7xl: 4.5rem;      /* 72px */
-    --font-size-8xl: 6rem;        /* 96px */
-    --font-size-9xl: 8rem;        /* 128px */
+    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-base: 1rem; /* 16px */
+    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-xl: 1.25rem; /* 20px */
+    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem; /* 36px */
+    --font-size-5xl: 3rem; /* 48px */
+    --font-size-6xl: 3.75rem; /* 60px */
+    --font-size-7xl: 4.5rem; /* 72px */
+    --font-size-8xl: 6rem; /* 96px */
+    --font-size-9xl: 8rem; /* 128px */
 
     /* ----- Line Heights ----- */
     --line-height-none: 1;
@@ -91,22 +91,25 @@
 
     /* ----- Border Radii ----- */
     --radius-none: 0px;
-    --radius-sm: 0.125rem;        /* 2px */
-    --radius-default: 0.25rem;    /* 4px */
-    --radius-md: 0.375rem;        /* 6px */
-    --radius-lg: 0.5rem;          /* 8px */
-    --radius-xl: 0.75rem;         /* 12px */
-    --radius-2xl: 1rem;           /* 16px */
-    --radius-3xl: 1.5rem;         /* 24px */
+    --radius-sm: 0.125rem; /* 2px */
+    --radius-default: 0.25rem; /* 4px */
+    --radius-md: 0.375rem; /* 6px */
+    --radius-lg: 0.5rem; /* 8px */
+    --radius-xl: 0.75rem; /* 12px */
+    --radius-2xl: 1rem; /* 16px */
+    --radius-3xl: 1.5rem; /* 24px */
     --radius-full: 9999px;
 
     /* ----- Shadow Depths ----- */
     --shadow-none: none;
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
     --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
 
@@ -149,69 +152,69 @@
        ============================================= */
 
     /* ----- Surface Colors ----- */
-    --surface-base: 0 0% 100%;              /* #FFFFFF - Base background */
-    --surface-raised: 210 20% 98%;          /* #FAFBFC - Slightly elevated */
-    --surface-elevated: 210 17% 95%;        /* #F1F3F5 - Cards, panels */
-    --surface-overlay: 0 0% 100%;           /* #FFFFFF - Modals, popovers */
-    --surface-sunken: 210 16% 93%;          /* #EBEDF0 - Inset areas */
-    --surface-interactive: 210 20% 98%;     /* #FAFBFC - Buttons hover bg */
-    --surface-disabled: 210 14% 89%;        /* #DEE2E6 - Disabled elements */
+    --surface-base: 0 0% 100%; /* #FFFFFF - Base background */
+    --surface-raised: 210 20% 98%; /* #FAFBFC - Slightly elevated */
+    --surface-elevated: 210 17% 95%; /* #F1F3F5 - Cards, panels */
+    --surface-overlay: 0 0% 100%; /* #FFFFFF - Modals, popovers */
+    --surface-sunken: 210 16% 93%; /* #EBEDF0 - Inset areas */
+    --surface-interactive: 210 20% 98%; /* #FAFBFC - Buttons hover bg */
+    --surface-disabled: 210 14% 89%; /* #DEE2E6 - Disabled elements */
 
     /* ----- Text Colors (WCAG AA compliant on surfaces) ----- */
-    --text-primary: 222 47% 11%;            /* #0F172A - Primary text, 15.8:1 contrast */
-    --text-secondary: 215 16% 35%;          /* #4B5563 - Secondary text, 7.5:1 contrast */
-    --text-muted: 215 14% 45%;              /* #6B7280 - Muted text, 4.6:1 contrast */
-    --text-disabled: 215 13% 65%;           /* #9CA3AF - Disabled, decorative only */
-    --text-inverse: 0 0% 100%;              /* #FFFFFF - On dark backgrounds */
-    --text-link: 217 91% 40%;               /* #2563EB - Links, 4.7:1 contrast */
-    --text-link-hover: 217 91% 30%;         /* #1D4ED8 - Link hover */
+    --text-primary: 222 47% 11%; /* #0F172A - Primary text, 15.8:1 contrast */
+    --text-secondary: 215 16% 35%; /* #4B5563 - Secondary text, 7.5:1 contrast */
+    --text-muted: 215 14% 45%; /* #6B7280 - Muted text, 4.6:1 contrast */
+    --text-disabled: 215 13% 65%; /* #9CA3AF - Disabled, decorative only */
+    --text-inverse: 0 0% 100%; /* #FFFFFF - On dark backgrounds */
+    --text-link: 217 91% 40%; /* #2563EB - Links, 4.7:1 contrast */
+    --text-link-hover: 217 91% 30%; /* #1D4ED8 - Link hover */
 
     /* ----- Accent Colors (Brand) ----- */
-    --accent-primary: 217 91% 50%;          /* #3B82F6 - Primary brand */
-    --accent-primary-hover: 217 91% 45%;    /* #2563EB - Hover state */
-    --accent-primary-active: 217 91% 40%;   /* #1D4ED8 - Active/pressed */
-    --accent-primary-subtle: 217 91% 95%;   /* #EFF6FF - Subtle background */
+    --accent-primary: 217 91% 50%; /* #3B82F6 - Primary brand */
+    --accent-primary-hover: 217 91% 45%; /* #2563EB - Hover state */
+    --accent-primary-active: 217 91% 40%; /* #1D4ED8 - Active/pressed */
+    --accent-primary-subtle: 217 91% 95%; /* #EFF6FF - Subtle background */
     --accent-primary-foreground: 0 0% 100%; /* #FFFFFF - Text on accent */
 
-    --accent-secondary: 262 83% 58%;        /* #8B5CF6 - Secondary brand */
-    --accent-secondary-hover: 262 83% 52%;  /* #7C3AED - Hover state */
+    --accent-secondary: 262 83% 58%; /* #8B5CF6 - Secondary brand */
+    --accent-secondary-hover: 262 83% 52%; /* #7C3AED - Hover state */
     --accent-secondary-active: 262 83% 46%; /* #6D28D9 - Active/pressed */
     --accent-secondary-subtle: 262 90% 96%; /* #F5F3FF - Subtle background */
     --accent-secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* ----- Semantic Status Colors ----- */
-    --success: 142 76% 36%;                 /* #16A34A - Success, 4.5:1 */
-    --success-hover: 142 76% 32%;           /* #15803D */
-    --success-subtle: 142 77% 95%;          /* #F0FDF4 */
-    --success-foreground: 0 0% 100%;        /* #FFFFFF */
+    --success: 142 76% 36%; /* #16A34A - Success, 4.5:1 */
+    --success-hover: 142 76% 32%; /* #15803D */
+    --success-subtle: 142 77% 95%; /* #F0FDF4 */
+    --success-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --warning: 38 92% 50%;                  /* #F59E0B - Warning */
-    --warning-hover: 38 92% 45%;            /* #D97706 */
-    --warning-subtle: 48 96% 95%;           /* #FFFBEB */
-    --warning-foreground: 0 0% 0%;          /* #000000 for contrast */
+    --warning: 38 92% 50%; /* #F59E0B - Warning */
+    --warning-hover: 38 92% 45%; /* #D97706 */
+    --warning-subtle: 48 96% 95%; /* #FFFBEB */
+    --warning-foreground: 0 0% 0%; /* #000000 for contrast */
 
-    --error: 0 84% 50%;                     /* #EF4444 - Error, 4.5:1 */
-    --error-hover: 0 84% 45%;               /* #DC2626 */
-    --error-subtle: 0 86% 97%;              /* #FEF2F2 */
-    --error-foreground: 0 0% 100%;          /* #FFFFFF */
+    --error: 0 84% 50%; /* #EF4444 - Error, 4.5:1 */
+    --error-hover: 0 84% 45%; /* #DC2626 */
+    --error-subtle: 0 86% 97%; /* #FEF2F2 */
+    --error-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --info: 199 89% 48%;                    /* #0EA5E9 - Info */
-    --info-hover: 199 89% 42%;              /* #0284C7 */
-    --info-subtle: 199 95% 95%;             /* #F0F9FF */
-    --info-foreground: 0 0% 100%;           /* #FFFFFF */
+    --info: 199 89% 48%; /* #0EA5E9 - Info */
+    --info-hover: 199 89% 42%; /* #0284C7 */
+    --info-subtle: 199 95% 95%; /* #F0F9FF */
+    --info-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* ----- Border Colors ----- */
-    --border-default: 214 32% 91%;          /* #E2E8F0 - Default borders */
-    --border-muted: 214 20% 94%;            /* #F1F5F9 - Subtle borders */
-    --border-strong: 214 32% 80%;           /* #CBD5E1 - Emphasized borders */
-    --border-focus: 217 91% 50%;            /* #3B82F6 - Focus rings */
-    --border-error: 0 84% 50%;              /* #EF4444 - Error state */
-    --border-success: 142 76% 36%;          /* #16A34A - Success state */
+    --border-default: 214 32% 91%; /* #E2E8F0 - Default borders */
+    --border-muted: 214 20% 94%; /* #F1F5F9 - Subtle borders */
+    --border-strong: 214 32% 80%; /* #CBD5E1 - Emphasized borders */
+    --border-focus: 217 91% 50%; /* #3B82F6 - Focus rings */
+    --border-error: 0 84% 50%; /* #EF4444 - Error state */
+    --border-success: 142 76% 36%; /* #16A34A - Success state */
 
     /* ----- Interactive Element Colors ----- */
-    --interactive-default: 215 16% 47%;     /* #64748B */
-    --interactive-hover: 215 25% 27%;       /* #334155 */
-    --interactive-active: 222 47% 11%;      /* #0F172A */
+    --interactive-default: 215 16% 47%; /* #64748B */
+    --interactive-hover: 215 25% 27%; /* #334155 */
+    --interactive-active: 222 47% 11%; /* #0F172A */
 
     /* =============================================
        LEGACY TOKENS (shadcn/ui compatibility)
@@ -246,9 +249,12 @@
     /* ----- Shadow Depths (adjusted for dark mode) ----- */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
     --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
     --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
 
@@ -258,69 +264,69 @@
        ============================================= */
 
     /* ----- Surface Colors ----- */
-    --surface-base: 222 47% 6%;             /* #0A0F1A - Base background */
-    --surface-raised: 222 47% 9%;           /* #111827 - Slightly elevated */
-    --surface-elevated: 222 47% 12%;        /* #1E293B - Cards, panels */
-    --surface-overlay: 222 47% 14%;         /* #1E3A5F - Modals, popovers */
-    --surface-sunken: 222 47% 4%;           /* #030712 - Inset areas */
-    --surface-interactive: 222 47% 14%;     /* #1E293B - Buttons hover bg */
-    --surface-disabled: 222 47% 18%;        /* #334155 - Disabled elements */
+    --surface-base: 222 47% 6%; /* #0A0F1A - Base background */
+    --surface-raised: 222 47% 9%; /* #111827 - Slightly elevated */
+    --surface-elevated: 222 47% 12%; /* #1E293B - Cards, panels */
+    --surface-overlay: 222 47% 14%; /* #1E3A5F - Modals, popovers */
+    --surface-sunken: 222 47% 4%; /* #030712 - Inset areas */
+    --surface-interactive: 222 47% 14%; /* #1E293B - Buttons hover bg */
+    --surface-disabled: 222 47% 18%; /* #334155 - Disabled elements */
 
     /* ----- Text Colors (WCAG AA compliant on dark surfaces) ----- */
-    --text-primary: 210 40% 98%;            /* #F8FAFC - Primary text, 15.8:1 */
-    --text-secondary: 215 20% 75%;          /* #B4BCD0 - Secondary text, 8.6:1 */
-    --text-muted: 215 16% 60%;              /* #8B9BB4 - Muted text, 4.5:1 */
-    --text-disabled: 215 13% 45%;           /* #6B7A8F - Disabled, decorative only */
-    --text-inverse: 222 47% 11%;            /* #0F172A - On light backgrounds */
-    --text-link: 217 91% 65%;               /* #60A5FA - Links, 5.9:1 contrast */
-    --text-link-hover: 217 91% 75%;         /* #93C5FD - Link hover */
+    --text-primary: 210 40% 98%; /* #F8FAFC - Primary text, 15.8:1 */
+    --text-secondary: 215 20% 75%; /* #B4BCD0 - Secondary text, 8.6:1 */
+    --text-muted: 215 16% 60%; /* #8B9BB4 - Muted text, 4.5:1 */
+    --text-disabled: 215 13% 45%; /* #6B7A8F - Disabled, decorative only */
+    --text-inverse: 222 47% 11%; /* #0F172A - On light backgrounds */
+    --text-link: 217 91% 65%; /* #60A5FA - Links, 5.9:1 contrast */
+    --text-link-hover: 217 91% 75%; /* #93C5FD - Link hover */
 
     /* ----- Accent Colors (Brand) ----- */
-    --accent-primary: 217 91% 60%;          /* #60A5FA - Primary brand */
-    --accent-primary-hover: 217 91% 65%;    /* #78B4FC - Hover state */
-    --accent-primary-active: 217 91% 70%;   /* #93C5FD - Active/pressed */
-    --accent-primary-subtle: 217 33% 17%;   /* #1E3A5F - Subtle background */
+    --accent-primary: 217 91% 60%; /* #60A5FA - Primary brand */
+    --accent-primary-hover: 217 91% 65%; /* #78B4FC - Hover state */
+    --accent-primary-active: 217 91% 70%; /* #93C5FD - Active/pressed */
+    --accent-primary-subtle: 217 33% 17%; /* #1E3A5F - Subtle background */
     --accent-primary-foreground: 222 47% 6%; /* #0A0F1A - Text on accent */
 
-    --accent-secondary: 262 83% 68%;        /* #A78BFA - Secondary brand */
-    --accent-secondary-hover: 262 83% 72%;  /* #B8A4FB - Hover state */
+    --accent-secondary: 262 83% 68%; /* #A78BFA - Secondary brand */
+    --accent-secondary-hover: 262 83% 72%; /* #B8A4FB - Hover state */
     --accent-secondary-active: 262 83% 76%; /* #C4B5FD - Active/pressed */
     --accent-secondary-subtle: 262 30% 18%; /* #2E1E50 - Subtle background */
     --accent-secondary-foreground: 222 47% 6%; /* #0A0F1A */
 
     /* ----- Semantic Status Colors ----- */
-    --success: 142 71% 45%;                 /* #22C55E - Success */
-    --success-hover: 142 71% 50%;           /* #2DD469 */
-    --success-subtle: 142 40% 12%;          /* #14532D */
-    --success-foreground: 222 47% 6%;       /* #0A0F1A */
+    --success: 142 71% 45%; /* #22C55E - Success */
+    --success-hover: 142 71% 50%; /* #2DD469 */
+    --success-subtle: 142 40% 12%; /* #14532D */
+    --success-foreground: 222 47% 6%; /* #0A0F1A */
 
-    --warning: 38 92% 55%;                  /* #FBBF24 - Warning */
-    --warning-hover: 38 92% 60%;            /* #FCD34D */
-    --warning-subtle: 38 40% 14%;           /* #422006 */
-    --warning-foreground: 222 47% 6%;       /* #0A0F1A */
+    --warning: 38 92% 55%; /* #FBBF24 - Warning */
+    --warning-hover: 38 92% 60%; /* #FCD34D */
+    --warning-subtle: 38 40% 14%; /* #422006 */
+    --warning-foreground: 222 47% 6%; /* #0A0F1A */
 
-    --error: 0 84% 60%;                     /* #F87171 - Error */
-    --error-hover: 0 84% 65%;               /* #FB8C8C */
-    --error-subtle: 0 40% 15%;              /* #450A0A */
-    --error-foreground: 222 47% 6%;         /* #0A0F1A */
+    --error: 0 84% 60%; /* #F87171 - Error */
+    --error-hover: 0 84% 65%; /* #FB8C8C */
+    --error-subtle: 0 40% 15%; /* #450A0A */
+    --error-foreground: 222 47% 6%; /* #0A0F1A */
 
-    --info: 199 89% 55%;                    /* #38BDF8 - Info */
-    --info-hover: 199 89% 60%;              /* #58C9FA */
-    --info-subtle: 199 40% 15%;             /* #0C4A6E */
-    --info-foreground: 222 47% 6%;          /* #0A0F1A */
+    --info: 199 89% 55%; /* #38BDF8 - Info */
+    --info-hover: 199 89% 60%; /* #58C9FA */
+    --info-subtle: 199 40% 15%; /* #0C4A6E */
+    --info-foreground: 222 47% 6%; /* #0A0F1A */
 
     /* ----- Border Colors ----- */
-    --border-default: 215 28% 20%;          /* #2D3748 - Default borders */
-    --border-muted: 215 20% 15%;            /* #1A202C - Subtle borders */
-    --border-strong: 215 28% 30%;           /* #4A5568 - Emphasized borders */
-    --border-focus: 217 91% 60%;            /* #60A5FA - Focus rings */
-    --border-error: 0 84% 60%;              /* #F87171 - Error state */
-    --border-success: 142 71% 45%;          /* #22C55E - Success state */
+    --border-default: 215 28% 20%; /* #2D3748 - Default borders */
+    --border-muted: 215 20% 15%; /* #1A202C - Subtle borders */
+    --border-strong: 215 28% 30%; /* #4A5568 - Emphasized borders */
+    --border-focus: 217 91% 60%; /* #60A5FA - Focus rings */
+    --border-error: 0 84% 60%; /* #F87171 - Error state */
+    --border-success: 142 71% 45%; /* #22C55E - Success state */
 
     /* ----- Interactive Element Colors ----- */
-    --interactive-default: 215 20% 55%;     /* #94A3B8 */
-    --interactive-hover: 215 20% 70%;       /* #B8C5D6 */
-    --interactive-active: 210 40% 98%;      /* #F8FAFC */
+    --interactive-default: 215 20% 55%; /* #94A3B8 */
+    --interactive-hover: 215 20% 70%; /* #B8C5D6 */
+    --interactive-active: 210 40% 98%; /* #F8FAFC */
 
     /* =============================================
        LEGACY TOKENS (shadcn/ui compatibility)
@@ -368,7 +374,7 @@
   /* Touch-friendly tap targets */
   button,
   a,
-  [role="button"] {
+  [role='button'] {
     @apply min-h-[44px];
     /* Ensure minimum tap target size for accessibility */
   }
@@ -401,7 +407,7 @@
 
   /* Button focus states */
   button:focus-visible,
-  [role="button"]:focus-visible {
+  [role='button']:focus-visible {
     @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
@@ -415,7 +421,7 @@
 
   /* Link focus states */
   a:focus-visible {
-    @apply ring-2 ring-ring ring-offset-2 ring-offset-background rounded;
+    @apply rounded ring-2 ring-ring ring-offset-2 ring-offset-background;
     outline: none;
   }
 
@@ -462,7 +468,8 @@
 
   /* Pulsing border animation for attention-needed items */
   @keyframes pulse-border {
-    0%, 100% {
+    0%,
+    100% {
       box-shadow: 0 0 0 0 hsl(var(--warning) / 0.4);
     }
     50% {
@@ -476,7 +483,8 @@
 
   /* QuickSwitchDock Status Animations */
   @keyframes pulse-fast {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
@@ -487,7 +495,8 @@
   }
 
   @keyframes pulse-slow {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
@@ -498,7 +507,8 @@
   }
 
   @keyframes pulse-alert {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }

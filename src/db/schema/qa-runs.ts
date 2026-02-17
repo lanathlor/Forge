@@ -3,11 +3,20 @@ import { relations } from 'drizzle-orm';
 import { repositories } from './repositories';
 
 export type QARunStatus = 'running' | 'passed' | 'failed' | 'cancelled';
-export type QAGateExecutionStatus = 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
+export type QAGateExecutionStatus =
+  | 'pending'
+  | 'running'
+  | 'passed'
+  | 'failed'
+  | 'skipped';
 
 export const qaRuns = sqliteTable('qa_runs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  repositoryId: text('repository_id').notNull().references(() => repositories.id),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  repositoryId: text('repository_id')
+    .notNull()
+    .references(() => repositories.id),
   status: text('status').$type<QARunStatus>().notNull(),
   startedAt: integer('started_at', { mode: 'timestamp' })
     .notNull()
@@ -17,8 +26,12 @@ export const qaRuns = sqliteTable('qa_runs', {
 });
 
 export const qaGateExecutions = sqliteTable('qa_gate_executions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  runId: text('run_id').notNull().references(() => qaRuns.id),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  runId: text('run_id')
+    .notNull()
+    .references(() => qaRuns.id),
   gateName: text('gate_name').notNull(),
   command: text('command').notNull(),
   status: text('status').$type<QAGateExecutionStatus>().notNull(),
@@ -41,12 +54,15 @@ export const qaRunsRelations = relations(qaRuns, ({ one, many }) => ({
   gateExecutions: many(qaGateExecutions),
 }));
 
-export const qaGateExecutionsRelations = relations(qaGateExecutions, ({ one }) => ({
-  run: one(qaRuns, {
-    fields: [qaGateExecutions.runId],
-    references: [qaRuns.id],
-  }),
-}));
+export const qaGateExecutionsRelations = relations(
+  qaGateExecutions,
+  ({ one }) => ({
+    run: one(qaRuns, {
+      fields: [qaGateExecutions.runId],
+      references: [qaRuns.id],
+    }),
+  })
+);
 
 export type QARun = typeof qaRuns.$inferSelect;
 export type NewQARun = typeof qaRuns.$inferInsert;

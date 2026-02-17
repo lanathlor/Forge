@@ -1,4 +1,7 @@
-import { handleGetPlans, handleCreatePlan } from '@/features/plans/api/handlers';
+import {
+  handleGetPlans,
+  handleCreatePlan,
+} from '@/features/plans/api/handlers';
 import type { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {

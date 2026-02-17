@@ -125,9 +125,7 @@ describe('DiffViewer', () => {
     });
 
     it('should show error when fetch throws', async () => {
-      (global.fetch as any).mockRejectedValueOnce(
-        new Error('Network error')
-      );
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       render(<DiffViewer taskId="test-task-1" />);
 
@@ -388,9 +386,7 @@ describe('DiffViewer', () => {
       render(<DiffViewer taskId="test-task-1" />);
 
       await waitFor(() => {
-        expect(screen.getByTestId('hide-unchanged')).toHaveTextContent(
-          'true'
-        );
+        expect(screen.getByTestId('hide-unchanged')).toHaveTextContent('true');
       });
     });
   });
@@ -843,7 +839,9 @@ describe('DiffViewer', () => {
       const { container } = render(<DiffViewer taskId="test-task-1" />);
 
       await waitFor(() => {
-        const anchor = container.querySelector('[data-comment-anchor="src/file1.ts"]');
+        const anchor = container.querySelector(
+          '[data-comment-anchor="src/file1.ts"]'
+        );
         expect(anchor).toBeInTheDocument();
       });
     });

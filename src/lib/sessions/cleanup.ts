@@ -13,10 +13,14 @@ export async function runSessionCleanup(): Promise<number> {
   console.log('[SessionCleanup] Running cleanup job...');
 
   try {
-    const abandonedCount = await abandonInactiveSessions(INACTIVITY_THRESHOLD_MS);
+    const abandonedCount = await abandonInactiveSessions(
+      INACTIVITY_THRESHOLD_MS
+    );
 
     if (abandonedCount > 0) {
-      console.log(`[SessionCleanup] Abandoned ${abandonedCount} inactive session(s)`);
+      console.log(
+        `[SessionCleanup] Abandoned ${abandonedCount} inactive session(s)`
+      );
     } else {
       console.log('[SessionCleanup] No inactive sessions to abandon');
     }

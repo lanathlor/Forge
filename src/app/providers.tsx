@@ -10,9 +10,7 @@ import { ErrorBoundary } from '@/shared/components/error';
  * Default SSE connections to establish on app mount
  * Using unified endpoint that combines all streams
  */
-const SSE_CONNECTIONS = [
-  { id: 'unified', url: '/api/sse' },
-];
+const SSE_CONNECTIONS = [{ id: 'unified', url: '/api/sse' }];
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

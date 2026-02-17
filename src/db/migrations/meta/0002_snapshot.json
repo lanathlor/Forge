@@ -103,9 +103,7 @@
       "indexes": {
         "repositories_path_unique": {
           "name": "repositories_path_unique",
-          "columns": [
-            "path"
-          ],
+          "columns": ["path"],
           "isUnique": true
         }
       },
@@ -404,9 +402,7 @@
       "indexes": {
         "qa_gate_configs_name_unique": {
           "name": "qa_gate_configs_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -580,12 +576,8 @@
           "name": "qa_gate_executions_run_id_qa_runs_id_fk",
           "tableFrom": "qa_gate_executions",
           "tableTo": "qa_runs",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["run_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -645,12 +637,8 @@
           "name": "qa_runs_repository_id_repositories_id_fk",
           "tableFrom": "qa_runs",
           "tableTo": "repositories",
-          "columnsFrom": [
-            "repository_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["repository_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

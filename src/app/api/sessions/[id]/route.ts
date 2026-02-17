@@ -105,11 +105,9 @@ export async function PATCH(
     return NextResponse.json({ session });
   } catch (error) {
     console.error('Error updating session:', error);
-    const message = error instanceof Error ? error.message : 'Failed to update session';
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : 'Failed to update session';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -129,10 +127,8 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting session:', error);
-    const message = error instanceof Error ? error.message : 'Failed to delete session';
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : 'Failed to delete session';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

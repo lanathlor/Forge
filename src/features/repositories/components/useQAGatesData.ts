@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, type Dispatch, type SetStateAction } from 'react';
 import type {
   QAGate,
   QAGatesConfigData,
@@ -23,7 +23,9 @@ interface UseQAGatesDataReturn {
   reorderGates: (fromIndex: number, toIndex: number) => void;
 }
 
-async function fetchQAGatesConfig(repositoryId: string): Promise<QAGatesConfigData> {
+async function fetchQAGatesConfig(
+  repositoryId: string
+): Promise<QAGatesConfigData> {
   const response = await fetch(`/api/repositories/${repositoryId}/qa-gates`);
   if (!response.ok) throw new Error('Failed to fetch QA gates configuration');
   return response.json();
@@ -42,7 +44,9 @@ function useQAGatesConfig(repositoryId: string) {
 
     const timeoutId = setTimeout(() => {
       if (isMountedRef.current) {
-        setError('Request is taking longer than expected. The server might be slow.');
+        setError(
+          'Request is taking longer than expected. The server might be slow.'
+        );
         setIsLoading(false);
       }
     }, 30000);
@@ -50,7 +54,10 @@ function useQAGatesConfig(repositoryId: string) {
     fetchQAGatesConfig(repositoryId)
       .then((data) => {
         clearTimeout(timeoutId);
-        if (isMountedRef.current) { setConfig(data); setIsLoading(false); }
+        if (isMountedRef.current) {
+          setConfig(data);
+          setIsLoading(false);
+        }
       })
       .catch((err) => {
         clearTimeout(timeoutId);
@@ -60,7 +67,10 @@ function useQAGatesConfig(repositoryId: string) {
         }
       });
 
-    return () => { isMountedRef.current = false; clearTimeout(timeoutId); };
+    return () => {
+      isMountedRef.current = false;
+      clearTimeout(timeoutId);
+    };
   }, [repositoryId]);
 
   useEffect(() => {
@@ -132,7 +142,7 @@ function useQAGatesRunner(
         `/api/repositories/${repositoryId}/qa-gates/run`,
         {
           method: 'POST',
-          signal: controller.signal
+          signal: controller.signal,
         }
       );
 
@@ -149,7 +159,8 @@ function useQAGatesRunner(
       if (err instanceof Error && err.name === 'AbortError') {
         setError('Request timed out - please try again');
       } else {
-        const message = err instanceof Error ? err.message : 'Failed to start QA gates';
+        const message =
+          err instanceof Error ? err.message : 'Failed to start QA gates';
         console.error('Error running QA gates:', err);
         setError(message);
       }
@@ -159,7 +170,11 @@ function useQAGatesRunner(
   return { runQAGates, error, isRunning };
 }
 
-async function persistGatesConfig(repositoryId: string, config: QAGatesConfigData, gates: QAGate[]) {
+async function persistGatesConfig(
+  repositoryId: string,
+  config: QAGatesConfigData,
+  gates: QAGate[]
+) {
   const body = {
     version: config.config.version,
     maxRetries: config.config.maxRetries,
@@ -167,41 +182,49 @@ async function persistGatesConfig(repositoryId: string, config: QAGatesConfigDat
   };
   const response = await fetch(
     `/api/repositories/${repositoryId}/qa-gates/save`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }
   );
   if (!response.ok) throw new Error('Failed to save configuration');
 }
 
-function useGatesMutation(repositoryId: string, config: QAGatesConfigData | null) {
-  const [gates, setGates] = useState<QAGate[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (config) { setGates(config.config.qaGates); }
-  }, [config]);
-
-  const updateGates = useCallback((newGates: QAGate[]) => { setGates(newGates); }, []);
-
+function useGatesMutationCallbacks(setGates: Dispatch<SetStateAction<QAGate[]>>) {
+  const updateGates = useCallback((newGates: QAGate[]) => { setGates(newGates); }, [setGates]);
   const toggleGate = useCallback((name: string, enabled: boolean) => {
-    setGates(prev => prev.map(g => g.name === name ? { ...g, enabled } : g));
-  }, []);
-
+    setGates((prev) => prev.map((g) => (g.name === name ? { ...g, enabled } : g)));
+  }, [setGates]);
   const deleteGate = useCallback((name: string) => {
-    setGates(prev => prev.filter(g => g.name !== name).map((g, i) => ({ ...g, order: i + 1 })));
-  }, []);
-
+    setGates((prev) => prev.filter((g) => g.name !== name).map((g, i) => ({ ...g, order: i + 1 })));
+  }, [setGates]);
   const addGate = useCallback((gate: QAGate) => {
-    setGates(prev => [...prev, { ...gate, order: prev.length + 1 }]);
-  }, []);
-
+    setGates((prev) => [...prev, { ...gate, order: prev.length + 1 }]);
+  }, [setGates]);
   const reorderGates = useCallback((fromIndex: number, toIndex: number) => {
-    setGates(prev => {
+    setGates((prev) => {
       const items = [...prev];
       const [moved] = items.splice(fromIndex, 1);
       if (moved) items.splice(toIndex, 0, moved);
       return items.map((g, i) => ({ ...g, order: i + 1 }));
     });
-  }, []);
+  }, [setGates]);
+  return { updateGates, toggleGate, deleteGate, addGate, reorderGates };
+}
+
+function useGatesMutation(
+  repositoryId: string,
+  config: QAGatesConfigData | null
+) {
+  const [gates, setGates] = useState<QAGate[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (config) setGates(config.config.qaGates);
+  }, [config]);
+
+  const mutations = useGatesMutationCallbacks(setGates);
 
   const saveConfig = useCallback(async () => {
     if (!config) return;
@@ -216,23 +239,34 @@ function useGatesMutation(repositoryId: string, config: QAGatesConfigData | null
     }
   }, [repositoryId, config, gates]);
 
-  return { gates, isSaving, updateGates, toggleGate, deleteGate, addGate, reorderGates, saveConfig };
+  return { gates, isSaving, ...mutations, saveConfig };
 }
 
-export function useQAGatesData(
-  repositoryId: string
-): UseQAGatesDataReturn {
-  const { config, isLoading, error: configError } = useQAGatesConfig(repositoryId);
-  const { runStatus, isRunning: statusRunning, fetchStatus } = useQAGatesStatus(
-    repositoryId,
-    !!config
-  );
-  const { runQAGates, error: runError, isRunning: runnerRunning } = useQAGatesRunner(
-    repositoryId,
-    fetchStatus
-  );
+export function useQAGatesData(repositoryId: string): UseQAGatesDataReturn {
   const {
-    gates, isSaving, updateGates, toggleGate, deleteGate, addGate, reorderGates, saveConfig,
+    config,
+    isLoading,
+    error: configError,
+  } = useQAGatesConfig(repositoryId);
+  const {
+    runStatus,
+    isRunning: statusRunning,
+    fetchStatus,
+  } = useQAGatesStatus(repositoryId, !!config);
+  const {
+    runQAGates,
+    error: runError,
+    isRunning: runnerRunning,
+  } = useQAGatesRunner(repositoryId, fetchStatus);
+  const {
+    gates,
+    isSaving,
+    updateGates,
+    toggleGate,
+    deleteGate,
+    addGate,
+    reorderGates,
+    saveConfig,
   } = useGatesMutation(repositoryId, config);
 
   const isRunning = statusRunning || runnerRunning;

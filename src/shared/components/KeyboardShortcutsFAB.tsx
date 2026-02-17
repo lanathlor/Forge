@@ -41,7 +41,7 @@ export function KeyboardShortcutsFAB({
           'fixed z-50',
           'group',
           'flex items-center gap-2',
-          'px-4 py-3 rounded-full',
+          'rounded-full px-4 py-3',
           'bg-primary text-primary-foreground',
           'shadow-lg hover:shadow-xl',
           'transition-all duration-200',
@@ -54,10 +54,10 @@ export function KeyboardShortcutsFAB({
         title="Keyboard shortcuts (Shift + ?)"
       >
         <Keyboard className="h-5 w-5" aria-hidden="true" />
-        <span className="text-sm font-medium hidden sm:inline group-hover:inline">
+        <span className="hidden text-sm font-medium group-hover:inline sm:inline">
           Shortcuts
         </span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary-foreground/20 text-xs font-mono">
+        <kbd className="hidden items-center gap-0.5 rounded bg-primary-foreground/20 px-1.5 py-0.5 font-mono text-xs sm:inline-flex">
           ?
         </kbd>
       </button>

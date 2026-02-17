@@ -324,9 +324,7 @@ function StatsCard() {
       <CardHeader>
         <CardTitle>Statistics</CardTitle>
       </CardHeader>
-      <CardContent>
-        {/* render stats */}
-      </CardContent>
+      <CardContent>{/* render stats */}</CardContent>
     </Card>
   );
 }
@@ -438,11 +436,7 @@ function CompleteExample() {
 
   if (error) {
     return (
-      <ErrorState
-        type="network"
-        message={error.message}
-        onRetry={fetchData}
-      />
+      <ErrorState type="network" message={error.message} onRetry={fetchData} />
     );
   }
 

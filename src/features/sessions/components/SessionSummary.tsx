@@ -139,7 +139,7 @@ function TaskStatusPieChart({ tasks }: { tasks: EnhancedTaskSummary[] }) {
 
   if (total === 0) {
     return (
-      <div className="flex items-center justify-center h-40 text-text-muted text-sm">
+      <div className="flex h-40 items-center justify-center text-sm text-text-muted">
         No tasks
       </div>
     );
@@ -192,7 +192,7 @@ function TaskStatusPieChart({ tasks }: { tasks: EnhancedTaskSummary[] }) {
 
   return (
     <div className="flex items-center gap-4">
-      <svg viewBox="0 0 140 140" className="w-28 h-28 sm:w-32 sm:h-32 shrink-0">
+      <svg viewBox="0 0 140 140" className="h-28 w-28 shrink-0 sm:h-32 sm:w-32">
         {paths}
         {/* Center circle for donut effect */}
         <circle cx={cx} cy={cy} r={35} className="fill-card" />
@@ -215,15 +215,17 @@ function TaskStatusPieChart({ tasks }: { tasks: EnhancedTaskSummary[] }) {
           tasks
         </text>
       </svg>
-      <div className="flex flex-col gap-1.5 min-w-0">
+      <div className="flex min-w-0 flex-col gap-1.5">
         {slices.map((slice) => (
           <div key={slice.label} className="flex items-center gap-2 text-xs">
             <span
-              className="w-2.5 h-2.5 rounded-full shrink-0"
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: slice.color }}
             />
-            <span className="text-text-secondary truncate">{slice.label}</span>
-            <span className="text-text-primary font-medium ml-auto">{slice.value}</span>
+            <span className="truncate text-text-secondary">{slice.label}</span>
+            <span className="ml-auto font-medium text-text-primary">
+              {slice.value}
+            </span>
           </div>
         ))}
       </div>
@@ -238,7 +240,7 @@ function ActivityTimeline({
 }) {
   if (timeline.length === 0) {
     return (
-      <div className="flex items-center justify-center h-20 text-text-muted text-sm">
+      <div className="flex h-20 items-center justify-center text-sm text-text-muted">
         No activity recorded
       </div>
     );
@@ -260,15 +262,17 @@ function ActivityTimeline({
 
   let cumCompleted = 0;
   let cumFailed = 0;
-  const maxCount = timeline.filter(
-    (e) => e.type === 'task_complete' || e.type === 'task_fail'
-  ).length || 1;
+  const maxCount =
+    timeline.filter((e) => e.type === 'task_complete' || e.type === 'task_fail')
+      .length || 1;
 
   const completedPoints: string[] = [`${padX},${height - padY}`];
   const failedPoints: string[] = [];
 
   for (const event of timeline) {
-    const x = padX + ((new Date(event.timestamp).getTime() - startTime) / timeRange) * chartW;
+    const x =
+      padX +
+      ((new Date(event.timestamp).getTime() - startTime) / timeRange) * chartW;
 
     if (event.type === 'task_complete') {
       cumCompleted++;
@@ -288,7 +292,11 @@ function ActivityTimeline({
 
   return (
     <div className="w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-20" preserveAspectRatio="none">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-20 w-full"
+        preserveAspectRatio="none"
+      >
         {/* Grid lines */}
         {[0.25, 0.5, 0.75].map((frac) => (
           <line
@@ -343,16 +351,16 @@ function ActivityTimeline({
           strokeWidth={1}
         />
       </svg>
-      <div className="flex items-center justify-between text-[10px] text-text-muted px-2 -mt-1">
+      <div className="-mt-1 flex items-center justify-between px-2 text-[10px] text-text-muted">
         <span>{format(new Date(firstEvent.timestamp), 'HH:mm')}</span>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-0.5 bg-success inline-block rounded" />
+            <span className="inline-block h-0.5 w-2 rounded bg-success" />
             completed
           </span>
           {cumFailed > 0 && (
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-error inline-block rounded-full" />
+              <span className="inline-block h-2 w-2 rounded-full bg-error" />
               failed
             </span>
           )}
@@ -369,7 +377,7 @@ function ActivityTimeline({
 
 function SummaryLoadingState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3">
+    <div className="flex flex-col items-center justify-center gap-3 py-16">
       <Loader2 className="h-8 w-8 animate-spin text-text-muted" />
       <p className="text-sm text-text-muted">Loading session summary...</p>
     </div>
@@ -378,7 +386,7 @@ function SummaryLoadingState() {
 
 function SummaryErrorState() {
   return (
-    <div className="text-center py-12 text-text-muted">
+    <div className="py-12 text-center text-text-muted">
       Session data not available
     </div>
   );
@@ -389,20 +397,20 @@ function SessionInfoBar({ summary }: { summary: EnhancedSessionSummary }) {
   const stats = summary.stats;
 
   return (
-    <div className="bg-surface-raised rounded-lg border border-border p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="rounded-lg border border-border bg-surface-raised p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h3 className="font-semibold text-text-primary truncate">
+          <h3 className="truncate font-semibold text-text-primary">
             {session.repository.name}
           </h3>
-          <p className="text-xs text-text-muted mt-0.5">
+          <p className="mt-0.5 text-xs text-text-muted">
             {format(new Date(session.startedAt), 'MMM d, yyyy h:mm a')}
             {session.endedAt && (
               <> — {format(new Date(session.endedAt), 'h:mm a')}</>
             )}
           </p>
         </div>
-        <div className="flex items-center gap-3 text-xs shrink-0">
+        <div className="flex shrink-0 items-center gap-3 text-xs">
           <div className="flex items-center gap-1 text-text-muted">
             <Clock className="h-3.5 w-3.5" />
             <span className="font-medium text-text-primary">
@@ -414,9 +422,10 @@ function SessionInfoBar({ summary }: { summary: EnhancedSessionSummary }) {
               <GitBranch className="h-3.5 w-3.5" />
               <span className="font-mono text-text-primary">
                 {session.startBranch}
-                {session.endBranch && session.endBranch !== session.startBranch && (
-                  <> → {session.endBranch}</>
-                )}
+                {session.endBranch &&
+                  session.endBranch !== session.startBranch && (
+                    <> → {session.endBranch}</>
+                  )}
               </span>
             </div>
           )}
@@ -452,11 +461,11 @@ function MetricCard({
         variantClasses[variant]
       )}
     >
-      <div className="flex items-center justify-center mb-1.5 text-text-muted">
+      <div className="mb-1.5 flex items-center justify-center text-text-muted">
         {icon}
       </div>
       <div className="text-xl font-bold text-text-primary">{value}</div>
-      <div className="text-[11px] text-text-muted mt-0.5">{label}</div>
+      <div className="mt-0.5 text-[11px] text-text-muted">{label}</div>
     </div>
   );
 }
@@ -465,7 +474,7 @@ function StatsGrid({ summary }: { summary: EnhancedSessionSummary }) {
   const { stats, qaStats } = summary;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       <MetricCard
         icon={<FileText className="h-4 w-4" />}
         value={stats.totalTasks}
@@ -481,7 +490,9 @@ function StatsGrid({ summary }: { summary: EnhancedSessionSummary }) {
         icon={<XCircle className="h-4 w-4 text-error" />}
         value={stats.failedTasks + stats.rejectedTasks}
         label="Failed / Rejected"
-        variant={stats.failedTasks + stats.rejectedTasks > 0 ? 'error' : 'default'}
+        variant={
+          stats.failedTasks + stats.rejectedTasks > 0 ? 'error' : 'default'
+        }
       />
       <MetricCard
         icon={<GitCommit className="h-4 w-4" />}
@@ -497,7 +508,13 @@ function StatsGrid({ summary }: { summary: EnhancedSessionSummary }) {
         icon={<Shield className="h-4 w-4 text-info" />}
         value={`${qaStats.passRate}%`}
         label="QA Pass Rate"
-        variant={qaStats.passRate >= 80 ? 'success' : qaStats.passRate >= 50 ? 'warning' : 'error'}
+        variant={
+          qaStats.passRate >= 80
+            ? 'success'
+            : qaStats.passRate >= 50
+              ? 'warning'
+              : 'error'
+        }
       />
     </div>
   );
@@ -537,12 +554,14 @@ function TaskBreakdownList({
 
   if (tasks.length === 0) {
     return (
-      <p className="text-sm text-text-muted py-4 text-center">No tasks in this session</p>
+      <p className="py-4 text-center text-sm text-text-muted">
+        No tasks in this session
+      </p>
     );
   }
 
   return (
-    <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
+    <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
       {tasks.map((task) => {
         const isExpanded = expandedTask === task.id;
         const duration =
@@ -563,7 +582,7 @@ function TaskBreakdownList({
                   setExpandedTask(isExpanded ? null : task.id);
                 }
               }}
-              className="w-full text-left p-3 hover:bg-surface-interactive transition-colors flex items-start gap-2"
+              className="flex w-full items-start gap-2 p-3 text-left transition-colors hover:bg-surface-interactive"
             >
               <span className="mt-0.5 shrink-0">
                 {isExpanded ? (
@@ -572,80 +591,96 @@ function TaskBreakdownList({
                   <ChevronRight className="h-3.5 w-3.5 text-text-muted" />
                 )}
               </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-text-primary truncate">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-text-primary">
                   {task.prompt}
                 </p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <div className="mt-1 flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
-                    className={cn('text-[10px] px-1.5 py-0', getTaskStatusColor(task.status))}
+                    className={cn(
+                      'px-1.5 py-0 text-[10px]',
+                      getTaskStatusColor(task.status)
+                    )}
                   >
                     {getTaskStatusLabel(task.status)}
                   </Badge>
                   {duration && (
-                    <span className="text-[10px] text-text-muted flex items-center gap-0.5">
+                    <span className="flex items-center gap-0.5 text-[10px] text-text-muted">
                       <Clock className="h-2.5 w-2.5" />
                       {duration}
                     </span>
                   )}
                   {task.filesChanged.length > 0 && (
                     <span className="text-[10px] text-text-muted">
-                      {task.filesChanged.length} file{task.filesChanged.length !== 1 ? 's' : ''}
+                      {task.filesChanged.length} file
+                      {task.filesChanged.length !== 1 ? 's' : ''}
                     </span>
                   )}
                   {task.qaResults.length > 0 && (
-                    <span className="text-[10px] text-text-muted flex items-center gap-0.5">
+                    <span className="flex items-center gap-0.5 text-[10px] text-text-muted">
                       <Shield className="h-2.5 w-2.5" />
-                      {task.qaResults.filter((r) => r.status === 'passed').length}/
-                      {task.qaResults.length} QA
+                      {
+                        task.qaResults.filter((r) => r.status === 'passed')
+                          .length
+                      }
+                      /{task.qaResults.length} QA
                     </span>
                   )}
                 </div>
               </div>
             </button>
             {isExpanded && (
-              <div className="px-3 pb-3 ml-6 space-y-2">
+              <div className="ml-6 space-y-2 px-3 pb-3">
                 {task.commitMessage && (
-                  <div className="text-xs bg-surface-raised rounded p-2">
+                  <div className="rounded bg-surface-raised p-2 text-xs">
                     <span className="text-text-muted">Commit: </span>
                     <span className="font-mono text-text-secondary">
                       {task.committedSha?.slice(0, 7)}
                     </span>{' '}
-                    <span className="text-text-primary">{task.commitMessage}</span>
+                    <span className="text-text-primary">
+                      {task.commitMessage}
+                    </span>
                   </div>
                 )}
                 {task.filesChanged.length > 0 && (
-                  <div className="text-xs space-y-0.5">
+                  <div className="space-y-0.5 text-xs">
                     {task.filesChanged.slice(0, 5).map((f) => (
-                      <div key={f.path} className="flex items-center gap-2 text-text-secondary">
+                      <div
+                        key={f.path}
+                        className="flex items-center gap-2 text-text-secondary"
+                      >
                         <FileCode2 className="h-3 w-3 shrink-0" />
-                        <span className="font-mono truncate">{f.path}</span>
-                        <span className="text-success ml-auto">+{f.additions}</span>
+                        <span className="truncate font-mono">{f.path}</span>
+                        <span className="ml-auto text-success">
+                          +{f.additions}
+                        </span>
                         <span className="text-error">-{f.deletions}</span>
                       </div>
                     ))}
                     {task.filesChanged.length > 5 && (
-                      <p className="text-text-muted pl-5">
+                      <p className="pl-5 text-text-muted">
                         +{task.filesChanged.length - 5} more files
                       </p>
                     )}
                   </div>
                 )}
                 {task.qaResults.length > 0 && (
-                  <div className="text-xs space-y-0.5">
+                  <div className="space-y-0.5 text-xs">
                     {task.qaResults.map((qr, i) => (
                       <div key={i} className="flex items-center gap-2">
                         {qr.status === 'passed' ? (
-                          <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
+                          <CheckCircle2 className="h-3 w-3 shrink-0 text-success" />
                         ) : qr.status === 'failed' ? (
-                          <XCircle className="h-3 w-3 text-error shrink-0" />
+                          <XCircle className="h-3 w-3 shrink-0 text-error" />
                         ) : (
-                          <Clock className="h-3 w-3 text-text-muted shrink-0" />
+                          <Clock className="h-3 w-3 shrink-0 text-text-muted" />
                         )}
-                        <span className="text-text-secondary">{qr.gateName}</span>
+                        <span className="text-text-secondary">
+                          {qr.gateName}
+                        </span>
                         {qr.duration != null && (
-                          <span className="text-text-muted ml-auto">
+                          <span className="ml-auto text-text-muted">
                             {formatDurationMs(qr.duration)}
                           </span>
                         )}
@@ -690,16 +725,16 @@ function EventTimeline({
   return (
     <div className="space-y-0">
       {displayed.map((event, i) => (
-        <div key={i} className="flex items-start gap-2 py-1.5 relative">
+        <div key={i} className="relative flex items-start gap-2 py-1.5">
           {/* Vertical connector line */}
           {i < displayed.length - 1 && (
-            <div className="absolute left-[7px] top-6 bottom-0 w-px bg-border" />
+            <div className="absolute bottom-0 left-[7px] top-6 w-px bg-border" />
           )}
-          <span className="shrink-0 mt-0.5 relative z-10 bg-card">
+          <span className="relative z-10 mt-0.5 shrink-0 bg-card">
             {iconForType(event.type)}
           </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-text-primary truncate">{event.label}</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-text-primary">{event.label}</p>
             <p className="text-[10px] text-text-muted">
               {format(new Date(event.timestamp), 'h:mm:ss a')}
             </p>
@@ -709,7 +744,7 @@ function EventTimeline({
       {timeline.length > 8 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-xs text-accent-primary hover:text-accent-primary-hover mt-1 ml-5"
+          className="ml-5 mt-1 text-xs text-accent-primary hover:text-accent-primary-hover"
         >
           {showAll ? 'Show less' : `Show all ${timeline.length} events`}
         </button>
@@ -723,18 +758,32 @@ function EventTimeline({
 // ============================================================================
 
 function generateMarkdownReport(summary: EnhancedSessionSummary): string {
-  const { session, stats, qaStats, tasks, timeline, totalAdditions, totalDeletions } = summary;
+  const {
+    session,
+    stats,
+    qaStats,
+    tasks,
+    timeline,
+    totalAdditions,
+    totalDeletions,
+  } = summary;
   const lines: string[] = [];
 
   lines.push(`# Session Summary: ${session.repository.name}`);
   lines.push('');
-  lines.push(`**Started:** ${format(new Date(session.startedAt), 'MMM d, yyyy h:mm a')}`);
+  lines.push(
+    `**Started:** ${format(new Date(session.startedAt), 'MMM d, yyyy h:mm a')}`
+  );
   if (session.endedAt) {
-    lines.push(`**Ended:** ${format(new Date(session.endedAt), 'MMM d, yyyy h:mm a')}`);
+    lines.push(
+      `**Ended:** ${format(new Date(session.endedAt), 'MMM d, yyyy h:mm a')}`
+    );
   }
   lines.push(`**Duration:** ${formatDurationMs(stats.duration)}`);
   if (session.startBranch) {
-    lines.push(`**Branch:** ${session.startBranch}${session.endBranch && session.endBranch !== session.startBranch ? ` → ${session.endBranch}` : ''}`);
+    lines.push(
+      `**Branch:** ${session.startBranch}${session.endBranch && session.endBranch !== session.startBranch ? ` → ${session.endBranch}` : ''}`
+    );
   }
   lines.push('');
 
@@ -750,7 +799,9 @@ function generateMarkdownReport(summary: EnhancedSessionSummary): string {
   lines.push(`| Files Changed | ${stats.filesChanged} |`);
   lines.push(`| Lines Added | ${totalAdditions} |`);
   lines.push(`| Lines Removed | ${totalDeletions} |`);
-  lines.push(`| QA Pass Rate | ${qaStats.passRate}% (${qaStats.passed}/${qaStats.totalRuns}) |`);
+  lines.push(
+    `| QA Pass Rate | ${qaStats.passRate}% (${qaStats.passed}/${qaStats.totalRuns}) |`
+  );
   lines.push('');
 
   if (tasks.length > 0) {
@@ -761,16 +812,24 @@ function generateMarkdownReport(summary: EnhancedSessionSummary): string {
       lines.push(`### ${task.prompt}`);
       lines.push(`- **Status:** ${status}`);
       if (task.startedAt && task.completedAt) {
-        lines.push(`- **Duration:** ${formatDistanceStrict(new Date(task.startedAt), new Date(task.completedAt))}`);
+        lines.push(
+          `- **Duration:** ${formatDistanceStrict(new Date(task.startedAt), new Date(task.completedAt))}`
+        );
       }
       if (task.commitMessage) {
-        lines.push(`- **Commit:** \`${task.committedSha?.slice(0, 7)}\` ${task.commitMessage}`);
+        lines.push(
+          `- **Commit:** \`${task.committedSha?.slice(0, 7)}\` ${task.commitMessage}`
+        );
       }
       if (task.filesChanged.length > 0) {
-        lines.push(`- **Files:** ${task.filesChanged.map((f) => `\`${f.path}\``).join(', ')}`);
+        lines.push(
+          `- **Files:** ${task.filesChanged.map((f) => `\`${f.path}\``).join(', ')}`
+        );
       }
       if (task.qaResults.length > 0) {
-        lines.push(`- **QA:** ${task.qaResults.map((r) => `${r.gateName} (${r.status})`).join(', ')}`);
+        lines.push(
+          `- **QA:** ${task.qaResults.map((r) => `${r.gateName} (${r.status})`).join(', ')}`
+        );
       }
       lines.push('');
     }
@@ -835,13 +894,13 @@ function ExportMenu({ summary }: { summary: EnhancedSessionSummary }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
+          <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg">
             <button
               onClick={() => {
                 exportReport(summary, 'markdown');
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-surface-interactive transition-colors flex items-center gap-2"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-interactive"
             >
               <FileText className="h-3.5 w-3.5" />
               Markdown
@@ -851,7 +910,7 @@ function ExportMenu({ summary }: { summary: EnhancedSessionSummary }) {
                 exportReport(summary, 'json');
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-surface-interactive transition-colors flex items-center gap-2"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-interactive"
             >
               <FileCode2 className="h-3.5 w-3.5" />
               JSON
@@ -881,7 +940,7 @@ function SummarySection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+        <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary">
           {icon}
           {title}
         </h4>
@@ -901,7 +960,11 @@ export function SessionSummary({
   className,
   onTaskClick,
 }: SessionSummaryProps) {
-  const { data: summary, isLoading, isError } = useGetEnhancedSessionSummaryQuery(sessionId);
+  const {
+    data: summary,
+    isLoading,
+    isError,
+  } = useGetEnhancedSessionSummaryQuery(sessionId);
 
   if (isLoading) return <SummaryLoadingState />;
   if (isError || !summary) return <SummaryErrorState />;
@@ -921,7 +984,7 @@ export function SessionSummary({
     <div className={cn('flex flex-col gap-5', className)}>
       {/* Header with export */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-text-primary">
           <BarChart3 className="h-5 w-5" />
           Session Summary
         </h3>
@@ -941,8 +1004,8 @@ export function SessionSummary({
       />
 
       {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-card border border-border rounded-lg p-4">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="rounded-lg border border-border bg-card p-4">
           <SummarySection
             title="Task Status Distribution"
             icon={<Activity className="h-4 w-4" />}
@@ -950,7 +1013,7 @@ export function SessionSummary({
             <TaskStatusPieChart tasks={summary.tasks} />
           </SummarySection>
         </div>
-        <div className="bg-card border border-border rounded-lg p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
           <SummarySection
             title="Activity Over Time"
             icon={<BarChart3 className="h-4 w-4" />}
@@ -962,10 +1025,12 @@ export function SessionSummary({
 
       {/* Pending alert */}
       {hasPending && (
-        <div className="flex items-center gap-2 text-sm bg-warning/5 border border-warning/20 rounded-lg p-3">
-          <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+        <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 p-3 text-sm">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
           <span>
-            <span className="font-medium text-warning">{pendingTasks.length}</span>{' '}
+            <span className="font-medium text-warning">
+              {pendingTasks.length}
+            </span>{' '}
             task{pendingTasks.length !== 1 ? 's' : ''} still in progress
           </span>
         </div>
@@ -980,11 +1045,8 @@ export function SessionSummary({
       </SummarySection>
 
       {/* Event timeline */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <SummarySection
-          title="Timeline"
-          icon={<Clock className="h-4 w-4" />}
-        >
+      <div className="rounded-lg border border-border bg-card p-4">
+        <SummarySection title="Timeline" icon={<Clock className="h-4 w-4" />}>
           <EventTimeline timeline={summary.timeline} />
         </SummarySection>
       </div>

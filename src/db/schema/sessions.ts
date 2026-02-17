@@ -6,7 +6,9 @@ import { tasks } from './tasks';
 export type SessionStatus = 'active' | 'paused' | 'completed' | 'abandoned';
 
 export const sessions = sqliteTable('sessions', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   repositoryId: text('repository_id').notNull(),
   status: text('status').$type<SessionStatus>().notNull().default('active'),
   startBranch: text('start_branch'),

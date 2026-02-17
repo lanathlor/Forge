@@ -6,7 +6,9 @@ export type IterationType = 'generation' | 'review' | 'refine' | 'user_edit';
 export type ChangedBy = 'user' | 'claude';
 
 export const planIterations = sqliteTable('plan_iterations', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   planId: text('plan_id').notNull(),
   iterationType: text('iteration_type').$type<IterationType>().notNull(),
   prompt: text('prompt'), // what was asked

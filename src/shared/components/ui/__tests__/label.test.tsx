@@ -15,12 +15,20 @@ describe('Label', () => {
   });
 
   it('should apply custom className', () => {
-    render(<Label className="custom-class" data-testid="label">Test</Label>);
+    render(
+      <Label className="custom-class" data-testid="label">
+        Test
+      </Label>
+    );
     expect(screen.getByTestId('label')).toHaveClass('custom-class');
   });
 
   it('should pass through native label props', () => {
-    render(<Label htmlFor="input-id" data-testid="label">Test</Label>);
+    render(
+      <Label htmlFor="input-id" data-testid="label">
+        Test
+      </Label>
+    );
     expect(screen.getByTestId('label')).toHaveAttribute('for', 'input-id');
   });
 

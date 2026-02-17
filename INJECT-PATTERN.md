@@ -27,6 +27,7 @@ export const api = createApi({
 ```
 
 **Issues**:
+
 - Tight coupling between unrelated features
 - Merge conflicts when multiple teams work
 - Hard to add/remove features
@@ -97,7 +98,7 @@ import { api } from './api';
 // Import feature APIs to register their endpoints
 import '@/features/repositories/store/repositoriesApi';
 import '@/features/sessions/store/sessionsApi'; // When created
-import '@/features/tasks/store/tasksApi';       // When created
+import '@/features/tasks/store/tasksApi'; // When created
 
 export const store = configureStore({
   reducer: {
@@ -203,9 +204,7 @@ export const myFeatureApi = api.injectEndpoints({
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'MyFeature', id },
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'MyFeature', id }],
     }),
 
     // DELETE mutation
@@ -214,9 +213,7 @@ export const myFeatureApi = api.injectEndpoints({
         url: `/items/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => [
-        { type: 'MyFeature', id },
-      ],
+      invalidatesTags: (result, error, id) => [{ type: 'MyFeature', id }],
     }),
   }),
 });

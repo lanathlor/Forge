@@ -17,9 +17,11 @@ import { cn } from '../lib/utils';
  * - Respects reduced-motion preferences.
  */
 export function ReconnectingBanner({ className }: { className?: string }) {
-  const { status, isOnline, reconnect, reconnectAttempts } = useConnectionStatus();
+  const { status, isOnline, reconnect, reconnectAttempts } =
+    useConnectionStatus();
 
-  const isVisible = status === 'reconnecting' || status === 'disconnected' || !isOnline;
+  const isVisible =
+    status === 'reconnecting' || status === 'disconnected' || !isOnline;
 
   if (!isVisible) return null;
 
@@ -38,16 +40,19 @@ export function ReconnectingBanner({ className }: { className?: string }) {
         isOffline
           ? 'bg-slate-800 text-slate-100'
           : isReconnecting
-          ? 'bg-amber-500 text-amber-950'
-          : 'bg-red-600 text-red-50',
+            ? 'bg-amber-500 text-amber-950'
+            : 'bg-red-600 text-red-50',
         className
       )}
     >
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex min-w-0 items-center gap-2.5">
         {isOffline ? (
           <CloudOff className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
         ) : isReconnecting ? (
-          <RefreshCw className="h-4 w-4 flex-shrink-0 animate-spin" aria-hidden="true" />
+          <RefreshCw
+            className="h-4 w-4 flex-shrink-0 animate-spin"
+            aria-hidden="true"
+          />
         ) : (
           <WifiOff className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
         )}
@@ -55,8 +60,8 @@ export function ReconnectingBanner({ className }: { className?: string }) {
           {isOffline
             ? 'No network connection — updates paused'
             : isReconnecting
-            ? `Reconnecting${reconnectAttempts > 1 ? ` (attempt ${reconnectAttempts})` : ''}… live updates may be delayed`
-            : 'Connection lost — live updates paused'}
+              ? `Reconnecting${reconnectAttempts > 1 ? ` (attempt ${reconnectAttempts})` : ''}… live updates may be delayed`
+              : 'Connection lost — live updates paused'}
         </span>
       </div>
 
@@ -64,11 +69,11 @@ export function ReconnectingBanner({ className }: { className?: string }) {
         <button
           onClick={reconnect}
           className={cn(
-            'flex-shrink-0 px-3 py-1 rounded-md text-xs font-semibold',
+            'flex-shrink-0 rounded-md px-3 py-1 text-xs font-semibold',
             'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2',
             isReconnecting
-              ? 'bg-amber-950/20 hover:bg-amber-950/30 text-amber-950 focus-visible:ring-amber-800'
-              : 'bg-red-50/20 hover:bg-red-50/30 text-red-50 focus-visible:ring-red-200'
+              ? 'bg-amber-950/20 text-amber-950 hover:bg-amber-950/30 focus-visible:ring-amber-800'
+              : 'bg-red-50/20 text-red-50 hover:bg-red-50/30 focus-visible:ring-red-200'
           )}
           aria-label="Manually reconnect to server"
         >

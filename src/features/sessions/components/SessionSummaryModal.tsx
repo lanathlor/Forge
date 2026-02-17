@@ -45,7 +45,6 @@ function formatDuration(ms: number): string {
   return `${seconds} second${seconds !== 1 ? 's' : ''}`;
 }
 
- 
 export function SessionSummaryModal({
   sessionId,
   isOpen,
@@ -77,7 +76,7 @@ export function SessionSummaryModal({
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : !summary ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             Session not found
           </div>
         ) : (
@@ -90,7 +89,9 @@ export function SessionSummaryModal({
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Duration</span>
-                <span className="font-medium">{formatDuration(stats!.duration)}</span>
+                <span className="font-medium">
+                  {formatDuration(stats!.duration)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Started</span>
@@ -110,7 +111,7 @@ export function SessionSummaryModal({
 
             {/* Branch Info */}
             {(session!.startBranch || session!.endBranch) && (
-              <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg p-3">
+              <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-sm">
                 <GitBranch className="h-4 w-4 text-muted-foreground" />
                 <div className="flex-1">
                   {session!.startBranch && (
@@ -119,36 +120,39 @@ export function SessionSummaryModal({
                       <span className="font-mono">{session!.startBranch}</span>
                     </div>
                   )}
-                  {session!.endBranch && session!.endBranch !== session!.startBranch && (
-                    <div>
-                      <span className="text-muted-foreground">End: </span>
-                      <span className="font-mono">{session!.endBranch}</span>
-                    </div>
-                  )}
+                  {session!.endBranch &&
+                    session!.endBranch !== session!.startBranch && (
+                      <div>
+                        <span className="text-muted-foreground">End: </span>
+                        <span className="font-mono">{session!.endBranch}</span>
+                      </div>
+                    )}
                 </div>
               </div>
             )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="rounded-lg bg-muted/50 p-4 text-center">
+                <div className="mb-1 flex items-center justify-center gap-1">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="text-2xl font-bold">{stats!.totalTasks}</div>
                 <div className="text-xs text-muted-foreground">Total Tasks</div>
               </div>
 
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="rounded-lg bg-muted/50 p-4 text-center">
+                <div className="mb-1 flex items-center justify-center gap-1">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="text-2xl font-bold">{stats!.filesChanged}</div>
-                <div className="text-xs text-muted-foreground">Files Changed</div>
+                <div className="text-xs text-muted-foreground">
+                  Files Changed
+                </div>
               </div>
 
-              <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-950/20">
+                <div className="mb-1 flex items-center justify-center gap-1">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                 </div>
                 <div className="text-2xl font-bold text-green-600">
@@ -157,8 +161,8 @@ export function SessionSummaryModal({
                 <div className="text-xs text-muted-foreground">Completed</div>
               </div>
 
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="rounded-lg bg-muted/50 p-4 text-center">
+                <div className="mb-1 flex items-center justify-center gap-1">
                   <GitCommit className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="text-2xl font-bold">{stats!.commits}</div>
@@ -170,7 +174,7 @@ export function SessionSummaryModal({
             {(stats!.rejectedTasks > 0 || stats!.failedTasks > 0) && (
               <div className="space-y-2">
                 {stats!.rejectedTasks > 0 && (
-                  <div className="flex items-center gap-2 text-sm bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-3">
+                  <div className="flex items-center gap-2 rounded-lg bg-yellow-50 p-3 text-sm dark:bg-yellow-950/20">
                     <XCircle className="h-4 w-4 text-yellow-600" />
                     <span>
                       <span className="font-medium text-yellow-600">
@@ -181,7 +185,7 @@ export function SessionSummaryModal({
                   </div>
                 )}
                 {stats!.failedTasks > 0 && (
-                  <div className="flex items-center gap-2 text-sm bg-red-50 dark:bg-red-950/20 rounded-lg p-3">
+                  <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm dark:bg-red-950/20">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
                     <span>
                       <span className="font-medium text-red-600">
@@ -196,7 +200,7 @@ export function SessionSummaryModal({
           </div>
         )}
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
           {onNewSession && (
             <Button
               variant="default"

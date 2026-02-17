@@ -28,10 +28,13 @@ describe('git/content', () => {
       );
 
       expect(content).toBe(mockStdout);
-      expect(mockExecAsync).toHaveBeenCalledWith('git show abc123:src/file.ts', {
-        cwd: '/repo/path',
-        timeout: 30000,
-      });
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        'git show abc123:src/file.ts',
+        {
+          cwd: '/repo/path',
+          timeout: 30000,
+        }
+      );
     });
 
     it('should use HEAD as default commit', async () => {

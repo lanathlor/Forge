@@ -69,19 +69,31 @@ describe('QAGateCard', () => {
 
     it('displays index + 1 if gate.order is not provided', () => {
       const gateWithoutOrder = { ...mockGate, order: undefined };
-      render(<QAGateCard {...defaultProps} gate={gateWithoutOrder} index={2} />);
+      render(
+        <QAGateCard {...defaultProps} gate={gateWithoutOrder} index={2} />
+      );
       expect(screen.getByText('3')).toBeInTheDocument();
     });
   });
 
   describe('Required/Optional badges', () => {
     it('shows Required badge when failOnError is true', () => {
-      render(<QAGateCard {...defaultProps} gate={{ ...mockGate, failOnError: true }} />);
+      render(
+        <QAGateCard
+          {...defaultProps}
+          gate={{ ...mockGate, failOnError: true }}
+        />
+      );
       expect(screen.getByText('Required')).toBeInTheDocument();
     });
 
     it('shows Optional badge when failOnError is false', () => {
-      render(<QAGateCard {...defaultProps} gate={{ ...mockGate, failOnError: false }} />);
+      render(
+        <QAGateCard
+          {...defaultProps}
+          gate={{ ...mockGate, failOnError: false }}
+        />
+      );
       expect(screen.getByText('Optional')).toBeInTheDocument();
     });
   });
@@ -95,14 +107,18 @@ describe('QAGateCard', () => {
 
     it('applies dashed border styling for disabled gate', () => {
       const disabledGate = { ...mockGate, enabled: false };
-      const { container } = render(<QAGateCard {...defaultProps} gate={disabledGate} />);
+      const { container } = render(
+        <QAGateCard {...defaultProps} gate={disabledGate} />
+      );
       const card = container.querySelector('.border-dashed');
       expect(card).toBeInTheDocument();
     });
 
     it('applies reduced opacity for disabled gate', () => {
       const disabledGate = { ...mockGate, enabled: false };
-      const { container } = render(<QAGateCard {...defaultProps} gate={disabledGate} />);
+      const { container } = render(
+        <QAGateCard {...defaultProps} gate={disabledGate} />
+      );
       const card = container.querySelector('.opacity-60');
       expect(card).toBeInTheDocument();
     });
@@ -110,13 +126,19 @@ describe('QAGateCard', () => {
 
   describe('Execution Status', () => {
     it('shows Running badge when execution status is running', () => {
-      const execution = createMockExecution({ status: 'running', duration: 1000 });
+      const execution = createMockExecution({
+        status: 'running',
+        duration: 1000,
+      });
       render(<QAGateCard {...defaultProps} execution={execution} />);
       expect(screen.getByText('Running')).toBeInTheDocument();
     });
 
     it('shows Passed badge when execution status is passed', () => {
-      const execution = createMockExecution({ status: 'passed', duration: 2500 });
+      const execution = createMockExecution({
+        status: 'passed',
+        duration: 2500,
+      });
       render(<QAGateCard {...defaultProps} execution={execution} />);
       expect(screen.getByText('Passed')).toBeInTheDocument();
     });
@@ -138,7 +160,10 @@ describe('QAGateCard', () => {
     });
 
     it('displays execution duration', () => {
-      const execution = createMockExecution({ status: 'passed', duration: 2345 });
+      const execution = createMockExecution({
+        status: 'passed',
+        duration: 2345,
+      });
       render(<QAGateCard {...defaultProps} execution={execution} />);
       expect(screen.getByText('2.3s')).toBeInTheDocument();
     });
@@ -146,7 +171,10 @@ describe('QAGateCard', () => {
 
   describe('Execution Output', () => {
     it('does not show output toggle when no output or error', () => {
-      const execution = createMockExecution({ status: 'passed', duration: 1000 });
+      const execution = createMockExecution({
+        status: 'passed',
+        duration: 1000,
+      });
       render(<QAGateCard {...defaultProps} execution={execution} />);
       expect(screen.queryByText('Show output')).not.toBeInTheDocument();
     });
@@ -287,9 +315,13 @@ describe('QAGateCard', () => {
       // The delete button is the last button in the actions area with a Trash2 icon
       const buttons = screen.getAllByRole('button');
       // Find a button that is not the switch, not the test button, and not the toggle
-      const trashButton = buttons.find(b => {
+      const trashButton = buttons.find((b) => {
         const svg = b.querySelector('svg');
-        return svg && b.getAttribute('role') !== 'switch' && !b.hasAttribute('data-testid');
+        return (
+          svg &&
+          b.getAttribute('role') !== 'switch' &&
+          !b.hasAttribute('data-testid')
+        );
       });
       if (trashButton) await user.click(trashButton);
 

@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-  useMemo,
-} from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 import {
@@ -285,20 +279,17 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
   const hasContent = prompt.trim().length > 0;
 
   return (
-    <form
-      ref={formRef}
-      onSubmit={handleSubmit}
-      className="relative"
-    >
+    <form ref={formRef} onSubmit={handleSubmit} className="relative">
       <div
         className={cn(
           'relative rounded-xl border-2 bg-card transition-all duration-200',
           isFocused
             ? 'border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.1)]'
             : 'border-border hover:border-primary/40',
-          isDragOver && 'border-primary border-dashed bg-primary/5',
+          isDragOver && 'border-dashed border-primary bg-primary/5',
           isSubmitting && 'opacity-80',
-          error && 'border-destructive shadow-[0_0_0_3px_hsl(var(--destructive)/0.1)]'
+          error &&
+            'border-destructive shadow-[0_0_0_3px_hsl(var(--destructive)/0.1)]'
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -307,16 +298,16 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
         {/* Floating label */}
         <div
           className={cn(
-            'absolute left-4 transition-all duration-200 pointer-events-none z-10',
+            'pointer-events-none absolute left-4 z-10 transition-all duration-200',
             hasContent || isFocused
-              ? '-top-2.5 text-xs px-1.5 bg-card'
+              ? '-top-2.5 bg-card px-1.5 text-xs'
               : 'top-4 text-sm'
           )}
         >
           <span
             className={cn(
               'transition-colors duration-200',
-              isFocused ? 'text-primary font-medium' : 'text-muted-foreground'
+              isFocused ? 'font-medium text-primary' : 'text-muted-foreground'
             )}
           >
             What should Claude do?
@@ -325,7 +316,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
 
         {/* Drag overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-primary/5 z-20">
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-primary/5">
             <div className="flex flex-col items-center gap-2 text-primary">
               <Upload className="h-8 w-8" />
               <span className="text-sm font-medium">Drop files to attach</span>
@@ -334,7 +325,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
         )}
 
         {/* Toolbar row */}
-        <div className="flex items-center gap-1 px-2 pt-2 pb-0">
+        <div className="flex items-center gap-1 px-2 pb-0 pt-2">
           {/* Templates dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -342,7 +333,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
               >
                 <Zap className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Templates</span>
@@ -356,7 +347,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
                 <DropdownMenuItem
                   key={t.label}
                   onClick={() => insertTemplate(t.template)}
-                  className="gap-2 cursor-pointer"
+                  className="cursor-pointer gap-2"
                 >
                   {t.icon}
                   <div className="flex flex-col">
@@ -378,7 +369,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <Clock className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Recent</span>
@@ -406,7 +397,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="h-3.5 w-3.5" />
@@ -424,7 +415,10 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
           <div className="flex-1" />
 
           {/* Markdown hint */}
-          <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground/60 mr-1" title="Markdown formatting is supported">
+          <div
+            className="mr-1 hidden items-center gap-1 text-xs text-muted-foreground/60 sm:flex"
+            title="Markdown formatting is supported"
+          >
             <Hash className="h-3 w-3" />
             <span>Markdown</span>
           </div>
@@ -443,8 +437,8 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
           onBlur={() => setIsFocused(false)}
           placeholder="Describe the task, feature, or bug fix..."
           className={cn(
-            'w-full px-4 py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50',
-            'resize-none focus:outline-none text-sm leading-relaxed',
+            'w-full bg-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground/50',
+            'resize-none text-sm leading-relaxed focus:outline-none',
             'scrollbar-hide'
           )}
           style={{
@@ -461,17 +455,17 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
             {attachments.map((att, i) => (
               <div
                 key={i}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-xs text-secondary-foreground"
+                className="flex items-center gap-1.5 rounded-md bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
               >
                 <FileText className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate max-w-[120px]">{att.name}</span>
+                <span className="max-w-[120px] truncate">{att.name}</span>
                 <span className="text-muted-foreground">
                   {formatFileSize(att.size)}
                 </span>
                 <button
                   type="button"
                   onClick={() => removeAttachment(i)}
-                  className="ml-0.5 hover:text-destructive transition-colors"
+                  className="ml-0.5 transition-colors hover:text-destructive"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -482,13 +476,13 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
 
         {/* Error message */}
         {error && (
-          <div className="mx-4 mb-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
+          <div className="mx-4 mb-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </div>
         )}
 
         {/* Bottom bar: counts + submit */}
-        <div className="flex items-center justify-between px-3 py-2 border-t border-border/50">
+        <div className="flex items-center justify-between border-t border-border/50 px-3 py-2">
           {/* Character / token count */}
           <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
             <span>{charCount} chars</span>
@@ -497,7 +491,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
 
           {/* Submit area */}
           <div className="flex items-center gap-2">
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/60 border border-border/50 text-[10px] text-muted-foreground">
+            <kbd className="hidden items-center gap-0.5 rounded border border-border/50 bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline-flex">
               {modKey} + ↵
             </kbd>
             <Button
@@ -505,9 +499,9 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
               disabled={isSubmitting || !hasContent}
               size="sm"
               className={cn(
-                'gap-1.5 h-8 px-4 transition-all duration-200',
+                'h-8 gap-1.5 px-4 transition-all duration-200',
                 hasContent && !isSubmitting
-                  ? 'bg-primary hover:bg-primary/90 shadow-sm'
+                  ? 'bg-primary shadow-sm hover:bg-primary/90'
                   : ''
               )}
             >

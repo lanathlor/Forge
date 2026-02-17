@@ -22,11 +22,13 @@ export interface FileChange {
   additions: number;
   deletions: number;
   oldPath?: string; // For renamed files
-  patch: string;    // Individual file diff
+  patch: string; // Individual file diff
 }
 
 export const tasks = sqliteTable('tasks', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   sessionId: text('session_id').notNull(),
   prompt: text('prompt').notNull(),
   status: text('status').$type<TaskStatus>().notNull().default('pending'),

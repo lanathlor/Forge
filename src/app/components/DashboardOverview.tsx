@@ -5,7 +5,10 @@ import { cn } from '@/shared/lib/utils';
 import { MultiRepoCommandCenter } from './MultiRepoCommandCenter';
 import { MultiSessionOverviewCard } from './MultiSessionOverviewCard';
 import { QuickActions } from './QuickActions';
-import { RecentActivity as RecentActivityFeed, type ActivityItem } from './RecentActivity';
+import {
+  RecentActivity as RecentActivityFeed,
+  type ActivityItem,
+} from './RecentActivity';
 import { useGetActivityQuery } from '@/features/activity/store/activityApi';
 import { MetricsGrid, type MetricsData } from './MetricsGrid';
 import { NeedsAttention } from './NeedsAttention';
@@ -64,7 +67,12 @@ export interface QuickAction {
 /** @deprecated Use ActivityItem from RecentActivity instead */
 export interface RecentActivityItem {
   id: string;
-  type: 'task_completed' | 'task_started' | 'task_failed' | 'session_created' | 'plan_approved';
+  type:
+    | 'task_completed'
+    | 'task_started'
+    | 'task_failed'
+    | 'session_created'
+    | 'plan_approved';
   title: string;
   description?: string;
   timestamp: string;
@@ -106,7 +114,9 @@ export interface DashboardOverviewProps {
  * Converts legacy DashboardMetrics to new MetricsData format
  * for backward compatibility during migration
  */
-function convertLegacyMetrics(metrics?: DashboardMetrics): MetricsData | undefined {
+function convertLegacyMetrics(
+  metrics?: DashboardMetrics
+): MetricsData | undefined {
   if (!metrics) return undefined;
   return {
     tasksCompletedToday: metrics.tasksCompleted,
@@ -142,7 +152,10 @@ interface RecentActivitySectionProps {
 
 const ITEMS_PER_PAGE = 20;
 
-function appendNewItems(prev: ActivityItem[], newData: ActivityItem[]): ActivityItem[] {
+function appendNewItems(
+  prev: ActivityItem[],
+  newData: ActivityItem[]
+): ActivityItem[] {
   const existingIds = new Set(prev.map((item) => item.id));
   const filtered = newData.filter((item) => !existingIds.has(item.id));
   return [...prev, ...filtered];
@@ -159,10 +172,15 @@ function useActivityPagination(repositoryId?: string) {
 
   React.useEffect(() => {
     if (!data?.items) return;
-    setAllItems((prev) => offset === 0 ? data.items : appendNewItems(prev, data.items));
+    setAllItems((prev) =>
+      offset === 0 ? data.items : appendNewItems(prev, data.items)
+    );
   }, [data, offset]);
 
-  const handleLoadMore = React.useCallback(() => setOffset((prev) => prev + ITEMS_PER_PAGE), []);
+  const handleLoadMore = React.useCallback(
+    () => setOffset((prev) => prev + ITEMS_PER_PAGE),
+    []
+  );
 
   const handleRefresh = React.useCallback(() => {
     setOffset(0);
@@ -170,12 +188,31 @@ function useActivityPagination(repositoryId?: string) {
     refetch();
   }, [refetch]);
 
-  return { allItems, data, isLoading, isFetching, offset, handleLoadMore, handleRefresh };
+  return {
+    allItems,
+    data,
+    isLoading,
+    isFetching,
+    offset,
+    handleLoadMore,
+    handleRefresh,
+  };
 }
 
-const RecentActivitySection = React.memo(function RecentActivitySection({ repositoryId, onItemClick, loading: externalLoading }: RecentActivitySectionProps) {
-  const { allItems, data, isLoading, isFetching, offset, handleLoadMore, handleRefresh } =
-    useActivityPagination(repositoryId);
+const RecentActivitySection = React.memo(function RecentActivitySection({
+  repositoryId,
+  onItemClick,
+  loading: externalLoading,
+}: RecentActivitySectionProps) {
+  const {
+    allItems,
+    data,
+    isLoading,
+    isFetching,
+    offset,
+    handleLoadMore,
+    handleRefresh,
+  } = useActivityPagination(repositoryId);
   const { addToast } = useToast();
   const showError = useErrorToast(addToast);
 
@@ -221,15 +258,30 @@ function useStuckDetectionIntegration(
 ) {
   const { showStuckAlert, resolveStuckAlert } = useStuckToasts();
 
-  const handleStuckDetected = React.useCallback((alert: StuckAlert) => {
-    showStuckAlert(alert.repositoryId, alert.repositoryName, alert.reason, alert.stuckDurationSeconds, () => onSelectRepo?.(alert.repositoryId));
-  }, [showStuckAlert, onSelectRepo]);
+  const handleStuckDetected = React.useCallback(
+    (alert: StuckAlert) => {
+      showStuckAlert(
+        alert.repositoryId,
+        alert.repositoryName,
+        alert.reason,
+        alert.stuckDurationSeconds,
+        () => onSelectRepo?.(alert.repositoryId)
+      );
+    },
+    [showStuckAlert, onSelectRepo]
+  );
 
-  const handleStuckResolved = React.useCallback((alert: StuckAlert) => {
-    resolveStuckAlert(alert.repositoryId);
-  }, [resolveStuckAlert]);
+  const handleStuckResolved = React.useCallback(
+    (alert: StuckAlert) => {
+      resolveStuckAlert(alert.repositoryId);
+    },
+    [resolveStuckAlert]
+  );
 
-  useStuckDetection({ onStuckDetected: handleStuckDetected, onStuckResolved: handleStuckResolved });
+  useStuckDetection({
+    onStuckDetected: handleStuckDetected,
+    onStuckResolved: handleStuckResolved,
+  });
 }
 
 /* ============================================
@@ -237,26 +289,51 @@ function useStuckDetectionIntegration(
    ============================================ */
 
 /** DashboardOverview - Comprehensive dashboard with metrics, actions, and activity */
-export const DashboardOverview = React.memo(function DashboardOverview(props: DashboardOverviewProps) {
+export const DashboardOverview = React.memo(function DashboardOverview(
+  props: DashboardOverviewProps
+) {
   const {
-    metrics, metricsData, onCreateTask, onNewTask, onStartSession, onBrowsePlans,
-    onViewRepositories, onSelectRepo, onPauseRepo, onResumeRepo, onActivityItemClick,
-    selectedRepoId, loading, className,
+    metrics,
+    metricsData,
+    onCreateTask,
+    onNewTask,
+    onStartSession,
+    onBrowsePlans,
+    onViewRepositories,
+    onSelectRepo,
+    onPauseRepo,
+    onResumeRepo,
+    onActivityItemClick,
+    selectedRepoId,
+    loading,
+    className,
   } = props;
 
-  const resolvedMetrics = React.useMemo(() => metricsData ?? convertLegacyMetrics(metrics), [metricsData, metrics]);
-  const handleNewTask = React.useMemo(() => onNewTask ?? onCreateTask, [onNewTask, onCreateTask]);
+  const resolvedMetrics = React.useMemo(
+    () => metricsData ?? convertLegacyMetrics(metrics),
+    [metricsData, metrics]
+  );
+  const handleNewTask = React.useMemo(
+    () => onNewTask ?? onCreateTask,
+    [onNewTask, onCreateTask]
+  );
 
   useStuckDetectionIntegration(onSelectRepo);
 
-  const handleNeedsAttentionSelect = React.useCallback((repositoryId: string, _sessionId?: string | null) => {
-    onSelectRepo?.(repositoryId);
-  }, [onSelectRepo]);
+  const handleNeedsAttentionSelect = React.useCallback(
+    (repositoryId: string, _sessionId?: string | null) => {
+      onSelectRepo?.(repositoryId);
+    },
+    [onSelectRepo]
+  );
 
   return (
     <div className={cn('flex flex-col gap-6 sm:gap-8', className)}>
       <ErrorBoundary id="needs-attention">
-        <NeedsAttention onSelectRepo={handleNeedsAttentionSelect} maxVisible={3} />
+        <NeedsAttention
+          onSelectRepo={handleNeedsAttentionSelect}
+          maxVisible={3}
+        />
       </ErrorBoundary>
 
       <ErrorBoundary id="multi-session-overview">
@@ -264,7 +341,13 @@ export const DashboardOverview = React.memo(function DashboardOverview(props: Da
       </ErrorBoundary>
 
       <ErrorBoundary id="multi-repo-command-center">
-        <MultiRepoCommandCenter onSelectRepo={onSelectRepo} onPauseRepo={onPauseRepo} onResumeRepo={onResumeRepo} selectedRepoId={selectedRepoId} maxVisible={8} />
+        <MultiRepoCommandCenter
+          onSelectRepo={onSelectRepo}
+          onPauseRepo={onPauseRepo}
+          onResumeRepo={onResumeRepo}
+          selectedRepoId={selectedRepoId}
+          maxVisible={8}
+        />
       </ErrorBoundary>
 
       <ErrorBoundary id="metrics-grid">
@@ -274,14 +357,24 @@ export const DashboardOverview = React.memo(function DashboardOverview(props: Da
       <SectionDivider />
 
       <ErrorBoundary id="quick-actions">
-        <QuickActions onNewTask={handleNewTask} onStartSession={onStartSession} onBrowsePlans={onBrowsePlans} onViewRepositories={onViewRepositories} loading={loading} />
+        <QuickActions
+          onNewTask={handleNewTask}
+          onStartSession={onStartSession}
+          onBrowsePlans={onBrowsePlans}
+          onViewRepositories={onViewRepositories}
+          loading={loading}
+        />
       </ErrorBoundary>
 
       <SectionDivider />
 
       {/* Recent activity feed */}
       <ErrorBoundary id="recent-activity">
-        <RecentActivitySection repositoryId={selectedRepoId} onItemClick={onActivityItemClick} loading={loading} />
+        <RecentActivitySection
+          repositoryId={selectedRepoId}
+          onItemClick={onActivityItemClick}
+          loading={loading}
+        />
       </ErrorBoundary>
     </div>
   );

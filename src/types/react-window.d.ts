@@ -45,9 +45,14 @@ declare module 'react-window' {
     width: number | string;
   }
 
-  export class FixedSizeList<T = unknown> extends React.Component<FixedSizeListProps<T>> {
+  export class FixedSizeList<T = unknown> extends React.Component<
+    FixedSizeListProps<T>
+  > {
     scrollTo(scrollOffset: number): void;
-    scrollToItem(index: number, align?: 'auto' | 'smart' | 'center' | 'end' | 'start'): void;
+    scrollToItem(
+      index: number,
+      align?: 'auto' | 'smart' | 'center' | 'end' | 'start'
+    ): void;
   }
 
   export interface VariableSizeListProps<T = unknown> {
@@ -74,10 +79,15 @@ declare module 'react-window' {
     width: number | string;
   }
 
-  export class VariableSizeList<T = unknown> extends React.Component<VariableSizeListProps<T>> {
+  export class VariableSizeList<T = unknown> extends React.Component<
+    VariableSizeListProps<T>
+  > {
     resetAfterIndex(index: number, shouldForceUpdate?: boolean): void;
     scrollTo(scrollOffset: number): void;
-    scrollToItem(index: number, align?: 'auto' | 'smart' | 'center' | 'end' | 'start'): void;
+    scrollToItem(
+      index: number,
+      align?: 'auto' | 'smart' | 'center' | 'end' | 'start'
+    ): void;
   }
 
   export interface GridChildComponentProps<T = unknown> {
@@ -119,7 +129,11 @@ declare module 'react-window' {
     innerElementType?: React.ElementType;
     innerRef?: React.Ref<HTMLDivElement>;
     itemData?: T;
-    itemKey?: (params: { columnIndex: number; data: T; rowIndex: number }) => string | number;
+    itemKey?: (params: {
+      columnIndex: number;
+      data: T;
+      rowIndex: number;
+    }) => string | number;
     onItemsRendered?: (props: GridOnItemsRenderedProps) => void;
     onScroll?: (props: GridOnScrollProps) => void;
     outerElementType?: React.ElementType;
@@ -133,9 +147,15 @@ declare module 'react-window' {
     width: number;
   }
 
-  export class FixedSizeGrid<T = unknown> extends React.Component<FixedSizeGridProps<T>> {
+  export class FixedSizeGrid<T = unknown> extends React.Component<
+    FixedSizeGridProps<T>
+  > {
     scrollTo(params: { scrollLeft?: number; scrollTop?: number }): void;
-    scrollToItem(params: { align?: 'auto' | 'smart' | 'center' | 'end' | 'start'; columnIndex?: number; rowIndex?: number }): void;
+    scrollToItem(params: {
+      align?: 'auto' | 'smart' | 'center' | 'end' | 'start';
+      columnIndex?: number;
+      rowIndex?: number;
+    }): void;
   }
 
   export interface VariableSizeGridProps<T = unknown> {
@@ -152,7 +172,11 @@ declare module 'react-window' {
     innerElementType?: React.ElementType;
     innerRef?: React.Ref<HTMLDivElement>;
     itemData?: T;
-    itemKey?: (params: { columnIndex: number; data: T; rowIndex: number }) => string | number;
+    itemKey?: (params: {
+      columnIndex: number;
+      data: T;
+      rowIndex: number;
+    }) => string | number;
     onItemsRendered?: (props: GridOnItemsRenderedProps) => void;
     onScroll?: (props: GridOnScrollProps) => void;
     outerElementType?: React.ElementType;
@@ -166,12 +190,22 @@ declare module 'react-window' {
     width: number;
   }
 
-  export class VariableSizeGrid<T = unknown> extends React.Component<VariableSizeGridProps<T>> {
+  export class VariableSizeGrid<T = unknown> extends React.Component<
+    VariableSizeGridProps<T>
+  > {
     resetAfterColumnIndex(index: number, shouldForceUpdate?: boolean): void;
-    resetAfterIndices(params: { columnIndex?: number; rowIndex?: number; shouldForceUpdate?: boolean }): void;
+    resetAfterIndices(params: {
+      columnIndex?: number;
+      rowIndex?: number;
+      shouldForceUpdate?: boolean;
+    }): void;
     resetAfterRowIndex(index: number, shouldForceUpdate?: boolean): void;
     scrollTo(params: { scrollLeft?: number; scrollTop?: number }): void;
-    scrollToItem(params: { align?: 'auto' | 'smart' | 'center' | 'end' | 'start'; columnIndex?: number; rowIndex?: number }): void;
+    scrollToItem(params: {
+      align?: 'auto' | 'smart' | 'center' | 'end' | 'start';
+      columnIndex?: number;
+      rowIndex?: number;
+    }): void;
   }
 
   export function areEqual(
@@ -180,7 +214,9 @@ declare module 'react-window' {
   ): boolean;
 
   export function shouldComponentUpdate(
-    this: { props: Readonly<ListChildComponentProps | GridChildComponentProps> },
+    this: {
+      props: Readonly<ListChildComponentProps | GridChildComponentProps>;
+    },
     nextProps: Readonly<ListChildComponentProps | GridChildComponentProps>,
     nextState: unknown
   ): boolean;

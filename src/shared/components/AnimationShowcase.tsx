@@ -65,9 +65,9 @@ export function AnimationShowcase() {
   };
 
   return (
-    <div className="p-8 space-y-12 bg-background min-h-screen">
+    <div className="min-h-screen space-y-12 bg-background p-8">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Animation Showcase</h1>
+        <h1 className="mb-2 text-3xl font-bold">Animation Showcase</h1>
         <p className="text-muted-foreground">
           All micro-interactions and animations available in the design system
         </p>
@@ -75,8 +75,8 @@ export function AnimationShowcase() {
 
       {/* Button Animations */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Button Animations</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Button Animations</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Hover, focus, and active states with lift and scale effects
         </p>
         <div className="flex flex-wrap gap-3">
@@ -96,24 +96,24 @@ export function AnimationShowcase() {
 
       {/* Feedback Indicators */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Feedback Indicators</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Feedback Indicators</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Animated feedback for success, error, warning, and info states
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
           <div className="flex flex-col items-center gap-2">
             <Button onClick={handleSuccessClick} variant="outline" size="sm">
               Show Success
             </Button>
             <SuccessCheckmark show={showSuccess} size="md" />
-            <p className="text-xs text-center">Bounce + Checkmark</p>
+            <p className="text-center text-xs">Bounce + Checkmark</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Button onClick={handleErrorClick} variant="outline" size="sm">
               Show Error
             </Button>
             <ErrorIndicator show={showError} size="md" />
-            <p className="text-xs text-center">Shake Animation</p>
+            <p className="text-center text-xs">Shake Animation</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Button
@@ -124,7 +124,7 @@ export function AnimationShowcase() {
               Toggle Warning
             </Button>
             <WarningIndicator show={showWarning} size="md" />
-            <p className="text-xs text-center">Pulse Animation</p>
+            <p className="text-center text-xs">Pulse Animation</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Button
@@ -135,20 +135,20 @@ export function AnimationShowcase() {
               Toggle Info
             </Button>
             <InfoIndicator show={showInfo} size="md" />
-            <p className="text-xs text-center">Fade In</p>
+            <p className="text-center text-xs">Fade In</p>
           </div>
         </div>
       </section>
 
       {/* Flash Feedback */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Flash Feedback</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Flash Feedback</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Background flash animations for row/element feedback
         </p>
         <div className="grid gap-4">
           <SuccessFlash trigger={successTrigger}>
-            <div className="p-4 border rounded-lg">
+            <div className="rounded-lg border p-4">
               <p className="font-medium">Success Flash</p>
               <p className="text-sm text-muted-foreground">
                 Click "Show Success" above to see this flash green
@@ -156,7 +156,7 @@ export function AnimationShowcase() {
             </div>
           </SuccessFlash>
           <ErrorFlash trigger={errorTrigger}>
-            <div className="p-4 border rounded-lg">
+            <div className="rounded-lg border p-4">
               <p className="font-medium">Error Flash</p>
               <p className="text-sm text-muted-foreground">
                 Click "Show Error" above to see this flash red
@@ -168,8 +168,8 @@ export function AnimationShowcase() {
 
       {/* Dashboard Cards */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Dashboard Cards</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Dashboard Cards</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Hover lift, scale, and colored shadow effects
         </p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -184,14 +184,14 @@ export function AnimationShowcase() {
             icon={<Zap className="h-5 w-5" />}
             value="12"
             label="Active Tasks"
-            trend={{ value: "+15%", direction: "up", label: "from last week" }}
+            trend={{ value: '+15%', direction: 'up', label: 'from last week' }}
           />
           <StatCard
             variant="success"
             icon={<Check className="h-5 w-5" />}
             value="28"
             label="Completed"
-            trend={{ value: "+8", direction: "up" }}
+            trend={{ value: '+8', direction: 'up' }}
           />
           <StatCard
             variant="warning"
@@ -204,8 +204,8 @@ export function AnimationShowcase() {
 
       {/* Action Cards */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Action Cards</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Action Cards</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Icon rotation, scale, and interactive feedback
         </p>
         <div className="grid gap-4 md:grid-cols-2">
@@ -214,7 +214,7 @@ export function AnimationShowcase() {
             icon={<Plus className="h-6 w-6" />}
             title="Create New Task"
             description="Start a new task in your current session"
-            action={{ label: "Create Task", onClick: () => {} }}
+            action={{ label: 'Create Task', onClick: () => {} }}
           />
           <ActionCard
             variant="default"
@@ -228,8 +228,8 @@ export function AnimationShowcase() {
 
       {/* List Card */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">List Card</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">List Card</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Hover indent, stagger animation, and smooth transitions
         </p>
         <ListCard
@@ -240,12 +240,14 @@ export function AnimationShowcase() {
               id: '1',
               content: (
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success/10">
                     <Check className="h-4 w-4 text-success" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">Task completed</p>
-                    <p className="text-xs text-muted-foreground">2 minutes ago</p>
+                    <p className="text-xs text-muted-foreground">
+                      2 minutes ago
+                    </p>
                   </div>
                 </div>
               ),
@@ -255,12 +257,14 @@ export function AnimationShowcase() {
               id: '2',
               content: (
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                     <Plus className="h-4 w-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">New task created</p>
-                    <p className="text-xs text-muted-foreground">5 minutes ago</p>
+                    <p className="text-xs text-muted-foreground">
+                      5 minutes ago
+                    </p>
                   </div>
                 </div>
               ),
@@ -270,12 +274,14 @@ export function AnimationShowcase() {
               id: '3',
               content: (
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warning/10">
                     <AlertTriangle className="h-4 w-4 text-warning" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">Needs attention</p>
-                    <p className="text-xs text-muted-foreground">10 minutes ago</p>
+                    <p className="text-xs text-muted-foreground">
+                      10 minutes ago
+                    </p>
                   </div>
                 </div>
               ),
@@ -288,8 +294,8 @@ export function AnimationShowcase() {
 
       {/* Loading States */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Loading States</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Loading States</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Spinners and skeleton loaders with pulse animations
         </p>
         <div className="grid gap-6 md:grid-cols-2">
@@ -314,15 +320,15 @@ export function AnimationShowcase() {
 
       {/* Ripple Effect */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Ripple Effect</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Ripple Effect</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Material Design-style click feedback
         </p>
         <div
-          className="relative overflow-hidden p-8 border rounded-lg bg-primary text-primary-foreground cursor-pointer select-none"
+          className="relative cursor-pointer select-none overflow-hidden rounded-lg border bg-primary p-8 text-primary-foreground"
           onClick={addRipple}
         >
-          <p className="text-center font-medium relative z-10">
+          <p className="relative z-10 text-center font-medium">
             Click anywhere to see ripple effect
           </p>
           <RippleContainer />
@@ -331,74 +337,76 @@ export function AnimationShowcase() {
 
       {/* Hover Classes */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Hover Effect Classes</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Hover Effect Classes</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Utility classes for custom components
         </p>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="hover-lift p-6 border rounded-lg bg-card cursor-pointer">
-            <p className="font-medium mb-1">hover-lift</p>
+          <div className="hover-lift cursor-pointer rounded-lg border bg-card p-6">
+            <p className="mb-1 font-medium">hover-lift</p>
             <p className="text-sm text-muted-foreground">
               Lifts element with shadow
             </p>
           </div>
-          <div className="hover-scale p-6 border rounded-lg bg-card cursor-pointer">
-            <p className="font-medium mb-1">hover-scale</p>
+          <div className="hover-scale cursor-pointer rounded-lg border bg-card p-6">
+            <p className="mb-1 font-medium">hover-scale</p>
             <p className="text-sm text-muted-foreground">Scales to 1.02</p>
           </div>
-          <div className="hover-glow p-6 border rounded-lg bg-card cursor-pointer">
-            <p className="font-medium mb-1">hover-glow</p>
-            <p className="text-sm text-muted-foreground">
-              Ring glow effect
-            </p>
+          <div className="hover-glow cursor-pointer rounded-lg border bg-card p-6">
+            <p className="mb-1 font-medium">hover-glow</p>
+            <p className="text-sm text-muted-foreground">Ring glow effect</p>
           </div>
         </div>
       </section>
 
       {/* Animation Classes */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Animation Classes</h2>
-        <p className="text-sm text-muted-foreground mb-4">
+        <h2 className="mb-4 text-2xl font-semibold">Animation Classes</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
           Keyframe animations for various use cases
         </p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="p-4 border rounded-lg">
-            <div className="h-12 w-12 bg-primary rounded-full mb-2 animate-fade-in" />
+          <div className="rounded-lg border p-4">
+            <div className="animate-fade-in mb-2 h-12 w-12 rounded-full bg-primary" />
             <p className="text-sm font-medium">animate-fade-in</p>
           </div>
-          <div className="p-4 border rounded-lg">
-            <div className="h-12 w-12 bg-primary rounded-full mb-2 animate-slide-in-up" />
+          <div className="rounded-lg border p-4">
+            <div className="animate-slide-in-up mb-2 h-12 w-12 rounded-full bg-primary" />
             <p className="text-sm font-medium">animate-slide-in-up</p>
           </div>
-          <div className="p-4 border rounded-lg">
-            <div className="h-12 w-12 bg-primary rounded-full mb-2 animate-scale-in" />
+          <div className="rounded-lg border p-4">
+            <div className="animate-scale-in mb-2 h-12 w-12 rounded-full bg-primary" />
             <p className="text-sm font-medium">animate-scale-in</p>
           </div>
-          <div className="p-4 border rounded-lg">
-            <div className="h-12 w-12 bg-primary rounded-full mb-2 animate-bounce-in" />
+          <div className="rounded-lg border p-4">
+            <div className="animate-bounce-in mb-2 h-12 w-12 rounded-full bg-primary" />
             <p className="text-sm font-medium">animate-bounce-in</p>
           </div>
-          <div className="p-4 border rounded-lg">
-            <div className="h-12 w-12 bg-destructive rounded-full mb-2 animate-shake" />
+          <div className="rounded-lg border p-4">
+            <div className="animate-shake mb-2 h-12 w-12 rounded-full bg-destructive" />
             <p className="text-sm font-medium">animate-shake</p>
           </div>
-          <div className="p-4 border rounded-lg">
-            <div className="h-12 w-12 bg-warning rounded-full mb-2 animate-pulse-alert" />
+          <div className="rounded-lg border p-4">
+            <div className="animate-pulse-alert mb-2 h-12 w-12 rounded-full bg-warning" />
             <p className="text-sm font-medium">animate-pulse-alert</p>
           </div>
         </div>
       </section>
 
       {/* Accessibility Notice */}
-      <section className="p-6 border-2 border-dashed rounded-lg bg-muted/30">
-        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+      <section className="rounded-lg border-2 border-dashed bg-muted/30 p-6">
+        <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold">
           <Info className="h-5 w-5" />
           Accessibility Note
         </h3>
         <p className="text-sm text-muted-foreground">
-          All animations respect the <code className="text-xs bg-muted px-1 py-0.5 rounded">prefers-reduced-motion</code> media query.
-          Users who prefer reduced motion will see instant transitions instead of animations.
-          Try enabling "Reduce motion" in your system settings to see the difference.
+          All animations respect the{' '}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            prefers-reduced-motion
+          </code>{' '}
+          media query. Users who prefer reduced motion will see instant
+          transitions instead of animations. Try enabling "Reduce motion" in
+          your system settings to see the difference.
         </p>
       </section>
     </div>

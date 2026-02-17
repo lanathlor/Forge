@@ -13,7 +13,8 @@ const mockResumeSession = vi.fn();
 const mockRefetch = vi.fn();
 
 vi.mock('@/features/sessions/store/sessionsApi', () => ({
-  useListSessionsQuery: (...args: unknown[]) => mockUseListSessionsQuery(...args),
+  useListSessionsQuery: (...args: unknown[]) =>
+    mockUseListSessionsQuery(...args),
   useDeleteSessionMutation: () => mockUseDeleteSessionMutation(),
   useResumeSessionMutation: () => mockUseResumeSessionMutation(),
   useGetSessionSummaryQuery: () => ({ data: null, isLoading: false }),
@@ -39,14 +40,34 @@ vi.mock('@/shared/components/ui/dialog', () => ({
 
 // Mock DropdownMenu to always render children
 vi.mock('@/shared/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children, onClick, className, disabled }: { children: React.ReactNode; onClick?: () => void; className?: string; disabled?: boolean }) => (
-    <button onClick={onClick} className={className} disabled={disabled}>{children}</button>
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onClick,
+    className,
+    disabled,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    className?: string;
+    disabled?: boolean;
+  }) => (
+    <button onClick={onClick} className={className} disabled={disabled}>
+      {children}
+    </button>
   ),
   DropdownMenuSeparator: () => <hr />,
-  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 describe('SessionHistoryModal', () => {
@@ -99,7 +120,10 @@ describe('SessionHistoryModal', () => {
       isLoading: false,
       refetch: mockRefetch,
     });
-    mockUseDeleteSessionMutation.mockReturnValue([mockDeleteSession, { isLoading: false }]);
+    mockUseDeleteSessionMutation.mockReturnValue([
+      mockDeleteSession,
+      { isLoading: false },
+    ]);
     mockUseResumeSessionMutation.mockReturnValue([mockResumeSession]);
   });
 
@@ -261,7 +285,11 @@ describe('SessionHistoryModal', () => {
       );
 
       expect(screen.getByText('No sessions yet')).toBeInTheDocument();
-      expect(screen.getByText('Sessions will appear here as you work with this repository.')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Sessions will appear here as you work with this repository.'
+        )
+      ).toBeInTheDocument();
     });
   });
 
@@ -356,9 +384,9 @@ describe('SessionHistoryModal', () => {
       );
 
       // Find and click a Delete menu item (rendered as button via dropdown mock)
-      const deleteButtons = screen.getAllByText('Delete').filter(
-        (el) => el.tagName === 'BUTTON'
-      );
+      const deleteButtons = screen
+        .getAllByText('Delete')
+        .filter((el) => el.tagName === 'BUTTON');
 
       const firstDeleteButton = deleteButtons[0];
       if (firstDeleteButton) {
@@ -371,9 +399,10 @@ describe('SessionHistoryModal', () => {
       });
 
       // Click the confirm Delete button in the overlay
-      const confirmButton = screen.getAllByText('Delete').filter(
-        (el) => el.tagName === 'BUTTON'
-      ).pop();
+      const confirmButton = screen
+        .getAllByText('Delete')
+        .filter((el) => el.tagName === 'BUTTON')
+        .pop();
       if (confirmButton) {
         await user.click(confirmButton);
       }
@@ -397,9 +426,9 @@ describe('SessionHistoryModal', () => {
       );
 
       // Find and click a Delete menu item
-      const deleteButtons = screen.getAllByText('Delete').filter(
-        (el) => el.tagName === 'BUTTON'
-      );
+      const deleteButtons = screen
+        .getAllByText('Delete')
+        .filter((el) => el.tagName === 'BUTTON');
 
       const firstDeleteButton = deleteButtons[0];
       if (firstDeleteButton) {

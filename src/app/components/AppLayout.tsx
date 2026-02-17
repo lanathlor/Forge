@@ -2,7 +2,12 @@
 
 import { type ReactNode, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks';
-import { hydrateFromStorage, setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
+import {
+  hydrateFromStorage,
+  setSidebarCollapsed,
+  setCurrentRepository,
+  setCurrentSession,
+} from '@/features/sessions/store/sessionSlice';
 import { Navigation, useNavigationItems } from '@/shared/components/navigation';
 import { QuickSwitchDock } from './QuickSwitchDock';
 import { StuckAlertToastManager } from './StuckAlertToastManager';
@@ -42,8 +47,12 @@ export function AppLayout({
   className,
 }: AppLayoutProps) {
   const dispatch = useAppDispatch();
-  const isSidebarCollapsed = useAppSelector(state => state.session.isSidebarCollapsed);
-  const currentRepositoryId = useAppSelector(state => state.session.currentRepositoryId);
+  const isSidebarCollapsed = useAppSelector(
+    (state) => state.session.isSidebarCollapsed
+  );
+  const currentRepositoryId = useAppSelector(
+    (state) => state.session.currentRepositoryId
+  );
 
   // Hydrate state from localStorage on mount (client-side only)
   useEffect(() => {
@@ -51,20 +60,26 @@ export function AppLayout({
   }, [dispatch]);
 
   // Handle repo selection from QuickSwitchDock with zero page reload
-  const handleDockSelectRepo = useCallback((repositoryId: string, sessionId?: string | null) => {
-    dispatch(setCurrentRepository(repositoryId));
-    if (sessionId) {
-      dispatch(setCurrentSession(sessionId));
-    }
-  }, [dispatch]);
+  const handleDockSelectRepo = useCallback(
+    (repositoryId: string, sessionId?: string | null) => {
+      dispatch(setCurrentRepository(repositoryId));
+      if (sessionId) {
+        dispatch(setCurrentSession(sessionId));
+      }
+    },
+    [dispatch]
+  );
 
   // Handle stuck alert view action - navigates to the stuck repo
-  const handleViewStuckAlert = useCallback((repositoryId: string, sessionId: string | null) => {
-    dispatch(setCurrentRepository(repositoryId));
-    if (sessionId) {
-      dispatch(setCurrentSession(sessionId));
-    }
-  }, [dispatch]);
+  const handleViewStuckAlert = useCallback(
+    (repositoryId: string, sessionId: string | null) => {
+      dispatch(setCurrentRepository(repositoryId));
+      if (sessionId) {
+        dispatch(setCurrentSession(sessionId));
+      }
+    },
+    [dispatch]
+  );
 
   // Navigation is now handled by Next.js routing, no need for local state
 
@@ -90,13 +105,19 @@ export function AppLayout({
         statusIndicators={statusIndicators}
         shortcuts={shortcuts}
         collapsed={isSidebarCollapsed}
-        onCollapsedChange={(collapsed) => dispatch(setSidebarCollapsed(collapsed))}
+        onCollapsedChange={(collapsed) =>
+          dispatch(setSidebarCollapsed(collapsed))
+        }
         logo={
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-lg font-semibold text-text-primary truncate">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-lg font-semibold text-text-primary">
               Claude Code
             </span>
-            <ConnectionStatusIndicator compact showDetails={false} className="flex-shrink-0" />
+            <ConnectionStatusIndicator
+              compact
+              showDetails={false}
+              className="flex-shrink-0"
+            />
           </div>
         }
         mobileHeader={
@@ -112,7 +133,7 @@ export function AppLayout({
       {/* Main Content Area */}
       <main
         className={cn(
-          'flex-1 flex flex-col overflow-hidden',
+          'flex flex-1 flex-col overflow-hidden',
           'bg-surface-default',
           // Add padding top for mobile header
           'pt-14 md:pt-0',
@@ -131,9 +152,7 @@ export function AppLayout({
         />
 
         {/* Page Content */}
-        <div className="flex-1 overflow-hidden">
-          {children}
-        </div>
+        <div className="flex-1 overflow-hidden">{children}</div>
       </main>
     </div>
   );

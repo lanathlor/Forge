@@ -303,9 +303,7 @@ describe('Task Orchestrator', () => {
 
     it('should include error message in task output', async () => {
       const errorMessage = 'Claude process crashed';
-      mockClaudeWrapper.executeTask.mockRejectedValue(
-        new Error(errorMessage)
-      );
+      mockClaudeWrapper.executeTask.mockRejectedValue(new Error(errorMessage));
 
       await executeTask('test-task-123');
 
@@ -316,7 +314,9 @@ describe('Task Orchestrator', () => {
 
       const claudeOutput =
         failedUpdate?.value?.set?.mock?.calls?.[0]?.[0]?.claudeOutput;
-      expect(claudeOutput).toBe(`\n\n❌ Claude execution failed: ${errorMessage}`);
+      expect(claudeOutput).toBe(
+        `\n\n❌ Claude execution failed: ${errorMessage}`
+      );
     });
 
     it('should handle non-Error exceptions', async () => {
@@ -331,7 +331,9 @@ describe('Task Orchestrator', () => {
 
       const claudeOutput =
         failedUpdate?.value?.set?.mock?.calls?.[0]?.[0]?.claudeOutput;
-      expect(claudeOutput).toBe('\n\n❌ Claude execution failed: Unknown error');
+      expect(claudeOutput).toBe(
+        '\n\n❌ Claude execution failed: Unknown error'
+      );
     });
   });
 

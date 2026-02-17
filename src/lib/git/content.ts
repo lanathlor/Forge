@@ -9,10 +9,10 @@ export async function getFileContent(
     // Convert host path to container path
     const containerPath = getContainerPath(repoPath);
 
-    const { stdout } = await execAsync(
-      `git show ${commit}:${filePath}`,
-      { cwd: containerPath, timeout: 30000 }
-    );
+    const { stdout } = await execAsync(`git show ${commit}:${filePath}`, {
+      cwd: containerPath,
+      timeout: 30000,
+    });
     return stdout;
   } catch (_error) {
     // File might not exist at this commit (new file)

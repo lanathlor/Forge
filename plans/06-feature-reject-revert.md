@@ -7,6 +7,7 @@ A safe rollback mechanism that allows users to reject Claude's changes and surgi
 ## User Problem
 
 **Without this feature**:
+
 - Manually undo changes with git reset
 - Risk of losing other work
 - No record of what was rejected
@@ -14,6 +15,7 @@ A safe rollback mechanism that allows users to reject Claude's changes and surgi
 - Fear of breaking repository state
 
 **With this feature**:
+
 - One-click rejection
 - Surgical revert (only Claude's files)
 - Reason tracking for decisions
@@ -23,6 +25,7 @@ A safe rollback mechanism that allows users to reject Claude's changes and surgi
 ## User Stories
 
 ### Story 1: Easy Rejection
+
 ```
 AS A developer
 I WANT to reject Claude's changes with one click
@@ -30,6 +33,7 @@ SO THAT I can quickly undo work I don't want
 ```
 
 ### Story 2: Safe Rollback
+
 ```
 AS A developer
 I WANT only Claude's files to be reverted
@@ -37,6 +41,7 @@ SO THAT I don't lose any other work I might have done
 ```
 
 ### Story 3: Rejection Tracking
+
 ```
 AS A developer
 I WANT to record why I rejected changes
@@ -234,23 +239,21 @@ export async function revertChanges(
   try {
     // Separate files by status
     const modifiedOrDeleted = changedFiles.filter(
-      f => f.status === 'modified' || f.status === 'deleted'
+      (f) => f.status === 'modified' || f.status === 'deleted'
     );
 
-    const newFiles = changedFiles.filter(f => f.status === 'added');
+    const newFiles = changedFiles.filter((f) => f.status === 'added');
 
     // 1. Revert modified/deleted files using git checkout
     if (modifiedOrDeleted.length > 0) {
-      const filePaths = modifiedOrDeleted.map(f => f.path).join(' ');
+      const filePaths = modifiedOrDeleted.map((f) => f.path).join(' ');
 
       try {
-        await execAsync(
-          `git checkout ${startingCommit} -- ${filePaths}`,
-          { cwd: repoPath }
-        );
+        await execAsync(`git checkout ${startingCommit} -- ${filePaths}`, {
+          cwd: repoPath,
+        });
 
-        filesReverted.push(...modifiedOrDeleted.map(f => f.path));
-
+        filesReverted.push(...modifiedOrDeleted.map((f) => f.path));
       } catch (error) {
         errors.push(
           `Failed to revert modified files: ${
@@ -266,7 +269,6 @@ export async function revertChanges(
         const fullPath = path.join(repoPath, file.path);
         await fs.unlink(fullPath);
         filesDeleted.push(file.path);
-
       } catch (error) {
         errors.push(
           `Failed to delete ${file.path}: ${
@@ -285,7 +287,6 @@ export async function revertChanges(
       success: errors.length === 0,
       errors: errors.length > 0 ? errors : undefined,
     };
-
   } catch (error) {
     return {
       filesReverted,
@@ -360,7 +361,8 @@ export async function rejectTask(
   });
 
   // 3. Update task
-  await db.update(tasks)
+  await db
+    .update(tasks)
     .set({
       status: 'rejected',
       rejectedAt: new Date(),
@@ -392,15 +394,12 @@ export async function validateRevertSafety(
   }
 
   // 2. Check for uncommitted changes outside of task files
-  const { stdout: statusOutput } = await execAsync(
-    'git status --porcelain',
-    { cwd: repoPath }
-  );
+  const { stdout: statusOutput } = await execAsync('git status --porcelain', {
+    cwd: repoPath,
+  });
 
   if (statusOutput.trim()) {
-    warnings.push(
-      'Repository has uncommitted changes outside of this task'
-    );
+    warnings.push('Repository has uncommitted changes outside of this task');
   }
 
   // 3. Check if branch has changed
@@ -429,6 +428,7 @@ export async function validateRevertSafety(
 ### API Endpoints
 
 **POST /api/tasks/:id/reject**
+
 ```typescript
 import { db } from '@/lib/db';
 import { tasks } from '@/db/schema';
@@ -490,7 +490,6 @@ export async function POST(
       filesReverted: result.filesReverted,
       filesDeleted: result.filesDeleted,
     });
-
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
@@ -501,6 +500,7 @@ export async function POST(
 ```
 
 **GET /api/tasks/:id/revert-preview**
+
 ```typescript
 // Show what will happen before confirming
 
@@ -531,9 +531,9 @@ export async function GET(
 
   const preview = {
     filesToRevert: changedFiles.filter(
-      f => f.status === 'modified' || f.status === 'deleted'
+      (f) => f.status === 'modified' || f.status === 'deleted'
     ),
-    filesToDelete: changedFiles.filter(f => f.status === 'added'),
+    filesToDelete: changedFiles.filter((f) => f.status === 'added'),
     warnings: [] as string[],
   };
 
@@ -693,21 +693,27 @@ export function RejectButton({ taskId, onSuccess }: RejectButtonProps) {
 ## Edge Cases
 
 ### Scenario: Starting Commit No Longer Exists
+
 **Handling**: Show error, prevent rejection, suggest manual cleanup
 
 ### Scenario: Files Modified Outside of Task
+
 **Handling**: Warn user, proceed only if they confirm
 
 ### Scenario: New File Already Deleted
+
 **Handling**: Skip deletion, log warning, continue with other files
 
 ### Scenario: Permission Denied on File Deletion
+
 **Handling**: Collect errors, show to user, mark revert as partial success
 
 ### Scenario: Branch Changed After Task
+
 **Handling**: Warn user, allow override with confirmation
 
 ### Scenario: Uncommitted Changes Elsewhere
+
 **Handling**: Warn that they might be affected, require explicit confirmation
 
 ## Acceptance Criteria
@@ -728,11 +734,13 @@ export function RejectButton({ taskId, onSuccess }: RejectButtonProps) {
 ## Dependencies
 
 **Required for**:
+
 - User control over AI changes
 - Safe experimentation
 - Quality control
 
 **Depends on**:
+
 - Task execution completed
 - Starting commit recorded
 - File changes tracked

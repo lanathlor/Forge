@@ -26,7 +26,9 @@ describe('sessions/cleanup', () => {
       const result = await runSessionCleanup();
 
       expect(result).toBe(3);
-      expect(mockAbandonInactiveSessions).toHaveBeenCalledWith(24 * 60 * 60 * 1000);
+      expect(mockAbandonInactiveSessions).toHaveBeenCalledWith(
+        24 * 60 * 60 * 1000
+      );
       expect(consoleSpy).toHaveBeenCalledWith(
         '[SessionCleanup] Abandoned 3 inactive session(s)'
       );
@@ -49,7 +51,9 @@ describe('sessions/cleanup', () => {
 
     it('should handle errors gracefully and return 0', async () => {
       mockAbandonInactiveSessions.mockRejectedValueOnce(new Error('DB error'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const { runSessionCleanup } = await import('../cleanup');
       const result = await runSessionCleanup();
@@ -68,7 +72,8 @@ describe('sessions/cleanup', () => {
       mockAbandonInactiveSessions.mockResolvedValue(0);
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      const { startSessionCleanupJob, stopSessionCleanupJob } = await import('../cleanup');
+      const { startSessionCleanupJob, stopSessionCleanupJob } =
+        await import('../cleanup');
       startSessionCleanupJob();
 
       // Should have run immediately
@@ -86,7 +91,8 @@ describe('sessions/cleanup', () => {
       mockAbandonInactiveSessions.mockResolvedValue(0);
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      const { startSessionCleanupJob, stopSessionCleanupJob } = await import('../cleanup');
+      const { startSessionCleanupJob, stopSessionCleanupJob } =
+        await import('../cleanup');
       startSessionCleanupJob();
       startSessionCleanupJob(); // Try to start again
 
@@ -102,7 +108,8 @@ describe('sessions/cleanup', () => {
       mockAbandonInactiveSessions.mockResolvedValue(0);
       vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      const { startSessionCleanupJob, stopSessionCleanupJob } = await import('../cleanup');
+      const { startSessionCleanupJob, stopSessionCleanupJob } =
+        await import('../cleanup');
       startSessionCleanupJob();
 
       // Initial call
@@ -123,11 +130,14 @@ describe('sessions/cleanup', () => {
       mockAbandonInactiveSessions.mockResolvedValue(0);
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      const { startSessionCleanupJob, stopSessionCleanupJob } = await import('../cleanup');
+      const { startSessionCleanupJob, stopSessionCleanupJob } =
+        await import('../cleanup');
       startSessionCleanupJob();
       stopSessionCleanupJob();
 
-      expect(consoleSpy).toHaveBeenCalledWith('[SessionCleanup] Cleanup job stopped');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[SessionCleanup] Cleanup job stopped'
+      );
       consoleSpy.mockRestore();
     });
 
@@ -138,7 +148,9 @@ describe('sessions/cleanup', () => {
       stopSessionCleanupJob();
 
       // Should not log anything about stopping
-      expect(consoleSpy).not.toHaveBeenCalledWith('[SessionCleanup] Cleanup job stopped');
+      expect(consoleSpy).not.toHaveBeenCalledWith(
+        '[SessionCleanup] Cleanup job stopped'
+      );
       consoleSpy.mockRestore();
     });
   });
@@ -153,8 +165,11 @@ describe('sessions/cleanup', () => {
       mockAbandonInactiveSessions.mockResolvedValue(0);
       vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      const { startSessionCleanupJob, stopSessionCleanupJob, isCleanupJobRunning } =
-        await import('../cleanup');
+      const {
+        startSessionCleanupJob,
+        stopSessionCleanupJob,
+        isCleanupJobRunning,
+      } = await import('../cleanup');
       startSessionCleanupJob();
 
       expect(isCleanupJobRunning()).toBe(true);

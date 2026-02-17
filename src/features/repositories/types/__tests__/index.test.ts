@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type {
-  DiscoveredRepository,
-  RepositoryFilters,
-} from '../index';
+import type { DiscoveredRepository, RepositoryFilters } from '../index';
 
 describe('Repository Types', () => {
   describe('DiscoveredRepository', () => {

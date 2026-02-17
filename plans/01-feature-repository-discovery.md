@@ -7,12 +7,14 @@ A system that automatically discovers all git repositories within a workspace ro
 ## User Problem
 
 **Without this feature**:
+
 - Users manually navigate to each repository
 - Hard to remember paths to all projects
 - Can't see repository status at a glance
 - Risk of working in wrong directory
 
 **With this feature**:
+
 - All repositories discovered automatically
 - Visual list with status indicators
 - One-click repository selection
@@ -21,6 +23,7 @@ A system that automatically discovers all git repositories within a workspace ro
 ## User Stories
 
 ### Story 1: First-time User
+
 ```
 AS A developer with multiple projects
 I WANT to see all my git repositories in one place
@@ -28,6 +31,7 @@ SO THAT I can quickly select which project needs work
 ```
 
 ### Story 2: Checking Repository Status
+
 ```
 AS A developer
 I WANT to see if a repository has uncommitted changes
@@ -35,6 +39,7 @@ SO THAT I know if it's safe to start a Claude task
 ```
 
 ### Story 3: Switching Projects
+
 ```
 AS A developer working on multiple projects
 I WANT to easily switch between repositories
@@ -68,6 +73,7 @@ SO THAT I can manage different codebases from one dashboard
 ## UI Components
 
 ### Repository List (Sidebar or Dropdown)
+
 ```
 ┌─────────────────────────────────────┐
 │  📍 Selected Repository             │
@@ -94,6 +100,7 @@ Legend:
 ```
 
 ### Repository Details (when selected)
+
 ```
 ┌─────────────────────────────────────────┐
 │  Repository: my-app                     │
@@ -111,13 +118,14 @@ Legend:
 ### Discovery Logic
 
 **Scan Algorithm**:
+
 ```typescript
 // src/lib/workspace/scanner.ts
 
 interface Repository {
-  id: string;           // Generated unique ID
-  name: string;         // Directory name (e.g., "my-app")
-  path: string;         // Absolute path
+  id: string; // Generated unique ID
+  name: string; // Directory name (e.g., "my-app")
+  path: string; // Absolute path
   currentBranch: string;
   lastCommit: {
     sha: string;
@@ -125,7 +133,7 @@ interface Repository {
     author: string;
     timestamp: Date;
   };
-  isClean: boolean;     // No uncommitted changes
+  isClean: boolean; // No uncommitted changes
   uncommittedFiles: string[];
 }
 
@@ -150,8 +158,9 @@ async function discoverRepositories(rootDir: string): Promise<Repository[]> {
   );
 
   // 3. Sort by last modified
-  return repos.sort((a, b) =>
-    b.lastCommit.timestamp.getTime() - a.lastCommit.timestamp.getTime()
+  return repos.sort(
+    (a, b) =>
+      b.lastCommit.timestamp.getTime() - a.lastCommit.timestamp.getTime()
   );
 }
 
@@ -196,7 +205,9 @@ async function getCurrentBranch(repoPath: string): Promise<string> {
   return result.trim();
 }
 
-async function getLastCommit(repoPath: string): Promise<Repository['lastCommit']> {
+async function getLastCommit(
+  repoPath: string
+): Promise<Repository['lastCommit']> {
   const sha = await execCommand('git rev-parse HEAD', repoPath);
   const message = await execCommand('git log -1 --pretty=%B', repoPath);
   const author = await execCommand('git log -1 --pretty=%an', repoPath);
@@ -221,8 +232,8 @@ async function getUncommittedFiles(repoPath: string): Promise<string[]> {
 
   return result
     .split('\n')
-    .filter(line => line.trim())
-    .map(line => line.substring(3)); // Remove status prefix
+    .filter((line) => line.trim())
+    .map((line) => line.substring(3)); // Remove status prefix
 }
 ```
 
@@ -234,25 +245,38 @@ async function getUncommittedFiles(repoPath: string): Promise<string[]> {
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { createId } from '@paralleldrive/cuid2';
 
-export const repositories = sqliteTable('repositories', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  name: text('name').notNull(),
-  path: text('path').notNull().unique(),
-  lastScanned: integer('last_scanned', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  lastCommitSha: text('last_commit_sha'),
-  lastCommitMsg: text('last_commit_msg'),
-  currentBranch: text('current_branch'),
-  isClean: integer('is_clean', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-}, (table) => ({
-  pathIdx: index('path_idx').on(table.path),
-}));
+export const repositories = sqliteTable(
+  'repositories',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    name: text('name').notNull(),
+    path: text('path').notNull().unique(),
+    lastScanned: integer('last_scanned', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    lastCommitSha: text('last_commit_sha'),
+    lastCommitMsg: text('last_commit_msg'),
+    currentBranch: text('current_branch'),
+    isClean: integer('is_clean', { mode: 'boolean' }).notNull().default(true),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+  },
+  (table) => ({
+    pathIdx: index('path_idx').on(table.path),
+  })
+);
 ```
 
 ### API Endpoints
 
 **GET /api/repositories**
+
 - Scans workspace and returns all repositories
 - Caches results for 5 minutes
 - Returns fresh git status for each repo
@@ -271,8 +295,9 @@ export async function GET() {
 
   // Update database
   await Promise.all(
-    repos.map(repo =>
-      db.insert(repositories)
+    repos.map((repo) =>
+      db
+        .insert(repositories)
         .values({
           name: repo.name,
           path: repo.path,
@@ -302,10 +327,12 @@ export async function GET() {
 ```
 
 **GET /api/repositories/:id**
+
 - Returns detailed info about specific repository
 - Fresh git status (no cache)
 
 **POST /api/repositories/rescan**
+
 - Forces immediate workspace rescan
 - Returns updated repository list
 
@@ -394,22 +421,27 @@ export function RepositorySelector() {
 ## Edge Cases
 
 ### Scenario: Nested Repositories
+
 **Situation**: Git repo inside another git repo (submodules)
 **Handling**: Only detect top-level .git directories, ignore nested .git
 
 ### Scenario: Non-git Directories
+
 **Situation**: Directory exists but isn't a git repository
 **Handling**: Ignore during scan, only show git repos
 
 ### Scenario: Permission Denied
+
 **Situation**: Can't read certain directories
 **Handling**: Log warning, skip directory, continue scan
 
 ### Scenario: Workspace Root Doesn't Exist
+
 **Situation**: WORKSPACE_ROOT points to non-existent path
 **Handling**: Show error, prompt user to configure
 
 ### Scenario: Empty Workspace
+
 **Situation**: No git repositories found
 **Handling**: Show empty state with instructions
 
@@ -428,11 +460,13 @@ export function RepositorySelector() {
 ## Dependencies
 
 **Required for**:
+
 - Task execution (need to know where to run Claude)
 - Pre-flight checks (need to validate repo state)
 - Session management (associate session with repo)
 
 **Depends on**:
+
 - Git installed on system
 - Read access to workspace directory
 - Environment variable WORKSPACE_ROOT configured

@@ -1,7 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 import {
   GlobalSSEManager,
   type ConnectionStatus,
@@ -12,7 +19,13 @@ import {
 } from '../services/GlobalSSEManager';
 
 // Re-export types that components need
-export type { ConnectionStatus, SSEConnectionHealth, SSEEvent, SSEEventCallback, ConnectionQualityMetrics };
+export type {
+  ConnectionStatus,
+  SSEConnectionHealth,
+  SSEEvent,
+  SSEEventCallback,
+  ConnectionQualityMetrics,
+};
 
 /* ============================================
    TYPES
@@ -34,7 +47,10 @@ export interface SSEContextValue {
     callback: SSEEventCallback<T>
   ) => () => void;
   /** Subscribe to all events from a connection */
-  subscribeAll: (connectionId: string, callback: SSEEventCallback) => () => void;
+  subscribeAll: (
+    connectionId: string,
+    callback: SSEEventCallback
+  ) => () => void;
   /** Manually reconnect a specific connection */
   reconnect: (id: string) => void;
   /** Reconnect all connections */
@@ -133,12 +149,16 @@ interface SSEProviderProps {
 
 function useSSEInit(autoConnect?: Array<{ id: string; url: string }>) {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
-  const [health, setHealth] = useState<Map<string, SSEConnectionHealth>>(new Map());
+  const [health, setHealth] = useState<Map<string, SSEConnectionHealth>>(
+    new Map()
+  );
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [isVisible, setIsVisible] = useState(() =>
-    typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
+    typeof document !== 'undefined'
+      ? document.visibilityState === 'visible'
+      : true
   );
   const initializedRef = useRef(false);
 
@@ -173,34 +193,51 @@ function useSSEInit(autoConnect?: Array<{ id: string; url: string }>) {
   return { status, health, setStatus, setHealth, isOnline, isVisible };
 }
 
-function useSSEActions(setStatus: React.Dispatch<React.SetStateAction<ConnectionStatus>>, setHealth: React.Dispatch<React.SetStateAction<Map<string, SSEConnectionHealth>>>) {
-  const connect = useCallback((id: string, url: string) => {
-    GlobalSSEManager.connect(id, url);
-    setStatus(GlobalSSEManager.getOverallStatus());
-    setHealth(GlobalSSEManager.getHealth());
-  }, [setStatus, setHealth]);
+type SetStatus = React.Dispatch<React.SetStateAction<ConnectionStatus>>;
+type SetHealth = React.Dispatch<React.SetStateAction<Map<string, SSEConnectionHealth>>>;
 
-  const subscribe = useCallback(<T = unknown>(connectionId: string, eventType: string, callback: SSEEventCallback<T>) => {
-    return GlobalSSEManager.subscribe(connectionId, eventType, callback);
-  }, []);
+function refreshConnectionState(setStatus: SetStatus, setHealth: SetHealth) {
+  setStatus(GlobalSSEManager.getOverallStatus());
+  setHealth(GlobalSSEManager.getHealth());
+}
 
-  const subscribeAll = useCallback((connectionId: string, callback: SSEEventCallback) => GlobalSSEManager.subscribeAll(connectionId, callback), []);
+function useSSEActions(setStatus: SetStatus, setHealth: SetHealth) {
+  const connect = useCallback(
+    (id: string, url: string) => {
+      GlobalSSEManager.connect(id, url);
+      refreshConnectionState(setStatus, setHealth);
+    },
+    [setStatus, setHealth]
+  );
+
+  const subscribe = useCallback(
+    <T = unknown,>(connectionId: string, eventType: string, callback: SSEEventCallback<T>) =>
+      GlobalSSEManager.subscribe(connectionId, eventType, callback),
+    []
+  );
+
+  const subscribeAll = useCallback(
+    (connectionId: string, callback: SSEEventCallback) => GlobalSSEManager.subscribeAll(connectionId, callback),
+    []
+  );
   const reconnect = useCallback((id: string) => GlobalSSEManager.reconnect(id), []);
   const reconnectAll = useCallback(() => GlobalSSEManager.reconnectAll(), []);
-
-  const disconnect = useCallback((id: string) => {
-    GlobalSSEManager.disconnect(id);
-    setStatus(GlobalSSEManager.getOverallStatus());
-    setHealth(GlobalSSEManager.getHealth());
-  }, [setStatus, setHealth]);
-
   const hasConnection = useCallback((id: string) => GlobalSSEManager.hasConnection(id), []);
+
+  const disconnect = useCallback(
+    (id: string) => {
+      GlobalSSEManager.disconnect(id);
+      refreshConnectionState(setStatus, setHealth);
+    },
+    [setStatus, setHealth]
+  );
 
   return { connect, subscribe, subscribeAll, reconnect, reconnectAll, disconnect, hasConnection };
 }
 
 export function SSEProvider({ children, autoConnect }: SSEProviderProps) {
-  const { status, health, setStatus, setHealth, isOnline, isVisible } = useSSEInit(autoConnect);
+  const { status, health, setStatus, setHealth, isOnline, isVisible } =
+    useSSEInit(autoConnect);
   const actions = useSSEActions(setStatus, setHealth);
 
   const value: SSEContextValue = {
@@ -295,7 +332,12 @@ export function useSSEData<T>(
   eventType: string,
   transform: (event: SSEEvent) => T,
   initialValue: T
-): { data: T; isLoading: boolean; error: string | null; lastUpdated: Date | null } {
+): {
+  data: T;
+  isLoading: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
+} {
   const { status, health, subscribe } = useSSE();
   const [data, setData] = useState<T>(initialValue);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -315,7 +357,8 @@ export function useSSEData<T>(
   }, [connectionId, eventType, transform, subscribe]);
 
   const connectionHealth = health.get(connectionId);
-  const isLoading = status === 'connecting' || (connectionHealth?.status === 'connecting');
+  const isLoading =
+    status === 'connecting' || connectionHealth?.status === 'connecting';
   const error = status === 'disconnected' ? 'Connection lost' : null;
 
   return { data, isLoading, error, lastUpdated };
@@ -342,7 +385,16 @@ export function useConnectionStatus(): {
   averageLatency: number | null;
   reconnect: () => void;
 } {
-  const { status, health, reconnectAll, connectionCount, isOnline, isVisible, queuedEventCount, quality } = useSSE();
+  const {
+    status,
+    health,
+    reconnectAll,
+    connectionCount,
+    isOnline,
+    isVisible,
+    queuedEventCount,
+    quality,
+  } = useSSE();
 
   let totalReconnectAttempts = 0;
   let connectedCount = 0;

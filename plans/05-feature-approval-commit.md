@@ -7,6 +7,7 @@ An intelligent commit workflow where users approve Claude's changes, Claude gene
 ## User Problem
 
 **Without this feature**:
+
 - Manually stage files after Claude finishes
 - Write commit messages from scratch
 - Remember what changed and why
@@ -14,6 +15,7 @@ An intelligent commit workflow where users approve Claude's changes, Claude gene
 - Time spent on commit housekeeping
 
 **With this feature**:
+
 - One-click approval
 - AI-generated commit messages
 - Consistent message format
@@ -23,6 +25,7 @@ An intelligent commit workflow where users approve Claude's changes, Claude gene
 ## User Stories
 
 ### Story 1: Easy Approval
+
 ```
 AS A developer
 I WANT to approve Claude's changes with one click
@@ -30,6 +33,7 @@ SO THAT I don't waste time on manual git commands
 ```
 
 ### Story 2: AI Commit Messages
+
 ```
 AS A developer
 I WANT Claude to write commit messages for me
@@ -37,6 +41,7 @@ SO THAT I get consistent, descriptive messages
 ```
 
 ### Story 3: Message Editing
+
 ```
 AS A developer
 I WANT to review and edit commit messages before committing
@@ -264,22 +269,19 @@ export async function commitChanges(
 ): Promise<CommitResult> {
   try {
     // 1. Stage files
-    await execAsync(
-      `git add ${files.map(f => `"${f}"`).join(' ')}`,
-      { cwd: repoPath }
-    );
+    await execAsync(`git add ${files.map((f) => `"${f}"`).join(' ')}`, {
+      cwd: repoPath,
+    });
 
     // 2. Commit
-    await execAsync(
-      `git commit -m ${JSON.stringify(message)}`,
-      { cwd: repoPath }
-    );
+    await execAsync(`git commit -m ${JSON.stringify(message)}`, {
+      cwd: repoPath,
+    });
 
     // 3. Get commit SHA
-    const { stdout: sha } = await execAsync(
-      'git rev-parse HEAD',
-      { cwd: repoPath }
-    );
+    const { stdout: sha } = await execAsync('git rev-parse HEAD', {
+      cwd: repoPath,
+    });
 
     return {
       sha: sha.trim(),
@@ -287,7 +289,6 @@ export async function commitChanges(
       filesCommitted: files,
       timestamp: new Date(),
     };
-
   } catch (error) {
     throw new Error(
       `Failed to commit: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -322,9 +323,7 @@ export async function approveTask(taskId: string): Promise<CommitResult> {
   );
 
   // Store generated message
-  await db.update(tasks)
-    .set({ commitMessage })
-    .where(eq(tasks.id, taskId));
+  await db.update(tasks).set({ commitMessage }).where(eq(tasks.id, taskId));
 
   return { message: commitMessage } as any; // Return for user review
 }
@@ -354,7 +353,8 @@ export async function finalizeCommit(
   const result = await commitChanges(repoPath, files, message);
 
   // Update task
-  await db.update(tasks)
+  await db
+    .update(tasks)
     .set({
       status: 'completed',
       committedSha: result.sha,
@@ -370,6 +370,7 @@ export async function finalizeCommit(
 ### API Endpoints
 
 **POST /api/tasks/:id/approve**
+
 ```typescript
 // Step 1: Generate commit message
 
@@ -384,7 +385,6 @@ export async function POST(
       message: result.message,
       status: 'awaiting_commit_confirmation',
     });
-
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
@@ -395,6 +395,7 @@ export async function POST(
 ```
 
 **POST /api/tasks/:id/commit**
+
 ```typescript
 // Step 2: Finalize commit with optional edited message
 
@@ -412,7 +413,6 @@ export async function POST(
       commitSha: result.sha,
       message: result.message,
     });
-
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
@@ -423,6 +423,7 @@ export async function POST(
 ```
 
 **POST /api/tasks/:id/regenerate-message**
+
 ```typescript
 // Regenerate commit message if user doesn't like first attempt
 
@@ -447,7 +448,8 @@ export async function POST(
     task.prompt
   );
 
-  await db.update(tasks)
+  await db
+    .update(tasks)
     .set({ commitMessage: newMessage })
     .where(eq(tasks.id, params.id));
 
@@ -634,21 +636,27 @@ export const tasks = sqliteTable('tasks', {
 ## Edge Cases
 
 ### Scenario: Commit Message Generation Fails
+
 **Handling**: Show error, allow manual message input
 
 ### Scenario: Git Commit Fails (e.g., hooks reject)
+
 **Handling**: Show git error, keep task in waiting_approval state, user can retry
 
 ### Scenario: User Edits to Empty Message
+
 **Handling**: Disable "Commit" button if message is empty
 
 ### Scenario: Files Changed After Approval
+
 **Handling**: Pre-commit check detects, abort with warning, ask user to review again
 
 ### Scenario: Branch Changed After Task Started
+
 **Handling**: Warning shown, ask user to confirm commit to current branch
 
 ### Scenario: Commit Message Too Long (> 5000 chars)
+
 **Handling**: Warn user, truncate or ask Claude to shorten
 
 ## Acceptance Criteria
@@ -668,11 +676,13 @@ export const tasks = sqliteTable('tasks', {
 ## Dependencies
 
 **Required for**:
+
 - Clean git history
 - Task completion
 - Audit trail
 
 **Depends on**:
+
 - Task execution completed
 - QA gates passed
 - Diff captured

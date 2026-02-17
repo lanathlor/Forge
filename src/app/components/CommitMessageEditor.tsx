@@ -2,10 +2,23 @@
 
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/shared/components/ui/card';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Badge } from '@/shared/components/ui/badge';
-import { Loader2, CheckCircle2, RotateCcw, GitCommit, Eye, Pencil } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle2,
+  RotateCcw,
+  GitCommit,
+  Eye,
+  Pencil,
+} from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -24,7 +37,9 @@ interface CommitMessageEditorProps {
 // ---------------------------------------------------------------------------
 
 async function regenerateMessage(taskId: string) {
-  const res = await fetch(`/api/tasks/${taskId}/regenerate-message`, { method: 'POST' });
+  const res = await fetch(`/api/tasks/${taskId}/regenerate-message`, {
+    method: 'POST',
+  });
   if (!res.ok) {
     const data = await res.json();
     throw new Error(data.error || 'Failed to regenerate commit message');
@@ -58,12 +73,22 @@ function CommitPreview({ message }: { message: string }) {
   const conventionalMatch = subject.match(/^(\w+)(?:\(([^)]+)\))?:\s*(.+)$/);
 
   return (
-    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+    <div className="space-y-2 rounded-md border bg-muted/30 p-3">
       {conventionalMatch ? (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">{conventionalMatch[1]}</Badge>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge
+            variant="outline"
+            className="px-1.5 py-0 font-mono text-[10px]"
+          >
+            {conventionalMatch[1]}
+          </Badge>
           {conventionalMatch[2] && (
-            <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">{conventionalMatch[2]}</Badge>
+            <Badge
+              variant="secondary"
+              className="px-1.5 py-0 font-mono text-[10px]"
+            >
+              {conventionalMatch[2]}
+            </Badge>
           )}
           <span className="text-sm font-medium">{conventionalMatch[3]}</span>
         </div>
@@ -71,7 +96,9 @@ function CommitPreview({ message }: { message: string }) {
         <p className="text-sm font-medium">{subject}</p>
       )}
       {body && (
-        <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words pt-1 border-t border-border/50">{body}</pre>
+        <pre className="whitespace-pre-wrap break-words border-t border-border/50 pt-1 text-xs text-muted-foreground">
+          {body}
+        </pre>
       )}
     </div>
   );
@@ -81,22 +108,38 @@ function CommitPreview({ message }: { message: string }) {
 // Success View
 // ---------------------------------------------------------------------------
 
-function SuccessView({ commitSha, commitMessage, onDone }: { commitSha: string; commitMessage: string; onDone: () => void }) {
+function SuccessView({
+  commitSha,
+  commitMessage,
+  onDone,
+}: {
+  commitSha: string;
+  commitMessage: string;
+  onDone: () => void;
+}) {
   return (
-    <Card className="w-full border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10">
+    <Card className="w-full border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/40 dark:bg-emerald-900/10">
       <CardHeader>
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-          <CardTitle className="text-lg text-emerald-900 dark:text-emerald-300">Changes Committed</CardTitle>
+          <CardTitle className="text-lg text-emerald-900 dark:text-emerald-300">
+            Changes Committed
+          </CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-emerald-900 dark:text-emerald-300">Commit:</span>
-          <Badge variant="secondary" className="font-mono text-xs">{commitSha.substring(0, 8)}</Badge>
+          <span className="text-sm font-medium text-emerald-900 dark:text-emerald-300">
+            Commit:
+          </span>
+          <Badge variant="secondary" className="font-mono text-xs">
+            {commitSha.substring(0, 8)}
+          </Badge>
         </div>
         <CommitPreview message={commitMessage} />
-        <Button onClick={onDone} className="w-full">Done</Button>
+        <Button onClick={onDone} className="w-full">
+          Done
+        </Button>
       </CardContent>
     </Card>
   );
@@ -124,19 +167,42 @@ function EditorActions({
   const disabled = isRegenerating || isCommitting;
   return (
     <div className="flex gap-2">
-      <Button variant="outline" onClick={onRegenerate} disabled={disabled} className="flex-1">
+      <Button
+        variant="outline"
+        onClick={onRegenerate}
+        disabled={disabled}
+        className="flex-1"
+      >
         {isRegenerating ? (
-          <><Loader2 className="h-4 w-4 animate-spin mr-2" />Regenerating...</>
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Regenerating...
+          </>
         ) : (
-          <><RotateCcw className="h-4 w-4 mr-2" />Regenerate</>
+          <>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Regenerate
+          </>
         )}
       </Button>
-      <Button variant="outline" onClick={onCancel} disabled={disabled}>Cancel</Button>
-      <Button onClick={onCommit} disabled={disabled || !canCommit} className="flex-1">
+      <Button variant="outline" onClick={onCancel} disabled={disabled}>
+        Cancel
+      </Button>
+      <Button
+        onClick={onCommit}
+        disabled={disabled || !canCommit}
+        className="flex-1"
+      >
         {isCommitting ? (
-          <><Loader2 className="h-4 w-4 animate-spin mr-2" />Committing...</>
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Committing...
+          </>
         ) : (
-          <><GitCommit className="h-4 w-4 mr-2" />Commit Changes</>
+          <>
+            <GitCommit className="mr-2 h-4 w-4" />
+            Commit Changes
+          </>
         )}
       </Button>
     </div>
@@ -147,7 +213,12 @@ function EditorActions({
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCancel }: CommitMessageEditorProps) {
+export function CommitMessageEditor({
+  taskId,
+  initialMessage,
+  onCommitted,
+  onCancel,
+}: CommitMessageEditorProps) {
   const [commitMessage, setCommitMessage] = useState(initialMessage);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
@@ -162,7 +233,9 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
       const data = await regenerateMessage(taskId);
       setCommitMessage(data.commitMessage);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to regenerate message');
+      setError(
+        err instanceof Error ? err.message : 'Failed to regenerate message'
+      );
     } finally {
       setIsRegenerating(false);
     }
@@ -183,7 +256,13 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
   };
 
   if (commitSha) {
-    return <SuccessView commitSha={commitSha} commitMessage={commitMessage} onDone={() => onCommitted?.()} />;
+    return (
+      <SuccessView
+        commitSha={commitSha}
+        commitMessage={commitMessage}
+        onDone={() => onCommitted?.()}
+      />
+    );
   }
 
   const isDisabled = isRegenerating || isCommitting;
@@ -197,12 +276,14 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
             <CardTitle className="text-lg">Commit Message</CardTitle>
           </div>
           {/* Edit/Preview toggle */}
-          <div className="flex rounded-md border overflow-hidden">
+          <div className="flex overflow-hidden rounded-md border">
             <button
               onClick={() => setMode('edit')}
               className={cn(
                 'flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors',
-                mode === 'edit' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+                mode === 'edit'
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Pencil className="h-3 w-3" />
@@ -211,8 +292,10 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
             <button
               onClick={() => setMode('preview')}
               className={cn(
-                'flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors border-l',
-                mode === 'preview' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+                'flex items-center gap-1 border-l px-2.5 py-1 text-xs font-medium transition-colors',
+                mode === 'preview'
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Eye className="h-3 w-3" />
@@ -220,7 +303,9 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
             </button>
           </div>
         </div>
-        <CardDescription>Review and edit the AI-generated commit message.</CardDescription>
+        <CardDescription>
+          Review and edit the AI-generated commit message.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {mode === 'edit' ? (
@@ -230,11 +315,14 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
               value={commitMessage}
               onChange={(e) => setCommitMessage(e.target.value)}
               disabled={isDisabled}
-              className="font-mono text-sm min-h-[200px]"
+              className="min-h-[200px] font-mono text-sm"
               placeholder="Enter commit message..."
             />
             <p className="text-xs text-muted-foreground">
-              Format: <code className="text-xs bg-muted px-1 py-0.5 rounded">type(scope): subject</code>
+              Format:{' '}
+              <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                type(scope): subject
+              </code>
             </p>
           </div>
         ) : (
@@ -242,7 +330,9 @@ export function CommitMessageEditor({ taskId, initialMessage, onCommitted, onCan
         )}
 
         {error && (
-          <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">{error}</div>
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
         )}
 
         <EditorActions

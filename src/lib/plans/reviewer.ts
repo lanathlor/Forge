@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
 import { eq } from 'drizzle-orm';
-import { claudeWrapper } from '@/lib/claude/wrapper';
+import { createAIProvider } from '@/lib/ai';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 export type ReviewType =
@@ -98,7 +98,8 @@ export async function reviewPlan(
 
   // Call Claude to review
   const workingDir = getContainerPath(repository.path);
-  const response = await claudeWrapper.executeOneShot(
+  const aiProvider = createAIProvider();
+  const response = await aiProvider.executeOneShot(
     prompt,
     workingDir,
     60000 // 60 second timeout
@@ -298,10 +299,7 @@ export async function applySuggestions(
     try {
       await applySingleSuggestion(planId, suggestion);
     } catch (error) {
-      console.error(
-        `Failed to apply suggestion ${idx}:`,
-        error
-      );
+      console.error(`Failed to apply suggestion ${idx}:`, error);
       throw error;
     }
   }
@@ -365,8 +363,15 @@ async function applySingleSuggestion(
 
     case 'reorder':
       // Apply reordering updates
-      if (suggestion.after?.updates && Array.isArray(suggestion.after.updates)) {
-        for (const update of suggestion.after.updates as { taskId?: string; phaseId?: string; newOrder: number }[]) {
+      if (
+        suggestion.after?.updates &&
+        Array.isArray(suggestion.after.updates)
+      ) {
+        for (const update of suggestion.after.updates as {
+          taskId?: string;
+          phaseId?: string;
+          newOrder: number;
+        }[]) {
           if (update.taskId) {
             await db
               .update(planTasks)
@@ -389,7 +394,9 @@ async function applySingleSuggestion(
         order: (phaseData.order as number) ?? 1,
         title: phaseData.title as string,
         description: phaseData.description as string | undefined,
-        executionMode: (phaseData.executionMode as 'sequential' | 'parallel' | 'manual') ?? 'sequential',
+        executionMode:
+          (phaseData.executionMode as 'sequential' | 'parallel' | 'manual') ??
+          'sequential',
         pauseAfter: (phaseData.pauseAfter as boolean) ?? false,
         status: 'pending',
       });
@@ -404,9 +411,12 @@ async function applySingleSuggestion(
       }
 
       // Add new broken-down tasks
-      const tasksData = suggestion.after?.tasks as Record<string, unknown>[] | undefined;
+      const tasksData = suggestion.after?.tasks as
+        | Record<string, unknown>[]
+        | undefined;
       if (tasksData && Array.isArray(tasksData)) {
-        const phaseId = (suggestion.before?.phaseId as string | undefined) || '';
+        const phaseId =
+          (suggestion.before?.phaseId as string | undefined) || '';
         for (const newTask of tasksData) {
           await db.insert(planTasks).values({
             phaseId: (newTask.phaseId as string) || phaseId,
@@ -425,6 +435,8 @@ async function applySingleSuggestion(
     }
 
     default:
-      console.warn(`Unknown suggestion type: ${(suggestion as { type: string }).type}`);
+      console.warn(
+        `Unknown suggestion type: ${(suggestion as { type: string }).type}`
+      );
   }
 }

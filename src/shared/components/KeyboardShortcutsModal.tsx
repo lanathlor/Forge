@@ -9,8 +9,17 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog';
 import { Badge } from '@/shared/components/ui/badge';
-import { formatShortcut, type KeyboardShortcut } from '@/shared/hooks/useKeyboardShortcuts';
-import { Keyboard, Search, Navigation, Command as CommandIcon, Layout } from 'lucide-react';
+import {
+  formatShortcut,
+  type KeyboardShortcut,
+} from '@/shared/hooks/useKeyboardShortcuts';
+import {
+  Keyboard,
+  Search,
+  Navigation,
+  Command as CommandIcon,
+  Layout,
+} from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 interface KeyboardShortcutsModalProps {
@@ -83,7 +92,7 @@ const CATEGORY_ICONS: Record<string, typeof Keyboard> = {
 
 function ShortcutKey({ shortcut }: { shortcut: string }) {
   return (
-    <kbd className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted text-xs font-mono border border-border shadow-sm">
+    <kbd className="inline-flex items-center gap-1 rounded border border-border bg-muted px-2 py-1 font-mono text-xs shadow-sm">
       {shortcut}
     </kbd>
   );
@@ -91,7 +100,7 @@ function ShortcutKey({ shortcut }: { shortcut: string }) {
 
 function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors">
+    <div className="flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-muted/50">
       <span className="text-sm">{shortcut.description}</span>
       <ShortcutKey shortcut={formatShortcut(shortcut)} />
     </div>
@@ -109,10 +118,10 @@ function ShortcutCategory({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <Icon className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold text-foreground">{category}</h3>
-        <Badge variant="secondary" className="text-xs h-5 px-1.5">
+        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
           {shortcuts.length}
         </Badge>
       </div>
@@ -168,7 +177,14 @@ export function KeyboardShortcutsModal({
     return groups;
   }, [allShortcuts, searchQuery]);
 
-  const categoryOrder = ['General', 'Navigation', 'Search', 'Actions', 'View', 'Other'];
+  const categoryOrder = [
+    'General',
+    'Navigation',
+    'Search',
+    'Actions',
+    'View',
+    'Other',
+  ];
   const sortedCategories = Object.keys(groupedShortcuts).sort((a, b) => {
     const aIndex = categoryOrder.indexOf(a);
     const bIndex = categoryOrder.indexOf(b);
@@ -180,7 +196,7 @@ export function KeyboardShortcutsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Keyboard className="h-5 w-5" />
@@ -188,7 +204,7 @@ export function KeyboardShortcutsModal({
           </DialogTitle>
           <DialogDescription>
             Navigate faster with keyboard shortcuts. Press{' '}
-            <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border">
+            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-xs">
               ?
             </kbd>{' '}
             anytime to view this guide.
@@ -197,17 +213,17 @@ export function KeyboardShortcutsModal({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search shortcuts..."
             className={cn(
-              'w-full h-9 pl-9 pr-3 rounded-md border text-sm',
-              'bg-muted/30 border-border/50',
+              'h-9 w-full rounded-md border pl-9 pr-3 text-sm',
+              'border-border/50 bg-muted/30',
               'placeholder:text-muted-foreground/50',
-              'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40',
+              'focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/40',
               'transition-all duration-150'
             )}
             autoFocus
@@ -215,10 +231,10 @@ export function KeyboardShortcutsModal({
         </div>
 
         {/* Shortcuts list */}
-        <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-6">
+        <div className="-mx-1 flex-1 space-y-6 overflow-y-auto px-1">
           {sortedCategories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Search className="h-12 w-12 text-muted-foreground/30 mb-3" />
+              <Search className="mb-3 h-12 w-12 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">
                 No shortcuts found for &quot;{searchQuery}&quot;
               </p>
@@ -239,8 +255,8 @@ export function KeyboardShortcutsModal({
         </div>
 
         {/* Footer tip */}
-        <div className="pt-3 border-t border-border/50">
-          <p className="text-xs text-muted-foreground text-center">
+        <div className="border-t border-border/50 pt-3">
+          <p className="text-center text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Keyboard className="h-3 w-3" />
               Tip: Most shortcuts work globally, even when not in focus

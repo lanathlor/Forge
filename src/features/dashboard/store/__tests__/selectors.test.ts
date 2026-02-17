@@ -295,7 +295,10 @@ describe('Repo snapshot selectors', () => {
   });
 
   it('selectTotalPendingApprovals sums all pending approvals', () => {
-    const makeSnapshot = (id: string, pendingApprovals: number): RepoSnapshot => ({
+    const makeSnapshot = (
+      id: string,
+      pendingApprovals: number
+    ): RepoSnapshot => ({
       repositoryId: id,
       repositoryName: id,
       sessionId: null,
@@ -357,7 +360,12 @@ describe('Repo snapshot selectors', () => {
   });
 
   it('selectCurrentRepoStats returns session stats for current repo', () => {
-    const stats = { totalTasks: 10, completedTasks: 5, failedTasks: 1, runningTasks: 1 };
+    const stats = {
+      totalTasks: 10,
+      completedTasks: 5,
+      failedTasks: 1,
+      runningTasks: 1,
+    };
     const state = makeState({
       repoSnapshot: {
         snapshots: {
@@ -431,7 +439,9 @@ describe('selectShouldShowSnapshot', () => {
   it('returns false when dismissed', () => {
     const state = makeState({
       repoSnapshot: {
-        snapshots: { 'repo-1': { ...baseSnapshot, lastViewedTaskId: 'task-1' } },
+        snapshots: {
+          'repo-1': { ...baseSnapshot, lastViewedTaskId: 'task-1' },
+        },
         dismissedRepoId: 'repo-1',
       },
     } as Partial<RootState>);
@@ -441,7 +451,9 @@ describe('selectShouldShowSnapshot', () => {
   it('returns true when has lastViewedTaskId', () => {
     const state = makeState({
       repoSnapshot: {
-        snapshots: { 'repo-1': { ...baseSnapshot, lastViewedTaskId: 'task-1' } },
+        snapshots: {
+          'repo-1': { ...baseSnapshot, lastViewedTaskId: 'task-1' },
+        },
         dismissedRepoId: null,
       },
     } as Partial<RootState>);

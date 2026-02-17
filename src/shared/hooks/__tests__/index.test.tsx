@@ -87,10 +87,9 @@ describe('Shared Hooks', () => {
         <Provider store={store}>{children}</Provider>
       );
 
-      const { result } = renderHook(
-        () => useAppSelector((state) => state.ui),
-        { wrapper }
-      );
+      const { result } = renderHook(() => useAppSelector((state) => state.ui), {
+        wrapper,
+      });
 
       expect(result.current).toBeDefined();
       expect(typeof result.current.isLoading).toBe('boolean');

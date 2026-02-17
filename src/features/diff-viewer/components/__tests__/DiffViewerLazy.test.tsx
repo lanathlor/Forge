@@ -40,6 +40,8 @@ describe('DiffViewerLazy', () => {
     // Check for loading text which is guaranteed to be there during initial render
     const loadingText = screen.queryByText('Loading diff viewer...');
     // Either loading text is shown, or it's already loaded (both are valid)
-    expect(loadingText !== null || screen.queryByTestId('diff-viewer') !== null).toBe(true);
+    expect(
+      loadingText !== null || screen.queryByTestId('diff-viewer') !== null
+    ).toBe(true);
   });
 });

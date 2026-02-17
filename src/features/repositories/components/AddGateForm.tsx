@@ -53,7 +53,10 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6 shadow-sm"
+    >
       <div className="flex items-center justify-between">
         <div>
           <h4 className="text-base font-semibold">Add New Quality Gate</h4>
@@ -61,14 +64,23 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
             Configure a command to validate your code
           </p>
         </div>
-        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onCancel}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="gate-name" className="text-xs font-semibold uppercase tracking-wide">
+          <Label
+            htmlFor="gate-name"
+            className="text-xs font-semibold uppercase tracking-wide"
+          >
             Gate Name
           </Label>
           <Input
@@ -79,12 +91,17 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
             className="h-10"
           />
           {name.trim().length === 0 && (
-            <p className="text-xs text-muted-foreground">Give your gate a descriptive name</p>
+            <p className="text-xs text-muted-foreground">
+              Give your gate a descriptive name
+            </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="gate-timeout" className="text-xs font-semibold uppercase tracking-wide">
+          <Label
+            htmlFor="gate-timeout"
+            className="text-xs font-semibold uppercase tracking-wide"
+          >
             Timeout
           </Label>
           <Select value={timeout} onValueChange={setTimeout}>
@@ -99,12 +116,17 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">Max execution time for this gate</p>
+          <p className="text-xs text-muted-foreground">
+            Max execution time for this gate
+          </p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="gate-command" className="text-xs font-semibold uppercase tracking-wide">
+        <Label
+          htmlFor="gate-command"
+          className="text-xs font-semibold uppercase tracking-wide"
+        >
           Command
         </Label>
         <Input
@@ -129,7 +151,10 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
             onCheckedChange={setFailOnError}
           />
           <div>
-            <Label htmlFor="gate-fail-on-error" className="cursor-pointer font-semibold">
+            <Label
+              htmlFor="gate-fail-on-error"
+              className="cursor-pointer font-semibold"
+            >
               {failOnError ? 'Required Gate' : 'Optional Gate'}
             </Label>
             <p className="text-xs text-muted-foreground">

@@ -7,12 +7,14 @@ An automated quality assurance system that runs configurable checks (ESLint, Typ
 ## User Problem
 
 **Without this feature**:
+
 - Manual testing after every Claude change
 - Risk of broken code entering codebase
 - Inconsistent quality standards
 - Time wasted on preventable bugs
 
 **With this feature**:
+
 - Automatic quality checks
 - Catch errors before review
 - Enforce project standards
@@ -21,6 +23,7 @@ An automated quality assurance system that runs configurable checks (ESLint, Typ
 ## User Stories
 
 ### Story 1: Automatic Quality Checks
+
 ```
 AS A developer
 I WANT automated checks to run after Claude finishes
@@ -28,6 +31,7 @@ SO THAT I don't have to manually test every change
 ```
 
 ### Story 2: Failed Gate Blocking
+
 ```
 AS A developer
 I WANT tasks with failing QA gates to be blocked from approval
@@ -35,6 +39,7 @@ SO THAT broken code never enters my repository
 ```
 
 ### Story 3: Configurable Gates
+
 ```
 AS A developer
 I WANT to configure which gates run and their settings
@@ -217,7 +222,8 @@ export async function runQAGatesWithRetry(
     attempt++;
 
     // Update task with current attempt
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({
         status: 'qa_running',
         currentQAAttempt: attempt,
@@ -226,11 +232,14 @@ export async function runQAGatesWithRetry(
 
     // Run QA gates
     const results = await runQAGates(taskId, repoPath);
-    const allPassed = results.every(r => r.status === 'passed' || r.status === 'skipped');
+    const allPassed = results.every(
+      (r) => r.status === 'passed' || r.status === 'skipped'
+    );
 
     if (allPassed) {
       // Success! Mark as waiting approval
-      await db.update(tasks)
+      await db
+        .update(tasks)
         .set({ status: 'waiting_approval' })
         .where(eq(tasks.id, taskId));
 
@@ -240,7 +249,8 @@ export async function runQAGatesWithRetry(
     // QA failed
     if (attempt >= MAX_QA_RETRIES) {
       // Max retries reached - final failure
-      await db.update(tasks)
+      await db
+        .update(tasks)
         .set({ status: 'qa_failed' })
         .where(eq(tasks.id, taskId));
 
@@ -248,7 +258,7 @@ export async function runQAGatesWithRetry(
     }
 
     // Prepare error feedback for Claude
-    const failedGates = results.filter(r => r.status === 'failed');
+    const failedGates = results.filter((r) => r.status === 'failed');
     const errorFeedback = formatErrorFeedback(failedGates);
 
     // Get original task
@@ -273,7 +283,8 @@ ${task!.prompt}`;
 
     // Capture new diff
     const diff = await captureDiff(repoPath, task!.startingCommit!);
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({
         diffContent: diff.fullDiff,
         filesChanged: diff.changedFiles,
@@ -338,10 +349,12 @@ export async function runQAGates(
 }
 
 function formatErrorFeedback(failedGates: GateResult[]): string {
-  return failedGates.map(gate => {
-    const errors = gate.errors || [gate.output];
-    return `${gate.gateName} errors:\n${errors.join('\n')}`;
-  }).join('\n\n');
+  return failedGates
+    .map((gate) => {
+      const errors = gate.errors || [gate.output];
+      return `${gate.gateName} errors:\n${errors.join('\n')}`;
+    })
+    .join('\n\n');
 }
 
 async function runSingleGate(
@@ -366,7 +379,6 @@ async function runSingleGate(
       output: stdout || 'No output',
       duration,
     };
-
   } catch (error: any) {
     const duration = Date.now() - startTime;
 
@@ -384,7 +396,7 @@ async function runSingleGate(
 function parseErrors(output: string): string[] {
   // Parse error output based on tool
   // ESLint, TypeScript, Jest have different formats
-  const lines = output.split('\n').filter(line => line.trim());
+  const lines = output.split('\n').filter((line) => line.trim());
 
   // Simple parsing - just return non-empty lines
   // Can be enhanced per-gate for better error extraction
@@ -399,16 +411,15 @@ async function createGateResult(
   duration: number,
   errors?: string[]
 ): Promise<void> {
-  await db.insert(qaGateResults)
-    .values({
-      taskId,
-      gateName,
-      status,
-      output,
-      errors: JSON.stringify(errors || []),
-      duration,
-      completedAt: new Date(),
-    });
+  await db.insert(qaGateResults).values({
+    taskId,
+    gateName,
+    status,
+    output,
+    errors: JSON.stringify(errors || []),
+    duration,
+    completedAt: new Date(),
+  });
 }
 ```
 
@@ -437,8 +448,9 @@ export const eslintGate = {
       }
 
       const errors = results.flatMap((file: any) =>
-        file.messages.map((msg: any) =>
-          `${file.filePath}:${msg.line}:${msg.column} - ${msg.message} (${msg.ruleId})`
+        file.messages.map(
+          (msg: any) =>
+            `${file.filePath}:${msg.line}:${msg.column} - ${msg.message} (${msg.ruleId})`
         )
       );
 
@@ -510,39 +522,65 @@ export const testsGate = {
 ```typescript
 // src/db/schema.ts
 
-export const qaGateConfigs = sqliteTable('qa_gate_configs', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  name: text('name').notNull().unique(),
-  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-  command: text('command').notNull(),
-  timeout: integer('timeout').notNull().default(60000),
-  failOnError: integer('fail_on_error', { mode: 'boolean' }).notNull().default(true),
-  order: integer('order').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-}, (table) => ({
-  enabledOrderIdx: index('qa_gate_enabled_order_idx').on(table.enabled, table.order),
-}));
+export const qaGateConfigs = sqliteTable(
+  'qa_gate_configs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    name: text('name').notNull().unique(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    command: text('command').notNull(),
+    timeout: integer('timeout').notNull().default(60000),
+    failOnError: integer('fail_on_error', { mode: 'boolean' })
+      .notNull()
+      .default(true),
+    order: integer('order').notNull().default(0),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+  },
+  (table) => ({
+    enabledOrderIdx: index('qa_gate_enabled_order_idx').on(
+      table.enabled,
+      table.order
+    ),
+  })
+);
 
-export const qaGateResults = sqliteTable('qa_gate_results', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  taskId: text('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
-  gateName: text('gate_name').notNull(),
-  status: text('status').notNull(), // pending, running, passed, failed, skipped
-  output: text('output'),
-  errors: text('errors'), // JSON string[]
-  duration: integer('duration'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
-}, (table) => ({
-  taskIdx: index('qa_gate_result_task_idx').on(table.taskId),
-  gateNameIdx: index('qa_gate_result_gate_name_idx').on(table.gateName),
-}));
+export const qaGateResults = sqliteTable(
+  'qa_gate_results',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    taskId: text('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    gateName: text('gate_name').notNull(),
+    status: text('status').notNull(), // pending, running, passed, failed, skipped
+    output: text('output'),
+    errors: text('errors'), // JSON string[]
+    duration: integer('duration'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
+  },
+  (table) => ({
+    taskIdx: index('qa_gate_result_task_idx').on(table.taskId),
+    gateNameIdx: index('qa_gate_result_gate_name_idx').on(table.gateName),
+  })
+);
 ```
 
 ### API Endpoints
 
 **POST /api/tasks/:id/qa-gates/run**
+
 ```typescript
 // Re-run QA gates manually
 
@@ -572,8 +610,7 @@ export async function POST(
   const repoPath = task.session.repository.path;
 
   // Clear old results
-  await db.delete(qaGateResults)
-    .where(eq(qaGateResults.taskId, task.id));
+  await db.delete(qaGateResults).where(eq(qaGateResults.taskId, task.id));
 
   // Run gates
   const results = await runQAGates(task.id, repoPath);
@@ -583,6 +620,7 @@ export async function POST(
 ```
 
 **GET /api/qa-gates**
+
 ```typescript
 // List all gate configurations
 
@@ -591,7 +629,8 @@ import { qaGateConfigs } from '@/db/schema';
 import { asc } from 'drizzle-orm';
 
 export async function GET() {
-  const gates = await db.select()
+  const gates = await db
+    .select()
     .from(qaGateConfigs)
     .orderBy(asc(qaGateConfigs.order));
 
@@ -600,6 +639,7 @@ export async function GET() {
 ```
 
 **PUT /api/qa-gates/:id**
+
 ```typescript
 // Update gate configuration
 
@@ -613,7 +653,8 @@ export async function PUT(
 ) {
   const data = await request.json();
 
-  const [gate] = await db.update(qaGateConfigs)
+  const [gate] = await db
+    .update(qaGateConfigs)
     .set({
       name: data.name,
       enabled: data.enabled,
@@ -640,7 +681,8 @@ import { qaGateConfigs } from './schema';
 
 async function main() {
   // Create default QA gates
-  await db.insert(qaGateConfigs)
+  await db
+    .insert(qaGateConfigs)
     .values([
       {
         name: 'eslint',
@@ -692,21 +734,27 @@ main()
 ## Edge Cases
 
 ### Scenario: Gate Command Not Found
+
 **Handling**: Catch error, mark gate as failed with "Command not found" error
 
 ### Scenario: Gate Timeout
+
 **Handling**: Kill process, mark as failed with "Timeout exceeded" error
 
 ### Scenario: All Gates Disabled
+
 **Handling**: Skip QA phase entirely, go straight to waiting_approval
 
 ### Scenario: Gate Output Too Large
+
 **Handling**: Truncate output to 10KB, store full output in file system
 
 ### Scenario: Repository Has No package.json
+
 **Handling**: Gates using `pnpm` fail gracefully with clear error message
 
 ### Scenario: User Wants to Approve Despite Failed Gates
+
 **Handling**: "Override" button with confirmation modal and reason input
 
 ## Acceptance Criteria
@@ -730,10 +778,12 @@ main()
 ## Dependencies
 
 **Required for**:
+
 - Approval workflow (gates must pass first)
 - Quality assurance (main purpose)
 
 **Depends on**:
+
 - Task execution completed
 - Repository has necessary tools (eslint, tsc, etc.)
 - Git working directory preserved

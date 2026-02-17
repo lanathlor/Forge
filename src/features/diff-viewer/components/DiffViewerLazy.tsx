@@ -4,7 +4,9 @@ import * as React from 'react';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load the DiffViewer component which includes Monaco editor
-const DiffViewer = React.lazy(() => import('./DiffViewer').then(mod => ({ default: mod.DiffViewer })));
+const DiffViewer = React.lazy(() =>
+  import('./DiffViewer').then((mod) => ({ default: mod.DiffViewer }))
+);
 
 interface DiffViewerLazyProps {
   taskId: string;
@@ -12,7 +14,7 @@ interface DiffViewerLazyProps {
 
 function DiffViewerFallback() {
   return (
-    <div className="flex items-center justify-center h-full min-h-[300px]">
+    <div className="flex h-full min-h-[300px] items-center justify-center">
       <div className="flex flex-col items-center gap-3 text-text-muted">
         <Loader2 className="h-6 w-6 animate-spin" />
         <span className="text-sm">Loading diff viewer...</span>

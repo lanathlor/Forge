@@ -201,7 +201,9 @@ describe('QARunControls', () => {
           onRun={mockOnRun}
         />
       );
-      const badge = screen.getByText('Running').closest('[class*="bg-blue-500"]');
+      const badge = screen
+        .getByText('Running')
+        .closest('[class*="bg-blue-500"]');
       expect(badge).toHaveClass('bg-blue-500/15');
     });
 
@@ -215,7 +217,9 @@ describe('QARunControls', () => {
           onRun={mockOnRun}
         />
       );
-      const badge = screen.getByText('All Gates Passed').closest('[class*="bg-green-500"]');
+      const badge = screen
+        .getByText('All Gates Passed')
+        .closest('[class*="bg-green-500"]');
       expect(badge).toHaveClass('bg-green-500/15');
     });
 
@@ -229,7 +233,9 @@ describe('QARunControls', () => {
           onRun={mockOnRun}
         />
       );
-      const badge = screen.getByText('Some Gates Failed').closest('[class*="bg-red-500"]');
+      const badge = screen
+        .getByText('Some Gates Failed')
+        .closest('[class*="bg-red-500"]');
       expect(badge).toHaveClass('bg-red-500/15');
     });
   });

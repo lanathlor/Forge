@@ -11,7 +11,8 @@ const mockUseResumeSessionMutation = vi.fn();
 const mockResumeSession = vi.fn();
 
 vi.mock('@/features/sessions/store/sessionsApi', () => ({
-  useListSessionsQuery: (...args: unknown[]) => mockUseListSessionsQuery(...args),
+  useListSessionsQuery: (...args: unknown[]) =>
+    mockUseListSessionsQuery(...args),
   useResumeSessionMutation: () => mockUseResumeSessionMutation(),
 }));
 
@@ -251,8 +252,8 @@ describe('SessionSelector', () => {
       // Click on the first other session
       const sessionButtons = screen.getAllByRole('button');
       // Filter to find session selection buttons (not the main toggle)
-      const sessionButton = sessionButtons.find(
-        (btn) => btn.textContent?.includes('5 tasks')
+      const sessionButton = sessionButtons.find((btn) =>
+        btn.textContent?.includes('5 tasks')
       );
       if (sessionButton) {
         await user.click(sessionButton);
@@ -275,8 +276,8 @@ describe('SessionSelector', () => {
 
       // Find the paused session and click it
       const sessionButtons = screen.getAllByRole('button');
-      const pausedSessionButton = sessionButtons.find(
-        (btn) => btn.textContent?.includes('(paused)')
+      const pausedSessionButton = sessionButtons.find((btn) =>
+        btn.textContent?.includes('(paused)')
       );
       if (pausedSessionButton) {
         await user.click(pausedSessionButton);
@@ -299,8 +300,8 @@ describe('SessionSelector', () => {
       await user.click(screen.getByRole('button'));
 
       const sessionButtons = screen.getAllByRole('button');
-      const sessionButton = sessionButtons.find(
-        (btn) => btn.textContent?.includes('5 tasks')
+      const sessionButton = sessionButtons.find((btn) =>
+        btn.textContent?.includes('5 tasks')
       );
       if (sessionButton) {
         await user.click(sessionButton);
@@ -397,7 +398,10 @@ describe('SessionSelector', () => {
     });
 
     it('displays correct icon for paused status', () => {
-      const pausedSession = { ...mockCurrentSession, status: 'paused' as const };
+      const pausedSession = {
+        ...mockCurrentSession,
+        status: 'paused' as const,
+      };
       render(
         <SessionSelector
           currentSession={pausedSession}

@@ -88,7 +88,12 @@ vi.mock('@/db', () => ({
 }));
 
 vi.mock('@/db/schema/sessions', () => ({
-  sessions: { id: 'id', repositoryId: 'repository_id', status: 'status', lastActivity: 'last_activity' },
+  sessions: {
+    id: 'id',
+    repositoryId: 'repository_id',
+    status: 'status',
+    lastActivity: 'last_activity',
+  },
 }));
 
 vi.mock('@/db/schema/tasks', () => ({
@@ -206,7 +211,9 @@ describe('sessions/manager', () => {
 
       const { createSession } = await import('../manager');
 
-      await expect(createSession('repo-1')).rejects.toThrow('Failed to create session');
+      await expect(createSession('repo-1')).rejects.toThrow(
+        'Failed to create session'
+      );
     });
   });
 
@@ -339,7 +346,9 @@ describe('sessions/manager', () => {
 
       const { endSession } = await import('../manager');
 
-      await expect(endSession('session-1')).rejects.toThrow('Failed to update session');
+      await expect(endSession('session-1')).rejects.toThrow(
+        'Failed to update session'
+      );
     });
   });
 
@@ -539,12 +548,16 @@ describe('sessions/manager', () => {
       // Mock the select chain to return a thenable that resolves with rows
       // The actual code calls .then() on the result, so we need to mock the then function
       mockSelectThen
-        .mockImplementationOnce((callback: (rows: { id: number }[]) => void) => {
-          return Promise.resolve(callback([{ id: 1 }, { id: 2 }])); // 2 tasks for session-1
-        })
-        .mockImplementationOnce((callback: (rows: { id: number }[]) => void) => {
-          return Promise.resolve(callback([{ id: 3 }])); // 1 task for session-2
-        });
+        .mockImplementationOnce(
+          (callback: (rows: { id: number }[]) => void) => {
+            return Promise.resolve(callback([{ id: 1 }, { id: 2 }])); // 2 tasks for session-1
+          }
+        )
+        .mockImplementationOnce(
+          (callback: (rows: { id: number }[]) => void) => {
+            return Promise.resolve(callback([{ id: 3 }])); // 1 task for session-2
+          }
+        );
 
       const { listSessionsWithStats } = await import('../manager');
       const result = await listSessionsWithStats('repo-1');
@@ -563,7 +576,10 @@ describe('sessions/manager', () => {
       ];
 
       mockDb.query.sessions.findMany.mockResolvedValueOnce(inactiveSessions);
-      mockReturning.mockResolvedValue([{ id: 'session-1' }, { id: 'session-2' }]);
+      mockReturning.mockResolvedValue([
+        { id: 'session-1' },
+        { id: 'session-2' },
+      ]);
 
       const { abandonInactiveSessions } = await import('../manager');
       const result = await abandonInactiveSessions(24 * 60 * 60 * 1000);
@@ -624,23 +640,40 @@ describe('sessions/manager', () => {
         {
           id: 'task-2',
           sessionId: 'session-1',
-          prompt: 'This is a very long prompt that exceeds sixty characters so it should be truncated properly',
+          prompt:
+            'This is a very long prompt that exceeds sixty characters so it should be truncated properly',
           status: 'failed',
           startedAt: task2StartedAt,
           completedAt: task2CompletedAt,
           createdAt: new Date('2024-01-01T10:34:00Z'),
-          filesChanged: [
-            { path: 'api.ts', additions: 20, deletions: 8 },
-          ],
+          filesChanged: [{ path: 'api.ts', additions: 20, deletions: 8 }],
           committedSha: null,
           commitMessage: null,
         },
       ];
 
       const mockQaResults = [
-        { id: 'qa-1', taskId: 'task-1', gateName: 'tests', status: 'passed', duration: 5000 },
-        { id: 'qa-2', taskId: 'task-1', gateName: 'lint', status: 'passed', duration: 2000 },
-        { id: 'qa-3', taskId: 'task-2', gateName: 'tests', status: 'failed', duration: 3000 },
+        {
+          id: 'qa-1',
+          taskId: 'task-1',
+          gateName: 'tests',
+          status: 'passed',
+          duration: 5000,
+        },
+        {
+          id: 'qa-2',
+          taskId: 'task-1',
+          gateName: 'lint',
+          status: 'passed',
+          duration: 2000,
+        },
+        {
+          id: 'qa-3',
+          taskId: 'task-2',
+          gateName: 'tests',
+          status: 'failed',
+          duration: 3000,
+        },
       ];
 
       // Mock for getSessionSummary (called internally)
@@ -670,7 +703,9 @@ describe('sessions/manager', () => {
       // Verify timeline has session_start, task events, and session_end
       expect(result.timeline.length).toBeGreaterThanOrEqual(5);
       expect(result.timeline[0]!.type).toBe('session_start');
-      expect(result.timeline[result.timeline.length - 1]!.type).toBe('session_end');
+      expect(result.timeline[result.timeline.length - 1]!.type).toBe(
+        'session_end'
+      );
       // Failed task should have task_fail type
       const failEvent = result.timeline.find(
         (e) => e.type === 'task_fail' && e.taskId === 'task-2'

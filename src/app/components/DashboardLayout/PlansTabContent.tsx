@@ -2,10 +2,26 @@ import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from '@/shared/components/error';
 import { Loader2 } from 'lucide-react';
 
-const PlanList = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanList })));
-const PlanDetailView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanDetailView })));
-const PlanExecutionView = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanExecutionView })));
-const PlanRefinementChat = lazy(() => import('@/features/plans/components').then(mod => ({ default: mod.PlanRefinementChat })));
+const PlanList = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanList,
+  }))
+);
+const PlanDetailView = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanDetailView,
+  }))
+);
+const PlanExecutionView = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanExecutionView,
+  }))
+);
+const PlanRefinementChat = lazy(() =>
+  import('@/features/plans/components').then((mod) => ({
+    default: mod.PlanRefinementChat,
+  }))
+);
 
 interface LoadingFallbackProps {
   message: string;
@@ -14,7 +30,7 @@ interface LoadingFallbackProps {
 function LoadingFallback({ message }: LoadingFallbackProps) {
   return (
     <div
-      className="flex items-center justify-center h-full min-h-[300px]"
+      className="flex h-full min-h-[300px] items-center justify-center"
       role="status"
       aria-live="polite"
       aria-label={message}
@@ -73,8 +89,8 @@ export function PlansTabContent({
             />
           </div>
         ) : planView === 'detail' && selectedPlanId ? (
-          <div className="h-full flex overflow-hidden">
-            <div className="flex-1 overflow-auto min-w-0">
+          <div className="flex h-full overflow-hidden">
+            <div className="min-w-0 flex-1 overflow-auto">
               <PlanDetailView
                 planId={selectedPlanId}
                 onBack={handleBackToList}

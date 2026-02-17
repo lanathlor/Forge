@@ -6,19 +6,15 @@ type Plan = typeof plans.$inferSelect;
 type PlanTask = typeof planTasks.$inferSelect;
 
 async function getRecentPlans() {
-  return db
-    .select()
-    .from(plans)
-    .orderBy(desc(plans.createdAt))
-    .limit(5);
+  return db.select().from(plans).orderBy(desc(plans.createdAt)).limit(5);
 }
 
 function getTaskStats(tasks: PlanTask[]) {
   return {
-    pending: tasks.filter(t => t.status === 'pending').length,
-    running: tasks.filter(t => t.status === 'running').length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    failed: tasks.filter(t => t.status === 'failed').length,
+    pending: tasks.filter((t) => t.status === 'pending').length,
+    running: tasks.filter((t) => t.status === 'running').length,
+    completed: tasks.filter((t) => t.status === 'completed').length,
+    failed: tasks.filter((t) => t.status === 'failed').length,
   };
 }
 
@@ -31,11 +27,15 @@ async function fixCurrentTaskCompleted(plan: Plan) {
     .set({ status: 'paused', updatedAt: new Date() })
     .where(eq(plans.id, plan.id));
 
-  console.log('✅ Fixed! Plan is now paused. Auto-resume should trigger on next task completion.');
+  console.log(
+    '✅ Fixed! Plan is now paused. Auto-resume should trigger on next task completion.'
+  );
 }
 
 async function fixNoFailedTasks(plan: Plan) {
-  console.log('⚠️  ISSUE: No failed tasks but plan is marked as failed. Should be paused or running.');
+  console.log(
+    '⚠️  ISSUE: No failed tasks but plan is marked as failed. Should be paused or running.'
+  );
   console.log('Fixing: Setting plan to paused...');
 
   await db
@@ -54,12 +54,16 @@ async function fixPlan(plan: Plan) {
   });
 
   const stats = getTaskStats(tasks);
-  console.log(`Tasks: ${stats.completed} completed, ${stats.failed} failed, ${stats.running} running, ${stats.pending} pending`);
+  console.log(
+    `Tasks: ${stats.completed} completed, ${stats.failed} failed, ${stats.running} running, ${stats.pending} pending`
+  );
 
   if (plan.currentTaskId) {
-    const currentTask = tasks.find(t => t.id === plan.currentTaskId);
+    const currentTask = tasks.find((t) => t.id === plan.currentTaskId);
     if (currentTask) {
-      console.log(`Current blocking task: "${currentTask.title}" - Status: ${currentTask.status}`);
+      console.log(
+        `Current blocking task: "${currentTask.title}" - Status: ${currentTask.status}`
+      );
       if (currentTask.status === 'completed') {
         await fixCurrentTaskCompleted(plan);
       }
@@ -78,17 +82,21 @@ async function main() {
 
   console.log('Recent plans:');
   for (const plan of recentPlans) {
-    console.log(`- ${plan.id}: "${plan.title}" - Status: ${plan.status}, CurrentTask: ${plan.currentTaskId || 'none'}`);
+    console.log(
+      `- ${plan.id}: "${plan.title}" - Status: ${plan.status}, CurrentTask: ${plan.currentTaskId || 'none'}`
+    );
   }
 
-  const failedPlans = recentPlans.filter(p => p.status === 'failed');
+  const failedPlans = recentPlans.filter((p) => p.status === 'failed');
 
   if (failedPlans.length === 0) {
     console.log('\nNo failed plans found.');
     return;
   }
 
-  console.log(`\nFound ${failedPlans.length} failed plan(s). Checking their tasks...`);
+  console.log(
+    `\nFound ${failedPlans.length} failed plan(s). Checking their tasks...`
+  );
 
   for (const plan of failedPlans) {
     await fixPlan(plan);

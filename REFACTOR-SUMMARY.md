@@ -8,6 +8,7 @@
 ### 1. Architecture Documentation ✅
 
 Created `ARCHITECTURE.md` with:
+
 - Feature-based architecture principles
 - Anti-patterns to avoid
 - Technology stack overview
@@ -20,6 +21,7 @@ Created `ARCHITECTURE.md` with:
 ### 2. Directory Restructure ✅
 
 **Before** (Technical layers):
+
 ```
 src/
 ├── components/
@@ -32,6 +34,7 @@ src/
 ```
 
 **After** (Feature-based):
+
 ```
 src/
 ├── features/
@@ -50,14 +53,14 @@ src/
 
 ### 3. Files Moved
 
-| Old Location | New Location |
-|--------------|--------------|
-| `src/lib/workspace/scanner.ts` | `src/features/repositories/lib/scanner.ts` |
-| `src/lib/workspace/types.ts` | `src/features/repositories/types/index.ts` |
+| Old Location                                      | New Location                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------- |
+| `src/lib/workspace/scanner.ts`                    | `src/features/repositories/lib/scanner.ts`                    |
+| `src/lib/workspace/types.ts`                      | `src/features/repositories/types/index.ts`                    |
 | `src/components/dashboard/RepositorySelector.tsx` | `src/features/repositories/components/RepositorySelector.tsx` |
-| `src/components/ui/*` | `src/shared/components/ui/*` |
-| `src/hooks/index.ts` | `src/shared/hooks/index.ts` |
-| `src/lib/utils.ts` | `src/shared/lib/utils.ts` |
+| `src/components/ui/*`                             | `src/shared/components/ui/*`                                  |
+| `src/hooks/index.ts`                              | `src/shared/hooks/index.ts`                                   |
+| `src/lib/utils.ts`                                | `src/shared/lib/utils.ts`                                     |
 
 ### 4. New Files Created
 
@@ -68,6 +71,7 @@ src/
 ### 5. Import Path Updates
 
 All imports updated to use new feature-based structure:
+
 ```typescript
 // Old
 import { RepositorySelector } from '@/components/dashboard/RepositorySelector';
@@ -81,6 +85,7 @@ import { Button } from '@/shared/components/ui/button';
 ### 6. Dark Mode Implemented ✅
 
 Updated `src/app/layout.tsx`:
+
 ```typescript
 <html lang="en" className="dark">
 ```
@@ -90,12 +95,13 @@ Dark mode is now the **default** theme. Light mode is secondary.
 ### 7. Docker Volume Fixed ✅
 
 Updated `docker-compose.yml`:
+
 ```yaml
 # Before
-- /home/lanath/Work:/workspace:ro  # ❌ Read-only
+- /home/lanath/Work:/workspace:ro # ❌ Read-only
 
 # After
-- /home/lanath/Work:/workspace      # ✅ Read-write
+- /home/lanath/Work:/workspace # ✅ Read-write
 ```
 
 App now has write permissions to create commits and modify repository state.
@@ -137,51 +143,62 @@ All business logic lives in `features/{feature}/api/handlers.ts`.
 ## Testing Results
 
 ### ✅ Type Check
+
 ```bash
 pnpm type-check
 # ✅ No errors
 ```
 
 ### ✅ Linting
+
 ```bash
 pnpm lint
 # ✅ No errors
 ```
 
 ### ✅ Docker Build
+
 ```bash
 docker compose build
 # ✅ Success
 ```
 
 ### ✅ API Functionality
+
 ```bash
 curl http://localhost:3000/api/repositories
 # ✅ Returns 75 repositories
 ```
 
 ### ✅ Dark Mode
+
 - Verified HTML has `class="dark"` by default
 - UI renders in dark mode
 
 ## Benefits of This Refactor
 
 ### 1. **Clear Boundaries**
+
 Each feature is self-contained. Related code lives together.
 
 ### 2. **Easier Navigation**
+
 Want to work on repositories? Everything is in `features/repositories/`.
 
 ### 3. **Scalable**
+
 Adding new features doesn't pollute existing directories.
 
 ### 4. **Team Collaboration**
+
 Teams can own features without conflicts.
 
 ### 5. **Easier to Delete**
+
 Removing a feature = delete the feature folder.
 
 ### 6. **Reduced Coupling**
+
 Features don't accidentally depend on each other.
 
 ## Future Feature Template

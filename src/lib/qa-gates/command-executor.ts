@@ -68,8 +68,14 @@ function getGitSafeEnv() {
   };
 }
 
-function createCommandError(code: number | null, stdout: string, stderr: string): CommandError {
-  const error: CommandError = new Error(`Command failed with exit code ${code}`);
+function createCommandError(
+  code: number | null,
+  stdout: string,
+  stderr: string
+): CommandError {
+  const error: CommandError = new Error(
+    `Command failed with exit code ${code}`
+  );
   error.stdout = stdout;
   error.stderr = stderr;
   error.code = code;
@@ -97,9 +103,15 @@ export async function execAsync(
     let stdout = '';
     let stderr = '';
 
-    child.stdout?.on('data', (data) => { stdout += data.toString(); });
-    child.stderr?.on('data', (data) => { stderr += data.toString(); });
-    child.on('error', (error) => { reject(error); });
+    child.stdout?.on('data', (data) => {
+      stdout += data.toString();
+    });
+    child.stderr?.on('data', (data) => {
+      stderr += data.toString();
+    });
+    child.on('error', (error) => {
+      reject(error);
+    });
 
     child.on('close', (code) => {
       if (code === 0) {

@@ -32,7 +32,11 @@ interface SessionHeaderProps {
 
 const statusConfig: Record<
   SessionStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    icon: React.ReactNode;
+  }
 > = {
   active: {
     label: 'Active',
@@ -70,7 +74,6 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
- 
 export function SessionHeader({
   session,
   repositoryName,
@@ -95,7 +98,9 @@ export function SessionHeader({
   const isActionable = isActive || isPaused;
 
   const handleEndSession = async () => {
-    if (confirm('End this session? You can view it in session history later.')) {
+    if (
+      confirm('End this session? You can view it in session history later.')
+    ) {
       await endSession(session.id);
       onSessionEnded?.();
       onOpenSummary?.();
@@ -111,33 +116,41 @@ export function SessionHeader({
   };
 
   return (
-    <div className="bg-card border rounded-lg p-3 sm:p-4">
+    <div className="rounded-lg border bg-card p-3 sm:p-4">
       {/* Main Header Row */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <h2 className="font-semibold text-sm sm:text-base truncate">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="truncate text-sm font-semibold sm:text-base">
             {repositoryName}
           </h2>
-          <Badge variant={statusInfo.variant} className="flex items-center gap-1">
+          <Badge
+            variant={statusInfo.variant}
+            className="flex items-center gap-1"
+          >
             {statusInfo.icon}
             <span className="hidden sm:inline">{statusInfo.label}</span>
           </Badge>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-2">
           {/* Quick Stats */}
           {stats && (
-            <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="hidden items-center gap-3 text-xs text-muted-foreground md:flex">
               <div className="flex items-center gap-1" title="Duration">
                 <Clock className="h-3 w-3" />
                 {formatDuration(stats.duration)}
               </div>
               <div className="flex items-center gap-1" title="Tasks">
-                <span className="font-medium text-foreground">{stats.totalTasks}</span>
+                <span className="font-medium text-foreground">
+                  {stats.totalTasks}
+                </span>
                 tasks
               </div>
               {stats.completedTasks > 0 && (
-                <div className="flex items-center gap-1 text-green-600" title="Completed">
+                <div
+                  className="flex items-center gap-1 text-green-600"
+                  title="Completed"
+                >
                   <CheckCircle2 className="h-3 w-3" />
                   {stats.completedTasks}
                 </div>
@@ -154,7 +167,7 @@ export function SessionHeader({
               className="hidden sm:flex"
             >
               <History className="h-4 w-4" />
-              <span className="hidden lg:inline ml-1">History</span>
+              <span className="ml-1 hidden lg:inline">History</span>
             </Button>
           )}
 
@@ -174,7 +187,7 @@ export function SessionHeader({
 
           {/* Desktop Session Controls */}
           {isActionable && (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden items-center gap-2 sm:flex">
               {isActive && (
                 <Button
                   variant="outline"
@@ -183,7 +196,7 @@ export function SessionHeader({
                   disabled={isPausing}
                 >
                   <Pause className="h-4 w-4" />
-                  <span className="hidden lg:inline ml-1">Pause</span>
+                  <span className="ml-1 hidden lg:inline">Pause</span>
                 </Button>
               )}
               {isPaused && (
@@ -194,7 +207,7 @@ export function SessionHeader({
                   disabled={isResuming}
                 >
                   <Play className="h-4 w-4" />
-                  <span className="hidden lg:inline ml-1">Resume</span>
+                  <span className="ml-1 hidden lg:inline">Resume</span>
                 </Button>
               )}
               <Button
@@ -204,7 +217,7 @@ export function SessionHeader({
                 disabled={isEnding}
               >
                 <StopCircle className="h-4 w-4" />
-                <span className="hidden lg:inline ml-1">End Session</span>
+                <span className="ml-1 hidden lg:inline">End Session</span>
               </Button>
             </div>
           )}
@@ -214,34 +227,41 @@ export function SessionHeader({
       {/* Session Info Row */}
       <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
         <span>
-          Started {formatDistanceToNow(new Date(session.startedAt), { addSuffix: true })}
+          Started{' '}
+          {formatDistanceToNow(new Date(session.startedAt), {
+            addSuffix: true,
+          })}
         </span>
         {session.startBranch && (
           <span className="hidden sm:inline">
             Branch: <span className="font-mono">{session.startBranch}</span>
           </span>
         )}
-        <span className="sm:hidden">
-          ID: {session.id.slice(0, 8)}
-        </span>
+        <span className="sm:hidden">ID: {session.id.slice(0, 8)}</span>
       </div>
 
       {/* Mobile Stats & Controls */}
       {showControls && isActionable && (
-        <div className="mt-3 pt-3 border-t space-y-3 sm:hidden">
+        <div className="mt-3 space-y-3 border-t pt-3 sm:hidden">
           {/* Mobile Stats */}
           {stats && (
             <div className="flex items-center justify-around text-xs">
               <div className="text-center">
-                <div className="font-medium text-foreground">{stats.totalTasks}</div>
+                <div className="font-medium text-foreground">
+                  {stats.totalTasks}
+                </div>
                 <div className="text-muted-foreground">Tasks</div>
               </div>
               <div className="text-center">
-                <div className="font-medium text-green-600">{stats.completedTasks}</div>
+                <div className="font-medium text-green-600">
+                  {stats.completedTasks}
+                </div>
                 <div className="text-muted-foreground">Completed</div>
               </div>
               <div className="text-center">
-                <div className="font-medium text-foreground">{formatDuration(stats.duration)}</div>
+                <div className="font-medium text-foreground">
+                  {formatDuration(stats.duration)}
+                </div>
                 <div className="text-muted-foreground">Duration</div>
               </div>
             </div>
@@ -256,7 +276,7 @@ export function SessionHeader({
                 onClick={onOpenHistory}
                 className="flex-1"
               >
-                <History className="h-4 w-4 mr-1" />
+                <History className="mr-1 h-4 w-4" />
                 History
               </Button>
             )}
@@ -268,7 +288,7 @@ export function SessionHeader({
                 disabled={isPausing}
                 className="flex-1"
               >
-                <Pause className="h-4 w-4 mr-1" />
+                <Pause className="mr-1 h-4 w-4" />
                 Pause
               </Button>
             )}
@@ -280,7 +300,7 @@ export function SessionHeader({
                 disabled={isResuming}
                 className="flex-1"
               >
-                <Play className="h-4 w-4 mr-1" />
+                <Play className="mr-1 h-4 w-4" />
                 Resume
               </Button>
             )}
@@ -291,7 +311,7 @@ export function SessionHeader({
               disabled={isEnding}
               className="flex-1"
             >
-              <StopCircle className="h-4 w-4 mr-1" />
+              <StopCircle className="mr-1 h-4 w-4" />
               End
             </Button>
           </div>

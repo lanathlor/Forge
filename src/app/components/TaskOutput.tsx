@@ -47,34 +47,139 @@ const STREAMING_STATUSES = ['running', 'qa_running', 'pre_flight'];
 // Simple keyword sets for lightweight highlighting
 const KEYWORDS: Record<string, Set<string>> = {
   js: new Set([
-    'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while',
-    'do', 'switch', 'case', 'break', 'continue', 'class', 'extends', 'new',
-    'this', 'super', 'import', 'export', 'default', 'from', 'async', 'await',
-    'try', 'catch', 'finally', 'throw', 'typeof', 'instanceof', 'in', 'of',
-    'true', 'false', 'null', 'undefined', 'yield', 'delete', 'void',
+    'const',
+    'let',
+    'var',
+    'function',
+    'return',
+    'if',
+    'else',
+    'for',
+    'while',
+    'do',
+    'switch',
+    'case',
+    'break',
+    'continue',
+    'class',
+    'extends',
+    'new',
+    'this',
+    'super',
+    'import',
+    'export',
+    'default',
+    'from',
+    'async',
+    'await',
+    'try',
+    'catch',
+    'finally',
+    'throw',
+    'typeof',
+    'instanceof',
+    'in',
+    'of',
+    'true',
+    'false',
+    'null',
+    'undefined',
+    'yield',
+    'delete',
+    'void',
   ]),
   py: new Set([
-    'def', 'class', 'return', 'if', 'elif', 'else', 'for', 'while', 'with',
-    'as', 'import', 'from', 'try', 'except', 'finally', 'raise', 'pass',
-    'break', 'continue', 'and', 'or', 'not', 'in', 'is', 'True', 'False',
-    'None', 'lambda', 'yield', 'global', 'nonlocal', 'del', 'assert',
+    'def',
+    'class',
+    'return',
+    'if',
+    'elif',
+    'else',
+    'for',
+    'while',
+    'with',
+    'as',
+    'import',
+    'from',
+    'try',
+    'except',
+    'finally',
+    'raise',
+    'pass',
+    'break',
+    'continue',
+    'and',
+    'or',
+    'not',
+    'in',
+    'is',
+    'True',
+    'False',
+    'None',
+    'lambda',
+    'yield',
+    'global',
+    'nonlocal',
+    'del',
+    'assert',
   ]),
   sh: new Set([
-    'if', 'then', 'else', 'elif', 'fi', 'for', 'do', 'done', 'while',
-    'until', 'case', 'esac', 'function', 'return', 'exit', 'export',
-    'local', 'readonly', 'shift', 'set', 'unset', 'echo', 'printf',
+    'if',
+    'then',
+    'else',
+    'elif',
+    'fi',
+    'for',
+    'do',
+    'done',
+    'while',
+    'until',
+    'case',
+    'esac',
+    'function',
+    'return',
+    'exit',
+    'export',
+    'local',
+    'readonly',
+    'shift',
+    'set',
+    'unset',
+    'echo',
+    'printf',
   ]),
 };
 
 const LANG_ALIASES: Record<string, string> = {
-  javascript: 'js', typescript: 'js', jsx: 'js', tsx: 'js', ts: 'js',
-  python: 'py', bash: 'sh', shell: 'sh', zsh: 'sh',
-  go: 'js', rust: 'js', java: 'js', c: 'js', cpp: 'js', 'c++': 'js',
-  json: 'json', yaml: 'json', yml: 'json', toml: 'json',
-  css: 'css', scss: 'css', less: 'css',
-  html: 'html', xml: 'html', svg: 'html',
-  sql: 'sql', graphql: 'sql',
-  markdown: 'md', md: 'md',
+  javascript: 'js',
+  typescript: 'js',
+  jsx: 'js',
+  tsx: 'js',
+  ts: 'js',
+  python: 'py',
+  bash: 'sh',
+  shell: 'sh',
+  zsh: 'sh',
+  go: 'js',
+  rust: 'js',
+  java: 'js',
+  c: 'js',
+  cpp: 'js',
+  'c++': 'js',
+  json: 'json',
+  yaml: 'json',
+  yml: 'json',
+  toml: 'json',
+  css: 'css',
+  scss: 'css',
+  less: 'css',
+  html: 'html',
+  xml: 'html',
+  svg: 'html',
+  sql: 'sql',
+  graphql: 'sql',
+  markdown: 'md',
+  md: 'md',
 };
 
 // ---------------------------------------------------------------------------
@@ -88,7 +193,8 @@ function highlightLine(line: string, langKey: string): ReactNode[] {
   // Tokenize with a simple regex
   const tokens: ReactNode[] = [];
   // Match: strings, comments, numbers, words, whitespace, other
-  const pattern = /(\/\/.*$|#.*$|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\b\d+(?:\.\d+)?\b|\b[a-zA-Z_$][\w$]*\b|\s+|.)/gm;
+  const pattern =
+    /(\/\/.*$|#.*$|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\b\d+(?:\.\d+)?\b|\b[a-zA-Z_$][\w$]*\b|\s+|.)/gm;
   let match: RegExpExecArray | null;
   let idx = 0;
 
@@ -98,19 +204,46 @@ function highlightLine(line: string, langKey: string): ReactNode[] {
 
     // Comment
     if (token.startsWith('//') || token.startsWith('#')) {
-      tokens.push(<span key={key} className="text-emerald-600 dark:text-emerald-400 italic">{token}</span>);
+      tokens.push(
+        <span
+          key={key}
+          className="italic text-emerald-600 dark:text-emerald-400"
+        >
+          {token}
+        </span>
+      );
     }
     // String
-    else if ((token.startsWith('"') || token.startsWith("'") || token.startsWith('`')) && token.length > 1) {
-      tokens.push(<span key={key} className="text-amber-600 dark:text-amber-400">{token}</span>);
+    else if (
+      (token.startsWith('"') ||
+        token.startsWith("'") ||
+        token.startsWith('`')) &&
+      token.length > 1
+    ) {
+      tokens.push(
+        <span key={key} className="text-amber-600 dark:text-amber-400">
+          {token}
+        </span>
+      );
     }
     // Number
     else if (/^\d/.test(token)) {
-      tokens.push(<span key={key} className="text-purple-600 dark:text-purple-400">{token}</span>);
+      tokens.push(
+        <span key={key} className="text-purple-600 dark:text-purple-400">
+          {token}
+        </span>
+      );
     }
     // Keyword
     else if (kws.has(token)) {
-      tokens.push(<span key={key} className="text-blue-600 dark:text-blue-400 font-medium">{token}</span>);
+      tokens.push(
+        <span
+          key={key}
+          className="font-medium text-blue-600 dark:text-blue-400"
+        >
+          {token}
+        </span>
+      );
     }
     // Default
     else {
@@ -138,10 +271,10 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
     <button
       onClick={handleCopy}
       className={cn(
-        'p-1.5 rounded-md transition-all text-muted-foreground',
+        'rounded-md p-1.5 text-muted-foreground transition-all',
         'hover:bg-muted hover:text-foreground',
         'focus:outline-none focus:ring-1 focus:ring-ring',
-        className,
+        className
       )}
       title="Copy to clipboard"
     >
@@ -156,7 +289,7 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
 
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 border border-red-500/20">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-600 dark:bg-red-500/20 dark:text-red-400">
       <span className="relative flex h-1.5 w-1.5">
         <span className="absolute inline-flex h-full w-full animate-live-pulse rounded-full bg-red-500" />
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
@@ -168,22 +301,28 @@ function LiveBadge() {
 
 function StreamingCursor() {
   return (
-    <span className="inline-block w-[7px] h-[14px] bg-foreground/70 animate-cursor-blink ml-0.5 align-text-bottom rounded-[1px]" />
+    <span className="ml-0.5 inline-block h-[14px] w-[7px] animate-cursor-blink rounded-[1px] bg-foreground/70 align-text-bottom" />
   );
 }
 
-function ScrollToBottomButton({ onClick, visible }: { onClick: () => void; visible: boolean }) {
+function ScrollToBottomButton({
+  onClick,
+  visible,
+}: {
+  onClick: () => void;
+  visible: boolean;
+}) {
   if (!visible) return null;
   return (
     <button
       onClick={onClick}
       className={cn(
         'absolute bottom-4 right-4 z-10',
-        'flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+        'flex items-center gap-1.5 rounded-full px-3 py-1.5',
         'bg-primary text-primary-foreground shadow-lg',
         'text-xs font-medium',
-        'hover:bg-primary/90 transition-all',
-        'animate-in fade-in slide-in-from-bottom-2 duration-200',
+        'transition-all hover:bg-primary/90',
+        'duration-200 animate-in fade-in slide-in-from-bottom-2'
       )}
     >
       <ArrowDown className="h-3 w-3" />
@@ -210,34 +349,45 @@ function CodeBlock({
   const [collapsed, setCollapsed] = useState(false);
   const lines = content.split('\n');
   const lineCount = lines.length;
-  const langKey = language ? (LANG_ALIASES[language.toLowerCase()] || language.toLowerCase()) : '';
+  const langKey = language
+    ? LANG_ALIASES[language.toLowerCase()] || language.toLowerCase()
+    : '';
   const isLong = lineCount > 25;
 
   return (
-    <div className={cn(
-      'rounded-lg border overflow-hidden my-2',
-      'bg-slate-950 dark:bg-black/40',
-      isStreaming && 'animate-stream-glow',
-    )}>
+    <div
+      className={cn(
+        'my-2 overflow-hidden rounded-lg border',
+        'bg-slate-950 dark:bg-black/40',
+        isStreaming && 'animate-stream-glow'
+      )}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/80 dark:bg-white/5 border-b border-white/10">
+      <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/80 px-3 py-1.5 dark:bg-white/5">
         <div className="flex items-center gap-2">
           {isLong && (
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="p-0.5 rounded hover:bg-white/10 transition-colors text-slate-400"
+              className="rounded p-0.5 text-slate-400 transition-colors hover:bg-white/10"
             >
-              {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {collapsed ? (
+                <ChevronRight className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
             </button>
           )}
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
             {language || 'code'}
           </span>
           <span className="text-[10px] text-slate-500">
             {lineCount} line{lineCount !== 1 ? 's' : ''}
           </span>
         </div>
-        <CopyButton text={content} className="text-slate-400 hover:text-slate-200 hover:bg-white/10" />
+        <CopyButton
+          text={content}
+          className="text-slate-400 hover:bg-white/10 hover:text-slate-200"
+        />
       </div>
 
       {/* Code content */}
@@ -247,13 +397,15 @@ function CodeBlock({
             <code>
               {lines.map((line, i) => (
                 <div key={i} className="flex">
-                  <span className="select-none text-slate-600 text-right w-8 pr-3 flex-shrink-0 text-[11px] leading-relaxed">
+                  <span className="w-8 flex-shrink-0 select-none pr-3 text-right text-[11px] leading-relaxed text-slate-600">
                     {i + 1}
                   </span>
-                  <span className="flex-1 text-slate-200 min-w-0">
-                    {searchQuery ? highlightSearchInLine(line, searchQuery) : (
-                      kws(langKey) ? highlightLine(line, langKey) : line
-                    )}
+                  <span className="min-w-0 flex-1 text-slate-200">
+                    {searchQuery
+                      ? highlightSearchInLine(line, searchQuery)
+                      : kws(langKey)
+                        ? highlightLine(line, langKey)
+                        : line}
                   </span>
                 </div>
               ))}
@@ -265,7 +417,7 @@ function CodeBlock({
       {collapsed && (
         <button
           onClick={() => setCollapsed(false)}
-          className="w-full py-2 text-xs text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+          className="w-full py-2 text-xs text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
         >
           Show {lineCount} lines
         </button>
@@ -294,24 +446,32 @@ function TextBlock({
   const [collapsed, setCollapsed] = useState(false);
   const lines = content.split('\n');
   const isLong = lines.length > 50;
-  const displayContent = collapsed ? lines.slice(0, 5).join('\n') + '\n...' : content;
+  const displayContent = collapsed
+    ? lines.slice(0, 5).join('\n') + '\n...'
+    : content;
 
   return (
-    <div className="relative group">
+    <div className="group relative">
       {isLong && !isStreaming && (
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
             'flex items-center gap-1 text-[10px] text-muted-foreground',
-            'hover:text-foreground transition-colors mb-1',
+            'mb-1 transition-colors hover:text-foreground'
           )}
         >
-          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {collapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronDown className="h-3 w-3" />
+          )}
           {collapsed ? `Show all (${lines.length} lines)` : 'Collapse'}
         </button>
       )}
-      <pre className="whitespace-pre-wrap break-words leading-relaxed text-[13px]">
-        {searchQuery ? highlightSearchInLine(displayContent, searchQuery) : displayContent}
+      <pre className="whitespace-pre-wrap break-words text-[13px] leading-relaxed">
+        {searchQuery
+          ? highlightSearchInLine(displayContent, searchQuery)
+          : displayContent}
       </pre>
     </div>
   );
@@ -336,7 +496,10 @@ function highlightSearchInLine(text: string, query: string): ReactNode[] {
       parts.push(<span key={key++}>{text.slice(lastIndex, matchIndex)}</span>);
     }
     parts.push(
-      <mark key={key++} className="bg-yellow-300/60 dark:bg-yellow-500/30 text-inherit rounded-sm px-0.5">
+      <mark
+        key={key++}
+        className="rounded-sm bg-yellow-300/60 px-0.5 text-inherit dark:bg-yellow-500/30"
+      >
         {text.slice(matchIndex, matchIndex + query.length)}
       </mark>
     );
@@ -420,8 +583,8 @@ function SearchBar({
   }, []);
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30">
-      <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+    <div className="flex items-center gap-2 border-b bg-muted/30 px-3 py-1.5">
+      <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
       <input
         ref={inputRef}
         type="text"
@@ -431,13 +594,13 @@ function SearchBar({
         className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
       />
       {query && (
-        <span className="text-[10px] text-muted-foreground tabular-nums flex-shrink-0">
+        <span className="flex-shrink-0 text-[10px] tabular-nums text-muted-foreground">
           {matchCount} match{matchCount !== 1 ? 'es' : ''}
         </span>
       )}
       <button
         onClick={onClose}
-        className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground"
+        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -460,7 +623,8 @@ function useSmartAutoScroll(output: string, isStreaming: boolean) {
     if (!el) return;
 
     const threshold = 60; // px from bottom
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    const atBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
     isUserScrolledUp.current = !atBottom;
   }, []);
 
@@ -513,7 +677,10 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
   const isStreaming = STREAMING_STATUSES.includes(status);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { scrollRef, handleScroll, scrollToBottom } = useSmartAutoScroll(output, isStreaming);
+  const { scrollRef, handleScroll, scrollToBottom } = useSmartAutoScroll(
+    output,
+    isStreaming
+  );
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Track scroll-up state for the button
@@ -524,7 +691,8 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
     const onScroll = () => {
       handleScroll();
       const threshold = 100;
-      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+      const atBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
       setShowScrollButton(!atBottom && output.length > 0);
     };
 
@@ -573,19 +741,21 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
   // Empty state
   if (!output) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+      <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
         {isStreaming ? (
           <>
             <div className="relative mb-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
-              <div className="absolute inset-0 h-8 w-8 animate-ping opacity-20 rounded-full bg-primary" />
+              <div className="absolute inset-0 h-8 w-8 animate-ping rounded-full bg-primary opacity-20" />
             </div>
             <p className="text-sm font-medium">Waiting for output...</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Claude is working on this task</p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              Claude is working on this task
+            </p>
           </>
         ) : (
           <>
-            <Terminal className="h-8 w-8 mb-3 opacity-40" />
+            <Terminal className="mb-3 h-8 w-8 opacity-40" />
             <p className="text-sm">No output available</p>
           </>
         )}
@@ -594,13 +764,15 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
   }
 
   return (
-    <div className={cn(
-      'h-full flex flex-col rounded-lg border overflow-hidden',
-      'bg-muted/20 dark:bg-black/20',
-      isStreaming && 'animate-stream-glow',
-    )}>
+    <div
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-lg border',
+        'bg-muted/20 dark:bg-black/20',
+        isStreaming && 'animate-stream-glow'
+      )}
+    >
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b bg-card/50 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center justify-between border-b bg-card/50 px-3 py-1.5">
         <div className="flex items-center gap-2">
           {isStreaming ? (
             <>
@@ -610,7 +782,7 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
               </span>
             </>
           ) : (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <Terminal className="h-3 w-3" />
               Output ({output.length.toLocaleString()} chars)
             </span>
@@ -623,9 +795,9 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
               if (showSearch) setSearchQuery('');
             }}
             className={cn(
-              'p-1.5 rounded-md transition-colors text-muted-foreground',
+              'rounded-md p-1.5 text-muted-foreground transition-colors',
               'hover:bg-muted hover:text-foreground',
-              showSearch && 'bg-muted text-foreground',
+              showSearch && 'bg-muted text-foreground'
             )}
             title="Search (Ctrl+F)"
           >
@@ -640,7 +812,10 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
         <SearchBar
           query={searchQuery}
           onChange={setSearchQuery}
-          onClose={() => { setShowSearch(false); setSearchQuery(''); }}
+          onClose={() => {
+            setShowSearch(false);
+            setSearchQuery('');
+          }}
           matchCount={matchCount}
         />
       )}
@@ -649,10 +824,10 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden relative"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden"
       >
         <div className="p-4 font-mono text-xs sm:text-sm">
-          {blocks.map((block) => (
+          {blocks.map((block) =>
             block.type === 'code' ? (
               <CodeBlock
                 key={block.id}
@@ -669,20 +844,23 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
                 searchQuery={searchQuery}
               />
             )
-          ))}
+          )}
 
           {/* Streaming cursor */}
           {isStreaming && <StreamingCursor />}
         </div>
 
         {/* Scroll to bottom button */}
-        <ScrollToBottomButton onClick={scrollToBottom} visible={showScrollButton} />
+        <ScrollToBottomButton
+          onClick={scrollToBottom}
+          visible={showScrollButton}
+        />
       </div>
 
       {/* Streaming footer */}
       {isStreaming && (
-        <div className="flex-shrink-0 px-3 py-1.5 border-t bg-card/50 flex items-center gap-2">
-          <Radio className="h-3 w-3 text-red-500 animate-live-pulse" />
+        <div className="flex flex-shrink-0 items-center gap-2 border-t bg-card/50 px-3 py-1.5">
+          <Radio className="h-3 w-3 animate-live-pulse text-red-500" />
           <span className="text-[10px] text-muted-foreground">
             Streaming live output from Claude...
           </span>

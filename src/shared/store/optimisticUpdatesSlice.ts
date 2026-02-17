@@ -92,7 +92,10 @@ export const optimisticUpdatesSlice = createSlice({
      * Register an optimistic update when an action is initiated.
      * The UI should immediately reflect `optimisticState`.
      */
-    registerOptimisticUpdate: (state, action: PayloadAction<PendingOperation>) => {
+    registerOptimisticUpdate: (
+      state,
+      action: PayloadAction<PendingOperation>
+    ) => {
       const { entityId } = action.payload;
       state.pendingByEntityId[entityId] = action.payload;
     },
@@ -101,7 +104,10 @@ export const optimisticUpdatesSlice = createSlice({
      * Confirm a successful operation — removes the pending entry.
      * RTK Query cache will have been updated by the mutation response.
      */
-    confirmOptimisticUpdate: (state, action: PayloadAction<{ entityId: string; operationId: string }>) => {
+    confirmOptimisticUpdate: (
+      state,
+      action: PayloadAction<{ entityId: string; operationId: string }>
+    ) => {
       const { entityId, operationId } = action.payload;
       if (state.pendingByEntityId[entityId]?.operationId === operationId) {
         delete state.pendingByEntityId[entityId];
@@ -112,7 +118,10 @@ export const optimisticUpdatesSlice = createSlice({
      * Roll back a failed operation — removes the pending entry.
      * Components should re-read from RTK cache (which still has original data).
      */
-    rollbackOptimisticUpdate: (state, action: PayloadAction<{ entityId: string; operationId: string }>) => {
+    rollbackOptimisticUpdate: (
+      state,
+      action: PayloadAction<{ entityId: string; operationId: string }>
+    ) => {
       const { entityId, operationId } = action.payload;
       if (state.pendingByEntityId[entityId]?.operationId === operationId) {
         delete state.pendingByEntityId[entityId];

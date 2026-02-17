@@ -8,10 +8,30 @@ const mockRerunChecks = vi.fn();
 vi.mock('../../hooks/usePreflightChecks', () => ({
   usePreflightChecks: vi.fn(() => ({
     checks: [
-      { id: 'repo', label: 'Repository accessible', status: 'pass', detail: 'my-repo' },
-      { id: 'clean', label: 'Working tree clean', status: 'pass', detail: 'No uncommitted changes' },
-      { id: 'gates', label: 'QA gates configured', status: 'pass', detail: '2 gates active' },
-      { id: 'plan', label: 'Plan is ready', status: 'pass', detail: '5 tasks across 2 phases' },
+      {
+        id: 'repo',
+        label: 'Repository accessible',
+        status: 'pass',
+        detail: 'my-repo',
+      },
+      {
+        id: 'clean',
+        label: 'Working tree clean',
+        status: 'pass',
+        detail: 'No uncommitted changes',
+      },
+      {
+        id: 'gates',
+        label: 'QA gates configured',
+        status: 'pass',
+        detail: '2 gates active',
+      },
+      {
+        id: 'plan',
+        label: 'Plan is ready',
+        status: 'pass',
+        detail: '5 tasks across 2 phases',
+      },
     ],
     isReady: true,
     isChecking: false,
@@ -73,7 +93,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
     expect(screen.getByText('Test Plan')).toBeInTheDocument();
@@ -87,7 +107,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getByText('Repository accessible')).toBeInTheDocument();
     expect(screen.getByText('Working tree clean')).toBeInTheDocument();
@@ -103,7 +123,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getByText('Launch & Monitor')).toBeInTheDocument();
   });
@@ -117,7 +137,7 @@ describe('PlanLaunchDialog', () => {
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
         onLaunchAndSwitch={mockOnLaunchAndSwitch}
-      />,
+      />
     );
     expect(screen.getByText('Launch & Switch')).toBeInTheDocument();
   });
@@ -130,7 +150,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.queryByText('Launch & Switch')).not.toBeInTheDocument();
   });
@@ -143,7 +163,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getAllByText(/2 phase/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/5 task/).length).toBeGreaterThan(0);
@@ -157,11 +177,14 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     // The summary section should display "1 phase" (singular, no trailing "s")
     const summaryStats = screen.getByText((_, element) => {
-      return element?.tagName === 'SPAN' && element?.textContent?.trim() === '1 phase';
+      return (
+        element?.tagName === 'SPAN' &&
+        element?.textContent?.trim() === '1 phase'
+      );
     });
     expect(summaryStats).toBeInTheDocument();
   });
@@ -174,10 +197,12 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     const taskSpan = screen.getByText((_, element) => {
-      return element?.tagName === 'SPAN' && element?.textContent?.trim() === '1 task';
+      return (
+        element?.tagName === 'SPAN' && element?.textContent?.trim() === '1 task'
+      );
     });
     expect(taskSpan).toBeInTheDocument();
   });
@@ -190,7 +215,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.getByText('30% done')).toBeInTheDocument();
   });
@@ -203,7 +228,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     expect(screen.queryByText('0% done')).not.toBeInTheDocument();
   });
@@ -216,7 +241,7 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
     const recheckButton = screen.getByText('Recheck');
     fireEvent.click(recheckButton);
@@ -231,21 +256,27 @@ describe('PlanLaunchDialog', () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
-      />,
+      />
     );
 
     // Wait for auto-transition from preflight to ready (600ms delay)
-    await waitFor(() => {
-      const launchButton = screen.getByText('Launch & Monitor');
-      expect(launchButton.closest('button')).not.toBeDisabled();
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        const launchButton = screen.getByText('Launch & Monitor');
+        expect(launchButton.closest('button')).not.toBeDisabled();
+      },
+      { timeout: 2000 }
+    );
 
     fireEvent.click(screen.getByText('Launch & Monitor'));
 
     // After launch, callbacks fire with a 400ms delay
-    await waitFor(() => {
-      expect(mockOnLaunched).toHaveBeenCalledWith('plan-1');
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(mockOnLaunched).toHaveBeenCalledWith('plan-1');
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('should call onLaunchAndSwitch when Launch & Switch clicked', async () => {
@@ -257,20 +288,26 @@ describe('PlanLaunchDialog', () => {
         onOpenChange={mockOnOpenChange}
         onLaunched={mockOnLaunched}
         onLaunchAndSwitch={mockOnLaunchAndSwitch}
-      />,
+      />
     );
 
     // Wait for auto-transition from preflight to ready (600ms delay)
-    await waitFor(() => {
-      const switchButton = screen.getByText('Launch & Switch');
-      expect(switchButton.closest('button')).not.toBeDisabled();
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        const switchButton = screen.getByText('Launch & Switch');
+        expect(switchButton.closest('button')).not.toBeDisabled();
+      },
+      { timeout: 2000 }
+    );
 
     fireEvent.click(screen.getByText('Launch & Switch'));
 
     // After launch, callbacks fire with a 400ms delay
-    await waitFor(() => {
-      expect(mockOnLaunchAndSwitch).toHaveBeenCalledWith('plan-1');
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(mockOnLaunchAndSwitch).toHaveBeenCalledWith('plan-1');
+      },
+      { timeout: 2000 }
+    );
   });
 });

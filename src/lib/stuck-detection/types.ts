@@ -64,10 +64,13 @@ export const DEFAULT_STUCK_CONFIG: StuckDetectionConfig = {
 /**
  * Sensitivity multipliers for thresholds
  */
-export const SENSITIVITY_MULTIPLIERS: Record<StuckDetectionConfig['sensitivityLevel'], number> = {
-  high: 0.5,   // More sensitive - shorter thresholds
+export const SENSITIVITY_MULTIPLIERS: Record<
+  StuckDetectionConfig['sensitivityLevel'],
+  number
+> = {
+  high: 0.5, // More sensitive - shorter thresholds
   medium: 1.0, // Default thresholds
-  low: 2.0,    // Less sensitive - longer thresholds
+  low: 2.0, // Less sensitive - longer thresholds
 };
 
 /**
@@ -203,10 +206,13 @@ export interface RepoStuckTracker {
 /**
  * Map reason to severity
  */
-export function getAlertSeverity(reason: StuckReason, durationSeconds: number): AlertSeverity {
+export function getAlertSeverity(
+  reason: StuckReason,
+  durationSeconds: number
+): AlertSeverity {
   // Escalate based on duration
   if (durationSeconds > 300) return 'critical'; // > 5 minutes
-  if (durationSeconds > 120) return 'high';     // > 2 minutes
+  if (durationSeconds > 120) return 'high'; // > 2 minutes
 
   // Base severity by reason
   switch (reason) {

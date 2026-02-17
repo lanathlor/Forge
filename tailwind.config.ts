@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   darkMode: ['class'],
@@ -54,19 +54,58 @@ const config: Config = {
          TYPOGRAPHY SCALE
          ============================================ */
       fontSize: {
-        xs: ['var(--font-size-xs)', { lineHeight: 'var(--line-height-normal)' }],
-        sm: ['var(--font-size-sm)', { lineHeight: 'var(--line-height-normal)' }],
-        base: ['var(--font-size-base)', { lineHeight: 'var(--line-height-normal)' }],
-        lg: ['var(--font-size-lg)', { lineHeight: 'var(--line-height-relaxed)' }],
-        xl: ['var(--font-size-xl)', { lineHeight: 'var(--line-height-relaxed)' }],
-        '2xl': ['var(--font-size-2xl)', { lineHeight: 'var(--line-height-snug)' }],
-        '3xl': ['var(--font-size-3xl)', { lineHeight: 'var(--line-height-snug)' }],
-        '4xl': ['var(--font-size-4xl)', { lineHeight: 'var(--line-height-tight)' }],
-        '5xl': ['var(--font-size-5xl)', { lineHeight: 'var(--line-height-tight)' }],
-        '6xl': ['var(--font-size-6xl)', { lineHeight: 'var(--line-height-none)' }],
-        '7xl': ['var(--font-size-7xl)', { lineHeight: 'var(--line-height-none)' }],
-        '8xl': ['var(--font-size-8xl)', { lineHeight: 'var(--line-height-none)' }],
-        '9xl': ['var(--font-size-9xl)', { lineHeight: 'var(--line-height-none)' }],
+        xs: [
+          'var(--font-size-xs)',
+          { lineHeight: 'var(--line-height-normal)' },
+        ],
+        sm: [
+          'var(--font-size-sm)',
+          { lineHeight: 'var(--line-height-normal)' },
+        ],
+        base: [
+          'var(--font-size-base)',
+          { lineHeight: 'var(--line-height-normal)' },
+        ],
+        lg: [
+          'var(--font-size-lg)',
+          { lineHeight: 'var(--line-height-relaxed)' },
+        ],
+        xl: [
+          'var(--font-size-xl)',
+          { lineHeight: 'var(--line-height-relaxed)' },
+        ],
+        '2xl': [
+          'var(--font-size-2xl)',
+          { lineHeight: 'var(--line-height-snug)' },
+        ],
+        '3xl': [
+          'var(--font-size-3xl)',
+          { lineHeight: 'var(--line-height-snug)' },
+        ],
+        '4xl': [
+          'var(--font-size-4xl)',
+          { lineHeight: 'var(--line-height-tight)' },
+        ],
+        '5xl': [
+          'var(--font-size-5xl)',
+          { lineHeight: 'var(--line-height-tight)' },
+        ],
+        '6xl': [
+          'var(--font-size-6xl)',
+          { lineHeight: 'var(--line-height-none)' },
+        ],
+        '7xl': [
+          'var(--font-size-7xl)',
+          { lineHeight: 'var(--line-height-none)' },
+        ],
+        '8xl': [
+          'var(--font-size-8xl)',
+          { lineHeight: 'var(--line-height-none)' },
+        ],
+        '9xl': [
+          'var(--font-size-9xl)',
+          { lineHeight: 'var(--line-height-none)' },
+        ],
       },
 
       lineHeight: {
@@ -168,8 +207,14 @@ const config: Config = {
           '50%': { opacity: '0.85' },
         },
         'stream-glow': {
-          '0%, 100%': { boxShadow: '0 0 0 1px hsl(var(--accent-primary) / 0.3), 0 0 8px 0 hsl(var(--accent-primary) / 0.1)' },
-          '50%': { boxShadow: '0 0 0 1px hsl(var(--accent-primary) / 0.6), 0 0 16px 2px hsl(var(--accent-primary) / 0.2)' },
+          '0%, 100%': {
+            boxShadow:
+              '0 0 0 1px hsl(var(--accent-primary) / 0.3), 0 0 8px 0 hsl(var(--accent-primary) / 0.1)',
+          },
+          '50%': {
+            boxShadow:
+              '0 0 0 1px hsl(var(--accent-primary) / 0.6), 0 0 16px 2px hsl(var(--accent-primary) / 0.2)',
+          },
         },
         'cursor-blink': {
           '0%, 100%': { opacity: '1' },
@@ -179,7 +224,7 @@ const config: Config = {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
           '50%': { opacity: '0.6', transform: 'scale(1.2)' },
         },
-        'shimmer': {
+        shimmer: {
           '0%': { backgroundPosition: '-1000px 0' },
           '100%': { backgroundPosition: '1000px 0' },
         },
@@ -191,7 +236,7 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateY(-10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'indeterminate': {
+        indeterminate: {
           '0%': { left: '-33%' },
           '100%': { left: '100%' },
         },
@@ -199,7 +244,7 @@ const config: Config = {
           '0%': { backgroundPosition: '-468px 0' },
           '100%': { backgroundPosition: '468px 0' },
         },
-        'spin': {
+        spin: {
           from: { transform: 'rotate(0deg)' },
           to: { transform: 'rotate(360deg)' },
         },
@@ -210,12 +255,13 @@ const config: Config = {
         'stream-glow': 'stream-glow 2s ease-in-out infinite',
         'cursor-blink': 'cursor-blink 1s step-end infinite',
         'live-pulse': 'live-pulse 1.5s ease-in-out infinite',
-        'shimmer': 'shimmer 2s linear infinite',
+        shimmer: 'shimmer 2s linear infinite',
         'slide-up-fade': 'slide-up-fade 0.3s ease-out',
         'slide-down-fade': 'slide-down-fade 0.3s ease-out',
-        'indeterminate': 'indeterminate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        indeterminate:
+          'indeterminate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
         'skeleton-shimmer': 'skeleton-shimmer 1.6s linear infinite',
-        'spin': 'spin 1s linear infinite',
+        spin: 'spin 1s linear infinite',
       },
 
       transitionTimingFunction: {
@@ -352,6 +398,6 @@ const config: Config = {
     },
   },
   plugins: [require('tailwindcss-animate')],
-}
+};
 
-export default config
+export default config;

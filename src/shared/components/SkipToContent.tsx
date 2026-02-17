@@ -33,10 +33,10 @@ export function SkipToContent({
       className={cn(
         'skip-to-content',
         'sr-only focus:not-sr-only',
-        'fixed top-4 left-4 z-[9999]',
-        'px-4 py-2 rounded-md',
+        'fixed left-4 top-4 z-[9999]',
+        'rounded-md px-4 py-2',
         'bg-primary text-primary-foreground',
-        'font-medium text-sm',
+        'text-sm font-medium',
         'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
         'transition-all duration-200',
         className

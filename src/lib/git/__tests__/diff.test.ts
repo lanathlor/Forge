@@ -147,11 +147,10 @@ M\tfile3.ts`;
 
       // Note: Implementation compares against working directory (no HEAD)
       // to capture both committed and uncommitted changes
-      expect(mockExecAsync).toHaveBeenNthCalledWith(
-        1,
-        'git diff commit-abc',
-        { cwd: '/repo/path', timeout: 30000 }
-      );
+      expect(mockExecAsync).toHaveBeenNthCalledWith(1, 'git diff commit-abc', {
+        cwd: '/repo/path',
+        timeout: 30000,
+      });
       expect(mockExecAsync).toHaveBeenNthCalledWith(
         2,
         'git diff commit-abc --numstat',

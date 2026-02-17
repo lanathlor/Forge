@@ -39,6 +39,7 @@ Variants: default, primary, success, warning, error
 ```
 
 **Use when:**
+
 - Loading a small component
 - Inline loading state
 - Simple async operation
@@ -57,6 +58,7 @@ Variants: default, primary, success, warning, error
 ```
 
 **Use when:**
+
 - Upload/download progress
 - Multi-step process with known steps
 - Processing with calculable progress
@@ -74,6 +76,7 @@ Moving bar animation
 ```
 
 **Use when:**
+
 - Unknown duration operation
 - Processing with unknown steps
 - Background task
@@ -92,6 +95,7 @@ Variants: default, text, circular, rectangular
 ```
 
 **Use when:**
+
 - Custom loading layout
 - Building your own skeleton
 - Non-standard content
@@ -111,6 +115,7 @@ Shows: icon, value, label, optional trend
 ```
 
 **Use when:**
+
 - Loading dashboard metrics
 - Loading statistics cards
 - Loading KPI displays
@@ -130,6 +135,7 @@ Shows: icon, title, description, optional action
 ```
 
 **Use when:**
+
 - Loading action cards
 - Loading CTA components
 - Loading feature cards
@@ -151,6 +157,7 @@ Shows: multiple task items with status, title, meta
 ```
 
 **Use when:**
+
 - Loading task lists
 - Loading to-do items
 - Loading work items
@@ -170,6 +177,7 @@ Shows: table with columns and rows
 ```
 
 **Use when:**
+
 - Loading data tables
 - Loading grids
 - Loading tabular data
@@ -191,6 +199,7 @@ Blurred background, centered spinner
 ```
 
 **Use when:**
+
 - Blocking modal/dialog interaction
 - Full-screen loading
 - Critical operation in progress
@@ -207,6 +216,7 @@ Auto-sized spinner, disabled state
 ```
 
 **Use when:**
+
 - Form submission
 - Any button-triggered async action
 - Save/delete/update operations
@@ -309,10 +319,7 @@ Large card:    h-32  (128px)
 ### Pattern: Button Loading
 
 ```tsx
-<LoadingButton
-  loading={isSaving}
-  loadingText="Saving..."
->
+<LoadingButton loading={isSaving} loadingText="Saving...">
   Save Changes
 </LoadingButton>
 ```
@@ -362,6 +369,7 @@ Large card:    h-32  (128px)
 ## ♿ Accessibility
 
 All loading components:
+
 - ✅ Respect `prefers-reduced-motion`
 - ✅ Include ARIA attributes where appropriate
 - ✅ Provide text alternatives
@@ -379,6 +387,7 @@ error:    Red (failed)
 ```
 
 Use variants to match the context:
+
 - Progress bars → primary
 - Success states → success
 - Error retries → error

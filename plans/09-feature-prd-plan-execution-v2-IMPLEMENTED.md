@@ -7,6 +7,7 @@ A hierarchical, database-first planning system where complex work is broken down
 ## User Problem
 
 **Without this feature**:
+
 - No structured way to plan and track complex multi-step work
 - Can't break down large features into manageable chunks
 - No visibility into progress across multiple phases of work
@@ -14,6 +15,7 @@ A hierarchical, database-first planning system where complex work is broken down
 - No way to collaborate with Claude on improving plans
 
 **With this feature**:
+
 - Create detailed plans with phases and tasks
 - Claude can help generate, refine, and optimize plans
 - Execute plans with control: step-by-step, parallel, or mixed
@@ -40,12 +42,14 @@ Plan
 ```
 
 ### Plan
+
 - Top-level container for a body of work
 - Has title, description, and multiple phases
 - Can be in states: `draft` → `ready` → `running` → `paused` → `completed`/`failed`
 - Created via UI, API, or Claude generation
 
 ### Phase
+
 - Logical grouping of related tasks
 - Executes in order (Phase 2 starts after Phase 1 completes)
 - Has execution mode:
@@ -55,6 +59,7 @@ Plan
 - Can be configured to pause after completion for review
 
 ### Task
+
 - Atomic unit of work
 - Has clear description of what Claude should do
 - Can have dependencies on other tasks
@@ -65,6 +70,7 @@ Plan
 ## User Stories
 
 ### Story 1: Generate Plan with Claude
+
 ```
 AS A developer
 I WANT to describe a feature and have Claude generate a detailed plan
@@ -72,6 +78,7 @@ SO THAT I don't have to manually break down complex work
 ```
 
 ### Story 2: Iterative Refinement
+
 ```
 AS A developer
 I WANT Claude to review and improve my plan
@@ -79,6 +86,7 @@ SO THAT I can catch missing tasks and improve descriptions before execution
 ```
 
 ### Story 3: Flexible Execution Control
+
 ```
 AS A developer
 I WANT to run tasks in parallel where possible, and pause for review between phases
@@ -86,6 +94,7 @@ SO THAT I can move fast but still maintain control
 ```
 
 ### Story 4: Resume from Failure
+
 ```
 AS A developer
 I WANT to fix issues manually and resume plan execution
@@ -93,6 +102,7 @@ SO THAT I don't have to restart the entire plan when one task fails
 ```
 
 ### Story 5: Manual Editing
+
 ```
 AS A developer
 I WANT to edit task descriptions and reorder phases
@@ -294,6 +304,7 @@ SO THAT I can adapt the plan based on what I learn
 ## Database Schema
 
 ### plans table
+
 ```typescript
 {
   id: string (uuid)
@@ -325,6 +336,7 @@ SO THAT I can adapt the plan based on what I learn
 ```
 
 ### phases table
+
 ```typescript
 {
   id: string (uuid)
@@ -351,6 +363,7 @@ SO THAT I can adapt the plan based on what I learn
 ```
 
 ### tasks table
+
 ```typescript
 {
   id: string (uuid)
@@ -382,6 +395,7 @@ SO THAT I can adapt the plan based on what I learn
 ```
 
 ### plan_iterations table (for Claude review history)
+
 ```typescript
 {
   id: string (uuid)
@@ -399,6 +413,7 @@ SO THAT I can adapt the plan based on what I learn
 ### Plans
 
 **POST /api/plans/generate**
+
 ```typescript
 Request:
 {
@@ -418,6 +433,7 @@ Response:
 ```
 
 **POST /api/plans/create**
+
 ```typescript
 Request:
 {
@@ -442,6 +458,7 @@ Response: Plan
 ```
 
 **GET /api/plans?repositoryId=xxx**
+
 ```typescript
 Response:
 {
@@ -450,6 +467,7 @@ Response:
 ```
 
 **GET /api/plans/:id**
+
 ```typescript
 Response:
 {
@@ -461,6 +479,7 @@ Response:
 ```
 
 **PATCH /api/plans/:id**
+
 ```typescript
 Request:
 {
@@ -477,6 +496,7 @@ Response: Plan
 ### Plan Review/Iteration
 
 **POST /api/plans/:id/review**
+
 ```typescript
 Request:
 {
@@ -499,6 +519,7 @@ Response:
 ```
 
 **POST /api/plans/:id/apply-suggestions**
+
 ```typescript
 Request:
 {
@@ -512,6 +533,7 @@ Response: Plan (updated)
 ### Plan Execution
 
 **POST /api/plans/:id/execute**
+
 ```typescript
 Request:
 {
@@ -527,6 +549,7 @@ Response:
 ```
 
 **POST /api/plans/:id/pause**
+
 ```typescript
 Response:
 {
@@ -537,14 +560,15 @@ Response:
 ```
 
 **POST /api/plans/:id/resume**
+
 ```typescript
-Response:
-{
-  status: 'running'
+Response: {
+  status: 'running';
 }
 ```
 
 **POST /api/plans/:id/cancel**
+
 ```typescript
 Response:
 {
@@ -556,6 +580,7 @@ Response:
 ### Phases
 
 **POST /api/phases**
+
 ```typescript
 Request:
 {
@@ -571,6 +596,7 @@ Response: Phase
 ```
 
 **PATCH /api/phases/:id**
+
 ```typescript
 Request:
 {
@@ -589,6 +615,7 @@ Response: Phase
 ### Tasks
 
 **POST /api/tasks**
+
 ```typescript
 Request:
 {
@@ -604,6 +631,7 @@ Response: Task
 ```
 
 **PATCH /api/tasks/:id**
+
 ```typescript
 Request:
 {
@@ -621,6 +649,7 @@ Response: Task
 **DELETE /api/tasks/:id**
 
 **POST /api/tasks/:id/retry**
+
 ```typescript
 // Retry a failed task
 Response: Task (status: 'running')
@@ -638,7 +667,8 @@ export class PlanExecutor {
     const plan = await loadPlanWithPhases(planId);
 
     // Update plan status
-    await db.update(plans)
+    await db
+      .update(plans)
       .set({ status: 'running', startedAt: new Date() })
       .where(eq(plans.id, planId));
 
@@ -654,10 +684,11 @@ export class PlanExecutor {
     }
 
     // All phases complete
-    await db.update(plans)
+    await db
+      .update(plans)
       .set({
         status: 'completed',
-        completedAt: new Date()
+        completedAt: new Date(),
       })
       .where(eq(plans.id, planId));
   }
@@ -666,7 +697,8 @@ export class PlanExecutor {
     const phase = await loadPhaseWithTasks(phaseId);
 
     // Update phase status
-    await db.update(phases)
+    await db
+      .update(phases)
       .set({ status: 'running', startedAt: new Date() })
       .where(eq(phases.id, phaseId));
 
@@ -685,10 +717,11 @@ export class PlanExecutor {
     }
 
     // Mark phase complete
-    await db.update(phases)
+    await db
+      .update(phases)
       .set({
         status: 'completed',
-        completedAt: new Date()
+        completedAt: new Date(),
       })
       .where(eq(phases.id, phaseId));
   }
@@ -706,17 +739,19 @@ export class PlanExecutor {
 
     while (completed.size < tasks.length) {
       // Find tasks ready to run (dependencies met, can run in parallel)
-      const ready = tasks.filter(task =>
-        !completed.has(task.id) &&
-        task.dependsOn.every(depId => completed.has(depId)) &&
-        task.canRunInParallel
+      const ready = tasks.filter(
+        (task) =>
+          !completed.has(task.id) &&
+          task.dependsOn.every((depId) => completed.has(depId)) &&
+          task.canRunInParallel
       );
 
       if (ready.length === 0) {
         // No parallel tasks ready, run next sequential task
-        const nextSequential = tasks.find(task =>
-          !completed.has(task.id) &&
-          task.dependsOn.every(depId => completed.has(depId))
+        const nextSequential = tasks.find(
+          (task) =>
+            !completed.has(task.id) &&
+            task.dependsOn.every((depId) => completed.has(depId))
         );
 
         if (nextSequential) {
@@ -726,7 +761,7 @@ export class PlanExecutor {
       } else {
         // Run parallel tasks concurrently
         await Promise.all(
-          ready.map(task =>
+          ready.map((task) =>
             this.executeTask(task.id).then(() => completed.add(task.id))
           )
         );
@@ -747,7 +782,7 @@ export class PlanExecutor {
   async executeTask(taskId: string): Promise<void> {
     const task = await db.query.tasks.findFirst({
       where: eq(tasks.id, taskId),
-      with: { phase: { with: { plan: true } } }
+      with: { phase: { with: { plan: true } } },
     });
 
     let attempt = 0;
@@ -758,11 +793,12 @@ export class PlanExecutor {
 
       try {
         // Update task status
-        await db.update(tasks)
+        await db
+          .update(tasks)
           .set({
             status: 'running',
             attempts: attempt,
-            startedAt: attempt === 1 ? new Date() : undefined
+            startedAt: attempt === 1 ? new Date() : undefined,
           })
           .where(eq(tasks.id, taskId));
 
@@ -789,8 +825,8 @@ export class PlanExecutor {
           task.phase.plan.repository.path
         );
 
-        const allPassed = qaResults.every(r =>
-          r.status === 'passed' || r.status === 'skipped'
+        const allPassed = qaResults.every(
+          (r) => r.status === 'passed' || r.status === 'skipped'
         );
 
         if (allPassed) {
@@ -799,12 +835,13 @@ export class PlanExecutor {
           const commitMsg = await generateCommitMessage(diff, task.title);
           const commitSha = await commitChanges(
             task.phase.plan.repository.path,
-            diff.changedFiles.map(f => f.path),
+            diff.changedFiles.map((f) => f.path),
             commitMsg
           );
 
           // Mark task complete
-          await db.update(tasks)
+          await db
+            .update(tasks)
             .set({
               status: 'completed',
               completedAt: new Date(),
@@ -814,15 +851,15 @@ export class PlanExecutor {
             .where(eq(tasks.id, taskId));
 
           return; // Success
-
         } else {
           // QA failed
           const errors = qaResults
-            .filter(r => r.status === 'failed')
-            .map(r => `${r.gateName}: ${r.errors.join('\n')}`)
+            .filter((r) => r.status === 'failed')
+            .map((r) => `${r.gateName}: ${r.errors.join('\n')}`)
             .join('\n\n');
 
-          await db.update(tasks)
+          await db
+            .update(tasks)
             .set({
               lastError: errors,
               lastQaResults: qaResults,
@@ -831,26 +868,29 @@ export class PlanExecutor {
 
           if (attempt >= MAX_RETRIES) {
             // Max retries reached
-            await db.update(tasks)
+            await db
+              .update(tasks)
               .set({
                 status: 'failed',
-                lastError: `QA failed after ${MAX_RETRIES} attempts:\n${errors}`
+                lastError: `QA failed after ${MAX_RETRIES} attempts:\n${errors}`,
               })
               .where(eq(tasks.id, taskId));
 
             // Pause plan for manual intervention
             await this.pausePlan(task.planId, 'task_failed', taskId);
-            throw new Error(`Task ${taskId} failed after ${MAX_RETRIES} attempts`);
+            throw new Error(
+              `Task ${taskId} failed after ${MAX_RETRIES} attempts`
+            );
           }
 
           // Will retry
         }
-
       } catch (error) {
-        await db.update(tasks)
+        await db
+          .update(tasks)
           .set({
             status: 'failed',
-            lastError: error instanceof Error ? error.message : 'Unknown error'
+            lastError: error instanceof Error ? error.message : 'Unknown error',
           })
           .where(eq(tasks.id, taskId));
 
@@ -864,10 +904,11 @@ export class PlanExecutor {
     reason: string,
     contextTaskId?: string
   ): Promise<void> {
-    await db.update(plans)
+    await db
+      .update(plans)
       .set({
         status: 'paused',
-        currentTaskId: contextTaskId
+        currentTaskId: contextTaskId,
       })
       .where(eq(plans.id, planId));
 
@@ -876,7 +917,8 @@ export class PlanExecutor {
   }
 
   async resumePlan(planId: string): Promise<void> {
-    await db.update(plans)
+    await db
+      .update(plans)
       .set({ status: 'running' })
       .where(eq(plans.id, planId));
 
@@ -897,22 +939,25 @@ export async function generatePlanFromDescription(
   description: string
 ): Promise<string> {
   // Create draft plan
-  const plan = await db.insert(plans).values({
-    id: generateId(),
-    repositoryId,
-    title,
-    description,
-    status: 'draft',
-    createdBy: 'claude',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).returning();
+  const plan = await db
+    .insert(plans)
+    .values({
+      id: generateId(),
+      repositoryId,
+      title,
+      description,
+      status: 'draft',
+      createdBy: 'claude',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .returning();
 
   const planId = plan[0].id;
 
   // Get repository info
   const repo = await db.query.repositories.findFirst({
-    where: eq(repositories.id, repositoryId)
+    where: eq(repositories.id, repositoryId),
   });
 
   // Ask Claude to generate plan structure
@@ -971,18 +1016,21 @@ Return the plan as JSON in this format:
   for (let phaseIdx = 0; phaseIdx < planStructure.phases.length; phaseIdx++) {
     const phaseData = planStructure.phases[phaseIdx];
 
-    const phase = await db.insert(phases).values({
-      id: generateId(),
-      planId,
-      order: phaseIdx + 1,
-      title: phaseData.title,
-      description: phaseData.description,
-      executionMode: phaseData.executionMode,
-      pauseAfter: phaseData.pauseAfter,
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
+    const phase = await db
+      .insert(phases)
+      .values({
+        id: generateId(),
+        planId,
+        order: phaseIdx + 1,
+        title: phaseData.title,
+        description: phaseData.description,
+        executionMode: phaseData.executionMode,
+        pauseAfter: phaseData.pauseAfter,
+        status: 'pending',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
 
     const phaseId = phase[0].id;
     const taskIdMap: Record<number, string> = {};
@@ -990,20 +1038,23 @@ Return the plan as JSON in this format:
     for (let taskIdx = 0; taskIdx < phaseData.tasks.length; taskIdx++) {
       const taskData = phaseData.tasks[taskIdx];
 
-      const task = await db.insert(tasks).values({
-        id: generateId(),
-        phaseId,
-        planId,
-        order: taskIdx + 1,
-        title: taskData.title,
-        description: taskData.description,
-        canRunInParallel: taskData.canRunInParallel,
-        dependsOn: [], // will update after all tasks created
-        status: 'pending',
-        attempts: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }).returning();
+      const task = await db
+        .insert(tasks)
+        .values({
+          id: generateId(),
+          phaseId,
+          planId,
+          order: taskIdx + 1,
+          title: taskData.title,
+          description: taskData.description,
+          canRunInParallel: taskData.canRunInParallel,
+          dependsOn: [], // will update after all tasks created
+          status: 'pending',
+          attempts: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
       taskIdMap[taskIdx] = task[0].id;
     }
@@ -1012,8 +1063,11 @@ Return the plan as JSON in this format:
     for (let taskIdx = 0; taskIdx < phaseData.tasks.length; taskIdx++) {
       const taskData = phaseData.tasks[taskIdx];
       if (taskData.dependsOn.length > 0) {
-        const dependencyIds = taskData.dependsOn.map((idx: number) => taskIdMap[idx]);
-        await db.update(tasks)
+        const dependencyIds = taskData.dependsOn.map(
+          (idx: number) => taskIdMap[idx]
+        );
+        await db
+          .update(tasks)
           .set({ dependsOn: dependencyIds })
           .where(eq(tasks.id, taskIdMap[taskIdx]));
       }
@@ -1042,7 +1096,11 @@ Return the plan as JSON in this format:
 
 export async function reviewPlan(
   planId: string,
-  reviewType: 'refine_descriptions' | 'add_missing' | 'optimize_order' | 'break_down',
+  reviewType:
+    | 'refine_descriptions'
+    | 'add_missing'
+    | 'optimize_order'
+    | 'break_down',
   scope: 'all' | 'phase' | 'task' = 'all',
   targetId?: string
 ): Promise<ReviewSuggestions> {
@@ -1095,15 +1153,18 @@ Provide suggestions as JSON array:
   const suggestions = JSON.parse(response);
 
   // Save iteration
-  const iteration = await db.insert(planIterations).values({
-    id: generateId(),
-    planId,
-    iterationType: 'review',
-    prompt,
-    changes: { reviewType, suggestions },
-    changedBy: 'claude',
-    createdAt: new Date(),
-  }).returning();
+  const iteration = await db
+    .insert(planIterations)
+    .values({
+      id: generateId(),
+      planId,
+      iterationType: 'review',
+      prompt,
+      changes: { reviewType, suggestions },
+      changedBy: 'claude',
+      createdAt: new Date(),
+    })
+    .returning();
 
   return {
     iterationId: iteration[0].id,
@@ -1117,7 +1178,7 @@ export async function applySuggestions(
   suggestionIndices: number[]
 ): Promise<void> {
   const iteration = await db.query.planIterations.findFirst({
-    where: eq(planIterations.id, iterationId)
+    where: eq(planIterations.id, iterationId),
   });
 
   const suggestions = iteration.changes.suggestions;
@@ -1139,7 +1200,8 @@ export async function applySuggestions(
         break;
 
       case 'modify_task':
-        await db.update(tasks)
+        await db
+          .update(tasks)
           .set(suggestion.after)
           .where(eq(tasks.id, suggestion.target));
         break;
@@ -1147,7 +1209,8 @@ export async function applySuggestions(
       case 'reorder':
         // Update order fields for affected tasks/phases
         for (const update of suggestion.after.updates) {
-          await db.update(tasks)
+          await db
+            .update(tasks)
             .set({ order: update.newOrder })
             .where(eq(tasks.id, update.taskId));
         }
@@ -1190,7 +1253,8 @@ export async function applySuggestions(
   }
 
   // Update plan timestamp
-  await db.update(plans)
+  await db
+    .update(plans)
     .set({ updatedAt: new Date() })
     .where(eq(plans.id, planId));
 }
@@ -1457,18 +1521,21 @@ export function PlanExecutionView({ planId }: { planId: string }) {
 ## Implementation Phases
 
 ### Phase 1: Core Data Models (Week 1)
+
 - [ ] Create database schema (plans, phases, tasks, plan_iterations)
 - [ ] Add migrations
 - [ ] Create Drizzle queries and relations
 - [ ] Basic CRUD API endpoints
 
 ### Phase 2: Plan Generation (Week 2)
+
 - [ ] Claude integration for plan generation
 - [ ] Parse feature description → structured plan
 - [ ] Save generated plans to database
 - [ ] UI: generation dialog and form
 
 ### Phase 3: Plan Editor (Week 2-3)
+
 - [ ] UI for viewing plan structure
 - [ ] Edit phases (add, remove, reorder)
 - [ ] Edit tasks (add, remove, reorder, edit descriptions)
@@ -1476,6 +1543,7 @@ export function PlanExecutionView({ planId }: { planId: string }) {
 - [ ] Mark plan as "ready"
 
 ### Phase 4: Execution Engine (Week 3-4)
+
 - [ ] Core executor class
 - [ ] Sequential task execution
 - [ ] Parallel task execution with dependency resolution
@@ -1485,12 +1553,14 @@ export function PlanExecutionView({ planId }: { planId: string }) {
 - [ ] Auto-commit per task
 
 ### Phase 5: Plan Review/Iteration (Week 4)
+
 - [ ] Claude review integration
 - [ ] Suggestion generation
 - [ ] Apply suggestions to plan
 - [ ] Iteration history
 
 ### Phase 6: Execution UI (Week 5)
+
 - [ ] Real-time execution view
 - [ ] Phase/task progress visualization
 - [ ] Claude output streaming
@@ -1499,6 +1569,7 @@ export function PlanExecutionView({ planId }: { planId: string }) {
 - [ ] Manual intervention for failed tasks
 
 ### Phase 7: Polish & Testing (Week 6)
+
 - [ ] Error handling edge cases
 - [ ] Mobile responsive design
 - [ ] Loading states and transitions

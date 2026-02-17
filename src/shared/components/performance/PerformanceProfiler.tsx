@@ -16,7 +16,7 @@ interface PerformanceProfilerProps {
 export function PerformanceProfiler({
   id,
   children,
-  enabled = process.env.NODE_ENV === 'development'
+  enabled = process.env.NODE_ENV === 'development',
 }: PerformanceProfilerProps) {
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
@@ -31,7 +31,8 @@ export function PerformanceProfiler({
         const endTime = performance.now();
         const duration = endTime - startTime;
 
-        if (duration > 100) { // Only log if render took more than 100ms
+        if (duration > 100) {
+          // Only log if render took more than 100ms
           console.log(`[PerformanceProfiler] ${id}: ${duration.toFixed(2)}ms`);
         }
       } catch (_error) {

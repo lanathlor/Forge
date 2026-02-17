@@ -39,23 +39,47 @@ describe('PlanLaunchCard', () => {
   const mockOnPause = vi.fn();
 
   it('should render plan title and description', () => {
-    render(<PlanLaunchCard plan={basePlan} onLaunch={mockOnLaunch} onView={mockOnView} />);
+    render(
+      <PlanLaunchCard
+        plan={basePlan}
+        onLaunch={mockOnLaunch}
+        onView={mockOnView}
+      />
+    );
     expect(screen.getByText('Test Plan')).toBeInTheDocument();
     expect(screen.getByText('A test plan description')).toBeInTheDocument();
   });
 
   it('should show Launch Plan button for draft plans', () => {
-    render(<PlanLaunchCard plan={basePlan} onLaunch={mockOnLaunch} onView={mockOnView} />);
+    render(
+      <PlanLaunchCard
+        plan={basePlan}
+        onLaunch={mockOnLaunch}
+        onView={mockOnView}
+      />
+    );
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
   });
 
   it('should show Launch Plan button for ready plans', () => {
-    render(<PlanLaunchCard plan={{ ...basePlan, status: 'ready' }} onLaunch={mockOnLaunch} onView={mockOnView} />);
+    render(
+      <PlanLaunchCard
+        plan={{ ...basePlan, status: 'ready' }}
+        onLaunch={mockOnLaunch}
+        onView={mockOnView}
+      />
+    );
     expect(screen.getByText('Launch Plan')).toBeInTheDocument();
   });
 
   it('should call onLaunch when Launch button clicked', () => {
-    render(<PlanLaunchCard plan={basePlan} onLaunch={mockOnLaunch} onView={mockOnView} />);
+    render(
+      <PlanLaunchCard
+        plan={basePlan}
+        onLaunch={mockOnLaunch}
+        onView={mockOnView}
+      />
+    );
     fireEvent.click(screen.getByText('Launch Plan'));
     expect(mockOnLaunch).toHaveBeenCalledWith('plan-1');
   });
@@ -67,7 +91,7 @@ describe('PlanLaunchCard', () => {
         onLaunch={mockOnLaunch}
         onView={mockOnView}
         onPause={mockOnPause}
-      />,
+      />
     );
     expect(screen.getByText('Pause')).toBeInTheDocument();
   });
@@ -79,7 +103,7 @@ describe('PlanLaunchCard', () => {
         onLaunch={mockOnLaunch}
         onView={mockOnView}
         onPause={mockOnPause}
-      />,
+      />
     );
     fireEvent.click(screen.getByText('Pause'));
     expect(mockOnPause).toHaveBeenCalledWith('plan-1');
@@ -92,7 +116,7 @@ describe('PlanLaunchCard', () => {
         onLaunch={mockOnLaunch}
         onView={mockOnView}
         onResume={mockOnResume}
-      />,
+      />
     );
     expect(screen.getByText('Resume')).toBeInTheDocument();
   });
@@ -104,7 +128,7 @@ describe('PlanLaunchCard', () => {
         onLaunch={mockOnLaunch}
         onView={mockOnView}
         onResume={mockOnResume}
-      />,
+      />
     );
     fireEvent.click(screen.getByText('Resume'));
     expect(mockOnResume).toHaveBeenCalledWith('plan-1');
@@ -116,7 +140,7 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, status: 'completed', completedTasks: 5 }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     expect(screen.getByText('View Details')).toBeInTheDocument();
   });
@@ -127,7 +151,7 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, status: 'running' }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     expect(screen.getByText('View Details')).toBeInTheDocument();
   });
@@ -138,7 +162,7 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, status: 'paused' }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     expect(screen.getByText('View Details')).toBeInTheDocument();
   });
@@ -149,7 +173,7 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, status: 'completed', completedTasks: 5 }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     fireEvent.click(screen.getByText('View Details'));
     expect(mockOnView).toHaveBeenCalledWith('plan-1');
@@ -161,7 +185,7 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, totalTasks: 10, completedTasks: 5 }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     const progressBar = container.querySelector('[style*="width: 50%"]');
     expect(progressBar).toBeInTheDocument();
@@ -173,14 +197,20 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, totalTasks: 0, completedTasks: 0 }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     const progressBar = container.querySelector('.bg-secondary.rounded-full');
     expect(progressBar).not.toBeInTheDocument();
   });
 
   it('should show stats (phases and tasks)', () => {
-    render(<PlanLaunchCard plan={basePlan} onLaunch={mockOnLaunch} onView={mockOnView} />);
+    render(
+      <PlanLaunchCard
+        plan={basePlan}
+        onLaunch={mockOnLaunch}
+        onView={mockOnView}
+      />
+    );
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('0/5')).toBeInTheDocument();
   });
@@ -191,18 +221,25 @@ describe('PlanLaunchCard', () => {
         plan={{ ...basePlan, description: null }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
-    expect(screen.queryByText('A test plan description')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('A test plan description')
+    ).not.toBeInTheDocument();
   });
 
   it('should apply failed progress bar color', () => {
     const { container } = render(
       <PlanLaunchCard
-        plan={{ ...basePlan, status: 'failed', totalTasks: 10, completedTasks: 3 }}
+        plan={{
+          ...basePlan,
+          status: 'failed',
+          totalTasks: 10,
+          completedTasks: 3,
+        }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     const bar = container.querySelector('.bg-red-500');
     expect(bar).toBeInTheDocument();
@@ -211,10 +248,15 @@ describe('PlanLaunchCard', () => {
   it('should apply completed progress bar color', () => {
     const { container } = render(
       <PlanLaunchCard
-        plan={{ ...basePlan, status: 'completed', totalTasks: 10, completedTasks: 10 }}
+        plan={{
+          ...basePlan,
+          status: 'completed',
+          totalTasks: 10,
+          completedTasks: 10,
+        }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
-      />,
+      />
     );
     const bar = container.querySelector('.bg-emerald-500');
     expect(bar).toBeInTheDocument();
@@ -223,11 +265,16 @@ describe('PlanLaunchCard', () => {
   it('should apply running progress bar color', () => {
     const { container } = render(
       <PlanLaunchCard
-        plan={{ ...basePlan, status: 'running', totalTasks: 10, completedTasks: 5 }}
+        plan={{
+          ...basePlan,
+          status: 'running',
+          totalTasks: 10,
+          completedTasks: 5,
+        }}
         onLaunch={mockOnLaunch}
         onView={mockOnView}
         onPause={mockOnPause}
-      />,
+      />
     );
     const bar = container.querySelector('.bg-blue-500');
     expect(bar).toBeInTheDocument();

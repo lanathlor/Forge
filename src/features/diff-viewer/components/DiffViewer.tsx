@@ -98,7 +98,10 @@ function getLanguageFromPath(path: string): string {
 // File status badge
 // ---------------------------------------------------------------------------
 
-const STATUS_BADGE: Record<FileChange['status'], { label: string; cls: string }> = {
+const STATUS_BADGE: Record<
+  FileChange['status'],
+  { label: string; cls: string }
+> = {
   added: { label: 'Added', cls: 'bg-emerald-500/15 text-emerald-500' },
   modified: { label: 'Modified', cls: 'bg-blue-500/15 text-blue-400' },
   deleted: { label: 'Deleted', cls: 'bg-red-500/15 text-red-400' },
@@ -131,13 +134,13 @@ function DiffToolbar({
   const effectiveViewMode = isMobile ? 'unified' : viewMode;
 
   return (
-    <div className="flex items-center border-b border-border bg-surface-raised flex-shrink-0">
+    <div className="flex flex-shrink-0 items-center border-b border-border bg-surface-raised">
       {/* Left: sidebar toggle + stats */}
-      <div className="flex items-center gap-1 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-center gap-1">
         {!isMobile && (
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-md hover:bg-surface-interactive transition-colors text-text-muted hover:text-text-primary ml-1"
+            className="ml-1 rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-interactive hover:text-text-primary"
             title={sidebarOpen ? 'Hide file tree' : 'Show file tree'}
           >
             {sidebarOpen ? (
@@ -151,15 +154,15 @@ function DiffToolbar({
       </div>
 
       {/* Right: view controls */}
-      <div className="flex items-center gap-0.5 px-2 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-0.5 px-2">
         {/* Minimap toggle */}
         <button
           onClick={onToggleMinimap}
           className={cn(
-            'p-1.5 rounded-md transition-colors',
+            'rounded-md p-1.5 transition-colors',
             minimapEnabled
               ? 'bg-accent-primary/15 text-accent-primary'
-              : 'text-text-muted hover:text-text-primary hover:bg-surface-interactive',
+              : 'text-text-muted hover:bg-surface-interactive hover:text-text-primary'
           )}
           title={minimapEnabled ? 'Hide minimap' : 'Show minimap'}
         >
@@ -168,14 +171,14 @@ function DiffToolbar({
 
         {/* Side-by-side / Unified toggle (desktop only) */}
         {!isMobile && (
-          <div className="flex items-center rounded-md border border-border overflow-hidden ml-1">
+          <div className="ml-1 flex items-center overflow-hidden rounded-md border border-border">
             <button
               onClick={() => onSetViewMode('side-by-side')}
               className={cn(
-                'px-2 py-1 text-xs flex items-center gap-1 transition-colors min-h-[28px]',
+                'flex min-h-[28px] items-center gap-1 px-2 py-1 text-xs transition-colors',
                 effectiveViewMode === 'side-by-side'
                   ? 'bg-accent-primary/15 text-accent-primary'
-                  : 'text-text-muted hover:text-text-primary hover:bg-surface-interactive',
+                  : 'text-text-muted hover:bg-surface-interactive hover:text-text-primary'
               )}
               title="Side by side"
             >
@@ -185,10 +188,10 @@ function DiffToolbar({
             <button
               onClick={() => onSetViewMode('unified')}
               className={cn(
-                'px-2 py-1 text-xs flex items-center gap-1 transition-colors min-h-[28px]',
+                'flex min-h-[28px] items-center gap-1 px-2 py-1 text-xs transition-colors',
                 effectiveViewMode === 'unified'
                   ? 'bg-accent-primary/15 text-accent-primary'
-                  : 'text-text-muted hover:text-text-primary hover:bg-surface-interactive',
+                  : 'text-text-muted hover:bg-surface-interactive hover:text-text-primary'
               )}
               title="Unified"
             >
@@ -223,33 +226,33 @@ function FileHeader({
   const dirPath = parts.join('/');
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-surface-raised flex-shrink-0">
+    <div className="flex flex-shrink-0 items-center gap-2 border-b border-border bg-surface-raised px-3 py-1.5">
       {/* Prev/next file navigation */}
-      <div className="flex items-center gap-0.5 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-0.5">
         <button
           onClick={onPrev}
           disabled={currentIndex <= 0}
           className={cn(
-            'p-1 rounded transition-colors min-h-[24px]',
+            'min-h-[24px] rounded p-1 transition-colors',
             currentIndex <= 0
-              ? 'text-text-disabled cursor-not-allowed'
-              : 'text-text-muted hover:text-text-primary hover:bg-surface-interactive',
+              ? 'cursor-not-allowed text-text-disabled'
+              : 'text-text-muted hover:bg-surface-interactive hover:text-text-primary'
           )}
           title="Previous file"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
-        <span className="text-[10px] text-text-muted tabular-nums min-w-[36px] text-center">
+        <span className="min-w-[36px] text-center text-[10px] tabular-nums text-text-muted">
           {currentIndex + 1}/{totalFiles}
         </span>
         <button
           onClick={onNext}
           disabled={currentIndex >= totalFiles - 1}
           className={cn(
-            'p-1 rounded transition-colors min-h-[24px]',
+            'min-h-[24px] rounded p-1 transition-colors',
             currentIndex >= totalFiles - 1
-              ? 'text-text-disabled cursor-not-allowed'
-              : 'text-text-muted hover:text-text-primary hover:bg-surface-interactive',
+              ? 'cursor-not-allowed text-text-disabled'
+              : 'text-text-muted hover:bg-surface-interactive hover:text-text-primary'
           )}
           title="Next file"
         >
@@ -259,25 +262,28 @@ function FileHeader({
 
       {/* File path with breadcrumb style */}
       <h3
-        className="font-mono text-xs truncate flex-1 flex items-center gap-0.5"
+        className="flex flex-1 items-center gap-0.5 truncate font-mono text-xs"
         title={selectedFile.path}
       >
-        {dirPath && (
-          <span className="text-text-muted">{dirPath}/</span>
-        )}
-        <span className="text-text-primary font-medium">{fileName}</span>
+        {dirPath && <span className="text-text-muted">{dirPath}/</span>}
+        <span className="font-medium text-text-primary">{fileName}</span>
       </h3>
 
       {/* Status badge */}
       {badge && (
-        <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0', badge.cls)}>
+        <span
+          className={cn(
+            'flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
+            badge.cls
+          )}
+        >
           {badge.label}
         </span>
       )}
 
       {/* File stats inline */}
       {(selectedFile.additions > 0 || selectedFile.deletions > 0) && (
-        <div className="hidden sm:flex items-center gap-1.5 text-[10px] tabular-nums font-mono flex-shrink-0">
+        <div className="hidden flex-shrink-0 items-center gap-1.5 font-mono text-[10px] tabular-nums sm:flex">
           {selectedFile.additions > 0 && (
             <span className="text-emerald-500">+{selectedFile.additions}</span>
           )}
@@ -353,7 +359,7 @@ function EditorContent({
 
   if (selectedFile && !fileContent) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-text-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-xs">Loading file...</span>
@@ -363,8 +369,10 @@ function EditorContent({
   }
 
   return (
-    <div className="flex items-center justify-center h-full">
-      <span className="text-xs text-text-muted">Select a file to view changes</span>
+    <div className="flex h-full items-center justify-center">
+      <span className="text-xs text-text-muted">
+        Select a file to view changes
+      </span>
     </div>
   );
 }
@@ -379,7 +387,7 @@ function MobileFileSelector({
   onSelectFile: (file: FileChange) => void;
 }) {
   return (
-    <div className="flex-shrink-0 border-t border-border bg-surface-raised px-2 py-1.5 overflow-x-auto scrollbar-hide">
+    <div className="scrollbar-hide flex-shrink-0 overflow-x-auto border-t border-border bg-surface-raised px-2 py-1.5">
       <div className="flex gap-1">
         {files.map((file) => {
           const b = STATUS_BADGE[file.status];
@@ -390,14 +398,19 @@ function MobileFileSelector({
               key={file.path}
               onClick={() => onSelectFile(file)}
               className={cn(
-                'flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono whitespace-nowrap transition-colors flex-shrink-0 min-h-[28px]',
+                'flex min-h-[28px] flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 font-mono text-[11px] transition-colors',
                 isSelected
                   ? 'bg-accent-primary/15 text-accent-primary'
-                  : 'text-text-secondary hover:bg-surface-interactive',
+                  : 'text-text-secondary hover:bg-surface-interactive'
               )}
               title={file.path}
             >
-              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', b.cls.split(' ')[0])} />
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                  b.cls.split(' ')[0]
+                )}
+              />
               {fileName}
             </button>
           );
@@ -413,11 +426,20 @@ function MobileFileSelector({
 
 function KeyboardHint({ className }: { className?: string }) {
   return (
-    <div className={cn('flex items-center gap-2 text-[10px] text-text-muted', className)}>
+    <div
+      className={cn(
+        'flex items-center gap-2 text-[10px] text-text-muted',
+        className
+      )}
+    >
       <Keyboard className="h-3 w-3" />
       <span className="flex items-center gap-1">
-        <kbd className="px-1 py-0.5 rounded bg-surface-sunken border border-border font-mono">j</kbd>
-        <kbd className="px-1 py-0.5 rounded bg-surface-sunken border border-border font-mono">k</kbd>
+        <kbd className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono">
+          j
+        </kbd>
+        <kbd className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono">
+          k
+        </kbd>
         <span>navigate</span>
       </span>
     </div>
@@ -487,10 +509,12 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
         const data = await res.json();
         setFileContent(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load file content');
+        setError(
+          err instanceof Error ? err.message : 'Failed to load file content'
+        );
       }
     },
-    [taskId],
+    [taskId]
   );
 
   useEffect(() => {
@@ -508,9 +532,8 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
   // File navigation
   // ---------------------------------------------------------------------------
 
-  const currentIndex = diff?.changedFiles.findIndex(
-    (f) => f.path === selectedFile?.path,
-  ) ?? -1;
+  const currentIndex =
+    diff?.changedFiles.findIndex((f) => f.path === selectedFile?.path) ?? -1;
 
   const goToPrev = useCallback(() => {
     if (!diff || currentIndex <= 0) return;
@@ -571,7 +594,7 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[200px]">
+      <div className="flex h-full min-h-[200px] items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-text-muted">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-xs">Loading diff...</span>
@@ -582,7 +605,7 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[200px]">
+      <div className="flex h-full min-h-[200px] items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-red-400">
           <AlertCircle className="h-5 w-5" />
           <span className="text-xs">Error: {error}</span>
@@ -593,7 +616,7 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
 
   if (!diff || diff.changedFiles.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[200px]">
+      <div className="flex h-full min-h-[200px] items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-text-muted">
           <FileX2 className="h-5 w-5" />
           <span className="text-xs">No changes detected</span>
@@ -607,7 +630,7 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full overflow-hidden">
+    <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
       {/* ── Toolbar ── */}
       <DiffToolbar
         isMobile={isMobile}
@@ -624,19 +647,19 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar (desktop only) ── */}
         {effectiveSidebarOpen && (
-          <aside className="w-60 xl:w-72 border-r border-border bg-surface-raised flex-shrink-0 overflow-hidden flex flex-col">
+          <aside className="flex w-60 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-surface-raised xl:w-72">
             <FileTree
               files={diff.changedFiles}
               selectedFile={selectedFile}
               onSelectFile={setSelectedFile}
-              className="flex-1 min-h-0"
+              className="min-h-0 flex-1"
             />
-            <KeyboardHint className="px-3 py-1.5 border-t border-border" />
+            <KeyboardHint className="border-t border-border px-3 py-1.5" />
           </aside>
         )}
 
         {/* ── Editor pane ── */}
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* File header */}
           {selectedFile && (
             <FileHeader
@@ -649,7 +672,7 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
           )}
 
           {/* Monaco diff editor */}
-          <div className="flex-1 relative">
+          <div className="relative flex-1">
             <EditorContent
               selectedFile={selectedFile}
               fileContent={fileContent}

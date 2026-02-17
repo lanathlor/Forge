@@ -21,12 +21,19 @@ async function gotoAndWait(page: Page, path: string) {
 }
 
 /** Collect all interactive elements and check they have accessible names. */
-async function checkInteractiveElementsHaveNames(page: Page): Promise<string[]> {
+async function checkInteractiveElementsHaveNames(
+  page: Page
+): Promise<string[]> {
   return page.evaluate(() => {
     const issues: string[] = [];
-    const selectors = 'button:not([aria-hidden="true"]), a:not([aria-hidden="true"]), [role="button"]:not([aria-hidden="true"])';
+    const selectors =
+      'button:not([aria-hidden="true"]), a:not([aria-hidden="true"]), [role="button"]:not([aria-hidden="true"])';
     document.querySelectorAll<HTMLElement>(selectors).forEach((el) => {
-      const isVisible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+      const isVisible = !!(
+        el.offsetWidth ||
+        el.offsetHeight ||
+        el.getClientRects().length
+      );
       if (!isVisible) return;
 
       const text = el.textContent?.trim() ?? '';
@@ -35,7 +42,9 @@ async function checkInteractiveElementsHaveNames(page: Page): Promise<string[]> 
       const title = el.getAttribute('title') ?? '';
 
       if (!text && !ariaLabel && !ariaLabelledBy && !title) {
-        issues.push(`Unlabeled ${el.tagName} [role="${el.getAttribute('role') ?? ''}"]`);
+        issues.push(
+          `Unlabeled ${el.tagName} [role="${el.getAttribute('role') ?? ''}"]`
+        );
       }
     });
     return issues;
@@ -59,7 +68,9 @@ async function getTabOrder(page: Page, maxElements = 15): Promise<string[]> {
       };
     });
     if (!focused) break;
-    elements.push(`${focused.tag}[${focused.role || 'default'}]: "${focused.text || focused.label}"`);
+    elements.push(
+      `${focused.tag}[${focused.role || 'default'}]: "${focused.text || focused.label}"`
+    );
     await page.keyboard.press('Tab');
   }
 
@@ -92,7 +103,9 @@ test.describe('Accessibility – Semantic Structure', () => {
       await expect(nav).toBeVisible({ timeout: 10_000 });
     });
 
-    test(`${name} page has proper heading hierarchy (h1 present)`, async ({ page }) => {
+    test(`${name} page has proper heading hierarchy (h1 present)`, async ({
+      page,
+    }) => {
       await gotoAndWait(page, path);
       // Allow h1 or a visually prominent heading equivalent
       const headings = page.locator('h1');
@@ -104,7 +117,9 @@ test.describe('Accessibility – Semantic Structure', () => {
       await expect(anyHeading).toBeVisible({ timeout: 8_000 });
     });
 
-    test(`${name} page does not have duplicate main landmarks`, async ({ page }) => {
+    test(`${name} page does not have duplicate main landmarks`, async ({
+      page,
+    }) => {
       await gotoAndWait(page, path);
       const mainCount = await page.locator('main, [role="main"]').count();
       expect(mainCount).toBeLessThanOrEqual(1);
@@ -117,13 +132,17 @@ test.describe('Accessibility – Semantic Structure', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Accessibility – ARIA Labels', () => {
-  test('dashboard: interactive elements have accessible names', async ({ page }) => {
+  test('dashboard: interactive elements have accessible names', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
     const issues = await checkInteractiveElementsHaveNames(page);
     expect(issues).toHaveLength(0);
   });
 
-  test('repositories: interactive elements have accessible names', async ({ page }) => {
+  test('repositories: interactive elements have accessible names', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/repositories');
     const issues = await checkInteractiveElementsHaveNames(page);
     expect(issues).toHaveLength(0);
@@ -147,7 +166,7 @@ test.describe('Accessibility – ARIA Labels', () => {
       // Check for associated <label> element
       if (!hasLabel && id) {
         const label = page.locator(`label[for="${id}"]`);
-        hasLabel = await label.count().then(c => c > 0);
+        hasLabel = await label.count().then((c) => c > 0);
       }
 
       expect(hasLabel).toBeTruthy();
@@ -187,7 +206,9 @@ test.describe('Accessibility – ARIA Labels', () => {
     await gotoAndWait(page, '/dashboard');
 
     const tabList = page.locator('[role="tablist"]').first();
-    const hasTabList = await tabList.isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasTabList = await tabList
+      .isVisible({ timeout: 5_000 })
+      .catch(() => false);
 
     if (hasTabList) {
       // tablist should contain tab elements
@@ -196,13 +217,17 @@ test.describe('Accessibility – ARIA Labels', () => {
       expect(tabCount).toBeGreaterThan(0);
 
       // Active tab should have aria-selected="true"
-      const selectedTab = tabList.locator('[role="tab"][aria-selected="true"], [role="tab"][data-state="active"]');
+      const selectedTab = tabList.locator(
+        '[role="tab"][aria-selected="true"], [role="tab"][data-state="active"]'
+      );
       const selectedCount = await selectedTab.count();
       expect(selectedCount).toBeGreaterThanOrEqual(1);
     }
   });
 
-  test('images and icons have alt text or are marked decorative', async ({ page }) => {
+  test('images and icons have alt text or are marked decorative', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
 
     const issues = await page.evaluate(() => {
@@ -211,7 +236,9 @@ test.describe('Accessibility – ARIA Labels', () => {
         const isVisible = !!(img.offsetWidth || img.offsetHeight);
         if (!isVisible) return;
         if (!img.hasAttribute('alt')) {
-          violations.push(`<img src="${img.src.slice(-40)}" missing alt attribute`);
+          violations.push(
+            `<img src="${img.src.slice(-40)}" missing alt attribute`
+          );
         }
       });
       return violations;
@@ -241,18 +268,24 @@ test.describe('Accessibility – Keyboard Navigation', () => {
     expect(tabOrder.length).toBeGreaterThan(3);
   });
 
-  test('focus is visible (not trapped at body) after page load', async ({ page }) => {
+  test('focus is visible (not trapped at body) after page load', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
 
     // Tab once to put focus somewhere
     await page.keyboard.press('Tab');
 
-    const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+    const focusedTag = await page.evaluate(
+      () => document.activeElement?.tagName
+    );
     // Focus should move to an element (not stay at body/html)
     expect(['BODY', 'HTML']).not.toContain(focusedTag);
   });
 
-  test('skip-to-content link is the first focusable element', async ({ page }) => {
+  test('skip-to-content link is the first focusable element', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
 
     await page.keyboard.press('Tab');
@@ -274,7 +307,10 @@ test.describe('Accessibility – Keyboard Navigation', () => {
       firstFocused.href.includes('#main') ||
       firstFocused.href.includes('#content');
 
-    const isNavElement = firstFocused.tag === 'A' || firstFocused.tag === 'BUTTON' || firstFocused.role === 'link';
+    const isNavElement =
+      firstFocused.tag === 'A' ||
+      firstFocused.tag === 'BUTTON' ||
+      firstFocused.role === 'link';
 
     // Either a skip link or at least a meaningful interactive element
     expect(isSkipLink || isNavElement).toBeTruthy();
@@ -292,7 +328,9 @@ test.describe('Accessibility – Keyboard Navigation', () => {
     await expect(main).toBeVisible();
   });
 
-  test('keyboard shortcut ? opens shortcuts modal (if implemented)', async ({ page }) => {
+  test('keyboard shortcut ? opens shortcuts modal (if implemented)', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
     await page.waitForTimeout(500);
 
@@ -300,8 +338,12 @@ test.describe('Accessibility – Keyboard Navigation', () => {
     await page.keyboard.press('Shift+?');
     await page.waitForTimeout(500);
 
-    const modal = page.locator('[role="dialog"], [data-testid="shortcuts-modal"]').first();
-    const isModalVisible = await modal.isVisible({ timeout: 1_500 }).catch(() => false);
+    const modal = page
+      .locator('[role="dialog"], [data-testid="shortcuts-modal"]')
+      .first();
+    const isModalVisible = await modal
+      .isVisible({ timeout: 1_500 })
+      .catch(() => false);
 
     if (isModalVisible) {
       // Modal should be accessible
@@ -316,7 +358,9 @@ test.describe('Accessibility – Keyboard Navigation', () => {
     // If modal doesn't exist, that's fine - test passes
   });
 
-  test('tab keyboard shortcut switches tabs (Ctrl+1, Ctrl+2)', async ({ page }) => {
+  test('tab keyboard shortcut switches tabs (Ctrl+1, Ctrl+2)', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
     await page.waitForTimeout(500);
 
@@ -344,8 +388,12 @@ test.describe('Accessibility – Focus Management', () => {
     await gotoAndWait(page, '/dashboard');
 
     // Navigate to settings
-    const settingsLink = page.locator('a[href="/settings"], a:has-text("Settings")').first();
-    const hasSettingsLink = await settingsLink.isVisible({ timeout: 3_000 }).catch(() => false);
+    const settingsLink = page
+      .locator('a[href="/settings"], a:has-text("Settings")')
+      .first();
+    const hasSettingsLink = await settingsLink
+      .isVisible({ timeout: 3_000 })
+      .catch(() => false);
 
     if (hasSettingsLink) {
       await settingsLink.click();
@@ -353,18 +401,27 @@ test.describe('Accessibility – Focus Management', () => {
 
       // After navigation, focus should be manageable
       await page.keyboard.press('Tab');
-      const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+      const focusedTag = await page.evaluate(
+        () => document.activeElement?.tagName
+      );
       expect(['BODY', 'HTML', null]).not.toContain(focusedTag);
     }
   });
 
   test('all pages have at least one focusable element', async ({ page }) => {
-    const paths = ['/dashboard', '/repositories', '/settings', '/plans', '/tasks'];
+    const paths = [
+      '/dashboard',
+      '/repositories',
+      '/settings',
+      '/plans',
+      '/tasks',
+    ];
 
     for (const path of paths) {
       await gotoAndWait(page, path);
       const focusable = await page.evaluate(() => {
-        const selector = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+        const selector =
+          'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
         return document.querySelectorAll(selector).length;
       });
       expect(focusable).toBeGreaterThan(0);
@@ -382,7 +439,9 @@ test.describe('Accessibility – Visual', () => {
     await page.waitForTimeout(1_000);
 
     // Status elements should have text or aria-label in addition to color
-    const statusElements = page.locator('[role="status"], [data-status], [aria-live]');
+    const statusElements = page.locator(
+      '[role="status"], [data-status], [aria-live]'
+    );
     const count = await statusElements.count();
 
     for (let i = 0; i < Math.min(count, 5); i++) {
@@ -419,7 +478,9 @@ test.describe('Accessibility – Visual', () => {
     await page.goto('/dashboard');
 
     // Check that loading indicators use proper ARIA
-    const loadingRegions = page.locator('[aria-live="polite"], [aria-live="assertive"], [role="progressbar"]');
+    const loadingRegions = page.locator(
+      '[aria-live="polite"], [aria-live="assertive"], [role="progressbar"]'
+    );
     const count = await loadingRegions.count();
 
     // Either loading regions exist with proper ARIA or page loads without them
@@ -447,33 +508,54 @@ test.describe('Accessibility – Visual', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Accessibility – DOM Structure', () => {
-  test('dashboard has meaningful DOM structure (landmarks, headings)', async ({ page }) => {
+  test('dashboard has meaningful DOM structure (landmarks, headings)', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/dashboard');
 
     // Should have at least one of: main, nav, header, footer
     const landmarkCount = await page.evaluate(() => {
-      const landmarks = ['main', 'nav', 'header', 'footer', '[role="main"]', '[role="navigation"]', '[role="banner"]'];
-      return landmarks.reduce((sum, sel) => sum + document.querySelectorAll(sel).length, 0);
+      const landmarks = [
+        'main',
+        'nav',
+        'header',
+        'footer',
+        '[role="main"]',
+        '[role="navigation"]',
+        '[role="banner"]',
+      ];
+      return landmarks.reduce(
+        (sum, sel) => sum + document.querySelectorAll(sel).length,
+        0
+      );
     });
     expect(landmarkCount).toBeGreaterThan(0);
   });
 
-  test('settings page DOM contains switches with proper roles', async ({ page }) => {
+  test('settings page DOM contains switches with proper roles', async ({
+    page,
+  }) => {
     await gotoAndWait(page, '/settings');
 
     // Count elements with role="switch"
-    const switchCount = await page.evaluate(() =>
-      document.querySelectorAll('[role="switch"]').length
+    const switchCount = await page.evaluate(
+      () => document.querySelectorAll('[role="switch"]').length
     );
     expect(switchCount).toBeGreaterThan(0);
   });
 
   test('all pages have at least one heading', async ({ page }) => {
-    const paths = ['/dashboard', '/repositories', '/settings', '/plans', '/tasks'];
+    const paths = [
+      '/dashboard',
+      '/repositories',
+      '/settings',
+      '/plans',
+      '/tasks',
+    ];
     for (const path of paths) {
       await gotoAndWait(page, path);
-      const headingCount = await page.evaluate(() =>
-        document.querySelectorAll('h1, h2, h3').length
+      const headingCount = await page.evaluate(
+        () => document.querySelectorAll('h1, h2, h3').length
       );
       expect(headingCount).toBeGreaterThan(0);
     }
@@ -485,7 +567,9 @@ test.describe('Accessibility – DOM Structure', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Accessibility – Reduced Motion', () => {
-  test('app renders correctly with prefers-reduced-motion', async ({ page }) => {
+  test('app renders correctly with prefers-reduced-motion', async ({
+    page,
+  }) => {
     // Emulate reduced motion preference
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await gotoAndWait(page, '/dashboard');

@@ -46,10 +46,16 @@ export const settingsSlice = createSlice({
     setLanguage: (state, action: PayloadAction<string>) => {
       state.language = action.payload;
     },
-    updateNotifications: (state, action: PayloadAction<Partial<SettingsState['notifications']>>) => {
+    updateNotifications: (
+      state,
+      action: PayloadAction<Partial<SettingsState['notifications']>>
+    ) => {
       state.notifications = { ...state.notifications, ...action.payload };
     },
-    updateEditor: (state, action: PayloadAction<Partial<SettingsState['editor']>>) => {
+    updateEditor: (
+      state,
+      action: PayloadAction<Partial<SettingsState['editor']>>
+    ) => {
       state.editor = { ...state.editor, ...action.payload };
     },
     setAutoSave: (state, action: PayloadAction<boolean>) => {

@@ -81,14 +81,11 @@ export const logSlowRender: ProfilerCallback = ({
 
   // Log if render takes more than 16ms (60fps threshold)
   if (actualDuration > 16) {
-    console.warn(
-      `[Performance] Slow ${phase} render detected:`,
-      {
-        component: id,
-        actualDuration: `${actualDuration.toFixed(2)}ms`,
-        baseDuration: `${baseDuration.toFixed(2)}ms`,
-      }
-    );
+    console.warn(`[Performance] Slow ${phase} render detected:`, {
+      component: id,
+      actualDuration: `${actualDuration.toFixed(2)}ms`,
+      baseDuration: `${baseDuration.toFixed(2)}ms`,
+    });
   }
 };
 

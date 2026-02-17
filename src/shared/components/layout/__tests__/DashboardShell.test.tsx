@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Home, Settings, HelpCircle, FolderGit2 } from 'lucide-react';
-import { DashboardShell, useDashboardShell, type NavItem } from '../DashboardShell';
+import {
+  DashboardShell,
+  useDashboardShell,
+  type NavItem,
+} from '../DashboardShell';
 
 // Mock resize observer
 const mockResizeObserver = vi.fn(() => ({
@@ -15,7 +19,10 @@ vi.stubGlobal('ResizeObserver', mockResizeObserver);
 describe('DashboardShell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.defineProperty(window, 'innerWidth', { value: 1400, writable: true });
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1400,
+      writable: true,
+    });
   });
 
   afterEach(() => {
@@ -46,7 +53,9 @@ describe('DashboardShell', () => {
 
     // Use getAllByText since mobile and desktop may both render
     expect(screen.getAllByText('Home').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Repositories').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Repositories').length).toBeGreaterThanOrEqual(
+      1
+    );
   });
 
   it('should render bottom navigation items', () => {
@@ -96,7 +105,9 @@ describe('DashboardShell', () => {
 
   it('should render right panel when provided', () => {
     render(
-      <DashboardShell rightPanel={<div data-testid="right-panel">Panel Content</div>}>
+      <DashboardShell
+        rightPanel={<div data-testid="right-panel">Panel Content</div>}
+      >
         <div>Content</div>
       </DashboardShell>
     );
@@ -106,7 +117,9 @@ describe('DashboardShell', () => {
 
   it('should render action bar when provided', () => {
     render(
-      <DashboardShell actionBar={<div data-testid="action-bar">Action Bar</div>}>
+      <DashboardShell
+        actionBar={<div data-testid="action-bar">Action Bar</div>}
+      >
         <div>Content</div>
       </DashboardShell>
     );
@@ -157,8 +170,15 @@ describe('DashboardShell', () => {
         const context = useDashboardShell();
         return (
           <>
-            <button onClick={context.toggleSidebar} data-testid="toggle">Toggle</button>
-            <button onClick={context.toggleRightPanel} data-testid="toggle-panel">Toggle Panel</button>
+            <button onClick={context.toggleSidebar} data-testid="toggle">
+              Toggle
+            </button>
+            <button
+              onClick={context.toggleRightPanel}
+              data-testid="toggle-panel"
+            >
+              Toggle Panel
+            </button>
           </>
         );
       };
@@ -177,7 +197,10 @@ describe('DashboardShell', () => {
 
   describe('breakpoint detection', () => {
     it('should detect desktop breakpoint', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1400, writable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1400,
+        writable: true,
+      });
 
       let contextValue: ReturnType<typeof useDashboardShell> | null = null;
 

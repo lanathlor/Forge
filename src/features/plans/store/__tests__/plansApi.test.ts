@@ -140,7 +140,9 @@ describe('plansApi', () => {
     it('should support ReviewResult type', () => {
       const result: ReviewResult = {
         iterationId: 'iter-1',
-        suggestions: [{ type: 'add', target: 'test', reasoning: 'test reason' }],
+        suggestions: [
+          { type: 'add', target: 'test', reasoning: 'test reason' },
+        ],
       };
       expect(result.iterationId).toBe('iter-1');
     });

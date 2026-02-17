@@ -21,11 +21,13 @@ describe('useBreakpoint', () => {
     });
 
     // Capture resize event listener
-    vi.spyOn(window, 'addEventListener').mockImplementation((event, handler) => {
-      if (event === 'resize') {
-        resizeHandler = handler as (this: Window, ev: UIEvent) => void;
+    vi.spyOn(window, 'addEventListener').mockImplementation(
+      (event, handler) => {
+        if (event === 'resize') {
+          resizeHandler = handler as (this: Window, ev: UIEvent) => void;
+        }
       }
-    });
+    );
 
     vi.spyOn(window, 'removeEventListener').mockImplementation(() => {});
   });
@@ -72,7 +74,10 @@ describe('useBreakpoint', () => {
   it('should cleanup resize listener on unmount', () => {
     const { unmount } = renderHook(() => useBreakpoint());
     unmount();
-    expect(window.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
+    expect(window.removeEventListener).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function)
+    );
   });
 
   it('should handle boundary at 768px (tablet)', () => {
@@ -218,7 +223,9 @@ describe('useIsBetweenBreakpoints', () => {
     const matchMediaSpy = vi.spyOn(window, 'matchMedia');
 
     renderHook(() => useIsBetweenBreakpoints('md', 'lg'));
-    expect(matchMediaSpy).toHaveBeenCalledWith('(min-width: 768px) and (max-width: 1023px)');
+    expect(matchMediaSpy).toHaveBeenCalledWith(
+      '(min-width: 768px) and (max-width: 1023px)'
+    );
   });
 });
 

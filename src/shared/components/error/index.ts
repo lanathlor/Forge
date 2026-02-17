@@ -10,7 +10,10 @@
 
 // Error Boundary
 export { ErrorBoundary } from './ErrorBoundary';
-export { withErrorBoundary, createErrorBoundaryWrapper } from './withErrorBoundary';
+export {
+  withErrorBoundary,
+  createErrorBoundaryWrapper,
+} from './withErrorBoundary';
 
 // Error State Components
 export {
@@ -28,7 +31,12 @@ export {
 export type { ErrorType } from './ErrorStates';
 
 // Error Toast Utilities
-export { useErrorToast, createErrorToast, formatError, errorToastHelpers } from './errorToast';
+export {
+  useErrorToast,
+  createErrorToast,
+  formatError,
+  errorToastHelpers,
+} from './errorToast';
 export type { ErrorToastType } from './errorToast';
 
 // Error Handler Hook

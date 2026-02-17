@@ -23,7 +23,9 @@ src/lib/utils.ts(42,10): error TS2304: Cannot find name 'unknownVar'.
     expect(result.errors).toHaveLength(2);
     expect(result.errors[0]).toContain('src/app/page.tsx:15:3');
     expect(result.errors[0]).toContain('TS2322');
-    expect(result.errors[0]).toContain("Type 'string' is not assignable to type 'number'");
+    expect(result.errors[0]).toContain(
+      "Type 'string' is not assignable to type 'number'"
+    );
     expect(result.errors[1]).toContain('src/lib/utils.ts:42:10');
     expect(result.errors[1]).toContain('TS2304');
   });

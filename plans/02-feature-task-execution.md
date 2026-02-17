@@ -7,6 +7,7 @@ The ability to send prompts to Claude Code and monitor task execution in real-ti
 ## User Problem
 
 **Without this feature**:
+
 - Run Claude Code manually in terminal
 - Can't see what's happening from dashboard
 - No record of what Claude did
@@ -14,6 +15,7 @@ The ability to send prompts to Claude Code and monitor task execution in real-ti
 - Can't pause/resume work
 
 **With this feature**:
+
 - Send prompts from UI
 - Real-time output streaming
 - Complete task history
@@ -23,6 +25,7 @@ The ability to send prompts to Claude Code and monitor task execution in real-ti
 ## User Stories
 
 ### Story 1: Starting a Task
+
 ```
 AS A developer
 I WANT to send a prompt to Claude from the dashboard
@@ -30,6 +33,7 @@ SO THAT I can initiate work without leaving the UI
 ```
 
 ### Story 2: Monitoring Progress
+
 ```
 AS A developer
 I WANT to see Claude's output in real-time
@@ -37,6 +41,7 @@ SO THAT I know what's happening during execution
 ```
 
 ### Story 3: Reviewing History
+
 ```
 AS A developer
 I WANT to see all past tasks in a session
@@ -206,10 +211,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       // Spawn Claude Code CLI
       this.process = spawn(
         process.env.CLAUDE_CODE_PATH || 'claude-code',
-        [
-          '--working-directory', workingDirectory,
-          '--prompt', prompt,
-        ],
+        ['--working-directory', workingDirectory, '--prompt', prompt],
         {
           cwd: workingDirectory,
           env: process.env,
@@ -282,13 +284,17 @@ class ClaudeCodeWrapper extends EventEmitter {
     }
   }
 
-  private async appendTaskOutput(taskId: string, output: string): Promise<void> {
+  private async appendTaskOutput(
+    taskId: string,
+    output: string
+  ): Promise<void> {
     const task = await db.query.tasks.findFirst({
       where: eq(tasks.id, taskId),
     });
 
     const existingOutput = task?.claudeOutput || '';
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({
         claudeOutput: existingOutput + output,
         updatedAt: new Date(),
@@ -338,14 +344,16 @@ export async function executeTask(taskId: string): Promise<void> {
     const repoPath = task.session.repository.path;
 
     // 2. Run pre-flight checks
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({ status: 'pre_flight' })
       .where(eq(tasks.id, taskId));
 
     const preFlightResult = await runPreFlightChecks(repoPath);
 
     if (!preFlightResult.passed) {
-      await db.update(tasks)
+      await db
+        .update(tasks)
         .set({
           status: 'failed',
           claudeOutput: `Pre-flight check failed: ${preFlightResult.error}`,
@@ -355,7 +363,8 @@ export async function executeTask(taskId: string): Promise<void> {
     }
 
     // 3. Capture starting state
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({
         startingCommit: preFlightResult.currentCommit,
         startingBranch: preFlightResult.currentBranch,
@@ -363,7 +372,8 @@ export async function executeTask(taskId: string): Promise<void> {
       .where(eq(tasks.id, taskId));
 
     // 4. Execute Claude Code
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({ status: 'running' })
       .where(eq(tasks.id, taskId));
 
@@ -376,7 +386,8 @@ export async function executeTask(taskId: string): Promise<void> {
     // 5. Capture diff
     const diff = await captureDiff(repoPath, task.startingCommit!);
 
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({
         diffContent: diff.fullDiff,
         filesChanged: JSON.stringify(diff.changedFiles),
@@ -386,9 +397,9 @@ export async function executeTask(taskId: string): Promise<void> {
 
     // 6. Run QA gates (automatic)
     await runQAGates(taskId, repoPath);
-
   } catch (error) {
-    await db.update(tasks)
+    await db
+      .update(tasks)
       .set({
         status: 'failed',
         claudeOutput: error instanceof Error ? error.message : 'Unknown error',
@@ -422,45 +433,60 @@ export const taskStatusEnum = [
   'cancelled',
 ] as const;
 
-export const tasks = sqliteTable('tasks', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
 
-  // Task details
-  prompt: text('prompt').notNull(),
-  status: text('status', { enum: taskStatusEnum }).notNull().default('pending'),
+    // Task details
+    prompt: text('prompt').notNull(),
+    status: text('status', { enum: taskStatusEnum })
+      .notNull()
+      .default('pending'),
 
-  // Timestamps
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  startedAt: integer('started_at', { mode: 'timestamp' }),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
+    // Timestamps
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+      () => new Date()
+    ),
+    startedAt: integer('started_at', { mode: 'timestamp' }),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
 
-  // Claude output
-  claudeOutput: text('claude_output'),
+    // Claude output
+    claudeOutput: text('claude_output'),
 
-  // Git state
-  startingCommit: text('starting_commit'),
-  startingBranch: text('starting_branch'),
-  filesChanged: text('files_changed'), // JSON string
-  diffContent: text('diff_content'),
+    // Git state
+    startingCommit: text('starting_commit'),
+    startingBranch: text('starting_branch'),
+    filesChanged: text('files_changed'), // JSON string
+    diffContent: text('diff_content'),
 
-  // Commit info (if approved)
-  committedSha: text('committed_sha'),
-  commitMessage: text('commit_message'),
+    // Commit info (if approved)
+    committedSha: text('committed_sha'),
+    commitMessage: text('commit_message'),
 
-  // Rejection info
-  rejectedAt: integer('rejected_at', { mode: 'timestamp' }),
-  rejectionReason: text('rejection_reason'),
-}, (table) => ({
-  sessionIdx: index('task_session_idx').on(table.sessionId),
-  statusIdx: index('task_status_idx').on(table.status),
-}));
+    // Rejection info
+    rejectedAt: integer('rejected_at', { mode: 'timestamp' }),
+    rejectionReason: text('rejection_reason'),
+  },
+  (table) => ({
+    sessionIdx: index('task_session_idx').on(table.sessionId),
+    statusIdx: index('task_status_idx').on(table.status),
+  })
+);
 ```
 
 ### API Endpoints
 
 **POST /api/tasks**
+
 ```typescript
 // src/app/api/tasks/route.ts
 
@@ -476,7 +502,8 @@ export async function POST(request: Request) {
   }
 
   // Create task
-  const [task] = await db.insert(tasks)
+  const [task] = await db
+    .insert(tasks)
     .values({
       sessionId,
       prompt,
@@ -492,6 +519,7 @@ export async function POST(request: Request) {
 ```
 
 **GET /api/tasks/:id**
+
 ```typescript
 import { db } from '@/lib/db';
 import { tasks } from '@/db/schema';
@@ -522,6 +550,7 @@ export async function GET(
 ```
 
 **POST /api/tasks/:id/cancel**
+
 ```typescript
 import { db } from '@/lib/db';
 import { tasks } from '@/db/schema';
@@ -533,7 +562,8 @@ export async function POST(
 ) {
   await claudeWrapper.cancel(params.id);
 
-  await db.update(tasks)
+  await db
+    .update(tasks)
     .set({ status: 'cancelled' })
     .where(eq(tasks.id, params.id));
 
@@ -554,19 +584,25 @@ export async function GET(request: Request) {
       // Listen to Claude wrapper events
       const onOutput = (data: any) => {
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'output', ...data })}\n\n`)
+          encoder.encode(
+            `data: ${JSON.stringify({ type: 'output', ...data })}\n\n`
+          )
         );
       };
 
       const onComplete = (data: any) => {
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'complete', ...data })}\n\n`)
+          encoder.encode(
+            `data: ${JSON.stringify({ type: 'complete', ...data })}\n\n`
+          )
         );
       };
 
       const onFailed = (data: any) => {
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'failed', ...data })}\n\n`)
+          encoder.encode(
+            `data: ${JSON.stringify({ type: 'failed', ...data })}\n\n`
+          )
         );
       };
 
@@ -588,7 +624,7 @@ export async function GET(request: Request) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
@@ -666,18 +702,23 @@ export function PromptInput({ sessionId }: { sessionId: string }) {
 ## Edge Cases
 
 ### Scenario: Claude Hangs
+
 **Handling**: Implement timeout (default 10 minutes), show warning at 8 minutes, auto-cancel at 10
 
 ### Scenario: Multiple Tasks Submitted
+
 **Handling**: Queue tasks, only one runs at a time per repository
 
 ### Scenario: User Closes Browser
+
 **Handling**: Task continues in background, state persists, user can reconnect
 
 ### Scenario: Claude Asks for Input
+
 **Handling**: Detect input prompt in output, show modal, send stdin to process (future enhancement)
 
 ### Scenario: Claude Code Not Installed
+
 **Handling**: Pre-flight check detects, shows error with installation instructions
 
 ## Acceptance Criteria
@@ -696,11 +737,13 @@ export function PromptInput({ sessionId }: { sessionId: string }) {
 ## Dependencies
 
 **Required for**:
+
 - QA gates (need completed task to test)
 - Diff review (need changes to review)
 - Approval workflow (need task to approve)
 
 **Depends on**:
+
 - Repository selected
 - Pre-flight checks passing
 - Claude Code CLI available

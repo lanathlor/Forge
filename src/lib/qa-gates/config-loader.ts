@@ -81,13 +81,26 @@ async function loadConfigFromFile(configPath: string): Promise<AutobotConfig> {
   return config;
 }
 
-function handleConfigError(error: unknown, configPath: string, containerPath: string): AutobotConfig {
-  if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-    console.log(`ℹ️ No .autobot.json found in ${containerPath}, using default config`);
+function handleConfigError(
+  error: unknown,
+  configPath: string,
+  containerPath: string
+): AutobotConfig {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'ENOENT'
+  ) {
+    console.log(
+      `ℹ️ No .autobot.json found in ${containerPath}, using default config`
+    );
     return DEFAULT_CONFIG;
   }
   if (error instanceof Error && error.message === 'Config load timeout') {
-    console.error(`⏱️ Timeout loading config from ${configPath}, using default config`);
+    console.error(
+      `⏱️ Timeout loading config from ${configPath}, using default config`
+    );
     return DEFAULT_CONFIG;
   }
   console.error(`❌ Error loading config from ${configPath}:`, error);

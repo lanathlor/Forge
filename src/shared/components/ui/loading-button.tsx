@@ -1,7 +1,7 @@
-import * as React from "react"
-import { Button, type ButtonProps } from "./button"
-import { LoadingSpinner } from "./loading"
-import { cn } from "@/shared/lib/utils"
+import * as React from 'react';
+import { Button, type ButtonProps } from './button';
+import { LoadingSpinner } from './loading';
+import { cn } from '@/shared/lib/utils';
 
 /**
  * Button with built-in loading state
@@ -15,24 +15,38 @@ import { cn } from "@/shared/lib/utils"
 
 export interface LoadingButtonProps extends ButtonProps {
   /** Whether the button is in a loading state */
-  loading?: boolean
+  loading?: boolean;
   /** Optional text to show while loading (defaults to children) */
-  loadingText?: React.ReactNode
+  loadingText?: React.ReactNode;
   /** Size of the loading spinner */
-  spinnerSize?: "xs" | "sm" | "default"
+  spinnerSize?: 'xs' | 'sm' | 'default';
 }
 
-export const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonProps>(
-  ({ className, children, loading = false, loadingText, spinnerSize = "sm", disabled, ...props }, ref) => {
+export const LoadingButton = React.forwardRef<
+  HTMLButtonElement,
+  LoadingButtonProps
+>(
+  (
+    {
+      className,
+      children,
+      loading = false,
+      loadingText,
+      spinnerSize = 'sm',
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     // Determine spinner size based on button size
     const getSpinnerSize = () => {
-      if (spinnerSize !== "default") return spinnerSize
+      if (spinnerSize !== 'default') return spinnerSize;
 
       // Auto-detect from button variant
-      if (props.size === "sm" || props.size === "icon") return "xs"
-      if (props.size === "lg") return "default"
-      return "sm"
-    }
+      if (props.size === 'sm' || props.size === 'icon') return 'xs';
+      if (props.size === 'lg') return 'default';
+      return 'sm';
+    };
 
     return (
       <Button
@@ -46,7 +60,7 @@ export const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonPr
             <LoadingSpinner
               size={getSpinnerSize()}
               className="mr-2"
-              variant={props.variant === "destructive" ? "error" : "default"}
+              variant={props.variant === 'destructive' ? 'error' : 'default'}
             />
             {loadingText || children}
           </>
@@ -54,10 +68,10 @@ export const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonPr
           children
         )}
       </Button>
-    )
+    );
   }
-)
-LoadingButton.displayName = "LoadingButton"
+);
+LoadingButton.displayName = 'LoadingButton';
 
 /**
  * Usage Examples:

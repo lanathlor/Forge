@@ -20,9 +20,18 @@ if (!globalForEvents.taskEvents) {
 // Plan execution event types
 export interface PlanExecutionEvent {
   planId: string;
-  type: 'plan_started' | 'plan_completed' | 'plan_failed' | 'plan_paused' |
-        'phase_started' | 'phase_completed' | 'phase_failed' |
-        'task_started' | 'task_completed' | 'task_failed' | 'task_progress';
+  type:
+    | 'plan_started'
+    | 'plan_completed'
+    | 'plan_failed'
+    | 'plan_paused'
+    | 'phase_started'
+    | 'phase_completed'
+    | 'phase_failed'
+    | 'task_started'
+    | 'task_completed'
+    | 'task_failed'
+    | 'task_progress';
   phaseId?: string;
   taskId?: string;
   sessionTaskId?: string;

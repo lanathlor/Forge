@@ -80,8 +80,12 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Response "}\n'));
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"text"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Response "}\n')
+        );
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"text"}\n')
+        );
         controller.close();
       },
     });
@@ -141,11 +145,15 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Here are changes"}\n'));
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Update task 1"}]}\n',
-          ),
+            'data: {"type":"chunk","content":"Here are changes"}\n'
+          )
+        );
+        controller.enqueue(
+          encoder.encode(
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Update task 1"}]}\n'
+          )
         );
         controller.close();
       },
@@ -171,7 +179,9 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"error","message":"Something broke"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"error","message":"Something broke"}\n')
+        );
         controller.close();
       },
     });
@@ -195,11 +205,13 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Changes"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Changes"}\n')
+        );
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Update task"}]}\n',
-          ),
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Update task"}]}\n'
+          )
         );
         controller.close();
       },
@@ -222,24 +234,30 @@ describe('usePlanRefinementChat', () => {
       result.current.setProposalStatus(msgIdx, 1, 'accepted');
     });
 
-    expect(result.current.messages[msgIdx]!.proposals![0]!.status).toBe('accepted');
+    expect(result.current.messages[msgIdx]!.proposals![0]!.status).toBe(
+      'accepted'
+    );
 
     act(() => {
       result.current.setProposalStatus(msgIdx, 1, 'rejected');
     });
 
-    expect(result.current.messages[msgIdx]!.proposals![0]!.status).toBe('rejected');
+    expect(result.current.messages[msgIdx]!.proposals![0]!.status).toBe(
+      'rejected'
+    );
   });
 
   it('should apply accepted proposals', async () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Changes"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Changes"}\n')
+        );
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Update task"}]}\n',
-          ),
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Update task"}]}\n'
+          )
         );
         controller.close();
       },
@@ -286,11 +304,13 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Changes"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Changes"}\n')
+        );
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"},{"id":2,"action":"add_task","label":"Task 2"}]}\n',
-          ),
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"},{"id":2,"action":"add_task","label":"Task 2"}]}\n'
+          )
         );
         controller.close();
       },
@@ -333,15 +353,19 @@ describe('usePlanRefinementChat', () => {
   });
 
   it('should handle apply failure', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Changes"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Changes"}\n')
+        );
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"}]}\n',
-          ),
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"}]}\n'
+          )
         );
         controller.close();
       },
@@ -372,15 +396,19 @@ describe('usePlanRefinementChat', () => {
   });
 
   it('should handle acceptAllAndApply failure', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Changes"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Changes"}\n')
+        );
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"}]}\n',
-          ),
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"}]}\n'
+          )
         );
         controller.close();
       },
@@ -426,7 +454,9 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"ok"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"ok"}\n')
+        );
         controller.close();
       },
     });
@@ -451,7 +481,9 @@ describe('usePlanRefinementChat', () => {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(encoder.encode('data: not-json\n'));
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"ok"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"ok"}\n')
+        );
         controller.enqueue(encoder.encode('not a data line\n'));
         controller.close();
       },
@@ -475,7 +507,11 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Some text <UPDATES>hidden</UPDATES> more text"}\n'));
+        controller.enqueue(
+          encoder.encode(
+            'data: {"type":"chunk","content":"Some text <UPDATES>hidden</UPDATES> more text"}\n'
+          )
+        );
         controller.close();
       },
     });
@@ -511,11 +547,13 @@ describe('usePlanRefinementChat', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode('data: {"type":"chunk","content":"Changes"}\n'));
+        controller.enqueue(
+          encoder.encode('data: {"type":"chunk","content":"Changes"}\n')
+        );
         controller.enqueue(
           encoder.encode(
-            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"}]}\n',
-          ),
+            'data: {"type":"proposals","changes":[{"id":1,"action":"modify_task","label":"Task 1"}]}\n'
+          )
         );
         controller.close();
       },

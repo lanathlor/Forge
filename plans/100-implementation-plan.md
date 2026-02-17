@@ -11,6 +11,7 @@
 ## Phase 1: Project Foundation (Days 1-2)
 
 ### Day 1 Morning: Initial Setup
+
 - [ ] Initialize Next.js project with TypeScript
   ```bash
   pnpx create-next-app@latest autobot \
@@ -32,6 +33,7 @@
 - [ ] Create `.env` file with defaults
 
 ### Day 1 Afternoon: Database Schema
+
 - [ ] Define complete Drizzle schema in `src/db/schema.ts`
   - repositories table
   - sessions table (with status enum)
@@ -56,6 +58,7 @@
   ```
 
 ### Day 1 Evening: Docker Setup
+
 - [ ] Create Dockerfile (multi-stage: dev + prod)
 - [ ] Create docker-compose.yml
   - App service with volume mounts
@@ -67,6 +70,7 @@
 - [ ] Verify hot reload works in container
 
 ### Day 2 Morning: shadcn/ui Setup
+
 - [ ] Initialize shadcn/ui
   ```bash
   pnpx shadcn@latest init
@@ -82,6 +86,7 @@
 - [ ] Create dashboard layout structure
 
 ### Day 2 Afternoon: Redux Toolkit & RTK Query Setup
+
 - [ ] Install Redux dependencies
   ```bash
   pnpm add @reduxjs/toolkit react-redux
@@ -98,6 +103,7 @@
   - `uiSlice.ts` - UI state (modals, loading, etc.)
 
 ### Day 2 Evening: Basic Types & Utils
+
 - [ ] Create TypeScript types (`src/types/index.ts`)
 - [ ] Create utility functions (`src/lib/utils.ts`)
 - [ ] Setup basic error handling
@@ -110,6 +116,7 @@
 ## Phase 2: Repository Discovery (Day 2-3)
 
 ### Day 2 Evening: Git Workspace Scanner
+
 - [ ] Implement `src/lib/workspace/scanner.ts`
   - `findGitDirectories()` - recursive search
   - `discoverRepositories()` - extract repo info
@@ -120,6 +127,7 @@
 - [ ] Test with `/home/lanath/Work` directory
 
 ### Day 3 Morning: Repository API
+
 - [ ] Create `GET /api/repositories` endpoint
   - Scan workspace
   - Update/create in database
@@ -129,6 +137,7 @@
 - [ ] Test APIs with curl/Postman
 
 ### Day 3 Afternoon: Repository UI
+
 - [ ] Add RTK Query endpoints for repositories
   - `getRepositories` query
   - `rescanRepositories` mutation
@@ -147,6 +156,7 @@
 ## Phase 3: Session Management (Day 3-4)
 
 ### Day 3 Evening: Session Logic
+
 - [ ] Implement `src/lib/sessions/manager.ts`
   - `getActiveSession()`
   - `createSession()`
@@ -159,6 +169,7 @@
 - [ ] Write unit tests
 
 ### Day 4 Morning: Session API & RTK Query
+
 - [ ] Create `GET /api/sessions?repositoryId=xxx` endpoint
 - [ ] Create `GET /api/sessions/:id` endpoint
 - [ ] Create `POST /api/sessions` endpoint
@@ -171,6 +182,7 @@
 - [ ] Test session lifecycle
 
 ### Day 4 Afternoon: Session UI
+
 - [ ] Build `SessionHeader` component (use RTK Query hooks)
 - [ ] Build session summary modal
 - [ ] Integrate with dashboard
@@ -183,6 +195,7 @@
 ## Phase 4: Claude Integration (Day 4-5)
 
 ### Day 4 Evening: Claude Wrapper
+
 - [ ] Implement `src/lib/claude/wrapper.ts`
   - `ClaudeCodeWrapper` class with EventEmitter
   - `executeTask()` - spawn claude-code CLI
@@ -192,6 +205,7 @@
 - [ ] Handle edge cases (timeout, error, cancel)
 
 ### Day 5 Morning: Pre-flight Checks
+
 - [ ] Implement `src/lib/git/pre-flight.ts`
   - `runPreFlightChecks()`
   - Check if repo is clean
@@ -200,6 +214,7 @@
 - [ ] Test with dirty repository
 
 ### Day 5 Afternoon: Task Orchestrator
+
 - [ ] Implement `src/lib/tasks/orchestrator.ts`
   - `executeTask()` - main workflow
   - Run pre-flight checks
@@ -216,6 +231,7 @@
 ## Phase 5: QA Gate System (Day 5-6)
 
 ### Day 5 Evening: Gate Runner
+
 - [ ] Implement `src/lib/qa-gates/runner.ts`
   - `runQAGates()` - orchestrate all gates
   - `runSingleGate()` - execute one gate
@@ -228,12 +244,14 @@
 - [ ] Write unit tests
 
 ### Day 6 Morning: QA Gate API
+
 - [ ] Create `GET /api/qa-gates` endpoint (list configs)
 - [ ] Create `PUT /api/qa-gates/:id` endpoint (update config)
 - [ ] Create `POST /api/tasks/:id/qa-gates/run` endpoint (re-run)
 - [ ] Test gate execution and results
 
 ### Day 6 Afternoon: QA Gate UI
+
 - [ ] Build `QAGateResults` component
   - Display gate status (pending/running/passed/failed)
   - Show errors with formatting
@@ -248,6 +266,7 @@
 ## Phase 6: Diff Review (Day 6-7)
 
 ### Day 6 Evening: Diff Capture
+
 - [ ] Implement `src/lib/git/diff.ts`
   - `captureDiff()` - get full diff
   - `parseChangedFiles()` - extract file list with stats
@@ -258,12 +277,14 @@
 - [ ] Write unit tests with sample repos
 
 ### Day 7 Morning: Diff API
+
 - [ ] Create `GET /api/tasks/:id/diff` endpoint
 - [ ] Create `GET /api/tasks/:id/files/:path` endpoint
 - [ ] Cache diff in database
 - [ ] Test with large diffs
 
 ### Day 7 Afternoon: Diff Viewer UI
+
 - [ ] Build `DiffViewer` component
   - File tree with change indicators
   - Monaco DiffEditor integration
@@ -279,6 +300,7 @@
 ## Phase 7: Approval & Commit Workflow (Day 7-8)
 
 ### Day 7 Evening: Commit Message Generation
+
 - [ ] Implement `src/lib/claude/commit-message.ts`
   - `generateCommitMessage()` - call Claude for commit msg
   - Format prompt with diff and context
@@ -286,6 +308,7 @@
 - [ ] Handle errors and timeouts
 
 ### Day 8 Morning: Commit Logic
+
 - [ ] Implement `src/lib/git/commit.ts`
   - `commitChanges()` - stage files and commit
   - `approveTask()` - generate commit message
@@ -294,6 +317,7 @@
 - [ ] Test in real repository
 
 ### Day 8 Afternoon: Approval API & UI
+
 - [ ] Create `POST /api/tasks/:id/approve` endpoint
 - [ ] Create `POST /api/tasks/:id/commit` endpoint
 - [ ] Create `POST /api/tasks/:id/regenerate-message` endpoint
@@ -316,6 +340,7 @@
 ## Phase 8: Reject & Revert Workflow (Day 8)
 
 ### Day 8 Evening: Revert Logic
+
 - [ ] Implement `src/lib/git/revert.ts`
   - `revertChanges()` - surgical revert
   - `validateRevertSafety()` - pre-revert checks
@@ -324,6 +349,7 @@
 - [ ] Test with sample changes
 
 ### Day 8 Night: Reject API & UI
+
 - [ ] Create `GET /api/tasks/:id/revert-preview` endpoint
 - [ ] Create `POST /api/tasks/:id/reject` endpoint
 - [ ] Build `RejectButton` component
@@ -339,6 +365,7 @@
 ## Phase 9: Real-time Dashboard (Day 9)
 
 ### Day 9 Morning: Server-Sent Events
+
 - [ ] Create `GET /api/stream` endpoint
   - Setup SSE stream
   - Implement event filtering by sessionId
@@ -351,6 +378,7 @@
 - [ ] Test SSE connection
 
 ### Day 9 Afternoon: SSE Client
+
 - [ ] Create `useTaskStream` hook
   - Connect to SSE endpoint
   - Handle events
@@ -360,6 +388,7 @@
 - [ ] Test real-time updates
 
 ### Day 9 Evening: Task UI Components
+
 - [ ] Build `TaskTimeline` component
   - List tasks in session
   - Show status indicators
@@ -378,6 +407,7 @@
 ## Phase 10: Polish & Testing (Day 10)
 
 ### Day 10 Morning: Integration Testing
+
 - [ ] Write E2E tests with Playwright
   - Full task approval workflow
   - Full task rejection workflow
@@ -386,6 +416,7 @@
 - [ ] Fix bugs discovered in testing
 
 ### Day 10 Afternoon: Error Handling & UX
+
 - [ ] Add loading states everywhere
 - [ ] Add error boundaries
 - [ ] Add user-friendly error messages
@@ -394,6 +425,7 @@
 - [ ] Improve responsive design
 
 ### Day 10 Evening: Documentation & Cleanup
+
 - [ ] Write README.md
   - Installation instructions
   - Configuration guide
@@ -412,23 +444,27 @@
 ## Post-MVP (Future Iterations)
 
 ### Iteration 1: Stability
+
 - Monitoring and logging (Winston, Sentry)
 - Performance optimizations
 - Database indexes tuning
 - Automated backups
 
 ### Iteration 2: Enhanced UX
+
 - Keyboard shortcuts
 - Dark mode
 - Desktop notifications
 - Better mobile support
 
 ### Iteration 3: Multi-user
+
 - Real authentication (OAuth, JWT)
 - User roles and permissions
 - Audit trail per user
 
 ### Iteration 4: Advanced Features
+
 - GitHub/GitLab integration
 - CI/CD integration
 - Custom QA gate plugins
@@ -467,18 +503,23 @@
 ## Risk Mitigation
 
 ### Risk 1: Claude Code CLI Issues
+
 **Mitigation**: Test wrapper early, create mock for development
 
 ### Risk 2: Git Operations Complexity
+
 **Mitigation**: Use well-tested git commands, extensive unit tests
 
 ### Risk 3: SSE Connection Stability
+
 **Mitigation**: Implement auto-reconnect, fallback to polling
 
 ### Risk 4: Large Diffs Performance
+
 **Mitigation**: Implement size limits, lazy loading
 
 ### Risk 5: Scope Creep
+
 **Mitigation**: Stick to MVP feature list, defer enhancements
 
 ---
@@ -486,6 +527,7 @@
 ## Success Criteria Checklist
 
 ### Core Functionality
+
 - [ ] Discover git repositories in workspace
 - [ ] Create and manage sessions
 - [ ] Execute Claude Code tasks
@@ -496,6 +538,7 @@
 - [ ] Real-time dashboard updates
 
 ### Quality Metrics
+
 - [ ] TypeScript strict mode (no errors)
 - [ ] ESLint passes with zero warnings
 - [ ] All unit tests pass
@@ -504,6 +547,7 @@
 - [ ] Can switch SQLite → PostgreSQL
 
 ### User Experience
+
 - [ ] Dashboard loads in < 2 seconds
 - [ ] Real-time updates arrive within 1 second
 - [ ] No UI freezes during operations

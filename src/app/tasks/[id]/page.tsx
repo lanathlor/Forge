@@ -24,12 +24,13 @@ export default function TaskDetailPage() {
             Back to Tasks
           </Button>
         </div>
-        <div className="flex items-center justify-center h-[calc(100%-4rem)]">
+        <div className="flex h-[calc(100%-4rem)] items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-2">Task Detail</h1>
+            <h1 className="mb-2 text-2xl font-bold">Task Detail</h1>
             <p className="text-muted-foreground">Task ID: {taskId}</p>
-            <p className="text-sm text-muted-foreground mt-4">
-              Task detail view coming soon. Use the dashboard view to interact with tasks.
+            <p className="mt-4 text-sm text-muted-foreground">
+              Task detail view coming soon. Use the dashboard view to interact
+              with tasks.
             </p>
           </div>
         </div>

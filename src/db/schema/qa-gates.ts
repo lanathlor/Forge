@@ -3,7 +3,9 @@ import { relations } from 'drizzle-orm';
 import { tasks } from './tasks';
 
 export const qaGateConfigs = sqliteTable('qa_gate_configs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull().unique(),
   enabled: integer('enabled', { mode: 'boolean' }).default(true),
   command: text('command').notNull(),
@@ -18,10 +20,17 @@ export const qaGateConfigs = sqliteTable('qa_gate_configs', {
     .$defaultFn(() => new Date()),
 });
 
-export type QAGateStatus = 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
+export type QAGateStatus =
+  | 'pending'
+  | 'running'
+  | 'passed'
+  | 'failed'
+  | 'skipped';
 
 export const qaGateResults = sqliteTable('qa_gate_results', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   taskId: text('task_id').notNull(),
   gateName: text('gate_name').notNull(),
   status: text('status').$type<QAGateStatus>().notNull(),

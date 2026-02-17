@@ -8,7 +8,8 @@ import { SessionSummaryModal } from '../SessionSummaryModal';
 const mockUseGetSessionSummaryQuery = vi.fn();
 
 vi.mock('@/features/sessions/store/sessionsApi', () => ({
-  useGetSessionSummaryQuery: (...args: unknown[]) => mockUseGetSessionSummaryQuery(...args),
+  useGetSessionSummaryQuery: (...args: unknown[]) =>
+    mockUseGetSessionSummaryQuery(...args),
 }));
 
 // Mock Dialog from shadcn
@@ -117,7 +118,9 @@ describe('SessionSummaryModal', () => {
         />
       );
 
-      expect(screen.getByText('Session completed for test-repo')).toBeInTheDocument();
+      expect(
+        screen.getByText('Session completed for test-repo')
+      ).toBeInTheDocument();
     });
   });
 

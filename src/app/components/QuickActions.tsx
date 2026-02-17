@@ -42,7 +42,9 @@ interface KeyboardShortcutProps {
 }
 
 function KeyboardShortcut({ shortcut, className }: KeyboardShortcutProps) {
-  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const isMac =
+    typeof navigator !== 'undefined' &&
+    navigator.platform.toUpperCase().indexOf('MAC') >= 0;
   const modKeyLabel = isMac ? '⌘' : 'Ctrl';
 
   return (
@@ -92,11 +94,15 @@ interface ActionCardContentProps {
   isInteractive: boolean;
 }
 
-function ActionCardContent({ action, isPrimary, isInteractive }: ActionCardContentProps) {
+function ActionCardContent({
+  action,
+  isPrimary,
+  isInteractive,
+}: ActionCardContentProps) {
   return (
     <>
       <ActionCardIcon icon={action.icon} isPrimary={isPrimary} />
-      <div className="flex flex-1 flex-col gap-1 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span
           className={cn(
             'text-base font-semibold transition-colors',
@@ -106,10 +112,12 @@ function ActionCardContent({ action, isPrimary, isInteractive }: ActionCardConte
         >
           {action.title}
         </span>
-        <span className="text-sm text-text-muted line-clamp-2">{action.description}</span>
+        <span className="line-clamp-2 text-sm text-text-muted">
+          {action.description}
+        </span>
       </div>
       {action.shortcut && (
-        <div className="hidden sm:flex shrink-0">
+        <div className="hidden shrink-0 sm:flex">
           <KeyboardShortcut shortcut={action.shortcut} />
         </div>
       )}
@@ -117,7 +125,12 @@ function ActionCardContent({ action, isPrimary, isInteractive }: ActionCardConte
   );
 }
 
-function getActionCardClasses(isPrimary: boolean, isInteractive: boolean, disabled?: boolean, loading?: boolean) {
+function getActionCardClasses(
+  isPrimary: boolean,
+  isInteractive: boolean,
+  disabled?: boolean,
+  loading?: boolean
+) {
   return cn(
     'group relative flex items-center gap-4 p-4 sm:p-5',
     'rounded-xl border bg-card text-card-foreground',
@@ -167,12 +180,28 @@ function ActionCard({ action, loading }: ActionCardProps) {
     [handleClick]
   );
 
-  const baseClasses = getActionCardClasses(isPrimary, isInteractive, action.disabled, loading);
-  const content = <ActionCardContent action={action} isPrimary={isPrimary} isInteractive={isInteractive} />;
+  const baseClasses = getActionCardClasses(
+    isPrimary,
+    isInteractive,
+    action.disabled,
+    loading
+  );
+  const content = (
+    <ActionCardContent
+      action={action}
+      isPrimary={isPrimary}
+      isInteractive={isInteractive}
+    />
+  );
 
   if (action.href && !action.disabled) {
     return (
-      <a href={action.href} className={baseClasses} tabIndex={0} aria-label={action.title}>
+      <a
+        href={action.href}
+        className={baseClasses}
+        tabIndex={0}
+        aria-label={action.title}
+      >
         {content}
       </a>
     );
@@ -199,13 +228,13 @@ function ActionCard({ action, loading }: ActionCardProps) {
 
 function ActionCardSkeleton() {
   return (
-    <div className="flex items-center gap-4 p-4 sm:p-5 rounded-xl border border-border bg-card min-h-[88px] sm:min-h-[96px]">
-      <div className="h-12 w-12 rounded-xl bg-muted animate-pulse" />
+    <div className="flex min-h-[88px] items-center gap-4 rounded-xl border border-border bg-card p-4 sm:min-h-[96px] sm:p-5">
+      <div className="h-12 w-12 animate-pulse rounded-xl bg-muted" />
       <div className="flex flex-1 flex-col gap-2">
-        <div className="h-5 w-24 rounded bg-muted animate-pulse" />
-        <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+        <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-36 animate-pulse rounded bg-muted" />
       </div>
-      <div className="hidden sm:block h-5 w-12 rounded bg-muted animate-pulse" />
+      <div className="hidden h-5 w-12 animate-pulse rounded bg-muted sm:block" />
     </div>
   );
 }
@@ -287,18 +316,28 @@ export function QuickActions({
   );
 
   return (
-    <section aria-labelledby="quick-actions-heading" className={cn('', className)}>
+    <section
+      aria-labelledby="quick-actions-heading"
+      className={cn('', className)}
+    >
       <div className="mb-4">
-        <h2 id="quick-actions-heading" className="text-lg font-semibold text-text-primary">
+        <h2
+          id="quick-actions-heading"
+          className="text-lg font-semibold text-text-primary"
+        >
           Quick Actions
         </h2>
-        <p className="mt-1 text-sm text-text-muted">Get started with common tasks</p>
+        <p className="mt-1 text-sm text-text-muted">
+          Get started with common tasks
+        </p>
       </div>
 
       {/* Responsive Grid: 2x2 on mobile (grid-cols-2), 1x4 on desktop (lg:grid-cols-4) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => <ActionCardSkeleton key={i} />)
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <ActionCardSkeleton key={i} />
+            ))
           : actions.map((action) => (
               <ActionCard key={action.id} action={action} loading={loading} />
             ))}

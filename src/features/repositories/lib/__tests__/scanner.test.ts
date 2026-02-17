@@ -28,7 +28,11 @@ import { discoverRepositories } from '../scanner';
 import { existsSync } from 'fs';
 import { spawn } from 'child_process';
 
-function createMockChildProcess(stdout: string = '', stderr: string = '', exitCode: number = 0): ChildProcess {
+function createMockChildProcess(
+  stdout: string = '',
+  stderr: string = '',
+  exitCode: number = 0
+): ChildProcess {
   const mockProcess = new EventEmitter() as ChildProcess;
 
   // Create stdout and stderr as EventEmitters BEFORE returning
@@ -333,11 +337,13 @@ describe('Repository Scanner', () => {
         ['git status --porcelain', ''],
       ]);
 
-      vi.mocked(spawn).mockImplementation((cmd: string, args?: readonly string[], options?: any) => {
-        const command = args?.[1] || '';
-        const output = gitCommands.get(command) || '';
-        return createMockChildProcess(output) as any;
-      });
+      vi.mocked(spawn).mockImplementation(
+        (cmd: string, args?: readonly string[], options?: any) => {
+          const command = args?.[1] || '';
+          const output = gitCommands.get(command) || '';
+          return createMockChildProcess(output) as any;
+        }
+      );
 
       const repos = await discoverRepositories('/test/root');
 
@@ -392,14 +398,19 @@ describe('Repository Scanner', () => {
         ['git log -1 --pretty=%B', 'WIP: New feature\n'],
         ['git log -1 --pretty=%an', 'Jane Doe\n'],
         ['git log -1 --pretty=%at', '1704153600\n'],
-        ['git status --porcelain', ' M src/file1.ts\n M src/file2.ts\n?? new-file.ts\n'],
+        [
+          'git status --porcelain',
+          ' M src/file1.ts\n M src/file2.ts\n?? new-file.ts\n',
+        ],
       ]);
 
-      vi.mocked(spawn).mockImplementation((cmd: string, args?: readonly string[], options?: any) => {
-        const command = args?.[1] || '';
-        const output = gitCommands.get(command) || '';
-        return createMockChildProcess(output) as any;
-      });
+      vi.mocked(spawn).mockImplementation(
+        (cmd: string, args?: readonly string[], options?: any) => {
+          const command = args?.[1] || '';
+          const output = gitCommands.get(command) || '';
+          return createMockChildProcess(output) as any;
+        }
+      );
 
       const repos = await discoverRepositories('/test/dirty-repo');
 
@@ -421,17 +432,26 @@ describe('Repository Scanner', () => {
         ['git status --porcelain', ''],
       ]);
 
-      vi.mocked(spawn).mockImplementation((cmd: string, args?: readonly string[], options?: any) => {
-        const command = args?.[1] || '';
+      vi.mocked(spawn).mockImplementation(
+        (cmd: string, args?: readonly string[], options?: any) => {
+          const command = args?.[1] || '';
 
-        // Git log commands should fail for repo with no commits
-        if (command.includes('git log') || command.includes('git rev-parse HEAD')) {
-          return createMockChildProcess('', 'fatal: your current branch does not have any commits yet', 1) as any;
+          // Git log commands should fail for repo with no commits
+          if (
+            command.includes('git log') ||
+            command.includes('git rev-parse HEAD')
+          ) {
+            return createMockChildProcess(
+              '',
+              'fatal: your current branch does not have any commits yet',
+              1
+            ) as any;
+          }
+
+          const output = gitCommands.get(command) || '';
+          return createMockChildProcess(output) as any;
         }
-
-        const output = gitCommands.get(command) || '';
-        return createMockChildProcess(output) as any;
-      });
+      );
 
       const repos = await discoverRepositories('/test/new-repo');
 
@@ -531,13 +551,19 @@ describe('Repository Scanner', () => {
       ]);
 
       // Mock git branch to fail
-      vi.mocked(spawn).mockImplementation((cmd: string, args?: readonly string[], options?: any) => {
-        const command = args?.[1] || '';
-        if (command.includes('git branch')) {
-          return createMockChildProcess('', 'fatal: not a git repository', 1) as any;
+      vi.mocked(spawn).mockImplementation(
+        (cmd: string, args?: readonly string[], options?: any) => {
+          const command = args?.[1] || '';
+          if (command.includes('git branch')) {
+            return createMockChildProcess(
+              '',
+              'fatal: not a git repository',
+              1
+            ) as any;
+          }
+          return createMockChildProcess('') as any;
         }
-        return createMockChildProcess('') as any;
-      });
+      );
 
       const repos = await discoverRepositories('/test/broken-repo');
 
@@ -571,17 +597,22 @@ describe('Repository Scanner', () => {
       const gitCommands = new Map<string, string>([
         ['git branch --show-current', 'main\n'],
         ['git rev-parse HEAD', 'abc123\n'],
-        ['git log -1 --pretty=%B', 'feat: Add new feature\n\nDetailed description\nwith multiple lines\n'],
+        [
+          'git log -1 --pretty=%B',
+          'feat: Add new feature\n\nDetailed description\nwith multiple lines\n',
+        ],
         ['git log -1 --pretty=%an', 'Developer\n'],
         ['git log -1 --pretty=%at', '1704067200\n'],
         ['git status --porcelain', ''],
       ]);
 
-      vi.mocked(spawn).mockImplementation((cmd: string, args?: readonly string[], options?: any) => {
-        const command = args?.[1] || '';
-        const output = gitCommands.get(command) || '';
-        return createMockChildProcess(output) as any;
-      });
+      vi.mocked(spawn).mockImplementation(
+        (cmd: string, args?: readonly string[], options?: any) => {
+          const command = args?.[1] || '';
+          const output = gitCommands.get(command) || '';
+          return createMockChildProcess(output) as any;
+        }
+      );
 
       const repos = await discoverRepositories('/test/repo');
 
@@ -615,7 +646,8 @@ describe('Repository Scanner', () => {
       expect(repos[0]?.id).not.toBe(repos[1]?.id);
 
       // Check UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       expect(repos[0]?.id).toMatch(uuidRegex);
       expect(repos[1]?.id).toMatch(uuidRegex);
     });

@@ -107,7 +107,9 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('navigation', { name: /main navigation/i })
+      ).toBeInTheDocument();
     });
 
     it('should render with custom logo', () => {
@@ -124,7 +126,9 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
       expect(within(sidebar).getByText('Claude Code')).toBeInTheDocument();
     });
 
@@ -142,7 +146,9 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
       expect(within(sidebar).getByText('Dashboard')).toBeInTheDocument();
       expect(within(sidebar).getByText('Tasks')).toBeInTheDocument();
       expect(within(sidebar).getByText('Plans')).toBeInTheDocument();
@@ -167,8 +173,12 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const dashboardLink = within(sidebar).getByRole('link', { name: 'Dashboard' });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
+      const dashboardLink = within(sidebar).getByRole('link', {
+        name: 'Dashboard',
+      });
       expect(dashboardLink).toHaveAttribute('aria-current', 'page');
     });
 
@@ -186,7 +196,9 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
       const plansLink = within(sidebar).getByRole('link', { name: 'Plans' });
       expect(plansLink).toHaveAttribute('aria-current', 'page');
     });
@@ -207,8 +219,12 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const collapseButton = within(sidebar).getByRole('button', { name: /collapse sidebar/i });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
+      const collapseButton = within(sidebar).getByRole('button', {
+        name: /collapse sidebar/i,
+      });
       expect(collapseButton).toBeInTheDocument();
     });
 
@@ -226,8 +242,12 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const expandButton = within(sidebar).getByRole('button', { name: /expand sidebar/i });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
+      const expandButton = within(sidebar).getByRole('button', {
+        name: /expand sidebar/i,
+      });
       expect(expandButton).toBeInTheDocument();
     });
 
@@ -260,13 +280,18 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const collapseButton = within(sidebar).getByRole('button', { name: /collapse sidebar/i });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
+      const collapseButton = within(sidebar).getByRole('button', {
+        name: /collapse sidebar/i,
+      });
       await user.click(collapseButton);
 
       // Verify the action was dispatched
-      const collapsedActions = actionLog.filter((a: unknown) =>
-        (a as { type?: string }).type === 'session/setSidebarCollapsed'
+      const collapsedActions = actionLog.filter(
+        (a: unknown) =>
+          (a as { type?: string }).type === 'session/setSidebarCollapsed'
       );
       expect(collapsedActions.length).toBeGreaterThan(0);
     });
@@ -346,7 +371,9 @@ describe('AppLayout', () => {
       );
 
       // Navigation component renders with main navigation role
-      expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('navigation', { name: /main navigation/i })
+      ).toBeInTheDocument();
       expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
@@ -365,8 +392,12 @@ describe('AppLayout', () => {
         </Provider>
       );
 
-      const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const dashboardLink = within(sidebar).getByRole('link', { name: 'Dashboard' });
+      const sidebar = screen.getByRole('navigation', {
+        name: /main navigation/i,
+      });
+      const dashboardLink = within(sidebar).getByRole('link', {
+        name: 'Dashboard',
+      });
 
       // Focus the first nav item
       dashboardLink.focus();
@@ -403,7 +434,9 @@ describe('AppLayout with mobile viewport', () => {
     );
 
     // Mobile header should show the hamburger menu button
-    expect(screen.getByRole('button', { name: /open navigation menu/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /open navigation menu/i })
+    ).toBeInTheDocument();
   });
 
   it('should add padding top for mobile header', () => {
