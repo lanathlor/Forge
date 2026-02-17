@@ -30,7 +30,7 @@ vi.mock('@/shared/lib/localStorage', () => ({
     set: vi.fn(),
   },
   STORAGE_KEYS: {
-    SESSION: 'autobot_session',
+    SESSION: 'forge_session',
   },
 }));
 

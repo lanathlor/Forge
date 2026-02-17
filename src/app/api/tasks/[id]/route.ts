@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { tasks } from '@/db/schema/tasks';
 import { eq } from 'drizzle-orm';
-import { createAIProvider } from '@/lib/ai';
+import { claudeWrapper } from '@/lib/claude/wrapper';
 
 // GET /api/tasks/:id - Get task by ID
 export async function GET(
@@ -41,8 +41,7 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const aiProvider = createAIProvider();
-    await aiProvider.cancel(id);
+    await claudeWrapper.cancel(id);
 
     await db
       .update(tasks)

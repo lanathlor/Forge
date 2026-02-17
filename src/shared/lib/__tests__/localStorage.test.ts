@@ -132,7 +132,7 @@ describe('localStorage utility', () => {
 
   describe('STORAGE_KEYS', () => {
     it('should have SESSION key defined', () => {
-      expect(STORAGE_KEYS.SESSION).toBe('autobot_session');
+      expect(STORAGE_KEYS.SESSION).toBe('forge_session');
     });
 
     it('should be defined as const', () => {

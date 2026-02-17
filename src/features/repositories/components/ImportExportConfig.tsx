@@ -32,7 +32,7 @@ export function ImportExportConfig({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '.autobot.json';
+    a.download = '.forge.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -66,7 +66,7 @@ export function ImportExportConfig({
         variant="outline"
         size="sm"
         onClick={handleExport}
-        title="Export configuration as .autobot.json"
+        title="Export configuration as .forge.json"
         className="gap-1.5"
       >
         <Download className="h-4 w-4" />
@@ -76,7 +76,7 @@ export function ImportExportConfig({
         variant="outline"
         size="sm"
         onClick={() => fileInputRef.current?.click()}
-        title="Import configuration from .autobot.json"
+        title="Import configuration from .forge.json"
         className="gap-1.5"
       >
         <Upload className="h-4 w-4" />
@@ -85,7 +85,7 @@ export function ImportExportConfig({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json,.autobot.json"
+        accept=".json,.forge.json"
         className="hidden"
         onChange={handleImport}
       />

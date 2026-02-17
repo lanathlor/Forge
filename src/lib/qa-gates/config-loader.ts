@@ -28,21 +28,21 @@ const QAGateConfigSchema = z.object({
 });
 
 /**
- * Schema for the .autobot.json configuration file
+ * Schema for the .forge.json configuration file
  */
-const AutobotConfigSchema = z.object({
+const ForgeConfigSchema = z.object({
   qaGates: z.array(QAGateConfigSchema),
   maxRetries: z.number().default(3).optional(),
   version: z.string().default('1.0').optional(),
 });
 
 export type QAGateConfig = z.infer<typeof QAGateConfigSchema>;
-export type AutobotConfig = z.infer<typeof AutobotConfigSchema>;
+export type ForgeConfig = z.infer<typeof ForgeConfigSchema>;
 
 /**
- * Default configuration for repositories without .autobot.json
+ * Default configuration for repositories without .forge.json
  */
-const DEFAULT_CONFIG: AutobotConfig = {
+const DEFAULT_CONFIG: ForgeConfig = {
   version: '1.0',
   maxRetries: 3,
   qaGates: [
@@ -73,10 +73,10 @@ const DEFAULT_CONFIG: AutobotConfig = {
   ],
 };
 
-async function loadConfigFromFile(configPath: string): Promise<AutobotConfig> {
+async function loadConfigFromFile(configPath: string): Promise<ForgeConfig> {
   await fs.access(configPath);
   const configContent = await fs.readFile(configPath, 'utf-8');
-  const config = AutobotConfigSchema.parse(JSON.parse(configContent));
+  const config = ForgeConfigSchema.parse(JSON.parse(configContent));
   config.qaGates.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
   return config;
 }
@@ -85,7 +85,7 @@ function handleConfigError(
   error: unknown,
   configPath: string,
   containerPath: string
-): AutobotConfig {
+): ForgeConfig {
   if (
     error &&
     typeof error === 'object' &&
@@ -93,7 +93,7 @@ function handleConfigError(
     error.code === 'ENOENT'
   ) {
     console.log(
-      `ℹ️ No .autobot.json found in ${containerPath}, using default config`
+      `ℹ️ No .forge.json found in ${containerPath}, using default config`
     );
     return DEFAULT_CONFIG;
   }
@@ -108,13 +108,13 @@ function handleConfigError(
 }
 
 /**
- * Load QA gate configuration from repository's .autobot.json file with timeout
+ * Load QA gate configuration from repository's .forge.json file with timeout
  */
 export async function loadRepositoryConfig(
   repoPath: string
-): Promise<AutobotConfig> {
+): Promise<ForgeConfig> {
   const containerPath = getContainerPath(repoPath);
-  const configPath = path.join(containerPath, '.autobot.json');
+  const configPath = path.join(containerPath, '.forge.json');
 
   try {
     const result = await Promise.race([
@@ -143,21 +143,21 @@ export async function getEnabledGates(
 /**
  * Validate a configuration object without loading from file
  */
-export function validateConfig(config: unknown): AutobotConfig {
-  return AutobotConfigSchema.parse(config);
+export function validateConfig(config: unknown): ForgeConfig {
+  return ForgeConfigSchema.parse(config);
 }
 
 import { CONFIG_TEMPLATES } from './config-templates';
 
 /**
- * Create an example .autobot.json file in a repository
+ * Create an example .forge.json file in a repository
  */
 export async function createExampleConfig(
   repoPath: string,
   techStack: 'typescript' | 'javascript' | 'python' | 'go' | 'rust'
 ): Promise<void> {
   const config = CONFIG_TEMPLATES[techStack] || CONFIG_TEMPLATES.typescript;
-  const configPath = path.join(repoPath, '.autobot.json');
+  const configPath = path.join(repoPath, '.forge.json');
 
   await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
   console.log(`✅ Created example config at ${configPath}`);

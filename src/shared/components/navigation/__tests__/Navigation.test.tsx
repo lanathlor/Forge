@@ -93,7 +93,7 @@ describe('Navigation Component', () => {
     it('should render with default logo text', () => {
       render(<Navigation items={testNavItems} />);
       const sidebar = getDesktopSidebar();
-      expect(within(sidebar).getByText('Autobot')).toBeInTheDocument();
+      expect(within(sidebar).getByText('Forge')).toBeInTheDocument();
     });
 
     it('should render custom logo', () => {

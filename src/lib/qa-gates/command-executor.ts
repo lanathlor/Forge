@@ -62,9 +62,9 @@ function getGitSafeEnv() {
     GIT_CONFIG_KEY_0: 'safe.directory',
     GIT_CONFIG_VALUE_0: '*',
     GIT_CONFIG_KEY_1: 'user.name',
-    GIT_CONFIG_VALUE_1: 'Autobot',
+    GIT_CONFIG_VALUE_1: 'Forge',
     GIT_CONFIG_KEY_2: 'user.email',
-    GIT_CONFIG_VALUE_2: 'autobot@example.com',
+    GIT_CONFIG_VALUE_2: 'forge@example.com',
   };
 }
 

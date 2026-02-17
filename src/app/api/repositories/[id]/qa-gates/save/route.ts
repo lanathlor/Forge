@@ -51,14 +51,14 @@ async function saveGatesConfig(
     maxRetries: maxRetries ?? 3,
     qaGates: qaGates.map(normalizeGate),
   };
-  const configPath = join(repo.path, '.autobot.json');
+  const configPath = join(repo.path, '.forge.json');
   await writeConfig(configPath, config);
   return { repoName: repo.name, configPath };
 }
 
 /**
  * POST /api/repositories/:id/qa-gates/save
- * Save QA gates configuration to .autobot.json
+ * Save QA gates configuration to .forge.json
  */
 export async function POST(
   request: Request,

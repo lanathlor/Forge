@@ -1,6 +1,6 @@
-import type { AutobotConfig } from './config-loader';
+import type { ForgeConfig } from './config-loader';
 
-export const TYPESCRIPT_CONFIG: AutobotConfig = {
+export const TYPESCRIPT_CONFIG: ForgeConfig = {
   version: '1.0',
   maxRetries: 3,
   qaGates: [
@@ -39,7 +39,7 @@ export const TYPESCRIPT_CONFIG: AutobotConfig = {
   ],
 };
 
-export const JAVASCRIPT_CONFIG: AutobotConfig = {
+export const JAVASCRIPT_CONFIG: ForgeConfig = {
   version: '1.0',
   maxRetries: 3,
   qaGates: [
@@ -62,7 +62,7 @@ export const JAVASCRIPT_CONFIG: AutobotConfig = {
   ],
 };
 
-export const PYTHON_CONFIG: AutobotConfig = {
+export const PYTHON_CONFIG: ForgeConfig = {
   version: '1.0',
   maxRetries: 3,
   qaGates: [
@@ -93,7 +93,7 @@ export const PYTHON_CONFIG: AutobotConfig = {
   ],
 };
 
-export const GO_CONFIG: AutobotConfig = {
+export const GO_CONFIG: ForgeConfig = {
   version: '1.0',
   maxRetries: 3,
   qaGates: [
@@ -124,7 +124,7 @@ export const GO_CONFIG: AutobotConfig = {
   ],
 };
 
-export const RUST_CONFIG: AutobotConfig = {
+export const RUST_CONFIG: ForgeConfig = {
   version: '1.0',
   maxRetries: 3,
   qaGates: [
@@ -155,7 +155,7 @@ export const RUST_CONFIG: AutobotConfig = {
   ],
 };
 
-export const CONFIG_TEMPLATES: Record<string, AutobotConfig> = {
+export const CONFIG_TEMPLATES: Record<string, ForgeConfig> = {
   typescript: TYPESCRIPT_CONFIG,
   javascript: JAVASCRIPT_CONFIG,
   python: PYTHON_CONFIG,

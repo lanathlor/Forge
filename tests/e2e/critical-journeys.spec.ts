@@ -1,5 +1,5 @@
 /**
- * E2E tests for critical user journeys in Autobot.
+ * E2E tests for critical user journeys in Forge.
  *
  * Covers:
  *  1. Start session → create task → view output → approve
@@ -469,7 +469,7 @@ test.describe('Journey 3: Browse repositories → configure QA gates', () => {
       await qaTab.first().click();
       await page.waitForTimeout(800);
 
-      // Look for known QA gate types from .autobot.json
+      // Look for known QA gate types from .forge.json
       const gateTypes = page.locator(
         'text=ESLint, text=TypeScript, text=Tests, text=Build, text=Coverage'
       );

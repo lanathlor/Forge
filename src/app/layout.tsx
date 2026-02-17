@@ -7,7 +7,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Autobot - Claude Code Oversight',
+  title: 'Forge - Claude Code Oversight',
   description: 'QA gate dashboard for Claude Code',
 };
 

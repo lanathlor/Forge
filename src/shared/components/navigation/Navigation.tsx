@@ -528,7 +528,7 @@ function Sidebar({
         >
           {logo || (
             <span className="whitespace-nowrap text-lg font-semibold text-text-primary">
-              Autobot
+              Forge
             </span>
           )}
         </div>
@@ -761,7 +761,7 @@ function MobileDrawer({
           <div className="flex items-center gap-3">
             {logo || (
               <span className="text-lg font-semibold text-text-primary">
-                Autobot
+                Forge
               </span>
             )}
           </div>
@@ -899,7 +899,7 @@ function MobileHeader({
       <div className="flex flex-1 justify-center">
         {header || (
           <span className="text-lg font-semibold text-text-primary">
-            Autobot
+            Forge
           </span>
         )}
       </div>

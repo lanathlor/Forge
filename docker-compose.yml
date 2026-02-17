@@ -30,9 +30,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: autobot
-      POSTGRES_USER: autobot
-      POSTGRES_PASSWORD: autobot
+      POSTGRES_DB: forge
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: forge
     ports:
       - '5432:5432'
     volumes:

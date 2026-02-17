@@ -1,6 +1,6 @@
 # Error Handling System
 
-Comprehensive error handling system for the autobot application with error boundaries, error states, toast notifications, and error handling utilities.
+Comprehensive error handling system for the Forge application with error boundaries, error states, toast notifications, and error handling utilities.
 
 ## Table of Contents
 

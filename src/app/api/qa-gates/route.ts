@@ -6,12 +6,12 @@ import { NextResponse } from 'next/server';
  */
 export async function GET() {
   return NextResponse.json({
-    message: 'QA gates are now defined per-repository in .autobot.json files',
+    message: 'QA gates are now defined per-repository in .forge.json files',
     documentation: {
       endpoint:
         'Use GET /api/repositories/:id/qa-gates to get gates for a specific repository',
-      configFile: '.autobot.json in repository root',
-      exampleLocation: '/examples/.autobot.json.*',
+      configFile: '.forge.json in repository root',
+      exampleLocation: '/examples/.forge.json.*',
       supportedLanguages: ['typescript', 'javascript', 'python', 'go', 'rust'],
     },
     schema: {

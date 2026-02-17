@@ -80,7 +80,7 @@ const PROMPT_TEMPLATES: PromptTemplate[] = [
   },
 ];
 
-const RECENT_PROMPTS_KEY = 'autobot-recent-prompts';
+const RECENT_PROMPTS_KEY = 'forge-recent-prompts';
 const MAX_RECENT_PROMPTS = 5;
 const MAX_TEXTAREA_HEIGHT = 300;
 const MIN_TEXTAREA_HEIGHT = 56;

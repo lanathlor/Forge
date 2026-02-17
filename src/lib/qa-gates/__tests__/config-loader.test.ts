@@ -6,7 +6,7 @@ import {
   getEnabledGates,
   validateConfig,
   createExampleConfig,
-  type AutobotConfig,
+  type ForgeConfig,
 } from '../config-loader';
 
 // Mock fs/promises
@@ -22,7 +22,7 @@ vi.mock('fs/promises', () => {
 
 describe('QA Gate Config Loader', () => {
   const mockRepoPath = '/test/repo';
-  const mockConfigPath = path.join(mockRepoPath, '.autobot.json');
+  const mockConfigPath = path.join(mockRepoPath, '.forge.json');
 
   let mockAccess: ReturnType<typeof vi.fn>;
   let mockReadFile: ReturnType<typeof vi.fn>;
@@ -42,7 +42,7 @@ describe('QA Gate Config Loader', () => {
 
   describe('loadRepositoryConfig', () => {
     it('should load and parse valid config file', async () => {
-      const validConfig: AutobotConfig = {
+      const validConfig: ForgeConfig = {
         version: '1.0',
         maxRetries: 3,
         qaGates: [
@@ -80,7 +80,7 @@ describe('QA Gate Config Loader', () => {
     });
 
     it('should sort gates by order field', async () => {
-      const unorderedConfig: AutobotConfig = {
+      const unorderedConfig: ForgeConfig = {
         version: '1.0',
         maxRetries: 3,
         qaGates: [
@@ -190,7 +190,7 @@ describe('QA Gate Config Loader', () => {
 
   describe('getEnabledGates', () => {
     it('should return only enabled gates', async () => {
-      const config: AutobotConfig = {
+      const config: ForgeConfig = {
         version: '1.0',
         maxRetries: 3,
         qaGates: [
@@ -229,7 +229,7 @@ describe('QA Gate Config Loader', () => {
     });
 
     it('should return empty array when no gates are enabled', async () => {
-      const config: AutobotConfig = {
+      const config: ForgeConfig = {
         version: '1.0',
         maxRetries: 3,
         qaGates: [
