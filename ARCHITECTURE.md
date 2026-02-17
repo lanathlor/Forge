@@ -1,161 +1,74 @@
-# Autobot Architecture
+# Architecture
 
-## Core Principles
+## Overview
 
-### 1. Feature-Based Architecture (CRITICAL)
+Forge is a Next.js 15 application using the App Router. It follows a **vertical-slice (feature-based)** architecture: each feature owns its API handlers, UI components, business logic, types, and state — all co-located in one directory.
 
-**DO NOT organize by technical type (components/, lib/, api/)**
-**DO organize by business feature**
-
-This is a VERTICAL SLICE architecture where each feature contains all its layers.
-
-### Correct Structure
+## Directory structure
 
 ```
 src/
-├── features/
-│   ├── repositories/           # Repository discovery & management
-│   │   ├── api/               # API route handlers
-│   │   │   └── route.ts
-│   │   ├── components/        # Feature UI components
-│   │   │   └── RepositorySelector.tsx
-│   │   ├── lib/               # Business logic
-│   │   │   └── scanner.ts
-│   │   ├── types/             # Feature-specific types
-│   │   │   └── index.ts
-│   │   └── store/             # RTK Query endpoints
-│   │       └── repositoriesApi.ts
-│   │
-│   ├── sessions/              # Session management
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── lib/
+├── app/                          # Next.js App Router
+│   ├── api/                      # Thin API route wrappers → delegate to features
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── features/                     # One directory per product feature
+│   ├── repositories/             # Repository discovery & management
+│   │   ├── api/                  # Request handlers
+│   │   ├── components/           # Feature-specific UI
+│   │   ├── lib/                  # Business logic (scanner, etc.)
 │   │   ├── types/
-│   │   └── store/
-│   │
-│   ├── tasks/                 # Task execution
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── lib/
-│   │   └── store/
-│   │
-│   └── qa-gates/              # QA gate system
-│       ├── api/
-│       ├── components/
-│       ├── lib/
-│       └── store/
+│   │   └── store/                # RTK Query endpoints
+│   ├── sessions/                 # Claude Code session tracking
+│   ├── dashboard/                # Main task dashboard
+│   ├── qa-gates/                 # Gate runner + results UI
+│   ├── diff-viewer/              # Monaco-based diff display
+│   ├── activity/                 # Activity feed
+│   ├── settings/                 # App settings
+│   └── plans/                   # Plans feature
 │
-├── shared/                    # Truly shared code ONLY
-│   ├── components/            # Generic UI (Button, Card, etc.)
-│   ├── hooks/                 # Generic hooks
-│   ├── lib/                   # Generic utilities
-│   └── types/                 # Shared types
+├── shared/                       # Code used by 3+ features
+│   ├── components/               # Generic UI primitives (Button, Card, etc.)
+│   ├── hooks/                    # Reusable hooks
+│   ├── services/                 # GlobalSSEManager, etc.
+│   ├── store/                    # Shared Redux slices
+│   └── lib/                     # Generic utilities
 │
-├── db/                        # Database layer (Drizzle)
-│   ├── schema/
-│   ├── migrations/
-│   └── index.ts
+├── db/                           # Database layer
+│   ├── schema/                   # Drizzle ORM table definitions
+│   ├── migrations/               # Generated SQL migrations
+│   └── index.ts                  # DB client
 │
-└── app/                       # Next.js App Router
-    ├── api/                   # Re-exports from features
-    ├── layout.tsx
-    └── page.tsx
+├── store/
+│   ├── api.ts                    # RTK Query base API (empty endpoints)
+│   └── index.ts                  # configureStore + slice registration
+│
+└── types/                        # Global shared TypeScript types
 ```
 
-### Why Feature-Based?
+## Feature structure
 
-1. **Colocation**: Related code lives together
-2. **Encapsulation**: Feature boundaries are clear
-3. **Scalability**: Easy to add/remove features
-4. **Team Collaboration**: Teams can own features
-5. **Maintenance**: Changes are localized
-
-### Anti-Patterns (DO NOT DO THIS)
-
-❌ **Wrong**:
+Each feature follows the same internal layout:
 
 ```
-src/
-├── components/        # All components mixed together
-├── lib/              # All business logic mixed
-├── api/              # All API routes mixed
-└── types/            # All types mixed
+src/features/{feature}/
+├── api/
+│   └── handlers.ts       # All business logic for API routes
+├── components/
+│   └── FeatureName.tsx   # UI components
+├── lib/
+│   └── core.ts           # Pure business logic (no HTTP, no React)
+├── types/
+│   └── index.ts          # Feature-specific TypeScript types
+└── store/
+    └── featureApi.ts     # RTK Query endpoint injection
 ```
 
-This creates:
-
-- Tight coupling between unrelated features
-- Merge conflicts
-- Hard to navigate
-- Difficult to delete features
-- Unclear boundaries
-
-### Migration Guide
-
-When adding a new feature:
-
-1. Create `src/features/{feature-name}/`
-2. Add subdirectories: `api/`, `components/`, `lib/`, `types/`, `store/`
-3. Implement vertically - complete one feature at a time
-4. Only move to `shared/` if truly used by 3+ features
-
-## Technology Stack
-
-### Frontend
-
-- **Next.js 15** (App Router)
-- **React 19**
-- **TypeScript** (strict mode)
-- **Tailwind CSS** (dark mode by default)
-- **shadcn/ui** (component library)
-
-### State Management
-
-- **Redux Toolkit** (global state)
-- **RTK Query** (data fetching & caching)
-
-### Database
-
-- **SQLite** (dev) / **PostgreSQL** (prod)
-- **Drizzle ORM** (type-safe queries)
-
-### Deployment
-
-- **Docker** (containerization)
-- **Docker Compose** (local development)
-
-## Dark Mode
-
-**Default**: Dark mode is the PRIMARY theme.
-
-- Use `dark` class by default in `layout.tsx`
-- Light mode is secondary/optional
-- All components must support dark mode first
-
-## Data Flow
-
-```
-User Action
-    ↓
-React Component
-    ↓
-RTK Query Hook (useGetRepositoriesQuery)
-    ↓
-API Endpoint (/api/repositories)
-    ↓
-Feature Business Logic (scanner.ts)
-    ↓
-Database (Drizzle ORM)
-    ↓
-Response back up the chain
-```
-
-## API Routes
-
-API routes in `app/api/` are THIN wrappers:
+API routes in `src/app/api/` are thin wrappers:
 
 ```typescript
-// app/api/repositories/route.ts
+// src/app/api/repositories/route.ts
 import { handleGetRepositories } from '@/features/repositories/api/handlers';
 
 export async function GET(request: Request) {
@@ -163,69 +76,27 @@ export async function GET(request: Request) {
 }
 ```
 
-All logic lives in the feature's `api/handlers.ts`.
+All logic lives in the feature's `handlers.ts`, not in the route file.
 
-## Testing Strategy
+## State management
 
-- **Unit Tests**: Feature `lib/` functions
-- **Integration Tests**: API endpoints
-- **E2E Tests**: Critical user flows
-- **Component Tests**: Complex UI components
+| State type | Tool | Location |
+|---|---|---|
+| Server/API data | RTK Query | `features/{feature}/store/` |
+| Global client state | Redux slices | `features/{feature}/store/` or `shared/store/` |
+| Local UI state | `useState` | Component |
+| URL state | `searchParams` | Next.js router |
 
-## Docker Volume Mounts
+### RTK Query: inject pattern
 
-**CRITICAL**: Repository workspace must be READ-WRITE
-
-```yaml
-volumes:
-  - /home/lanath/Work:/workspace # NO :ro flag!
-```
-
-The app needs write access to:
-
-- Create commits
-- Revert changes
-- Update git state
-
-## File Naming Conventions
-
-- **Components**: PascalCase (`RepositorySelector.tsx`)
-- **Utilities**: camelCase (`scanner.ts`)
-- **Types**: `index.ts` or `types.ts`
-- **API handlers**: `handlers.ts` or `route.ts`
-- **Constants**: UPPER_SNAKE_CASE in `constants.ts`
-
-## Import Aliases
-
-Use `@/` for absolute imports:
+The base API in `src/store/api.ts` has **no endpoints**:
 
 ```typescript
-import { db } from '@/db';
-import { RepositorySelector } from '@/features/repositories/components/RepositorySelector';
-import { Button } from '@/shared/components/ui/button';
-```
-
-## State Management Rules
-
-1. **Server State**: Use RTK Query (API data)
-2. **Global Client State**: Use Redux slices (UI state, current session)
-3. **Local State**: Use React useState (form inputs, toggles)
-4. **URL State**: Use Next.js searchParams (filters, pagination)
-
-### RTK Query Inject Pattern (CRITICAL)
-
-**DO NOT define endpoints in `src/store/api.ts`**
-**DO inject endpoints from feature files**
-
-The base API file should be minimal:
-
-```typescript
-// src/store/api.ts
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
   tagTypes: ['Repository', 'Session', 'Task', 'QAGate'],
-  endpoints: () => ({}), // EMPTY!
+  endpoints: () => ({}),
 });
 ```
 
@@ -241,152 +112,131 @@ export const repositoriesApi = api.injectEndpoints({
       query: () => '/repositories',
       providesTags: ['Repository'],
     }),
-    rescanRepositories: builder.mutation({
-      query: () => ({
-        url: '/repositories/rescan',
-        method: 'POST',
-      }),
-      invalidatesTags: ['Repository'],
-    }),
   }),
 });
 
-// Export hooks from the feature
-export const { useGetRepositoriesQuery, useRescanRepositoriesMutation } =
-  repositoriesApi;
+export const { useGetRepositoriesQuery } = repositoriesApi;
 ```
 
-Import feature APIs in store to register them:
+Features are registered in `src/store/index.ts` by importing them (side-effect import):
 
 ```typescript
-// src/store/index.ts
-import { api } from './api';
-import '@/features/repositories/store/repositoriesApi'; // Registers endpoints
-
-export const store = configureStore({
-  reducer: {
-    [api.reducerPath]: api.reducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware),
-});
+import '@/features/repositories/store/repositoriesApi';
 ```
 
-**Benefits**:
+### Optimistic updates
 
-- Features are self-contained
-- Endpoints live with their feature
-- Easy to add/remove features
-- No central file that grows forever
-
-### Redux Slices Organization
-
-**Feature-specific slices** → `src/features/{feature}/store/`
+Mutations that need instant UI feedback follow the patch/undo pattern:
 
 ```typescript
-// src/features/sessions/store/sessionSlice.ts
-export default sessionSlice.reducer;
-```
-
-**Shared slices** → `src/shared/store/`
-
-```typescript
-// src/shared/store/uiSlice.ts
-export default uiSlice.reducer;
-```
-
-## Security Considerations
-
-1. Never commit `.env` files
-2. Validate all API inputs with Zod
-3. Sanitize git commands (no command injection)
-4. Rate limit API endpoints
-5. Use CSRF protection in production
-
-## Performance
-
-1. Use React.memo for expensive components
-2. Implement virtual scrolling for long lists
-3. Lazy load Monaco Editor
-4. Use Next.js Image component
-5. Enable output: 'standalone' in next.config.js
-
-## Git Workflow
-
-1. Feature branches: `feature/{feature-name}`
-2. Conventional commits: `feat:`, `fix:`, `chore:`, `docs:`
-3. PR per feature
-4. Squash merge to main
-
-## Deployment
-
-### Development
-
-```bash
-docker compose up -d
-```
-
-### Production
-
-```bash
-docker build --target runner -t autobot:prod .
-docker run -p 3000:3000 -v ./data:/app/data autobot:prod
-```
-
-## Error Handling
-
-All errors should be handled gracefully:
-
-```typescript
-try {
-  // Operation
-} catch (error) {
-  console.error('Context:', error);
-  return NextResponse.json({ error: 'User-friendly message' }, { status: 500 });
+async onQueryStarted(args, { dispatch, queryFulfilled }) {
+  const patch = dispatch(
+    featureApi.util.updateQueryData('getItems', args.id, (draft) => {
+      // mutate draft
+    })
+  );
+  try {
+    await queryFulfilled;
+  } catch {
+    patch.undo();
+  }
 }
 ```
 
-## Database Migrations
+Always use the **feature's own API** (`featureApi.util.updateQueryData`), not the base `api` — the base API doesn't know about injected endpoint types.
 
-1. Update schema in `src/db/schema/`
-2. Generate migration: `pnpm db:generate`
-3. Review migration SQL
-4. Apply migration: `pnpm db:push`
-5. Update seed script if needed
+## Data flow
 
-## Adding a New Feature
-
-**Template Checklist**:
-
-```bash
-# 1. Create feature directory
-mkdir -p src/features/{feature}/{{api,components,lib,types,store}}
-
-# 2. Implement business logic
-touch src/features/{feature}/lib/core.ts
-
-# 3. Create API handlers
-touch src/features/{feature}/api/handlers.ts
-
-# 4. Add RTK Query endpoints
-touch src/features/{feature}/store/{feature}Api.ts
-
-# 5. Build UI components
-touch src/features/{feature}/components/{Feature}Component.tsx
-
-# 6. Wire up API route
-touch src/app/api/{feature}/route.ts
-
-# 7. Add to main store
-# Import and add to src/store/index.ts
-
-# 8. Write tests
-touch src/features/{feature}/__tests__/
-
-# 9. Update documentation
+```
+User action
+  → React component
+  → RTK Query hook
+  → Next.js API route
+  → Feature handler
+  → Drizzle ORM
+  → SQLite / PostgreSQL
 ```
 
-## Questions?
+Real-time updates travel the reverse path via **Server-Sent Events** (`GlobalSSEManager`).
 
-See implementation plan: `plans/100-implementation-plan.md`
-See technical architecture: `plans/99-technical-architecture.md`
+## Database
+
+- **Dev**: SQLite via `better-sqlite3`
+- **Prod**: PostgreSQL (set `DATABASE_URL` to a postgres connection string)
+- **ORM**: Drizzle — schema in `src/db/schema/`, migrations in `src/db/migrations/`
+
+Key tables: `repositories`, `sessions`, `tasks`, `qa_gate_configs`, `qa_gate_results`, `activity_logs`
+
+### Migrations
+
+```bash
+# After changing src/db/schema/
+pnpm db:generate   # generate SQL migration
+pnpm db:push       # apply to database
+```
+
+## Conventions
+
+### Naming
+
+- Components: `PascalCase.tsx`
+- Utilities / handlers: `camelCase.ts`
+- Constants: `UPPER_SNAKE_CASE`
+- Types file per directory: `index.ts` or `types.ts`
+
+### Imports
+
+Use `@/` for all absolute imports:
+
+```typescript
+import { db } from '@/db';
+import { Button } from '@/shared/components/ui/button';
+import { useGetRepositoriesQuery } from '@/features/repositories/store/repositoriesApi';
+```
+
+### Theme
+
+Dark mode is the primary theme. The `dark` class is set on `<html>` in `layout.tsx`. All components must work correctly in dark mode.
+
+## Docker
+
+Development:
+
+```bash
+docker-compose up
+```
+
+The workspace directory is mounted **read-write** — Forge needs write access to create commits and revert changes.
+
+Production:
+
+```bash
+docker build --target runner -t forge:prod .
+docker run -p 3000:3000 \
+  -v ./forge.db:/app/forge.db \
+  -v /path/to/workspace:/workspace \
+  forge:prod
+```
+
+## Testing
+
+- **Unit tests**: `src/features/{feature}/lib/` — pure functions, no React
+- **Component tests**: complex UI components with Testing Library
+- **E2E tests**: critical user flows with Playwright
+
+```bash
+pnpm test          # unit + component (Vitest)
+pnpm test:e2e      # E2E (Playwright)
+pnpm test:coverage # coverage report
+```
+
+## Adding a new feature
+
+1. Create `src/features/{feature}/` with subdirs: `api/`, `components/`, `lib/`, `types/`, `store/`
+2. Implement business logic in `lib/`
+3. Add API handlers in `api/handlers.ts`
+4. Create RTK Query endpoints in `store/{feature}Api.ts`
+5. Register in `src/store/index.ts`
+6. Wire up the Next.js route in `src/app/api/{feature}/route.ts`
+7. Build UI components in `components/`
+8. Only move code to `shared/` if genuinely needed by 3+ features
