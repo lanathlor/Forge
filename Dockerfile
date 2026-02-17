@@ -14,15 +14,15 @@ RUN pnpm install --frozen-lockfile
 # Development target with built native modules
 FROM base AS dev
 RUN apk add --no-cache libc6-compat git python3 make g++ bash curl sudo shadow
-WORKDIR /app
-RUN npm install -g pnpm@latest
 
 # Accept UID and GID as build arguments
 ARG USER_UID=1000
 ARG USER_GID=100
 
-# The node:20-alpine image already has a "node" user with UID 1000
-# We'll use that user and add them to the specified GID group
+# Install pnpm as root first
+RUN npm install -g pnpm@latest
+
+# Create user and group early, then switch to that user
 RUN GROUP_NAME=$(getent group ${USER_GID} | cut -d: -f1) && \
     if [ -z "$GROUP_NAME" ]; then \
         addgroup -g ${USER_GID} appgroup; \
@@ -30,22 +30,25 @@ RUN GROUP_NAME=$(getent group ${USER_GID} | cut -d: -f1) && \
     fi && \
     addgroup node ${GROUP_NAME}
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Switch to node user to avoid permission issues
+USER node
+WORKDIR /app
+
+# Copy node_modules as node user (already has correct permissions)
+COPY --from=deps --chown=node:${USER_GID} /app/node_modules ./node_modules
+
+# Copy source code as node user
+COPY --chown=node:${USER_GID} . .
 
 # Rebuild native modules for the container architecture
 RUN cd /app/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
 
-# Create .next directory with proper permissions
-RUN mkdir -p /app/.next && chown -R ${USER_UID}:${USER_GID} /app/.next
+# Create .next directory (already owned by node user)
+RUN mkdir -p /app/.next
 
-# Change ownership of the app directory to node user
-RUN chown -R ${USER_UID}:${USER_GID} /app
-
-# Install Claude Code CLI globally
+# Switch back to root to install Claude Code CLI globally, then back to node
+USER root
 RUN npm install -g @anthropic-ai/claude-code
-
-# Switch to the node user
 USER node
 
 EXPOSE 3000

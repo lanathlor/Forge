@@ -8,11 +8,12 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('[Instrumentation] Server startup - running cleanup tasks...');
 
-    // Dynamically import to avoid issues during build
-    const { planExecutor } = await import('@/lib/plans/executor');
+    // TODO: Temporarily disabled for Docker - better-sqlite3 binding issues
+    // // Dynamically import to avoid issues during build
+    // const { planExecutor } = await import('@/lib/plans/executor');
 
-    // Clean up any stuck tasks/plans from server restarts
-    await planExecutor.cleanupStuckExecutions();
+    // // Clean up any stuck tasks/plans from server restarts
+    // await planExecutor.cleanupStuckExecutions();
 
     console.log('[Instrumentation] Startup complete');
   }

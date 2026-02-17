@@ -19,9 +19,6 @@ const nextConfig = {
     return config;
   },
 
-  // Optimize production builds
-  swcMinify: true,
-
   // Compiler optimizations
   compiler: {
     // Remove console.log in production
