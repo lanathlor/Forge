@@ -11,6 +11,7 @@ import uiReducer from '@/shared/store/uiSlice';
 import repoSnapshotReducer from '@/features/sessions/store/repoSnapshotSlice';
 import settingsReducer from '@/features/settings/store/settingsSlice';
 import dashboardUiReducer from '@/features/dashboard/store/dashboardUiSlice';
+import optimisticUpdatesReducer from '@/shared/store/optimisticUpdatesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     repoSnapshot: repoSnapshotReducer,
     settings: settingsReducer,
     dashboardUi: dashboardUiReducer,
+    optimisticUpdates: optimisticUpdatesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(api.middleware),

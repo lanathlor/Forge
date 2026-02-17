@@ -32,6 +32,8 @@ import {
 
 interface RepositorySelectorProps {
   onSelect?: (repository: Repository) => void;
+  /** Called when hovering over a repo row — used for prefetching sessions */
+  onHover?: (repositoryId: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -324,6 +326,7 @@ const SectionHeader = memo(function SectionHeader({ title, count, icon: Icon }: 
 
 export function RepositorySelector({
   onSelect,
+  onHover,
   isCollapsed = false,
   onToggleCollapse,
 }: RepositorySelectorProps) {
@@ -660,7 +663,7 @@ export function RepositorySelector({
                     shortcutNum={i + 1}
                     needsAttention={Boolean(alert && !alert.acknowledged)}
                     onSelect={() => handleSelect(repo)}
-                    onMouseEnter={() => setFocusIndex(i)}
+                    onMouseEnter={() => { setFocusIndex(i); onHover?.(repo.id); }}
                   />
                 );
               })}
@@ -684,7 +687,7 @@ export function RepositorySelector({
                     isSelected={currentSelectedId === repo.id}
                     isFocused={focusIndex === globalIdx}
                     onSelect={() => handleSelect(repo)}
-                    onMouseEnter={() => setFocusIndex(globalIdx)}
+                    onMouseEnter={() => { setFocusIndex(globalIdx); onHover?.(repo.id); }}
                   />
                 );
               })}

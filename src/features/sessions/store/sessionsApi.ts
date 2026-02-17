@@ -78,8 +78,8 @@ export interface ListSessionsParams {
   status?: SessionStatus;
 }
 
+/* eslint-disable max-lines-per-function */
 export const sessionsApi = api.injectEndpoints({
-  /* eslint-disable max-lines-per-function */
   endpoints: (builder) => ({
     // Get or create active session for a repository
     getActiveSession: builder.query<{ session: Session }, string>({
@@ -137,23 +137,57 @@ export const sessionsApi = api.injectEndpoints({
       ],
     }),
 
-    // Pause a session
+    /**
+     * Pause a session.
+     * Optimistically updates session status to 'paused' instantly.
+     */
     pauseSession: builder.mutation<{ session: Session }, string>({
       query: (id) => ({
         url: `/sessions/${id}`,
         method: 'PATCH',
         body: { action: 'pause' },
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        const patchResult = dispatch(
+          sessionsApi.util.updateQueryData('getSession', id, (draft) => {
+            if (draft.session) {
+              draft.session.status = 'paused' as SessionStatus;
+            }
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: (result, error, id) => [{ type: 'Session', id }],
     }),
 
-    // Resume a session
+    /**
+     * Resume a session.
+     * Optimistically updates session status to 'active' instantly.
+     */
     resumeSession: builder.mutation<{ session: Session }, string>({
       query: (id) => ({
         url: `/sessions/${id}`,
         method: 'PATCH',
         body: { action: 'resume' },
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        const patchResult = dispatch(
+          sessionsApi.util.updateQueryData('getSession', id, (draft) => {
+            if (draft.session) {
+              draft.session.status = 'active' as SessionStatus;
+            }
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: (result, error, id) => [{ type: 'Session', id }],
     }),
 

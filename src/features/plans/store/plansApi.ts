@@ -48,8 +48,33 @@ export interface ApplySuggestionsRequest {
   suggestionIndices: number[];
 }
 
+// Helper to update plan status in both caches optimistically.
+// Must be called after plansApi is defined (closures capture by reference).
+function optimisticPlanStatusUpdate(
+  id: string,
+  status: Plan['status'],
+  dispatch: (action: unknown) => unknown,
+) {
+  const patchPlan = dispatch(
+    plansApi.util.updateQueryData('getPlan', id, (draft) => {
+      if (draft.plan) {
+        draft.plan.status = status;
+      }
+    }),
+  ) as { undo: () => void };
+
+  const patchList = dispatch(
+    plansApi.util.updateQueryData('getPlans', undefined, (draft) => {
+      const plan = draft.plans.find((p: Plan) => p.id === id);
+      if (plan) plan.status = status;
+    }),
+  ) as { undo: () => void };
+
+  return { patchPlan, patchList };
+}
+
+/* eslint-disable max-lines-per-function */
 export const plansApi = api.injectEndpoints({
-  /* eslint-disable max-lines-per-function */
   endpoints: (builder) => ({
     // Get all plans (optionally filtered by repository)
     getPlans: builder.query<{ plans: Plan[] }, string | void>({
@@ -144,39 +169,96 @@ export const plansApi = api.injectEndpoints({
       invalidatesTags: (result, error, { id }) => [{ type: 'Plan', id }],
     }),
 
-    // Execute a plan
+    /**
+     * Execute a plan.
+     * Optimistically updates status to 'running' on both getPlan and getPlans caches.
+     */
     executePlan: builder.mutation<{ status: string; message: string }, string>({
       query: (id) => ({
         url: `/plans/${id}/execute`,
         method: 'POST',
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'running', dispatch);
+        try {
+          await queryFulfilled;
+        } catch {
+          patchPlan.undo();
+          patchList.undo();
+        }
+      },
       invalidatesTags: (result, error, id) => [{ type: 'Plan', id }],
     }),
 
-    // Pause plan execution
+    /**
+     * Pause plan execution.
+     * Optimistically updates status to 'paused' instantly.
+     */
     pausePlan: builder.mutation<{ plan: Plan }, string>({
       query: (id) => ({
         url: `/plans/${id}/pause`,
         method: 'POST',
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'paused', dispatch);
+        try {
+          await queryFulfilled;
+        } catch {
+          patchPlan.undo();
+          patchList.undo();
+        }
+      },
       invalidatesTags: (result, error, id) => [{ type: 'Plan', id }],
     }),
 
-    // Resume plan execution
+    /**
+     * Resume plan execution.
+     * Optimistically updates status to 'running' instantly.
+     */
     resumePlan: builder.mutation<{ status: string; message: string }, string>({
       query: (id) => ({
         url: `/plans/${id}/resume`,
         method: 'POST',
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'running', dispatch);
+        try {
+          await queryFulfilled;
+        } catch {
+          patchPlan.undo();
+          patchList.undo();
+        }
+      },
       invalidatesTags: (result, error, id) => [{ type: 'Plan', id }],
     }),
 
-    // Cancel plan execution
+    /**
+     * Cancel plan execution.
+     * Optimistically updates status to 'failed' instantly, then reconciles with server.
+     */
     cancelPlan: builder.mutation<{ plan: Plan }, string>({
       query: (id) => ({
         url: `/plans/${id}/cancel`,
         method: 'POST',
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        // Optimistically show as failed (most likely outcome of cancel)
+        const { patchPlan, patchList } = optimisticPlanStatusUpdate(id, 'failed', dispatch);
+        try {
+          const { data } = await queryFulfilled;
+          // Reconcile with actual server status
+          dispatch(
+            plansApi.util.updateQueryData('getPlan', id, (draft) => {
+              if (draft.plan && data.plan) {
+                draft.plan.status = data.plan.status;
+              }
+            }),
+          );
+        } catch {
+          patchPlan.undo();
+          patchList.undo();
+        }
+      },
       invalidatesTags: (result, error, id) => [{ type: 'Plan', id }],
     }),
 
