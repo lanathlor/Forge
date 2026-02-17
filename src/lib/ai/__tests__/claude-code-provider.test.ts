@@ -3,20 +3,23 @@ import {
   it,
   expect,
   beforeEach,
+  afterEach,
   vi,
   type MockedFunction,
   type MockInstance,
 } from 'vitest';
-import { spawn } from 'child_process';
 import type { ChildProcess } from 'child_process';
 import { ClaudeCodeProvider } from '../providers/claude-code-provider';
 import type { TaskExecutionOptions } from '../types';
 
+// Hoist the spawn mock so it can be referenced in vi.mock factory
+const mockSpawnFn = vi.hoisted(() => vi.fn());
+
 // Mock child_process
 vi.mock('child_process', () => ({
-  spawn: vi.fn(),
+  spawn: mockSpawnFn,
   default: {
-    spawn: vi.fn(),
+    spawn: mockSpawnFn,
   },
 }));
 
@@ -47,7 +50,7 @@ vi.mock('drizzle-orm', () => ({
 describe('ClaudeCodeProvider', () => {
   let provider: ClaudeCodeProvider;
   let mockChildProcess: Partial<ChildProcess>;
-  const mockSpawn = spawn as unknown as MockedFunction<typeof spawn>;
+  const mockSpawn = mockSpawnFn as unknown as MockedFunction<any>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,6 +83,7 @@ describe('ClaudeCodeProvider', () => {
 
   describe('executeTask', () => {
     it('executes in simulation mode when SIMULATE_CLAUDE is true', async () => {
+      vi.useFakeTimers();
       process.env.SIMULATE_CLAUDE = 'true';
 
       const options: TaskExecutionOptions = {
@@ -94,9 +98,11 @@ describe('ClaudeCodeProvider', () => {
       const resultPromise = provider.executeTask(options);
 
       // Fast-forward time for simulation
-      vi.advanceTimersByTime(2000);
+      await vi.runAllTimersAsync();
 
       const result = await resultPromise;
+
+      vi.useRealTimers();
 
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain('Simulated Claude Code execution');
@@ -156,7 +162,9 @@ describe('ClaudeCodeProvider', () => {
       // Simulate process completion
       const closeHandler = (
         mockChildProcess.on as MockedFunction<any>
-      ).mock.calls.find((call) => call[0] === 'close')?.[1];
+      ).mock.calls.find((call) => call[0] === 'close')?.[1] as
+        | ((code: number) => void)
+        | undefined;
 
       if (closeHandler) {
         closeHandler(0); // Exit code 0
@@ -190,7 +198,9 @@ describe('ClaudeCodeProvider', () => {
       // Simulate process error
       const errorHandler = (
         mockChildProcess.on as MockedFunction<any>
-      ).mock.calls.find((call) => call[0] === 'error')?.[1];
+      ).mock.calls.find((call) => call[0] === 'error')?.[1] as
+        | ((err: Error) => void)
+        | undefined;
 
       if (errorHandler) {
         errorHandler(new Error('Process failed'));
@@ -237,6 +247,7 @@ describe('ClaudeCodeProvider', () => {
     });
 
     it('handles timeout in streaming mode', async () => {
+      vi.useFakeTimers();
       process.env.SIMULATE_CLAUDE = 'false';
 
       const onChunk = vi.fn();
@@ -254,6 +265,7 @@ describe('ClaudeCodeProvider', () => {
       await expect(resultPromise).rejects.toThrow(
         'Streaming execution timed out after 1000ms'
       );
+      vi.useRealTimers();
       expect(mockChildProcess.kill).toHaveBeenCalledWith('SIGTERM');
     });
   });
@@ -287,6 +299,7 @@ describe('ClaudeCodeProvider', () => {
     });
 
     it('handles timeout in one-shot mode', async () => {
+      vi.useFakeTimers();
       process.env.SIMULATE_CLAUDE = 'false';
 
       const resultPromise = provider.executeOneShot(
@@ -301,6 +314,7 @@ describe('ClaudeCodeProvider', () => {
       await expect(resultPromise).rejects.toThrow(
         'One-shot execution timed out after 1000ms'
       );
+      vi.useRealTimers();
       expect(mockChildProcess.kill).toHaveBeenCalledWith('SIGTERM');
     });
   });
@@ -356,7 +370,9 @@ describe('ClaudeCodeProvider', () => {
       // Simulate stdout data with JSON stream events
       const stdoutHandler = (
         mockChildProcess.stdout?.on as MockedFunction<any>
-      ).mock.calls.find((call) => call[0] === 'data')?.[1];
+      ).mock.calls.find((call) => call[0] === 'data')?.[1] as
+        | ((data: Buffer) => void)
+        | undefined;
 
       if (stdoutHandler) {
         const jsonEvent = JSON.stringify({
@@ -396,7 +412,9 @@ describe('ClaudeCodeProvider', () => {
       // Simulate tool use event
       const stdoutHandler = (
         mockChildProcess.stdout?.on as MockedFunction<any>
-      ).mock.calls.find((call) => call[0] === 'data')?.[1];
+      ).mock.calls.find((call) => call[0] === 'data')?.[1] as
+        | ((data: Buffer) => void)
+        | undefined;
 
       if (stdoutHandler) {
         const jsonEvent = JSON.stringify({
@@ -437,7 +455,9 @@ describe('ClaudeCodeProvider', () => {
       // Simulate plain text output
       const stdoutHandler = (
         mockChildProcess.stdout?.on as MockedFunction<any>
-      ).mock.calls.find((call) => call[0] === 'data')?.[1];
+      ).mock.calls.find((call) => call[0] === 'data')?.[1] as
+        | ((data: Buffer) => void)
+        | undefined;
 
       if (stdoutHandler) {
         stdoutHandler(Buffer.from('Plain text output\n'));

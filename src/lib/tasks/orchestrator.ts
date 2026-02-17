@@ -1,4 +1,4 @@
-import { createAIProvider } from '@/lib/ai';
+import { claudeWrapper } from '@/lib/claude/wrapper';
 import { runPreFlightChecks } from '@/lib/git/pre-flight';
 import { captureDiff } from '@/lib/git/diff';
 import { runTaskQAGates } from '@/lib/qa-gates/task-qa-service';
@@ -9,9 +9,6 @@ import { eq } from 'drizzle-orm';
 import { taskEvents } from '@/lib/events/task-events';
 
 const MAX_QA_ATTEMPTS = 3;
-
-// Create AI provider instance
-const aiProvider = createAIProvider();
 
 async function emitAndAppendOutput(
   taskId: string,
@@ -47,14 +44,14 @@ async function invokeClaudeForRetry(
     }
   };
 
-  aiProvider.on('output', outputHandler);
+  claudeWrapper.on('output', outputHandler);
 
   console.log(
     `[Task ${taskId}] Invoking Claude for retry with prompt length: ${retryPrompt.length} chars`
   );
 
   try {
-    await aiProvider.executeTask({
+    await claudeWrapper.executeTask({
       workingDirectory: containerPath,
       prompt: retryPrompt,
       taskId,
@@ -69,7 +66,7 @@ async function invokeClaudeForRetry(
 
     console.log(`[Task ${taskId}] Claude retry execution completed`);
   } finally {
-    aiProvider.off('output', outputHandler);
+    claudeWrapper.off('output', outputHandler);
   }
 }
 
@@ -437,14 +434,14 @@ export async function executeTask(taskId: string): Promise<void> {
     };
 
     console.log(`[Orchestrator] Registering output handler for task ${taskId}`);
-    aiProvider.on('output', outputHandler);
+    claudeWrapper.on('output', outputHandler);
 
     console.log(
       `[Task ${taskId}] Invoking Claude with prompt: "${task.prompt.substring(0, 100)}..."`
     );
 
     try {
-      await aiProvider.executeTask({
+      await claudeWrapper.executeTask({
         workingDirectory: containerPath,
         prompt: task.prompt,
         taskId: task.id,
@@ -479,7 +476,7 @@ export async function executeTask(taskId: string): Promise<void> {
 
       throw error; // Re-throw to exit the orchestrator
     } finally {
-      aiProvider.off('output', outputHandler);
+      claudeWrapper.off('output', outputHandler);
     }
 
     // 5. Capture diff

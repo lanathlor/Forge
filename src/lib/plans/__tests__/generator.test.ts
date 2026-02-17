@@ -81,6 +81,7 @@ vi.mock('@/db/schema/repositories', () => ({
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((a, b) => ({ field: a, value: b })),
+  relations: vi.fn(),
 }));
 
 vi.mock('@/lib/claude/wrapper', () => ({

@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { plans, phases, planTasks, planIterations } from '@/db/schema';
 import { repositories } from '@/db/schema/repositories';
 import { eq } from 'drizzle-orm';
-import { createAIProvider } from '@/lib/ai';
+import { claudeWrapper } from '@/lib/claude/wrapper';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 interface GeneratedPlanStructure {
@@ -62,8 +62,7 @@ export async function generatePlanFromDescription(
 
     // Call Claude to generate plan structure
     const workingDir = getContainerPath(repository.path);
-    const aiProvider = createAIProvider();
-    const response = await aiProvider.executeOneShot(
+    const response = await claudeWrapper.executeOneShot(
       prompt,
       workingDir,
       300000 // 5 minute timeout - plan generation can take time

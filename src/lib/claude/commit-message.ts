@@ -1,5 +1,5 @@
 import type { FileChange } from '@/db/schema/tasks';
-import { createAIProvider } from '@/lib/ai';
+import { claudeWrapper } from './wrapper';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
 const COMMIT_MESSAGE_GENERATION_TIMEOUT = 120000; // 2 minutes
@@ -58,8 +58,7 @@ async function invokeClaudeForCommitMessage(
   prompt: string,
   workingDirectory: string
 ): Promise<string> {
-  const aiProvider = createAIProvider();
-  const rawOutput = await aiProvider.executeOneShot(prompt, workingDirectory, COMMIT_MESSAGE_GENERATION_TIMEOUT);
+  const rawOutput = await claudeWrapper.executeOneShot(prompt, workingDirectory, COMMIT_MESSAGE_GENERATION_TIMEOUT);
   console.log('[generateCommitMessage] Raw output from Claude:');
   console.log('[generateCommitMessage]', rawOutput.substring(0, 200));
   const commitMessage = extractCommitMessage(rawOutput);
