@@ -1,6 +1,10 @@
 # Forge
 
-A self-hosted oversight dashboard for AI coding agents. Forge watches your AI coding sessions — powered by [Claude Code](https://claude.ai/code), the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), or [OpenAI Codex](https://platform.openai.com/docs/guides/code) — automatically runs your QA checks, and gives you a clean review-and-approve interface before anything gets committed.
+Most AI coding tools let the AI decide when to run tests, whether the output is good enough, and when to commit. Forge doesn't.
+
+Forge is a deterministic orchestrator that treats AI as a tool — like a compiler or a linter — not a decision-maker. You define the plan. Forge invokes the AI on each task, runs your actual QA gates (the scripts already in your repo), and only commits when they pass. The AI never decides if its own work is good enough.
+
+Self-hosted, multi-repository, works with [Claude Code](https://claude.ai/code), the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), or [OpenAI Codex](https://platform.openai.com/docs/guides/code).
 
 ## What it does
 
