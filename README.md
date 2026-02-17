@@ -1,23 +1,37 @@
 # Forge
 
-A self-hosted oversight dashboard for [Claude Code](https://claude.ai/code). Forge watches your AI coding sessions, automatically runs your QA checks, and gives you a clean review-and-approve interface before anything gets committed.
+A self-hosted oversight dashboard for AI coding agents. Forge watches your AI coding sessions — powered by [Claude Code](https://claude.ai/code), the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), or [OpenAI Codex](https://platform.openai.com/docs/guides/code) — automatically runs your QA checks, and gives you a clean review-and-approve interface before anything gets committed.
 
 ## What it does
 
-When Claude Code finishes working on a task, Forge steps in:
+When your AI agent finishes working on a task, Forge steps in:
 
 1. **Runs QA gates** — lint, type-check, tests — whatever you define per repository
 2. **Shows you the diff** — side-by-side in Monaco Editor with syntax highlighting
 3. **Lets you approve or reject** — approve commits with an AI-generated message, or revert cleanly
-4. **Retries automatically** — if a gate fails, Forge sends the errors back to Claude and tries again (up to 3 times)
+4. **Retries automatically** — if a gate fails, Forge sends the errors back to your AI agent and tries again (up to 3 times)
 
 Everything is tracked: sessions, tasks, gate results, commit SHAs.
 
+## Supported AI providers
+
+Forge works with any of the following out of the box, selected via the `AI_PROVIDER` environment variable:
+
+| Provider | Value | Description |
+|---|---|---|
+| Claude Code (CLI) | `claude-code` | Spawns the Claude Code CLI as a child process — the default |
+| Claude SDK | `claude-sdk` | Direct Anthropic API integration via the Claude SDK |
+| OpenAI Codex SDK | `codex-sdk` | OpenAI Codex API via the OpenAI SDK |
+| Fake (testing) | `fake` | Hardcoded deterministic responses for CI/local dev |
+
+See [CONFIGURATION.md](./CONFIGURATION.md) for provider-specific environment variables.
+
 ## Features
 
+- **Multi-provider**: switch between Claude Code, Claude SDK, Codex, or a fake provider with a single env var
 - **Multi-repository**: manage all your git repositories from one dashboard
 - **Per-repo QA gates**: each repo defines its own checks via `.forge.json` — works with TypeScript, Python, Go, Rust, or anything with a CLI
-- **3-retry loop**: failed gates feed their errors directly back to Claude for auto-correction
+- **3-retry loop**: failed gates feed their errors directly back to the AI agent for auto-correction
 - **Visual diff viewer**: Monaco Editor with syntax highlighting and file navigation
 - **Approval workflow**: AI-generated conventional commit messages, editable before commit
 - **Safe rejection**: one click to revert to the previous git state
@@ -43,7 +57,8 @@ Everything is tracked: sessions, tasks, gate results, commit SHAs.
 
 - Node.js 20+
 - pnpm
-- A Claude Code workspace (a directory containing git repositories)
+- A workspace directory containing git repositories
+- An AI provider — Claude Code CLI, an Anthropic API key, or an OpenAI API key (depending on which provider you choose)
 
 ### Install
 
@@ -67,6 +82,18 @@ WORKSPACE_ROOT="/path/to/your/projects"
 
 # SQLite for local use; swap for PostgreSQL in production
 DATABASE_URL="./forge.db"
+
+# AI provider: claude-code (default) | claude-sdk | codex-sdk | fake
+AI_PROVIDER=claude-code
+
+# Claude Code (default provider — requires Claude Code CLI installed)
+CLAUDE_CODE_PATH=claude
+
+# Claude SDK (set AI_PROVIDER=claude-sdk)
+# ANTHROPIC_API_KEY=your-key-here
+
+# Codex SDK (set AI_PROVIDER=codex-sdk)
+# OPENAI_API_KEY=your-key-here
 ```
 
 ### Initialize the database
