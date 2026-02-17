@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSSESubscription, useSSEConnected, useSSEStatus } from '@/shared/contexts/SSEContext';
 
 export interface TaskUpdate {
   type: 'connected' | 'task_update' | 'task_output' | 'qa_gate_update';
@@ -20,143 +21,67 @@ interface UseTaskStreamReturn {
   reconnect: () => void;
 }
 
-/**
- * Custom hook for consuming Server-Sent Events from the task stream
- *
- * @param sessionId - The session ID to subscribe to
- * @param options - Configuration options
- * @returns Updates array, connection status, and reconnect function
- */
-/* eslint-disable max-lines-per-function */
-export function useTaskStream(
-  sessionId: string | null,
-  options?: {
-    autoReconnect?: boolean;
-    reconnectDelay?: number;
-    maxUpdates?: number;
-  }
-): UseTaskStreamReturn {
-  const {
-    autoReconnect = true,
-    reconnectDelay = 3000,
-    maxUpdates = 1000,
-  } = options || {};
-
+function useAddUpdate(maxUpdates: number) {
   const [updates, setUpdates] = useState<TaskUpdate[]>([]);
-  const [connected, setConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const addUpdate = useCallback((update: TaskUpdate) => {
+    setUpdates((prev) => {
+      const next = [...prev, update];
+      return next.length > maxUpdates ? next.slice(next.length - maxUpdates) : next;
+    });
+  }, [maxUpdates]);
+  return { updates, setUpdates, addUpdate };
+}
 
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptRef = useRef(0);
+function useTaskUpdateSubscription(sessionId: string | null, addUpdate: (u: TaskUpdate) => void) {
+  useSSESubscription<TaskUpdate>('unified', 'task_update', (event) => {
+    if (!sessionId) return;
+    const data = event.data as TaskUpdate;
+    if (!data || data.sessionId !== sessionId) return;
+    addUpdate({ ...data, type: 'task_update', timestamp: event.timestamp });
+  }, [sessionId, addUpdate]);
+}
 
-  const cleanup = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  }, []);
+function useTaskOutputSubscription(sessionId: string | null, addUpdate: (u: TaskUpdate) => void) {
+  useSSESubscription<{ sessionId?: string; taskId?: string; output?: string }>(
+    'unified', 'task_output', (event) => {
+      if (!sessionId) return;
+      const data = event.data;
+      if (!data || data.sessionId !== sessionId) return;
+      addUpdate({ type: 'task_output', sessionId: data.sessionId, taskId: data.taskId, output: data.output, timestamp: event.timestamp });
+    }, [sessionId, addUpdate]);
+}
 
-  const connect = useCallback(() => {
-    if (!sessionId) {
-      console.log('[useTaskStream] No sessionId, skipping connection');
-      return;
-    }
+function useQAGateSubscription(sessionId: string | null, addUpdate: (u: TaskUpdate) => void) {
+  useSSESubscription<{ sessionId?: string; taskId?: string; gateName?: string; status?: string }>(
+    'unified', 'qa_gate_update', (event) => {
+      if (!sessionId) return;
+      const data = event.data;
+      if (!data || data.sessionId !== sessionId) return;
+      addUpdate({ type: 'qa_gate_update', sessionId: data.sessionId, taskId: data.taskId, gateName: data.gateName, status: data.status, timestamp: event.timestamp });
+    }, [sessionId, addUpdate]);
+}
 
-    console.log('[useTaskStream] Connecting to SSE with sessionId:', sessionId);
-    cleanup();
+/**
+ * Hook for consuming real-time task events for a specific session.
+ *
+ * Uses the GlobalSSEManager unified connection (already established by SSEProvider)
+ * instead of opening a separate EventSource per session. Events are filtered
+ * client-side by sessionId, matching the behaviour of the old /api/stream endpoint.
+ */
+export function useTaskStream(sessionId: string | null, options?: { maxUpdates?: number }): UseTaskStreamReturn {
+  const { maxUpdates = 1000 } = options || {};
+  const { updates, setUpdates, addUpdate } = useAddUpdate(maxUpdates);
+  const isConnected = useSSEConnected();
+  const status = useSSEStatus();
 
-    try {
-      const url = `/api/stream?sessionId=${sessionId}`;
-      console.log('[useTaskStream] Creating EventSource:', url);
-      const eventSource = new EventSource(url);
-      eventSourceRef.current = eventSource;
+  useEffect(() => { setUpdates([]); }, [sessionId, setUpdates]);
 
-      eventSource.onopen = () => {
-        console.log('[useTaskStream] Connection opened');
-        setConnected(true);
-        setError(null);
-        reconnectAttemptRef.current = 0;
-      };
+  useTaskUpdateSubscription(sessionId, addUpdate);
+  useTaskOutputSubscription(sessionId, addUpdate);
+  useQAGateSubscription(sessionId, addUpdate);
 
-      eventSource.onmessage = (event) => {
-        console.log('[useTaskStream] Received message:', event.data);
-        try {
-          const data: TaskUpdate = JSON.parse(event.data);
-          console.log('[useTaskStream] Parsed data:', data);
+  // GlobalSSEManager handles reconnection automatically. No-op for API compatibility.
+  const reconnect = useCallback(() => {}, []);
 
-          if (data.type === 'connected') {
-            setConnected(true);
-            return;
-          }
-
-          setUpdates((prev) => {
-            const newUpdates = [...prev, data];
-            console.log('[useTaskStream] Total updates:', newUpdates.length);
-            // Limit updates array size to prevent memory issues
-            if (newUpdates.length > maxUpdates) {
-              return newUpdates.slice(newUpdates.length - maxUpdates);
-            }
-            return newUpdates;
-          });
-        } catch (err) {
-          console.error('Error parsing SSE message:', err);
-        }
-      };
-
-      eventSource.onerror = () => {
-        setConnected(false);
-        setError('Connection lost');
-        eventSource.close();
-
-        // Auto-reconnect logic
-        if (autoReconnect) {
-          reconnectAttemptRef.current += 1;
-          const delay = Math.min(
-            reconnectDelay * Math.pow(2, reconnectAttemptRef.current - 1),
-            30000
-          );
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        }
-      };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      console.error('Error creating EventSource:', err);
-    }
-  }, [sessionId, autoReconnect, reconnectDelay, maxUpdates, cleanup]);
-
-  useEffect(() => {
-    console.log('[useTaskStream] useEffect triggered, sessionId:', sessionId);
-    if (sessionId) {
-      console.log('[useTaskStream] SessionId exists, calling connect()');
-      connect();
-    } else {
-      console.log('[useTaskStream] SessionId is null/undefined, skipping connect');
-    }
-
-    return () => {
-      console.log('[useTaskStream] Cleanup called');
-      cleanup();
-    };
-  }, [sessionId, connect, cleanup]);
-
-  const reconnect = useCallback(() => {
-    reconnectAttemptRef.current = 0;
-    connect();
-  }, [connect]);
-
-  return {
-    updates,
-    connected,
-    error,
-    reconnect,
-  };
+  return { updates, connected: isConnected, error: status === 'disconnected' ? 'Connection lost' : null, reconnect };
 }

@@ -1,4 +1,3 @@
- 
 'use client';
 
 import { type ReactNode, useCallback, useEffect } from 'react';
@@ -7,6 +6,8 @@ import { hydrateFromStorage, setSidebarCollapsed, setCurrentRepository, setCurre
 import { Navigation, useNavigationItems } from '@/shared/components/navigation';
 import { QuickSwitchDock } from './QuickSwitchDock';
 import { StuckAlertToastManager } from './StuckAlertToastManager';
+import { ConnectionStatusIndicator } from '@/shared/components/ConnectionStatusIndicator';
+import { ReconnectingBanner } from '@/shared/components/ReconnectingBanner';
 import { cn } from '@/shared/lib/utils';
 
 export interface AppLayoutProps {
@@ -91,14 +92,20 @@ export function AppLayout({
         collapsed={isSidebarCollapsed}
         onCollapsedChange={(collapsed) => dispatch(setSidebarCollapsed(collapsed))}
         logo={
-          <span className="text-lg font-semibold text-text-primary">
-            Claude Code
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg font-semibold text-text-primary truncate">
+              Claude Code
+            </span>
+            <ConnectionStatusIndicator compact showDetails={false} className="flex-shrink-0" />
+          </div>
         }
         mobileHeader={
-          <span className="text-lg font-semibold text-text-primary">
-            Claude Code
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold text-text-primary">
+              Claude Code
+            </span>
+            <ConnectionStatusIndicator compact showDetails={false} />
+          </div>
         }
       />
 
@@ -113,6 +120,9 @@ export function AppLayout({
           'pb-16 md:pb-0'
         )}
       >
+        {/* Reconnecting Banner - shown when SSE connection is lost/reconnecting */}
+        <ReconnectingBanner />
+
         {/* Quick-Switch Repo Dock - Desktop: top bar, Mobile: bottom tab bar */}
         <QuickSwitchDock
           selectedRepoId={currentRepositoryId || undefined}

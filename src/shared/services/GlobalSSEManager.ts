@@ -276,7 +276,8 @@ class SSEConnection {
   private static readonly NAMED_EVENTS = [
     'connected', 'bulk_update', 'repo_update', 'keep_alive',
     'task_update', 'task_output', 'qa_gate_update',
-    'stuck_update', 'stuck_detected', 'stuck_resolved', 'stuck_escalated'
+    'stuck_update', 'stuck_detected', 'stuck_resolved', 'stuck_escalated',
+    'plan_execution',
   ];
 
   /** Handle successful connection open */
