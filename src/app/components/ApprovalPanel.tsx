@@ -373,6 +373,114 @@ function ErrorFeedback({ message }: { message: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// No Changes Panel
+// ---------------------------------------------------------------------------
+
+function NoChangesPanel({
+  taskId,
+  onApproved,
+  onRejected,
+}: {
+  taskId: string;
+  onApproved?: () => void;
+  onRejected?: () => void;
+}) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+
+  const handleComplete = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch(`/api/tasks/${taskId}/approve`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to complete task');
+      }
+      onApproved?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete task');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [taskId, onApproved]);
+
+  const handleRejectConfirm = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch(`/api/tasks/${taskId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rejectReason || null }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to reject task');
+      }
+      setShowRejectDialog(false);
+      onRejected?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject task');
+      setShowRejectDialog(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [taskId, rejectReason, onRejected]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold flex items-center gap-2">
+          <Eye className="h-5 w-5 text-amber-500" />
+          Review Changes
+        </h3>
+        <Badge variant="default" className="text-xs bg-emerald-600 hover:bg-emerald-700">
+          <CheckCircle className="h-3 w-3 mr-1" />QA Passed
+        </Badge>
+      </div>
+
+      <div className="flex items-center gap-2 p-3 rounded-md bg-muted/40 border text-sm text-muted-foreground">
+        <FileText className="h-4 w-4 flex-shrink-0" />
+        No file changes were made by this task. You can mark it as complete or reject it.
+      </div>
+
+      {error && <ErrorFeedback message={error} />}
+
+      <div className="flex gap-2 pt-1">
+        <Button
+          variant="outline"
+          onClick={() => setShowRejectDialog(true)}
+          disabled={isLoading}
+          className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+        >
+          <ThumbsDown className="h-4 w-4 mr-2" />
+          Reject
+        </Button>
+        <Button
+          onClick={handleComplete}
+          disabled={isLoading}
+          className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+        >
+          {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Completing...</> : <><ThumbsUp className="h-4 w-4 mr-2" />Mark as Complete</>}
+        </Button>
+      </div>
+
+      <ConfirmRejectDialog
+        open={showRejectDialog}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setShowRejectDialog(false)}
+        isLoading={isLoading}
+        reason={rejectReason}
+        onReasonChange={setRejectReason}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // API Functions
 // ---------------------------------------------------------------------------
 
@@ -401,13 +509,13 @@ async function rejectTask(taskId: string, reason: string | null) {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function ApprovalPanel({
+function ApprovalPanelWithChanges({
   taskId,
   filesChanged,
-  qaGatesPassed = true,
+  qaGatesPassed,
   onApproved,
   onRejected,
-}: ApprovalPanelProps) {
+}: ApprovalPanelProps & { qaGatesPassed: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [commitMessage, setCommitMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -588,5 +696,26 @@ export function ApprovalPanel({
         onReasonChange={setRejectReason}
       />
     </div>
+  );
+}
+
+export function ApprovalPanel({
+  taskId,
+  filesChanged,
+  qaGatesPassed = true,
+  onApproved,
+  onRejected,
+}: ApprovalPanelProps) {
+  if (filesChanged.length === 0) {
+    return <NoChangesPanel taskId={taskId} onApproved={onApproved} onRejected={onRejected} />;
+  }
+  return (
+    <ApprovalPanelWithChanges
+      taskId={taskId}
+      filesChanged={filesChanged}
+      qaGatesPassed={qaGatesPassed}
+      onApproved={onApproved}
+      onRejected={onRejected}
+    />
   );
 }

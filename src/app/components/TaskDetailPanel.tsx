@@ -694,11 +694,11 @@ export function TaskDetailPanel({ taskId, updates, open, onClose }: TaskDetailPa
               <QAGateResults taskId={taskId} attempt={task.currentQAAttempt ?? 1} />
             </TabsContent>
 
-            {task.status === 'waiting_approval' && task.filesChanged && (
+            {task.status === 'waiting_approval' && (
               <TabsContent value="approval" className="flex-1 mt-0 overflow-y-auto p-4">
                 <ApprovalPanel
                   taskId={taskId}
-                  filesChanged={task.filesChanged}
+                  filesChanged={task.filesChanged ?? []}
                   qaGatesPassed
                   onApproved={loadTask}
                   onRejected={loadTask}
