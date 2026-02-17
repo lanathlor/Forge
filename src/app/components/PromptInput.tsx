@@ -301,7 +301,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
             'pointer-events-none absolute left-4 z-10 transition-all duration-200',
             hasContent || isFocused
               ? '-top-2.5 bg-card px-1.5 text-xs'
-              : 'top-4 text-sm'
+              : 'top-[2.75rem] text-sm'
           )}
         >
           <span
