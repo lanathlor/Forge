@@ -3,12 +3,14 @@ import { api } from './api';
 
 // Import feature APIs to ensure endpoints are registered
 import '@/features/repositories/store/repositoriesApi';
+import '@/features/dashboard/store/tasksApi';
 
 // Import slices
 import sessionReducer from '@/features/sessions/store/sessionSlice';
 import uiReducer from '@/shared/store/uiSlice';
 import repoSnapshotReducer from '@/features/sessions/store/repoSnapshotSlice';
 import settingsReducer from '@/features/settings/store/settingsSlice';
+import dashboardUiReducer from '@/features/dashboard/store/dashboardUiSlice';
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +19,7 @@ export const store = configureStore({
     ui: uiReducer,
     repoSnapshot: repoSnapshotReducer,
     settings: settingsReducer,
+    dashboardUi: dashboardUiReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(api.middleware),
