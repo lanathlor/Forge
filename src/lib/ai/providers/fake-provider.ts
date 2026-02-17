@@ -183,7 +183,7 @@ export class FakeAIProvider extends EventEmitter implements AIProvider {
 
   private async simulateDelay(): Promise<void> {
     if (this.delayMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+      await new Promise((resolve) => setTimeout(resolve, this.delayMs + 5));
     }
   }
 
