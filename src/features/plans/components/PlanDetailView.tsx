@@ -1123,12 +1123,15 @@ function TaskRow({
   onRetry: () => void;
   onEditChange: (edits: { title: string; description: string }) => void;
 }) {
-  const deps = task.dependsOn as string[] | null;
+  const rawDeps = task.dependsOn;
+  const deps: string[] = Array.isArray(rawDeps)
+    ? rawDeps
+    : typeof rawDeps === 'string' && rawDeps
+      ? (() => { try { return JSON.parse(rawDeps); } catch { return []; } })()
+      : [];
   const depTasks = deps
-    ? deps
-        .map((depId) => allTasks.find((t) => t.id === depId))
-        .filter(Boolean)
-    : [];
+    .map((depId) => allTasks.find((t) => t.id === depId))
+    .filter(Boolean);
 
   return (
     <div

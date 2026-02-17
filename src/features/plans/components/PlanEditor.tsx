@@ -72,7 +72,12 @@ function detectCircularDependency(
     if (t.id === taskId) {
       adjList.set(t.id, newDeps);
     } else {
-      adjList.set(t.id, (t.dependsOn as string[] | null) || []);
+      const rawTDeps = t.dependsOn;
+      adjList.set(t.id, Array.isArray(rawTDeps)
+        ? rawTDeps
+        : typeof rawTDeps === 'string' && rawTDeps
+          ? (() => { try { return JSON.parse(rawTDeps); } catch { return []; } })()
+          : []);
     }
   }
 
@@ -583,7 +588,12 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
       const task = data.tasks.find((t) => t.id === taskId);
       if (!task) return;
 
-      const currentDeps = (task.dependsOn as string[] | null) || [];
+      const rawCurrentDeps = task.dependsOn;
+      const currentDeps: string[] = Array.isArray(rawCurrentDeps)
+        ? rawCurrentDeps
+        : typeof rawCurrentDeps === 'string' && rawCurrentDeps
+          ? (() => { try { return JSON.parse(rawCurrentDeps); } catch { return []; } })()
+          : [];
       const newDeps = currentDeps.includes(depTaskId)
         ? currentDeps.filter((d) => d !== depTaskId)
         : [...currentDeps, depTaskId];
@@ -1088,7 +1098,12 @@ function EditorTaskRow({
   onToggleDepPicker: () => void;
   onToggleDependency: (depId: string) => void;
 }) {
-  const deps = (task.dependsOn as string[] | null) || [];
+  const rawDeps = task.dependsOn;
+  const deps: string[] = Array.isArray(rawDeps)
+    ? rawDeps
+    : typeof rawDeps === 'string' && rawDeps
+      ? (() => { try { return JSON.parse(rawDeps); } catch { return []; } })()
+      : [];
   const depTasks = deps
     .map((depId) => allTasks.find((t) => t.id === depId))
     .filter(Boolean) as PlanTask[];
