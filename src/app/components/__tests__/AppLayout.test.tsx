@@ -8,6 +8,19 @@ import { AppLayout } from '../AppLayout';
 import { ToastProvider } from '@/shared/components/ui/toast';
 import { SSEProvider } from '@/shared/contexts/SSEContext';
 
+// Mock Next.js navigation hooks
+vi.mock('next/navigation', () => ({
+  usePathname: vi.fn(() => '/dashboard'),
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  })),
+}));
+
 // Mock window.matchMedia for breakpoint detection
 const mockMatchMedia = (width: number) => {
   Object.defineProperty(window, 'innerWidth', {
@@ -130,10 +143,10 @@ describe('AppLayout', () => {
       );
 
       const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      expect(within(sidebar).getByText('Sessions')).toBeInTheDocument();
+      expect(within(sidebar).getByText('Dashboard')).toBeInTheDocument();
+      expect(within(sidebar).getByText('Tasks')).toBeInTheDocument();
       expect(within(sidebar).getByText('Plans')).toBeInTheDocument();
       expect(within(sidebar).getByText('Repositories')).toBeInTheDocument();
-      expect(within(sidebar).getByText('Tasks')).toBeInTheDocument();
       expect(within(sidebar).getByText('Settings')).toBeInTheDocument();
       expect(within(sidebar).getByText('Help')).toBeInTheDocument();
     });
@@ -155,8 +168,8 @@ describe('AppLayout', () => {
       );
 
       const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
-      expect(sessionsButton).toHaveAttribute('aria-current', 'page');
+      const dashboardLink = within(sidebar).getByRole('link', { name: 'Dashboard' });
+      expect(dashboardLink).toHaveAttribute('aria-current', 'page');
     });
 
     it('should set custom active nav item', () => {
@@ -174,8 +187,8 @@ describe('AppLayout', () => {
       );
 
       const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const plansButton = within(sidebar).getByRole('button', { name: 'Plans' });
-      expect(plansButton).toHaveAttribute('aria-current', 'page');
+      const plansLink = within(sidebar).getByRole('link', { name: 'Plans' });
+      expect(plansLink).toHaveAttribute('aria-current', 'page');
     });
   });
 
@@ -353,18 +366,18 @@ describe('AppLayout', () => {
       );
 
       const sidebar = screen.getByRole('navigation', { name: /main navigation/i });
-      const sessionsButton = within(sidebar).getByRole('button', { name: 'Sessions' });
+      const dashboardLink = within(sidebar).getByRole('link', { name: 'Dashboard' });
 
       // Focus the first nav item
-      sessionsButton.focus();
-      expect(document.activeElement).toBe(sessionsButton);
+      dashboardLink.focus();
+      expect(document.activeElement).toBe(dashboardLink);
 
       // Navigate with arrow key
       await user.keyboard('{ArrowDown}');
 
       // Should move focus to next item
-      const plansButton = within(sidebar).getByRole('button', { name: 'Plans' });
-      expect(document.activeElement).toBe(plansButton);
+      const tasksLink = within(sidebar).getByRole('link', { name: 'Tasks' });
+      expect(document.activeElement).toBe(tasksLink);
     });
   });
 });

@@ -3,8 +3,9 @@
 
 import { useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import { usePathname, useRouter } from 'next/navigation';
 import {
-  Activity,
+  LayoutDashboard,
   Map,
   FolderGit2,
   ListTodo,
@@ -46,13 +47,27 @@ export function useNavigationItems(
   options: UseNavigationItemsOptions = {}
 ): UseNavigationItemsResult {
   const {
-    activeItemId = 'sessions',
+    activeItemId,
     onNavigate,
     runningTasksCount = 0,
     pendingTasksCount = 0,
     hasActiveSession = false,
     sessionStatus = 'idle',
   } = options;
+
+  // Get current pathname for automatic active state
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Determine active item based on pathname if not explicitly provided
+  const effectiveActiveItemId = activeItemId ?? (() => {
+    if (pathname === '/dashboard' || pathname === '/') return 'dashboard';
+    if (pathname?.startsWith('/tasks')) return 'tasks';
+    if (pathname?.startsWith('/plans')) return 'plans';
+    if (pathname?.startsWith('/repositories')) return 'repositories';
+    if (pathname?.startsWith('/settings')) return 'settings';
+    return 'dashboard';
+  })();
 
   // Get state from Redux
   const currentSessionId = useSelector((state: RootState) => state.session.currentSessionId);
@@ -62,12 +77,15 @@ export function useNavigationItems(
   const effectiveHasActiveSession = hasActiveSession || !!currentSessionId;
   const totalTasksCount = runningTasksCount + pendingTasksCount;
 
-  // Navigation handler factory
+  // Navigation handler factory - use Next.js router for navigation
   const createNavigationHandler = useCallback(
-    (itemId: string) => () => {
+    (itemId: string, href?: string) => () => {
+      if (href) {
+        router.push(href);
+      }
       onNavigate?.(itemId);
     },
-    [onNavigate]
+    [onNavigate, router]
   );
 
   // Build navigation items
@@ -78,12 +96,13 @@ export function useNavigationItems(
     return [
       // Primary navigation items
       {
-        id: 'sessions',
-        label: 'Sessions',
-        icon: Activity,
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        href: '/dashboard',
         priority: 'primary' as const,
-        active: activeItemId === 'sessions',
-        onClick: createNavigationHandler('sessions'),
+        active: effectiveActiveItemId === 'dashboard',
+        onClick: createNavigationHandler('dashboard', '/dashboard'),
         shortcutHint: `${modKey}1`,
         status: effectiveHasActiveSession
           ? sessionStatus === 'running'
@@ -92,40 +111,43 @@ export function useNavigationItems(
             ? 'error'
             : 'active'
           : 'default',
-        tooltip: effectiveHasActiveSession ? 'Active session in progress' : 'Start a new session',
+        tooltip: effectiveHasActiveSession ? 'Active session in progress' : 'View dashboard',
+      },
+      {
+        id: 'tasks',
+        label: 'Tasks',
+        icon: ListTodo,
+        href: '/tasks',
+        priority: 'primary' as const,
+        active: effectiveActiveItemId === 'tasks',
+        onClick: createNavigationHandler('tasks', '/tasks'),
+        shortcutHint: `${modKey}2`,
+        badge: totalTasksCount > 0 ? totalTasksCount : undefined,
+        status: runningTasksCount > 0 ? 'running' : 'default',
+        tooltip: totalTasksCount > 0 ? `${totalTasksCount} tasks (${runningTasksCount} running)` : 'No active tasks',
       },
       {
         id: 'plans',
         label: 'Plans',
         icon: Map,
+        href: '/plans',
         priority: 'primary' as const,
-        active: activeItemId === 'plans',
-        onClick: createNavigationHandler('plans'),
-        shortcutHint: `${modKey}2`,
+        active: effectiveActiveItemId === 'plans',
+        onClick: createNavigationHandler('plans', '/plans'),
+        shortcutHint: `${modKey}3`,
         tooltip: 'View and manage plans',
       },
       {
         id: 'repositories',
         label: 'Repositories',
         icon: FolderGit2,
+        href: '/repositories',
         priority: 'primary' as const,
-        active: activeItemId === 'repositories',
-        onClick: createNavigationHandler('repositories'),
-        shortcutHint: `${modKey}3`,
+        active: effectiveActiveItemId === 'repositories',
+        onClick: createNavigationHandler('repositories', '/repositories'),
+        shortcutHint: `${modKey}4`,
         badge: currentRepositoryId ? undefined : undefined, // Could show count of repos
         tooltip: currentRepositoryId ? 'Current repository selected' : 'Select a repository',
-      },
-      {
-        id: 'tasks',
-        label: 'Tasks',
-        icon: ListTodo,
-        priority: 'primary' as const,
-        active: activeItemId === 'tasks',
-        onClick: createNavigationHandler('tasks'),
-        shortcutHint: `${modKey}4`,
-        badge: totalTasksCount > 0 ? totalTasksCount : undefined,
-        status: runningTasksCount > 0 ? 'running' : 'default',
-        tooltip: totalTasksCount > 0 ? `${totalTasksCount} tasks (${runningTasksCount} running)` : 'No active tasks',
       },
 
       // Secondary navigation items
@@ -133,9 +155,10 @@ export function useNavigationItems(
         id: 'settings',
         label: 'Settings',
         icon: Settings,
+        href: '/settings',
         priority: 'secondary' as const,
-        active: activeItemId === 'settings',
-        onClick: createNavigationHandler('settings'),
+        active: effectiveActiveItemId === 'settings',
+        onClick: createNavigationHandler('settings', '/settings'),
         shortcutHint: `${modKey},`,
         tooltip: 'Application settings',
       },
@@ -144,14 +167,14 @@ export function useNavigationItems(
         label: 'Help',
         icon: HelpCircle,
         priority: 'secondary' as const,
-        active: activeItemId === 'help',
+        active: effectiveActiveItemId === 'help',
         onClick: createNavigationHandler('help'),
         shortcutHint: `${modKey}?`,
         tooltip: 'Help and documentation',
       },
     ];
   }, [
-    activeItemId,
+    effectiveActiveItemId,
     createNavigationHandler,
     effectiveHasActiveSession,
     sessionStatus,
@@ -205,10 +228,10 @@ export function useNavigationItems(
   // Keyboard shortcuts map
   const shortcuts: Record<string, string> = useMemo(
     () => ({
-      sessions: '1',
-      plans: '2',
-      repositories: '3',
-      tasks: '4',
+      dashboard: '1',
+      tasks: '2',
+      plans: '3',
+      repositories: '4',
       settings: ',',
       help: '/',
     }),

@@ -1,7 +1,7 @@
  
 'use client';
 
-import { type ReactNode, useState, useCallback, useEffect } from 'react';
+import { type ReactNode, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks';
 import { hydrateFromStorage, setSidebarCollapsed, setCurrentRepository, setCurrentSession } from '@/features/sessions/store/sessionSlice';
 import { Navigation, useNavigationItems } from '@/shared/components/navigation';
@@ -37,7 +37,7 @@ export interface AppLayoutProps {
  */
 export function AppLayout({
   children,
-  activeNavItem = 'sessions',
+  activeNavItem,
   className,
 }: AppLayoutProps) {
   const dispatch = useAppDispatch();
@@ -65,20 +65,12 @@ export function AppLayout({
     }
   }, [dispatch]);
 
-  // Track active navigation for view switching (future: could route between views)
-  const [currentNavItem, setCurrentNavItem] = useState(activeNavItem);
-
-  // Navigation callback
-  const handleNavigate = useCallback((itemId: string) => {
-    setCurrentNavItem(itemId);
-    // Future: Could implement routing here
-    // router.push(`/${itemId}`);
-  }, []);
+  // Navigation is now handled by Next.js routing, no need for local state
 
   // Get navigation items with integrated state from Redux
+  // The activeItemId is automatically determined from the current pathname
   const { items, statusIndicators, shortcuts } = useNavigationItems({
-    activeItemId: currentNavItem,
-    onNavigate: handleNavigate,
+    activeItemId: activeNavItem,
     // These would typically come from Redux selectors:
     runningTasksCount: 0, // TODO: Connect to actual task state
     pendingTasksCount: 0, // TODO: Connect to actual task state

@@ -5,6 +5,19 @@ import userEvent from '@testing-library/user-event';
 import { Navigation, useNavigation, type NavItem } from '../Navigation';
 import { Activity, Map, Settings, HelpCircle } from 'lucide-react';
 
+// Mock Next.js navigation hooks
+vi.mock('next/navigation', () => ({
+  usePathname: vi.fn(() => '/dashboard'),
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  })),
+}));
+
 // Mock window.matchMedia for breakpoint detection
 const mockMatchMedia = (width: number) => {
   Object.defineProperty(window, 'innerWidth', {

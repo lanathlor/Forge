@@ -12,6 +12,8 @@ import {
   type ReactNode,
   type KeyboardEvent,
 } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/shared/lib/utils';
 import {
   ChevronRight,
@@ -23,8 +25,8 @@ import {
   Menu,
   X,
   Map,
-  Activity,
   Circle,
+  LayoutDashboard,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
@@ -251,7 +253,8 @@ function NavItemButton({
   tabIndex = 0,
 }: NavItemButtonProps) {
   const Icon = item.icon;
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
+  const router = useRouter();
 
   // Focus management
   useEffect(() => {
@@ -260,8 +263,15 @@ function NavItemButton({
     }
   }, [focused]);
 
-  const handleClick = () => {
+  const handleClick = (e?: React.MouseEvent) => {
     if (item.disabled) return;
+
+    // If href is provided, use Next.js router for client-side navigation
+    if (item.href && !e?.ctrlKey && !e?.metaKey) {
+      e?.preventDefault();
+      router.push(item.href);
+    }
+
     item.onClick?.();
     onClick?.();
   };
@@ -286,34 +296,24 @@ function NavItemButton({
   // Priority-based styling: primary items are more prominent
   const isPrimary = item.priority === 'primary';
 
-  return (
-    <button
-      ref={buttonRef}
-      onClick={handleClick}
-      onFocus={onFocus}
-      tabIndex={item.disabled ? -1 : tabIndex}
-      disabled={item.disabled}
-      className={cn(
-        'group relative flex w-full items-center gap-3 rounded-lg text-sm font-medium',
-        'transition-all duration-200 ease-in-out',
-        'hover:bg-surface-interactive',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset',
-        // Priority-based sizing
-        isPrimary ? 'px-3 py-2.5' : 'px-3 py-2',
-        item.active
-          ? statusStyles.active
-          : statusStyles[item.status || 'default'] || 'text-text-secondary hover:text-text-primary',
-        collapsed ? 'justify-center px-2' : 'justify-start',
-        item.disabled && 'cursor-not-allowed opacity-50',
-        // Priority indicator for primary items
-        isPrimary && !item.active && 'hover:translate-x-0.5'
-      )}
-      title={collapsed ? item.label : item.tooltip}
-      aria-label={item.label}
-      aria-current={item.active ? 'page' : undefined}
-      aria-disabled={item.disabled}
-      data-priority={item.priority}
-    >
+  const sharedClassName = cn(
+    'group relative flex w-full items-center gap-3 rounded-lg text-sm font-medium',
+    'transition-all duration-200 ease-in-out',
+    'hover:bg-surface-interactive',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset',
+    // Priority-based sizing
+    isPrimary ? 'px-3 py-2.5' : 'px-3 py-2',
+    item.active
+      ? statusStyles.active
+      : statusStyles[item.status || 'default'] || 'text-text-secondary hover:text-text-primary',
+    collapsed ? 'justify-center px-2' : 'justify-start',
+    item.disabled && 'cursor-not-allowed opacity-50',
+    // Priority indicator for primary items
+    isPrimary && !item.active && 'hover:translate-x-0.5'
+  );
+
+  const content = (
+    <>
       {/* Running indicator pulse */}
       {item.status === 'running' && (
         <span className="absolute left-1 top-1/2 -translate-y-1/2" aria-hidden="true">
@@ -395,6 +395,45 @@ function NavItemButton({
           {item.badge}
         </span>
       )}
+    </>
+  );
+
+  // Render as Link if href is provided, otherwise as button
+  if (item.href) {
+    return (
+      <Link
+        ref={buttonRef as React.Ref<HTMLAnchorElement>}
+        href={item.href}
+        onClick={handleClick}
+        onFocus={onFocus}
+        tabIndex={item.disabled ? -1 : tabIndex}
+        className={sharedClassName}
+        title={collapsed ? item.label : item.tooltip}
+        aria-label={item.label}
+        aria-current={item.active ? 'page' : undefined}
+        aria-disabled={item.disabled}
+        data-priority={item.priority}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      ref={buttonRef as React.Ref<HTMLButtonElement>}
+      onClick={handleClick}
+      onFocus={onFocus}
+      tabIndex={item.disabled ? -1 : tabIndex}
+      disabled={item.disabled}
+      className={sharedClassName}
+      title={collapsed ? item.label : item.tooltip}
+      aria-label={item.label}
+      aria-current={item.active ? 'page' : undefined}
+      aria-disabled={item.disabled}
+      data-priority={item.priority}
+    >
+      {content}
     </button>
   );
 }
@@ -825,11 +864,11 @@ function MobileHeader({ onMenuOpen, statusIndicators, header }: MobileHeaderProp
    ============================================ */
 
 export const defaultNavItems: NavItem[] = [
-  { id: 'sessions', label: 'Sessions', icon: Activity, priority: 'primary' },
-  { id: 'plans', label: 'Plans', icon: Map, priority: 'primary' },
-  { id: 'repositories', label: 'Repositories', icon: FolderGit2, priority: 'primary' },
-  { id: 'tasks', label: 'Tasks', icon: ListTodo, priority: 'primary', badge: 0 },
-  { id: 'settings', label: 'Settings', icon: Settings, priority: 'secondary' },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', priority: 'primary' },
+  { id: 'tasks', label: 'Tasks', icon: ListTodo, href: '/tasks', priority: 'primary', badge: 0 },
+  { id: 'plans', label: 'Plans', icon: Map, href: '/plans', priority: 'primary' },
+  { id: 'repositories', label: 'Repositories', icon: FolderGit2, href: '/repositories', priority: 'primary' },
+  { id: 'settings', label: 'Settings', icon: Settings, href: '/settings', priority: 'secondary' },
   { id: 'help', label: 'Help', icon: HelpCircle, priority: 'secondary' },
 ];
 

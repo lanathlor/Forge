@@ -5,6 +5,19 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { useNavigationItems } from '../useNavigationItems';
 
+// Mock Next.js navigation hooks
+vi.mock('next/navigation', () => ({
+  usePathname: vi.fn(() => '/dashboard'),
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  })),
+}));
+
 // Create a mock store
 const createMockStore = (sessionState = {}) =>
   configureStore({
@@ -43,11 +56,11 @@ describe('useNavigationItems', () => {
       wrapper: createWrapper(store),
     });
 
-    const sessionsItem = result.current.items.find((item) => item.id === 'sessions');
-    expect(sessionsItem).toBeDefined();
-    expect(sessionsItem?.label).toBe('Sessions');
-    expect(sessionsItem?.active).toBe(true); // Default active item
-    expect(sessionsItem?.priority).toBe('primary');
+    const dashboardItem = result.current.items.find((item) => item.id === 'dashboard');
+    expect(dashboardItem).toBeDefined();
+    expect(dashboardItem?.label).toBe('Dashboard');
+    expect(dashboardItem?.active).toBe(true); // Default active item
+    expect(dashboardItem?.priority).toBe('primary');
   });
 
   it('should return correct shortcuts map', () => {
@@ -57,10 +70,10 @@ describe('useNavigationItems', () => {
     });
 
     expect(result.current.shortcuts).toEqual({
-      sessions: '1',
-      plans: '2',
-      repositories: '3',
-      tasks: '4',
+      dashboard: '1',
+      tasks: '2',
+      plans: '3',
+      repositories: '4',
       settings: ',',
       help: '/',
     });
@@ -73,10 +86,10 @@ describe('useNavigationItems', () => {
       { wrapper: createWrapper(store) }
     );
 
-    const sessionsItem = result.current.items.find((item) => item.id === 'sessions');
+    const dashboardItem = result.current.items.find((item) => item.id === 'dashboard');
     const plansItem = result.current.items.find((item) => item.id === 'plans');
 
-    expect(sessionsItem?.active).toBe(false);
+    expect(dashboardItem?.active).toBe(false);
     expect(plansItem?.active).toBe(true);
   });
 
@@ -165,7 +178,7 @@ describe('useNavigationItems', () => {
     const primaryItems = result.current.items.filter((item) => item.priority === 'primary');
     const secondaryItems = result.current.items.filter((item) => item.priority === 'secondary');
 
-    expect(primaryItems.length).toBe(4); // sessions, plans, repositories, tasks
+    expect(primaryItems.length).toBe(4); // dashboard, tasks, plans, repositories
     expect(secondaryItems.length).toBe(2); // settings, help
   });
 
@@ -199,8 +212,8 @@ describe('useNavigationItems', () => {
       { wrapper: createWrapper(store) }
     );
 
-    const sessionsItem = result.current.items.find((item) => item.id === 'sessions');
-    expect(sessionsItem?.status).toBe('error');
+    const dashboardItem = result.current.items.find((item) => item.id === 'dashboard');
+    expect(dashboardItem?.status).toBe('error');
   });
 
   it('should return no badge for tasks when count is 0', () => {
