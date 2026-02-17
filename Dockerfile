@@ -33,7 +33,7 @@ RUN GROUP_NAME=$(getent group ${USER_GID} | cut -d: -f1) && \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Rebuild native modules BEFORE changing ownership and switching users
+# Rebuild native modules for the container architecture
 RUN cd /app/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
 
 # Create .next directory with proper permissions
