@@ -372,9 +372,9 @@
   }
 
   /* Touch-friendly tap targets */
-  button,
+  button:not([role='switch']),
   a,
-  [role='button'] {
+  [role='button']:not([role='switch']) {
     @apply min-h-[44px];
     /* Ensure minimum tap target size for accessibility */
   }
