@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: forge:latest
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    volumes:
+      - ${WORKSPACE_ROOT}:/workspace
+      - ${CLAUDE_CONFIG_DIR:-~/.claude}:/home/nextjs/.claude:ro
+      - forge_data:/app/data
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-/app/data/forge.db}
+      - WORKSPACE_ROOT=/workspace
+      - AI_PROVIDER=${AI_PROVIDER:-claude-code}
+      - CLAUDE_CODE_PATH=${CLAUDE_CODE_PATH:-claude}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_TELEMETRY_DISABLED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forge}
+      POSTGRES_USER: ${POSTGRES_USER:-forge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required when using the postgres profile}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-forge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
+
+volumes:
+  forge_data:
+  postgres_data:

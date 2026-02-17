@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Required for Docker production image (copies only necessary files)
+  output: 'standalone',
+
   // Enable webpack bundle analyzer when ANALYZE=true
   webpack: (config, { isServer }) => {
     if (process.env.ANALYZE === 'true') {

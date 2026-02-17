@@ -14,13 +14,15 @@ services:
       - .:/app
       - /app/.next
       - /app/node_modules
-      - /home/lanath/Work:/workspace
-      - ~/.claude:/home/node/.claude
+      - ${WORKSPACE_ROOT:-/tmp/forge-workspace}:/workspace
+      - ${CLAUDE_CONFIG_DIR:-~/.claude}:/home/node/.claude
     environment:
-      - DATABASE_URL=/app/dev.db
+      - DATABASE_URL=${DATABASE_URL:-/app/dev.db}
       - WORKSPACE_ROOT=/workspace
-      - CLAUDE_CODE_PATH=claude
-      - SIMULATE_CLAUDE=false
+      - CLAUDE_CODE_PATH=${CLAUDE_CODE_PATH:-claude}
+      - AI_PROVIDER=${AI_PROVIDER:-claude-code}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - NODE_ENV=development
     stdin_open: true
     tty: true

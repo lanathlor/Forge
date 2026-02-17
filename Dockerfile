@@ -65,20 +65,27 @@ COPY . .
 
 RUN pnpm db:generate
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm build
+
+# Compile the db-init script to plain JS for use in the runner
+RUN node_modules/.bin/esbuild src/db/init.ts \
+      --bundle \
+      --platform=node \
+      --target=node20 \
+      --external:better-sqlite3 \
+      --outfile=db-init.js
 
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# curl is needed for the Docker Compose health check
+RUN apk add --no-cache curl
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -94,12 +101,23 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy db init script and migrations for first-run database setup.
+# Migrations are placed at ./migrations/ to match the __dirname-relative path
+# used in db-init.js when compiled from src/db/init.ts.
+COPY --from=builder --chown=nextjs:nodejs /app/db-init.js ./db-init.js
+COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrations ./migrations
+
+# Copy entrypoint script
+COPY --chown=nextjs:nodejs docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
 
 ENV PORT=3000
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0" node server.js
+CMD ["sh", "-c", "HOSTNAME=0.0.0.0 node server.js"]

@@ -8,7 +8,10 @@ Copy `.env.example` to `.env` and set these values:
 |---|---|---|
 | `WORKSPACE_ROOT` | — | Path to the directory containing your git repositories |
 | `DATABASE_URL` | `./forge.db` | SQLite file path, or a PostgreSQL connection string for production |
-| `CLAUDE_CODE_PATH` | `claude` | Path or name of the Claude Code CLI binary |
+| `AI_PROVIDER` | `claude-code` | AI provider: `claude-code`, `claude-sdk`, `codex-sdk`, or `fake` |
+| `CLAUDE_CODE_PATH` | `claude` | Path or name of the Claude Code CLI binary (used when `AI_PROVIDER=claude-code`) |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key (used when `AI_PROVIDER=claude-sdk`) |
+| `OPENAI_API_KEY` | — | OpenAI API key (used when `AI_PROVIDER=codex-sdk`) |
 | `NODE_ENV` | `development` | `development` or `production` |
 | `PORT` | `3000` | HTTP port |
 
@@ -17,6 +20,53 @@ Copy `.env.example` to `.env` and set these values:
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/forge"
 ```
+
+## Docker configuration
+
+Additional variables used when running via Docker Compose:
+
+| Variable | Default | Description |
+|---|---|---|
+| `USER_UID` | `1000` | Host user ID — matched inside the dev container for correct file permissions |
+| `USER_GID` | `1000` | Host group ID — matched inside the dev container for correct file permissions |
+| `CLAUDE_CONFIG_DIR` | `~/.claude` | Path to your Claude config directory, mounted into the container |
+
+### Development (`docker-compose.yml`)
+
+The dev compose file mounts your source code and workspace into the container for hot-reloading. Set `WORKSPACE_ROOT` in your `.env` to the directory that contains your git repositories.
+
+To match file ownership between host and container, set `USER_UID` and `USER_GID` to your host user's IDs:
+
+```bash
+# Find your IDs
+id -u   # USER_UID
+id -g   # USER_GID
+```
+
+### Production (`docker-compose.prod.yml`)
+
+The production compose file builds the optimized Next.js standalone image and runs it as a long-lived service with health checks and automatic restarts.
+
+**Variables:**
+
+| Variable | Required | Description |
+|---|---|---|
+| `WORKSPACE_ROOT` | Yes | Path on the host to mount as `/workspace` |
+| `CLAUDE_CONFIG_DIR` | If using `claude-code` | Path to your Claude config dir (default: `~/.claude`) |
+| `DATABASE_URL` | If using PostgreSQL | PostgreSQL connection string |
+| `POSTGRES_DB` | With `--profile postgres` | Database name (default: `forge`) |
+| `POSTGRES_USER` | With `--profile postgres` | Database user (default: `forge`) |
+| `POSTGRES_PASSWORD` | With `--profile postgres` | Database password (required — no default) |
+| `AI_PROVIDER` | No | Defaults to `claude-code` |
+| `ANTHROPIC_API_KEY` | If using `claude-sdk` | — |
+| `OPENAI_API_KEY` | If using `codex-sdk` | — |
+| `PORT` | No | Host port to expose (default: `3000`) |
+
+**SQLite (default):** The production container auto-initializes the database on first start and stores it in a named Docker volume (`forge_data`).
+
+**PostgreSQL:** Use `--profile postgres` to also start a managed Postgres container, or set `DATABASE_URL` to point to an external instance.
+
+> **Note:** `WORKSPACE_ROOT` is mounted read-write so the AI provider can check out branches and write files inside your repositories. Ensure the host path is correct and accessible.
 
 ## Per-repository QA gates (`.forge.json`)
 

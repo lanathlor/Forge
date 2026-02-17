@@ -116,15 +116,58 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Docker (recommended)
+### Docker
 
-Docker handles native build dependencies (better-sqlite3) for you:
+Docker handles native build dependencies (better-sqlite3) automatically. There are two compose files:
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Development — hot-reload, source mounted, Claude Code CLI included |
+| `docker-compose.prod.yml` | Production — optimized standalone image, health checks, restart policy |
+
+#### Development
 
 ```bash
-docker-compose up
+cp .env.example .env
+# Edit .env — set WORKSPACE_ROOT to your projects directory
+docker compose up
 ```
 
-App runs at [http://localhost:3001](http://localhost:3001).
+The app hot-reloads on source changes and is available at [http://localhost:3001](http://localhost:3001).
+
+To use PostgreSQL instead of SQLite during development:
+
+```bash
+docker compose --profile postgres up
+```
+
+Then set `DATABASE_URL=postgresql://forge:forge@postgres:5432/forge` in your `.env`.
+
+#### Production
+
+```bash
+cp .env.example .env
+# Edit .env — set WORKSPACE_ROOT, AI_PROVIDER, API keys, etc.
+docker compose -f docker-compose.prod.yml up -d
+```
+
+With PostgreSQL (recommended for production):
+
+```bash
+# Set required variables in .env, then:
+POSTGRES_PASSWORD=your-secret-password \
+DATABASE_URL=postgresql://forge:your-secret-password@postgres:5432/forge \
+docker compose -f docker-compose.prod.yml --profile postgres up -d
+```
+
+The production image:
+- Runs the Next.js standalone server (minimal footprint)
+- Automatically initializes a fresh SQLite database on first start
+- Persists the SQLite database in a named Docker volume (`forge_data`)
+- Exposes port `3000` (mapped to `$PORT` on the host, default `3000`)
+- Includes health checks and restarts automatically on failure
+
+See [CONFIGURATION.md](./CONFIGURATION.md) for all environment variables.
 
 ## QA gate configuration
 
