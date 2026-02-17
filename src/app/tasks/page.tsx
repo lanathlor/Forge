@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useAppSelector } from '@/shared/hooks';
 import { AppLayout } from '../components/AppLayout';
 import { TasksTabContent } from '../components/DashboardLayout/TasksTabContent';
@@ -8,6 +9,16 @@ import { useTaskStream } from '@/shared/hooks';
 export default function TasksPage() {
   const currentSessionId = useAppSelector(state => state.session.currentSessionId);
   const { updates, connected, error, reconnect } = useTaskStream(currentSessionId || '');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleSelectTask = useCallback((taskId: string | null) => {
+    setSelectedTaskId(taskId);
+  }, []);
+
+  const handleTaskCreated = useCallback((_taskId: string) => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   if (!currentSessionId) {
     return (
@@ -27,11 +38,11 @@ export default function TasksPage() {
           connected={connected}
           error={error}
           reconnect={reconnect}
-          selectedTaskId={null}
-          handleSelectTask={() => {}}
+          selectedTaskId={selectedTaskId}
+          handleSelectTask={handleSelectTask}
           updates={updates}
-          refreshTrigger={0}
-          handleTaskCreated={() => {}}
+          refreshTrigger={refreshTrigger}
+          handleTaskCreated={handleTaskCreated}
         />
       </div>
     </AppLayout>
