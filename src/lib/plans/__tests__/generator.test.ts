@@ -367,6 +367,9 @@ describe('plans/generator', () => {
         status: 'draft',
       };
 
+      const emittedEvents: unknown[] = [];
+      const onProgress = (event: unknown) => emittedEvents.push(event);
+
       mockDb.query.repositories.findFirst.mockResolvedValueOnce(mockRepository);
       mockValuesReturning.mockResolvedValueOnce([mockPlan]);
       mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
@@ -376,10 +379,19 @@ describe('plans/generator', () => {
       const { generatePlanFromDescription } = await import('../generator');
 
       await expect(
-        generatePlanFromDescription('repo-1', 'Title', 'Desc')
-      ).rejects.toThrow('Failed to generate plan');
+        generatePlanFromDescription('repo-1', 'Title', 'Desc', onProgress)
+      ).rejects.toThrow('Failed to parse plan structure');
 
       expect(mockUpdate).toHaveBeenCalled();
+
+      // Verify a structured PARSE_ERROR event was emitted
+      const errorEvent = emittedEvents.find(
+        (e) => (e as { type: string }).type === 'error'
+      ) as { type: string; code: string; detail?: string } | undefined;
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent?.code).toBe('PARSE_ERROR');
+      // detail should contain a snippet of the raw response
+      expect(errorEvent?.detail).toContain('invalid json response');
     });
 
     it('should handle response with embedded JSON', async () => {
@@ -449,6 +461,9 @@ describe('plans/generator', () => {
         status: 'draft',
       };
 
+      const emittedEvents: unknown[] = [];
+      const onProgress = (event: unknown) => emittedEvents.push(event);
+
       mockDb.query.repositories.findFirst.mockResolvedValueOnce(mockRepository);
       mockValuesReturning.mockResolvedValueOnce([mockPlan]);
       mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('{"tasks": []}');
@@ -456,8 +471,15 @@ describe('plans/generator', () => {
       const { generatePlanFromDescription } = await import('../generator');
 
       await expect(
-        generatePlanFromDescription('repo-1', 'Title', 'Desc')
-      ).rejects.toThrow('Failed to generate plan');
+        generatePlanFromDescription('repo-1', 'Title', 'Desc', onProgress)
+      ).rejects.toThrow('Invalid plan structure: missing phases array');
+
+      // Verify a structured PARSE_ERROR event was emitted with code
+      const errorEvent = emittedEvents.find(
+        (e) => (e as { type: string }).type === 'error'
+      ) as { type: string; code: string } | undefined;
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent?.code).toBe('PARSE_ERROR');
     });
 
     it('should handle multiple phases with tasks', async () => {

@@ -159,6 +159,7 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
           process.env.SIMULATE_CLAUDE
         );
 
+        const iterateStartMs = Date.now();
         let response: string;
         try {
           const aiProvider = createAIProvider();
@@ -174,11 +175,28 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
           console.log('[PlanIterate] Claude complete response received');
         } catch (error) {
           console.error('[PlanIterate] Error calling Claude:', error);
-          send({
-            type: 'error',
-            message:
-              error instanceof Error ? error.message : 'Failed to call Claude',
-          });
+          const llmMessage =
+            error instanceof Error ? error.message : 'Failed to call Claude';
+          const elapsedMs = Date.now() - iterateStartMs;
+          const isTimeout =
+            llmMessage.toLowerCase().includes('timeout') ||
+            llmMessage.toLowerCase().includes('timed out') ||
+            elapsedMs >= 120000;
+          if (isTimeout) {
+            send({
+              type: 'error',
+              code: 'TIMEOUT',
+              message: 'Plan iteration timed out',
+              detail: `Elapsed: ${Math.round(elapsedMs / 1000)}s`,
+            });
+          } else {
+            send({
+              type: 'error',
+              code: 'LLM_ERROR',
+              message: `LLM call failed: ${llmMessage}`,
+            });
+          }
+          send({ type: 'done' });
           controller.close();
           return;
         }
@@ -329,7 +347,16 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
             }
           } catch (error) {
             console.error('Failed to parse/apply updates:', error);
-            send({ type: 'error', message: 'Failed to apply updates' });
+            const parseMessage =
+              error instanceof Error ? error.message : 'Unknown parse error';
+            // Provide a truncated raw snippet to aid debugging
+            const rawSnippet = updatesMatch[1]?.trim().substring(0, 300);
+            send({
+              type: 'error',
+              code: 'PARSE_ERROR',
+              message: `Failed to parse LLM updates: ${parseMessage}`,
+              detail: rawSnippet,
+            });
           }
         }
 
@@ -341,8 +368,12 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
           error instanceof Error ? error.message : 'Unknown error';
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ type: 'error', message: errorDetails })}\n\n`
+            `data: ${JSON.stringify({ type: 'error', code: 'LLM_ERROR', message: errorDetails })}\n\n`
           )
+        );
+        // Always emit a final 'done' event so the client can close the stream reliably
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
         );
         controller.close();
       }

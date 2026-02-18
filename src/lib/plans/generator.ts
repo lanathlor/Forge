@@ -21,12 +21,23 @@ interface GeneratedPlanStructure {
   }[];
 }
 
+/**
+ * Error codes for structured error events emitted during plan generation.
+ *
+ * - TIMEOUT      – the LLM call exceeded its time budget; `detail` contains elapsed ms.
+ * - PARSE_ERROR  – the LLM response could not be parsed as valid JSON; `detail`
+ *                  contains a truncated snippet of the raw output for debugging.
+ * - LLM_ERROR    – the AI provider returned an error or produced an empty response.
+ * - ABORTED      – the request was cancelled by the client (AbortController).
+ */
+export type GenerationErrorCode = 'TIMEOUT' | 'PARSE_ERROR' | 'LLM_ERROR' | 'ABORTED';
+
 export type GenerationProgressEvent =
   | { type: 'status'; message: string }
   | { type: 'progress'; percent: number }
   | { type: 'chunk'; content: string }
   | { type: 'done'; planId: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; code: GenerationErrorCode; message: string; detail?: string };
 
 export type ProgressCallback = (event: GenerationProgressEvent) => void;
 
@@ -73,6 +84,8 @@ export async function generatePlanFromDescription(
 
   const planId = plan.id;
 
+  const generationStartMs = Date.now();
+
   try {
     // Build prompt for Claude
     emit({ type: 'status', message: 'Building generation prompt...' });
@@ -84,13 +97,71 @@ export async function generatePlanFromDescription(
     // Call Claude to generate plan structure
     const workingDir = getContainerPath(repository.path);
 
-    const response = await claudeWrapper.executeOneShot(
-      prompt,
-      workingDir,
-      300000, // 5 minute timeout - plan generation can take time
-      null,
-      signal
-    );
+    let response: string;
+    try {
+      response = await claudeWrapper.executeOneShot(
+        prompt,
+        workingDir,
+        300000, // 5 minute timeout - plan generation can take time
+        null,
+        signal
+      );
+    } catch (llmError) {
+      const isAbort =
+        llmError instanceof DOMException && llmError.name === 'AbortError';
+      if (isAbort) {
+        console.log(
+          `[PlanGenerator] Request aborted – deleting orphaned draft plan ${planId}`
+        );
+        await db.delete(plans).where(eq(plans.id, planId));
+        throw llmError; // re-throw so the SSE handler emits ABORTED and closes cleanly
+      }
+
+      const elapsedMs = Date.now() - generationStartMs;
+      const llmMessage =
+        llmError instanceof Error ? llmError.message : 'Unknown LLM error';
+      const isTimeout =
+        llmMessage.toLowerCase().includes('timeout') ||
+        llmMessage.toLowerCase().includes('timed out') ||
+        elapsedMs >= 300000;
+
+      await db
+        .update(plans)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(plans.id, planId));
+
+      if (isTimeout) {
+        emit({
+          type: 'error',
+          code: 'TIMEOUT',
+          message: 'Plan generation timed out',
+          detail: `Elapsed: ${Math.round(elapsedMs / 1000)}s`,
+        });
+      } else {
+        emit({
+          type: 'error',
+          code: 'LLM_ERROR',
+          message: `LLM call failed: ${llmMessage}`,
+        });
+      }
+
+      throw new Error(`LLM call failed: ${llmMessage}`);
+    }
+
+    if (!response || response.trim().length === 0) {
+      const elapsedMs = Date.now() - generationStartMs;
+      await db
+        .update(plans)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(plans.id, planId));
+      emit({
+        type: 'error',
+        code: 'LLM_ERROR',
+        message: 'LLM returned an empty response',
+        detail: `Elapsed: ${Math.round(elapsedMs / 1000)}s`,
+      });
+      throw new Error('LLM returned an empty response');
+    }
 
     console.log(`[PlanGenerator] Claude response received (${response.length} chars)`);
 
@@ -98,7 +169,29 @@ export async function generatePlanFromDescription(
     emit({ type: 'status', message: 'Parsing plan structure...' });
 
     // Parse response as JSON
-    const planStructure = parseClaudeResponse(response);
+    let planStructure: GeneratedPlanStructure;
+    try {
+      planStructure = parseClaudeResponse(response);
+    } catch (parseError) {
+      await db
+        .update(plans)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(plans.id, planId));
+
+      const parseMessage =
+        parseError instanceof Error ? parseError.message : 'Unknown parse error';
+      // Provide a truncated raw snippet to aid debugging
+      const rawSnippet = response.trim().substring(0, 300);
+
+      emit({
+        type: 'error',
+        code: 'PARSE_ERROR',
+        message: `Failed to parse LLM response: ${parseMessage}`,
+        detail: rawSnippet,
+      });
+
+      throw parseError;
+    }
 
     emit({ type: 'progress', percent: 80 });
     emit({ type: 'status', message: 'Saving phases and tasks...' });
@@ -116,36 +209,36 @@ export async function generatePlanFromDescription(
 
     return planId;
   } catch (error) {
-    console.error('[PlanGenerator] Error generating plan:', error);
-
+    // Abort errors and errors already handled by inner try/catch blocks
+    // (LLM_ERROR, PARSE_ERROR) are re-thrown without additional logging or
+    // DB updates because those paths already took care of cleanup and emitting.
     const isAbort =
       error instanceof DOMException && error.name === 'AbortError';
+    const alreadyHandled =
+      isAbort ||
+      (error instanceof Error &&
+        (error.message.startsWith('LLM call failed:') ||
+          error.message === 'LLM returned an empty response' ||
+          error.message.startsWith('Failed to parse plan structure:') ||
+          error.message.startsWith('Invalid plan structure:')));
 
-    if (isAbort) {
-      // Delete the orphaned draft plan so it doesn't clutter the DB
-      console.log(
-        `[PlanGenerator] Request aborted – deleting orphaned draft plan ${planId}`
-      );
-      await db.delete(plans).where(eq(plans.id, planId));
-      throw error; // re-throw so the SSE handler can close the stream cleanly
+    if (alreadyHandled) {
+      throw error;
     }
 
-    // Mark plan as failed for non-abort errors
-    await db
-      .update(plans)
-      .set({
-        status: 'failed',
-        updatedAt: new Date(),
-      })
-      .where(eq(plans.id, planId));
+    // Truly unexpected error: log, mark plan as failed (best-effort), and re-throw.
+    console.error('[PlanGenerator] Unexpected error:', error);
+    try {
+      await db
+        .update(plans)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(plans.id, planId));
+    } catch {
+      // ignore secondary DB failure
+    }
 
-    // Provide a more helpful error message
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-
-    emit({ type: 'error', message: `Failed to generate plan: ${errorMessage}` });
-
-    throw new Error(`Failed to generate plan: ${errorMessage}`);
+    // Re-throw – the SSE handler in the route will emit a final error event.
+    throw error;
   }
 }
 

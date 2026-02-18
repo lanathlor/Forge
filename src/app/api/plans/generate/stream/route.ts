@@ -9,11 +9,20 @@ import type { GenerationProgressEvent } from '@/lib/plans/generator';
  * Streaming version of plan generation. Returns a text/event-stream response
  * with SSE events at key milestones:
  *
- * - { type: 'status', message: '...' }   — human-readable status update
- * - { type: 'progress', percent: N }     — 0–100 progress indicator
- * - { type: 'chunk', content: '...' }    — token-level output from the LLM
- * - { type: 'done', planId: '...' }      — generation complete, plan persisted
- * - { type: 'error', message: '...' }    — unrecoverable error
+ * - { type: 'status', message: '...' }                              — human-readable status update
+ * - { type: 'progress', percent: N }                                — 0–100 progress indicator
+ * - { type: 'chunk', content: '...' }                               — token-level output from the LLM
+ * - { type: 'done', planId: '...' }                                 — generation complete, plan persisted
+ * - { type: 'error', code: ErrorCode, message: '...', detail?: '...' } — unrecoverable error
+ *
+ * Error codes:
+ *   TIMEOUT     – LLM call exceeded 5-minute budget; detail contains elapsed time.
+ *   PARSE_ERROR – LLM response was not valid JSON; detail contains a raw snippet.
+ *   LLM_ERROR   – AI provider returned an error or empty response.
+ *   ABORTED     – Client cancelled the request via AbortController.
+ *
+ * The stream is always closed with a final SSE event (done or error), even on
+ * error paths, so the client can reliably detect the end of generation.
  */
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -56,17 +65,31 @@ export async function POST(request: NextRequest) {
         );
         // 'done' event is emitted by the generator itself
       } catch (error) {
-        // If the request was aborted (client closed the connection) don't send
-        // an error event – the client is already gone.
+        // If the request was aborted (client closed the connection), emit an
+        // ABORTED event so the client can reliably detect end-of-stream, then
+        // close cleanly. (The client may already be gone but this is harmless.)
         if (error instanceof DOMException && error.name === 'AbortError') {
           console.log('[PlanStream] Client disconnected – generation aborted');
+          send({ type: 'error', code: 'ABORTED', message: 'Generation was cancelled' });
           return;
         }
 
-        // For other errors, forward to the client.
+        // For other errors the generator has already emitted a structured error
+        // event via the progress callback. We emit a fallback here only if the
+        // error message doesn't look like it was already forwarded.
         const message =
           error instanceof Error ? error.message : 'Unknown error';
-        send({ type: 'error', message });
+        // The generator emits its own structured events; avoid double-emitting
+        // by only sending a generic event for truly unexpected errors (those
+        // not originating from generator's own emit calls).
+        const alreadyEmitted =
+          message.startsWith('LLM call failed:') ||
+          message.startsWith('Failed to parse plan structure:') ||
+          message.startsWith('LLM returned an empty response');
+
+        if (!alreadyEmitted) {
+          send({ type: 'error', code: 'LLM_ERROR', message });
+        }
       } finally {
         controller.close();
       }
