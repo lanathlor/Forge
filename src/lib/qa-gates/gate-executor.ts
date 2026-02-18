@@ -75,7 +75,7 @@ async function updateGateFailure(
       status: 'failed',
       output: error.stdout || null,
       error: error.stderr || error.message,
-      exitCode: error.code || 1,
+      exitCode: typeof error.code === 'number' ? error.code : 1,
       duration,
       completedAt: new Date(),
     })
