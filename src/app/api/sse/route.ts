@@ -221,43 +221,75 @@ function sendKeepAlive(ctx: StreamContext) {
    HANDLER FACTORIES
    ============================================ */
 
+async function fetchTaskUpdateContext(sessionId: string, taskId: string) {
+  const session = await db.query.sessions.findFirst({
+    where: eq(sessions.id, sessionId),
+    columns: { repositoryId: true },
+  });
+  if (!session) return null;
+
+  const repo = await db.query.repositories.findFirst({
+    where: eq(repositories.id, session.repositoryId),
+    columns: { id: true, name: true },
+  });
+  if (!repo) return null;
+
+  const [state, task] = await Promise.all([
+    buildRepoSessionState(repo),
+    db.query.tasks.findFirst({
+      where: eq(tasks.id, taskId),
+      columns: { status: true, prompt: true },
+    }),
+  ]);
+
+  return { repo, state, task };
+}
+
+function resolveTaskFields(
+  task: { status: string; prompt: string } | undefined,
+  currentTask: RepoSessionState['currentTask'],
+) {
+  return {
+    status: task?.status ?? currentTask?.status ?? null,
+    prompt: task?.prompt ?? currentTask?.prompt ?? null,
+  };
+}
+
+function notifyStuckDetector(
+  repo: { id: string; name: string },
+  state: RepoSessionState,
+) {
+  getStuckDetector().updateRepoState({
+    repositoryId: repo.id,
+    repositoryName: repo.name,
+    sessionId: state.sessionId,
+    taskId: state.currentTask?.id ?? null,
+    status: state.currentTask?.status ?? null,
+    hasOutput: true,
+    blockedQAGate: null,
+  });
+}
+
 function createTaskUpdateHandler(ctx: StreamContext) {
   return async (data: { sessionId: string; taskId: string }) => {
     try {
-      const session = await db.query.sessions.findFirst({
-        where: eq(sessions.id, data.sessionId),
-        columns: { repositoryId: true },
-      });
-      if (!session) return;
+      const result = await fetchTaskUpdateContext(data.sessionId, data.taskId);
+      if (!result) return;
+      const { repo, state, task } = result;
+      const { status, prompt } = resolveTaskFields(task, state.currentTask);
 
-      const repo = await db.query.repositories.findFirst({
-        where: eq(repositories.id, session.repositoryId),
-        columns: { id: true, name: true },
-      });
-      if (!repo) return;
-
-      const state = await buildRepoSessionState(repo);
       sendRepoUpdate(ctx, state);
-
-      // Also send as task_update for clients listening specifically
       sendEvent(ctx, 'task_update', {
         type: 'task_update',
         sessionId: data.sessionId,
         taskId: data.taskId,
+        status,
+        prompt,
+        repositoryId: repo.id,
         repository: state,
         timestamp: new Date().toISOString(),
       });
-
-      const detector = getStuckDetector();
-      detector.updateRepoState({
-        repositoryId: repo.id,
-        repositoryName: repo.name,
-        sessionId: state.sessionId,
-        taskId: state.currentTask?.id ?? null,
-        status: state.currentTask?.status ?? null,
-        hasOutput: true,
-        blockedQAGate: null,
-      });
+      notifyStuckDetector(repo, state);
     } catch (error) {
       console.error('[unified-sse] Error handling task update:', error);
     }

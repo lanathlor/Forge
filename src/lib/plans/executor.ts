@@ -83,17 +83,41 @@ export class PlanExecutor {
 
     if (stuckPlans.length > 0) {
       console.log(
-        `[PlanExecutor] Found ${stuckPlans.length} stuck plans, marking as paused`
+        `[PlanExecutor] Found ${stuckPlans.length} stuck plans, checking their phase completion status`
       );
 
       for (const plan of stuckPlans) {
-        await db
-          .update(plans)
-          .set({
-            status: 'paused',
-            updatedAt: new Date(),
-          })
-          .where(eq(plans.id, plan.id));
+        // Check if all phases are actually completed (plan finished before crash)
+        const allPlanPhases = await db
+          .select()
+          .from(phases)
+          .where(eq(phases.planId, plan.id));
+
+        const allPhasesComplete =
+          allPlanPhases.length > 0 &&
+          allPlanPhases.every((p) => p.status === 'completed');
+
+        if (allPhasesComplete) {
+          console.log(
+            `[PlanExecutor] Plan ${plan.id} has all phases completed, marking as completed`
+          );
+          await db
+            .update(plans)
+            .set({
+              status: 'completed',
+              completedAt: plan.completedAt || new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(plans.id, plan.id));
+        } else {
+          await db
+            .update(plans)
+            .set({
+              status: 'paused',
+              updatedAt: new Date(),
+            })
+            .where(eq(plans.id, plan.id));
+        }
       }
     }
 
@@ -147,10 +171,15 @@ export class PlanExecutor {
 
         await this.executePhase(planId, phase.id);
 
-        // Check if should pause after this phase
+        // Check if should pause after this phase (only if there are more phases to run)
         if (phase.pauseAfter) {
-          await this.pausePlan(planId, 'phase_complete');
-          return; // Wait for user to resume
+          const remainingPhases = planPhases.filter(
+            (p) => p.order > phase.order && p.status !== 'completed'
+          );
+          if (remainingPhases.length > 0) {
+            await this.pausePlan(planId, 'phase_complete');
+            return; // Wait for user to resume
+          }
         }
       }
 
