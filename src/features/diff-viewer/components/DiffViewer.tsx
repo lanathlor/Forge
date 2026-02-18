@@ -621,6 +621,18 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
   }, [goToNext, goToPrev, isMobile, isFullscreen]);
 
   // ---------------------------------------------------------------------------
+  // Resize editor on fullscreen toggle
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    // Allow the DOM to settle before recalculating Monaco layout
+    const rafId = requestAnimationFrame(() => {
+      editorRef.current?.layout();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [isFullscreen]);
+
+  // ---------------------------------------------------------------------------
   // Editor mount handler
   // ---------------------------------------------------------------------------
 
