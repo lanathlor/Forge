@@ -37,7 +37,8 @@ export async function generatePlanFromDescription(
   repositoryId: string,
   title: string,
   description: string,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  signal?: AbortSignal
 ): Promise<string> {
   const emit = (event: GenerationProgressEvent) => onProgress?.(event);
 
@@ -86,7 +87,9 @@ export async function generatePlanFromDescription(
     const response = await claudeWrapper.executeOneShot(
       prompt,
       workingDir,
-      300000 // 5 minute timeout - plan generation can take time
+      300000, // 5 minute timeout - plan generation can take time
+      null,
+      signal
     );
 
     console.log(`[PlanGenerator] Claude response received (${response.length} chars)`);
@@ -115,7 +118,19 @@ export async function generatePlanFromDescription(
   } catch (error) {
     console.error('[PlanGenerator] Error generating plan:', error);
 
-    // Mark plan as failed
+    const isAbort =
+      error instanceof DOMException && error.name === 'AbortError';
+
+    if (isAbort) {
+      // Delete the orphaned draft plan so it doesn't clutter the DB
+      console.log(
+        `[PlanGenerator] Request aborted – deleting orphaned draft plan ${planId}`
+      );
+      await db.delete(plans).where(eq(plans.id, planId));
+      throw error; // re-throw so the SSE handler can close the stream cleanly
+    }
+
+    // Mark plan as failed for non-abort errors
     await db
       .update(plans)
       .set({

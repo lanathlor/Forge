@@ -32,6 +32,10 @@ export async function POST(request: NextRequest) {
 
   const encoder = new TextEncoder();
 
+  // Expose the client-disconnect signal so we can abort the in-flight
+  // Anthropic request when the user closes the dialog.
+  const { signal } = request;
+
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: GenerationProgressEvent) => {
@@ -47,12 +51,19 @@ export async function POST(request: NextRequest) {
           description,
           (event) => {
             send(event);
-          }
+          },
+          signal
         );
         // 'done' event is emitted by the generator itself
       } catch (error) {
-        // If the generator threw (after emitting 'error'), send a final error
-        // event in case the caller only relies on the stream.
+        // If the request was aborted (client closed the connection) don't send
+        // an error event – the client is already gone.
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          console.log('[PlanStream] Client disconnected – generation aborted');
+          return;
+        }
+
+        // For other errors, forward to the client.
         const message =
           error instanceof Error ? error.message : 'Unknown error';
         send({ type: 'error', message });

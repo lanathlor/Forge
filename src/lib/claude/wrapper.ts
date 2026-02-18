@@ -522,7 +522,8 @@ class ClaudeCodeWrapper extends EventEmitter {
     prompt: string,
     workingDirectory: string,
     timeoutMs = 30000,
-    tools: string | null = null
+    tools: string | null = null,
+    signal?: AbortSignal
   ): Promise<string> {
     const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
 
@@ -539,14 +540,35 @@ class ClaudeCodeWrapper extends EventEmitter {
       return `feat(example): simulated commit message\n\nThis is a simulated response for testing.`;
     }
 
+    // Reject immediately if already aborted
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
     return new Promise((resolve, reject) => {
       let output = '';
       let errorOutput = '';
+      let childProcess: ReturnType<typeof spawn> | null = null;
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        abortHandler && signal?.removeEventListener('abort', abortHandler);
+      };
 
       const timeout = setTimeout(() => {
         childProcess?.kill('SIGTERM');
+        cleanup();
         reject(new Error(`One-shot execution timed out after ${timeoutMs}ms`));
       }, timeoutMs);
+
+      // Wire up AbortSignal
+      const abortHandler = () => {
+        console.log(`[ClaudeWrapper] One-shot aborted via signal`);
+        childProcess?.kill('SIGTERM');
+        cleanup();
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+      signal?.addEventListener('abort', abortHandler);
 
       console.log(`[ClaudeWrapper] Attempting to spawn: ${claudeCodePath}`);
       console.log(`[ClaudeWrapper] PATH: ${process.env.PATH}`);
@@ -558,7 +580,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       }
       console.log(`[ClaudeWrapper] One-shot args: ${args.join(' ')}`);
 
-      const childProcess = spawn(claudeCodePath, args, {
+      childProcess = spawn(claudeCodePath, args, {
         cwd: workingDirectory,
         env: process.env,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -578,7 +600,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       });
 
       childProcess.on('close', (exitCode) => {
-        clearTimeout(timeout);
+        cleanup();
         console.log(
           `[ClaudeWrapper] One-shot process closed with exit code: ${exitCode}`
         );
@@ -597,7 +619,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       });
 
       childProcess.on('error', (err) => {
-        clearTimeout(timeout);
+        cleanup();
         console.error(`[ClaudeWrapper] One-shot process error:`, err);
         reject(err);
       });

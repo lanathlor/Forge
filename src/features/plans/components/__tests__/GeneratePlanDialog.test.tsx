@@ -24,6 +24,19 @@ vi.mock('@/features/plans/store/plansApi', () => ({
   })),
 }));
 
+// Helper to build a readable stream from SSE data strings
+function buildSSEStream(events: string[]): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      for (const event of events) {
+        controller.enqueue(encoder.encode(event));
+      }
+      controller.close();
+    },
+  });
+}
+
 // Create a mock store
 const createMockStore = () =>
   configureStore({
@@ -47,6 +60,19 @@ describe('GeneratePlanDialog', () => {
       phases: [],
       tasks: [],
     });
+
+    // Default fetch mock: returns a successful SSE stream with a done event
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        body: buildSSEStream([
+          'data: {"type":"status","message":"Starting..."}\n\n',
+          'data: {"type":"progress","percent":50}\n\n',
+          'data: {"type":"done","planId":"plan-1"}\n\n',
+        ]),
+      })
+    );
   });
 
   const renderDialog = (open = true) => {
@@ -130,11 +156,17 @@ describe('GeneratePlanDialog', () => {
     fireEvent.click(generateButton!);
 
     await waitFor(() => {
-      expect(mockGeneratePlan).toHaveBeenCalledWith({
-        repositoryId: 'repo-1',
-        title: 'My Plan',
-        description: 'My Description',
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/plans/generate/stream',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            repositoryId: 'repo-1',
+            title: 'My Plan',
+            description: 'My Description',
+          }),
+        })
+      );
     });
   });
 
@@ -177,7 +209,15 @@ describe('GeneratePlanDialog', () => {
 
   it('should show error on generation failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockUnwrap.mockRejectedValueOnce(new Error('Generation failed'));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        body: buildSSEStream([
+          'data: {"type":"error","message":"Generation failed"}\n\n',
+        ]),
+      })
+    );
 
     renderDialog();
 

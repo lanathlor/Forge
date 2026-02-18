@@ -177,7 +177,9 @@ describe('plans/generator', () => {
       expect(mockClaudeWrapper.executeOneShot).toHaveBeenCalledWith(
         expect.stringContaining('Test Plan'),
         '/path/to/repo',
-        300000
+        300000,
+        null,
+        undefined
       );
     });
 

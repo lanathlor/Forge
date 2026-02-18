@@ -16,7 +16,6 @@ import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/shared/lib/utils';
 import {
-  useGeneratePlanMutation,
   useExecutePlanMutation,
   useUpdatePlanMutation,
   useGetPlanQuery,
@@ -124,7 +123,6 @@ export function GeneratePlanDialog({
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   // Generation
-  const [generatePlan] = useGeneratePlanMutation();
   const [executePlan] = useExecutePlanMutation();
   const [updatePlan] = useUpdatePlanMutation();
   const [generationProgress, setGenerationProgress] = useState(0);
@@ -132,6 +130,8 @@ export function GeneratePlanDialog({
   const [generationError, setGenerationError] = useState<string | null>(null);
   // planId populated once the SSE 'done' event arrives, used to fetch plan data
   const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
+  // AbortController for the in-flight SSE generation request
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Preview step
   const [generatedPlan, setGeneratedPlan] = useState<Plan | null>(null);
@@ -202,6 +202,9 @@ export function GeneratePlanDialog({
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       if (!newOpen) {
+        // Abort any in-flight generation request so the server stops processing
+        abortControllerRef.current?.abort();
+
         setTimeout(() => {
           setStep('prompt');
           setTitle('');
@@ -256,14 +259,71 @@ export function GeneratePlanDialog({
     setGenerationProgress(0);
     setGenerationStatus('Starting...');
 
-    try {
-      const result = await generatePlan({
-        repositoryId,
-        title: title.trim(),
-        description: description.trim(),
-      }).unwrap();
+    // Create a new AbortController for this generation request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-      const resolvedPlanId = result?.plan?.id;
+    try {
+      const response = await fetch('/api/plans/generate/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repositoryId,
+          title: title.trim(),
+          description: description.trim(),
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(
+          (err as { error?: string }).error || 'Failed to start plan generation'
+        );
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error('No response body');
+
+      let resolvedPlanId: string | null = null;
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+
+          try {
+            const data = JSON.parse(line.slice(6)) as {
+              type: string;
+              message?: string;
+              percent?: number;
+              planId?: string;
+            };
+
+            if (data.type === 'status' && data.message) {
+              setGenerationStatus(data.message);
+            } else if (data.type === 'progress' && data.percent !== undefined) {
+              setGenerationProgress(data.percent);
+            } else if (data.type === 'done' && data.planId) {
+              resolvedPlanId = data.planId;
+              setGenerationProgress(100);
+              break outer;
+            } else if (data.type === 'error' && data.message) {
+              throw new Error(data.message);
+            }
+          } catch (parseErr) {
+            // Ignore malformed SSE lines
+            if (parseErr instanceof SyntaxError) continue;
+            throw parseErr;
+          }
+        }
+      }
 
       if (!resolvedPlanId) {
         throw new Error('Plan generation completed without a plan ID');
@@ -283,6 +343,12 @@ export function GeneratePlanDialog({
         setGeneratingPlanId(resolvedPlanId);
       }
     } catch (error) {
+      // User cancelled – go back to the prompt step silently
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setStep('prompt');
+        return;
+      }
+
       console.error('Failed to generate plan:', error);
       setGenerationError(
         error instanceof Error
@@ -290,7 +356,13 @@ export function GeneratePlanDialog({
           : 'Failed to generate plan. Please try again.'
       );
       setStep('prompt');
+    } finally {
+      abortControllerRef.current = null;
     }
+  };
+
+  const handleCancelGeneration = () => {
+    abortControllerRef.current?.abort();
   };
 
   // ---------------------------------------------------------------------------
@@ -664,6 +736,17 @@ export function GeneratePlanDialog({
                 {generationStatus}
               </p>
             )}
+
+            {/* Cancel button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-6 text-muted-foreground hover:text-foreground"
+              onClick={handleCancelGeneration}
+            >
+              <X className="mr-1.5 h-3.5 w-3.5" />
+              Cancel
+            </Button>
           </div>
         )}
 
