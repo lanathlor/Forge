@@ -228,7 +228,7 @@ describe('git/commit', () => {
         'Delete file'
       );
 
-      expect(mockExecAsync).toHaveBeenCalledWith('git rm "deleted-file.ts"', {
+      expect(mockExecAsync).toHaveBeenCalledWith('git rm --ignore-unmatch "deleted-file.ts"', {
         cwd: '/repo',
         timeout: 10000,
       });

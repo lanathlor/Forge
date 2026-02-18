@@ -33,8 +33,20 @@ import {
 import dynamic from 'next/dynamic';
 
 // Lazy load Monaco-based DiffViewer (~5MB) and QAGateResults
+// Retry wrapper to handle transient chunk-load failures (e.g. network hiccup, stale cache)
+function retryImport<T>(fn: () => Promise<T>, retries = 2, delay = 1000): Promise<T> {
+  return fn().catch((err: unknown) => {
+    if (retries <= 0) throw err;
+    return new Promise<T>((resolve) => setTimeout(resolve, delay)).then(() =>
+      retryImport(fn, retries - 1, delay)
+    );
+  });
+}
+
 const DiffViewer = dynamic(
-  () => import('@/features/diff-viewer/components/DiffViewer').then(m => ({ default: m.DiffViewer })),
+  () => retryImport(() =>
+    import('@/features/diff-viewer/components/DiffViewer').then(m => ({ default: m.DiffViewer }))
+  ),
   {
     ssr: false,
     loading: () => (
@@ -49,7 +61,9 @@ const DiffViewer = dynamic(
 );
 
 const QAGateResults = dynamic(
-  () => import('@/features/qa-gates/components/QAGateResults').then(m => ({ default: m.QAGateResults })),
+  () => retryImport(() =>
+    import('@/features/qa-gates/components/QAGateResults').then(m => ({ default: m.QAGateResults }))
+  ),
   { ssr: false },
 );
 import { ApprovalPanel } from './ApprovalPanel';

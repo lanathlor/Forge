@@ -36,7 +36,7 @@ async function stageFiles(containerPath: string, filesChanged: FileChange[]) {
   for (const file of filesChanged) {
     const cmd =
       file.status === 'deleted'
-        ? `git rm "${file.path}"`
+        ? `git rm --ignore-unmatch "${file.path}"`
         : `git add "${file.path}"`;
     console.log(`[stageFiles] Executing: ${cmd}`);
     try {
