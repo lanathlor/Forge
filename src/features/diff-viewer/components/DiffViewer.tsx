@@ -13,6 +13,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Map as MapIcon,
+  Maximize2,
+  Minimize2,
   Keyboard,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -118,6 +120,8 @@ function DiffToolbar({
   onToggleSidebar,
   minimapEnabled,
   onToggleMinimap,
+  isFullscreen,
+  onToggleFullscreen,
   viewMode,
   onSetViewMode,
   stats,
@@ -127,6 +131,8 @@ function DiffToolbar({
   onToggleSidebar: () => void;
   minimapEnabled: boolean;
   onToggleMinimap: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
   viewMode: ViewMode;
   onSetViewMode: (mode: ViewMode) => void;
   stats: DiffResult['stats'];
@@ -167,6 +173,24 @@ function DiffToolbar({
           title={minimapEnabled ? 'Hide minimap' : 'Show minimap'}
         >
           <MapIcon className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Fullscreen toggle */}
+        <button
+          onClick={onToggleFullscreen}
+          className={cn(
+            'rounded-md p-1.5 transition-colors',
+            isFullscreen
+              ? 'bg-accent-primary/15 text-accent-primary'
+              : 'text-text-muted hover:bg-surface-interactive hover:text-text-primary'
+          )}
+          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        >
+          {isFullscreen ? (
+            <Minimize2 className="h-3.5 w-3.5" />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5" />
+          )}
         </button>
 
         {/* Side-by-side / Unified toggle (desktop only) */}
@@ -462,6 +486,7 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('side-by-side');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [minimapEnabled, setMinimapEnabled] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
@@ -572,12 +597,18 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
             setSidebarOpen((v) => !v);
           }
           break;
+        case 'Escape':
+          if (isFullscreen) {
+            e.preventDefault();
+            setIsFullscreen(false);
+          }
+          break;
       }
     }
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [goToNext, goToPrev, isMobile]);
+  }, [goToNext, goToPrev, isMobile, isFullscreen]);
 
   // ---------------------------------------------------------------------------
   // Editor mount handler
@@ -630,7 +661,13 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
+    <div
+      ref={containerRef}
+      className={cn(
+        'flex h-full flex-col overflow-hidden',
+        isFullscreen && 'fixed inset-0 z-50 bg-surface-base'
+      )}
+    >
       {/* ── Toolbar ── */}
       <DiffToolbar
         isMobile={isMobile}
@@ -638,6 +675,8 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         minimapEnabled={minimapEnabled}
         onToggleMinimap={() => setMinimapEnabled(!minimapEnabled)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
         viewMode={viewMode}
         onSetViewMode={setViewMode}
         stats={diff.stats}
