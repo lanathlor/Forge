@@ -876,7 +876,7 @@ export function TaskDetailPanel({
 
             <TabsContent
               value="output"
-              className="mt-0 flex-1 overflow-hidden p-3 sm:p-4"
+              className="mt-0 flex flex-1 flex-col overflow-hidden p-3 sm:p-4"
             >
               <TaskOutput output={output} status={task.status} />
             </TabsContent>

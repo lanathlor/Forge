@@ -31,7 +31,7 @@ export function TasksTabContent({
 }: TasksTabContentProps) {
   return (
     <ErrorBoundary id="tasks-tab">
-      <div className="flex h-full flex-col gap-3">
+      <div className="flex h-full flex-col gap-3 overflow-hidden">
         {/* Connection Status Bar */}
         <div
           className="flex flex-shrink-0 items-center justify-between gap-2 rounded-lg border bg-card/50 px-3 py-2 transition-all duration-300 hover:bg-card hover:shadow-sm"

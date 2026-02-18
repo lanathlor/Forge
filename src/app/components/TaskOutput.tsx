@@ -741,7 +741,7 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
   // Empty state
   if (!output) {
     return (
-      <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-muted-foreground">
         {isStreaming ? (
           <>
             <div className="relative mb-4">
@@ -766,7 +766,7 @@ export function TaskOutput({ output, status }: TaskOutputProps) {
   return (
     <div
       className={cn(
-        'flex h-full flex-col overflow-hidden rounded-lg border',
+        'flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border',
         'bg-muted/20 dark:bg-black/20',
         isStreaming && 'animate-stream-glow'
       )}
