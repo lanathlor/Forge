@@ -52,7 +52,15 @@ function useTaskUpdateSubscription(
       if (!sessionId) return;
       const data = event.data as TaskUpdate;
       if (!data || data.sessionId !== sessionId) return;
-      addUpdate({ ...data, type: 'task_update', timestamp: event.timestamp });
+      const repo = data.repository as
+        | { currentTask?: { status?: string } }
+        | undefined;
+      addUpdate({
+        ...data,
+        type: 'task_update',
+        status: data.status || repo?.currentTask?.status,
+        timestamp: event.timestamp,
+      });
     },
     [sessionId, addUpdate]
   );
