@@ -1,4 +1,5 @@
 import { generateCommitMessage } from '@/lib/claude/commit-message';
+import { getDiffForFiles } from '@/lib/git/diff';
 import { taskEvents } from '@/lib/events/task-events';
 import { db } from '@/db';
 import { tasks } from '@/db/schema/tasks';
@@ -49,19 +50,49 @@ async function approveWithoutChanges(task: Task, id: string) {
 }
 
 async function approveWithChanges(task: Task, id: string) {
-  if (!task.diffContent) {
-    return Response.json({ error: 'No diff content available', status: 400 });
-  }
   const repoPath = task.session.repository.path;
-  console.log(
-    `[Approve API] Calling Claude Code to generate commit message...`
-  );
-  const commitMessage = await generateCommitMessage(
-    task.prompt,
-    task.filesChanged!,
-    task.diffContent,
-    repoPath
-  );
+  let commitMessage: string;
+
+  let diffContent = task.diffContent;
+  let filesChanged = task.filesChanged!;
+
+  if (!diffContent && task.startingCommit) {
+    console.warn(
+      `[Approve API] diffContent is empty for task ${id}, regenerating from repo...`
+    );
+    try {
+      // Use getDiffForFiles (not captureDiff) so we only get diffs for the
+      // files the task actually touched — not every untracked file in the repo.
+      diffContent = await getDiffForFiles(repoPath, task.startingCommit, filesChanged);
+      if (diffContent) {
+        await db
+          .update(tasks)
+          .set({ diffContent, updatedAt: new Date() })
+          .where(eq(tasks.id, id));
+        console.log(`[Approve API] Regenerated diff successfully`);
+      }
+    } catch (err) {
+      console.error(`[Approve API] Failed to regenerate diff:`, err);
+    }
+  }
+
+  if (!diffContent) {
+    console.warn(
+      `[Approve API] Could not obtain diff content for task ${id}, using placeholder commit message`
+    );
+    const fileList = filesChanged.map((f) => f.path).join(', ');
+    commitMessage = `chore: update ${filesChanged.length} file(s)\n\n${fileList}`;
+  } else {
+    console.log(
+      `[Approve API] Calling Claude Code to generate commit message...`
+    );
+    commitMessage = await generateCommitMessage(
+      task.prompt,
+      filesChanged,
+      diffContent,
+      repoPath
+    );
+  }
   await db
     .update(tasks)
     .set({ commitMessage, updatedAt: new Date() })
@@ -71,9 +102,9 @@ async function approveWithChanges(task: Task, id: string) {
     success: true,
     commitMessage,
     stats: {
-      filesCount: task.filesChanged!.length,
-      insertions: task.filesChanged!.reduce((sum, f) => sum + f.additions, 0),
-      deletions: task.filesChanged!.reduce((sum, f) => sum + f.deletions, 0),
+      filesCount: filesChanged.length,
+      insertions: filesChanged.reduce((sum, f) => sum + f.additions, 0),
+      deletions: filesChanged.reduce((sum, f) => sum + f.deletions, 0),
     },
   });
 }

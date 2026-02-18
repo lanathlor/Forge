@@ -521,7 +521,8 @@ class ClaudeCodeWrapper extends EventEmitter {
   async executeOneShot(
     prompt: string,
     workingDirectory: string,
-    timeoutMs = 30000
+    timeoutMs = 30000,
+    tools: string | null = null
   ): Promise<string> {
     const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
 
@@ -551,15 +552,17 @@ class ClaudeCodeWrapper extends EventEmitter {
       console.log(`[ClaudeWrapper] PATH: ${process.env.PATH}`);
       console.log(`[ClaudeWrapper] CWD: ${workingDirectory}`);
 
-      const childProcess = spawn(
-        claudeCodePath,
-        ['--dangerously-skip-permissions', '--print'],
-        {
-          cwd: workingDirectory,
-          env: process.env,
-          stdio: ['pipe', 'pipe', 'pipe'],
-        }
-      );
+      const args = ['--dangerously-skip-permissions', '--print'];
+      if (tools !== null) {
+        args.push('--tools', tools);
+      }
+      console.log(`[ClaudeWrapper] One-shot args: ${args.join(' ')}`);
+
+      const childProcess = spawn(claudeCodePath, args, {
+        cwd: workingDirectory,
+        env: process.env,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
       console.log(
         `[ClaudeWrapper] One-shot process spawned with PID: ${childProcess.pid}`

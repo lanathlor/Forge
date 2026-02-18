@@ -58,7 +58,9 @@ async function invokeClaudeForCommitMessage(
   prompt: string,
   workingDirectory: string
 ): Promise<string> {
-  const rawOutput = await claudeWrapper.executeOneShot(prompt, workingDirectory, COMMIT_MESSAGE_GENERATION_TIMEOUT);
+  // Pass tools='' to disable all tool use — commit message generation is pure
+  // text generation and must not inspect the repo or run git commands.
+  const rawOutput = await claudeWrapper.executeOneShot(prompt, workingDirectory, COMMIT_MESSAGE_GENERATION_TIMEOUT, '');
   console.log('[generateCommitMessage] Raw output from Claude:');
   console.log('[generateCommitMessage]', rawOutput.substring(0, 200));
   const commitMessage = extractCommitMessage(rawOutput);
@@ -69,8 +71,32 @@ async function invokeClaudeForCommitMessage(
 }
 
 /**
- * Generate a commit message using Claude Code CLI based on the task prompt and diff
+ * Filter a full diff string to only include hunks for the specified files.
+ * This prevents unrelated untracked files in the workspace from leaking
+ * into the commit message prompt.
  */
+function filterDiffToFiles(fullDiff: string, files: FileChange[]): string {
+  const filePaths = new Set(files.map((f) => f.path));
+  const sections = fullDiff.split(/(?=^diff --git )/m);
+  return sections
+    .filter((section) => {
+      // Check the b/ path (destination), which is correct for both normal diffs
+      // and --no-index diffs where a/ is /dev/null for new files.
+      const match = section.match(/^diff --git .+? b\/(.+)/m);
+      const path = match?.[1];
+      return path !== undefined && filePaths.has(path);
+    })
+    .join('');
+}
+
+function logDiffFiles(label: string, diff: string): void {
+  const files: string[] = [];
+  for (const match of diff.matchAll(/^diff --git .+? b\/(.+)/gm)) {
+    if (match[1]) files.push(match[1]);
+  }
+  console.log(`[generateCommitMessage] ${label}: [${files.join(', ') || '(none)'}]`);
+}
+
 export async function generateCommitMessage(
   taskPrompt: string,
   filesChanged: FileChange[],
@@ -78,9 +104,14 @@ export async function generateCommitMessage(
   repoPath: string
 ): Promise<string> {
   const workingDirectory = getContainerPath(repoPath);
-  const prompt = constructCommitMessagePrompt(taskPrompt, filesChanged, diffContent);
+  const filteredDiff = filterDiffToFiles(diffContent, filesChanged);
+
+  console.log('[generateCommitMessage] filesChanged:', filesChanged.map((f) => f.path));
+  logDiffFiles('diffContent files', diffContent);
+  logDiffFiles('filteredDiff files (sent to AI)', filteredDiff || diffContent);
+
+  const prompt = constructCommitMessagePrompt(taskPrompt, filesChanged, filteredDiff || diffContent);
   console.log('[generateCommitMessage] Calling Claude Code CLI via wrapper...');
-  console.log('[generateCommitMessage] Host path:', repoPath);
   console.log('[generateCommitMessage] Working directory:', workingDirectory);
 
   try {
@@ -109,32 +140,33 @@ function constructCommitMessagePrompt(
     .map((f) => `- ${f.path} (${f.status}, +${f.additions} -${f.deletions})`)
     .join('\n');
 
-  return `Write a git commit message for the following changes.
+  return `You must write a git commit message. Do NOT use any tools. Do NOT run any commands. Do NOT read any files. Do NOT inspect the repository. Base your response SOLELY on the information provided below — nothing else.
 
-Task Description: ${taskPrompt}
+TASK DESCRIPTION:
+${taskPrompt}
 
-Files Changed (${fileCount}):
+FILES CHANGED (${fileCount}):
 ${filesChangedList}
 
-Statistics: ${insertions} insertions(+), ${deletions} deletions(-)
+STATISTICS: ${insertions} insertions(+), ${deletions} deletions(-)
 
-Diff:
+DIFF (only these changes — ignore anything else in the repository):
 ${diffContent.length > 8000 ? diffContent.substring(0, 8000) + '\n... (truncated)' : diffContent}
 
-Requirements:
+REQUIREMENTS:
 - Use conventional commits format: <type>(<scope>): <subject>
 - Types: feat, fix, refactor, docs, test, chore, style, perf, ci, build
 - First line under 72 characters
 - Use imperative mood ("add" not "added")
 - Don't capitalize first letter
 - No period at end of subject
-- Add blank line then body if change is complex
+- Add blank line then body if the change is complex
 
-Examples:
-feat(api): add error handling to user endpoints
+EXAMPLES:
+feat(blog): add project introduction post
 fix(auth): resolve token expiration edge case
-refactor(db): simplify query builder interface
+docs(readme): update installation instructions
 
-Output ONLY the commit message text, nothing else. No markdown, no code blocks, no explanations.
+Output ONLY the commit message text. No markdown, no code blocks, no explanations, no preamble.
 Do NOT include any "Co-Authored-By" or "Co-authored-by" lines.`;
 }
