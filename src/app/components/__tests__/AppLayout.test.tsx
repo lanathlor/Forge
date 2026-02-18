@@ -129,7 +129,7 @@ describe('AppLayout', () => {
       const sidebar = screen.getByRole('navigation', {
         name: /main navigation/i,
       });
-      expect(within(sidebar).getByText('Claude Code')).toBeInTheDocument();
+      expect(within(sidebar).getByText('Forge')).toBeInTheDocument();
     });
 
     it('should render all navigation items', () => {

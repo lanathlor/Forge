@@ -4,7 +4,7 @@ Most AI coding tools let the AI decide when to run tests, whether the output is 
 
 Forge is a deterministic orchestrator that treats AI as a tool — like a compiler or a linter — not a decision-maker. You define the plan. Forge invokes the AI on each task, runs your actual QA gates (the scripts already in your repo), and only commits when they pass. The AI never decides if its own work is good enough.
 
-Self-hosted, multi-repository, works with [Claude Code](https://claude.ai/code), the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), or [OpenAI Codex](https://platform.openai.com/docs/guides/code).
+Self-hosted, multi-repository, works with the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), [OpenAI Codex](https://platform.openai.com/docs/guides/code), or [Claude Code CLI](https://claude.ai/code).
 
 ## What it does
 
@@ -23,16 +23,16 @@ Forge works with any of the following out of the box, selected via the `AI_PROVI
 
 | Provider | Value | Description |
 |---|---|---|
-| Claude Code (CLI) | `claude-code` | Spawns the Claude Code CLI as a child process — the default |
 | Claude SDK | `claude-sdk` | Direct Anthropic API integration via the Claude SDK |
 | OpenAI Codex SDK | `codex-sdk` | OpenAI Codex API via the OpenAI SDK |
+| Claude Code (CLI) | `claude-code` | Spawns the Claude Code CLI as a child process |
 | Fake (testing) | `fake` | Hardcoded deterministic responses for CI/local dev |
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for provider-specific environment variables.
 
 ## Features
 
-- **Multi-provider**: switch between Claude Code, Claude SDK, Codex, or a fake provider with a single env var
+- **Multi-provider**: switch between Claude SDK, Codex, Claude Code CLI, or a fake provider with a single env var
 - **Multi-repository**: manage all your git repositories from one dashboard
 - **Per-repo QA gates**: each repo defines its own checks via `.forge.json` — works with TypeScript, Python, Go, Rust, or anything with a CLI
 - **3-retry loop**: failed gates feed their errors directly back to the AI agent for auto-correction
@@ -87,14 +87,14 @@ WORKSPACE_ROOT="/path/to/your/projects"
 # SQLite for local use; swap for PostgreSQL in production
 DATABASE_URL="./forge.db"
 
-# AI provider: claude-code (default) | claude-sdk | codex-sdk | fake
-AI_PROVIDER=claude-code
+# AI provider: claude-sdk | codex-sdk | claude-code | fake
+AI_PROVIDER=claude-sdk
 
-# Claude Code (default provider — requires Claude Code CLI installed)
-CLAUDE_CODE_PATH=claude
+# Claude SDK (recommended — requires an Anthropic API key)
+ANTHROPIC_API_KEY=your-key-here
 
-# Claude SDK (set AI_PROVIDER=claude-sdk)
-# ANTHROPIC_API_KEY=your-key-here
+# Claude Code CLI (set AI_PROVIDER=claude-code — requires Claude Code CLI installed)
+# CLAUDE_CODE_PATH=claude
 
 # Codex SDK (set AI_PROVIDER=codex-sdk)
 # OPENAI_API_KEY=your-key-here
@@ -122,7 +122,7 @@ Docker handles native build dependencies (better-sqlite3) automatically. There a
 
 | File | Purpose |
 |---|---|
-| `docker-compose.yml` | Development — hot-reload, source mounted, Claude Code CLI included |
+| `docker-compose.yml` | Development — hot-reload, source mounted |
 | `docker-compose.prod.yml` | Production — optimized standalone image, health checks, restart policy |
 
 #### Development

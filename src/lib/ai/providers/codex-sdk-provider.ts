@@ -65,7 +65,7 @@ export class CodexSDKProvider extends EventEmitter implements AIProvider {
           {
             role: 'system',
             content:
-              'You are Claude Code, a helpful AI assistant specialized in software development tasks. You have access to various tools and can help with coding, debugging, and project management.',
+              'You are a helpful AI assistant specialized in software development tasks. You have access to various tools and can help with coding, debugging, and project management.',
           },
           { role: 'user', content: prompt },
         ],
@@ -168,7 +168,7 @@ export class CodexSDKProvider extends EventEmitter implements AIProvider {
           {
             role: 'system',
             content:
-              'You are Claude Code, a helpful AI assistant specialized in software development tasks. You have access to various tools and can help with coding, debugging, and project management.',
+              'You are a helpful AI assistant specialized in software development tasks. You have access to various tools and can help with coding, debugging, and project management.',
           },
           {
             role: 'user',
@@ -244,7 +244,7 @@ export class CodexSDKProvider extends EventEmitter implements AIProvider {
           {
             role: 'system',
             content:
-              'You are Claude Code, a helpful AI assistant specialized in software development tasks. You have access to various tools and can help with coding, debugging, and project management.',
+              'You are a helpful AI assistant specialized in software development tasks. You have access to various tools and can help with coding, debugging, and project management.',
           },
           {
             role: 'user',

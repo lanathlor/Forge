@@ -111,7 +111,7 @@ export function AppLayout({
         logo={
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-lg font-semibold text-text-primary">
-              Claude Code
+              Forge
             </span>
             <ConnectionStatusIndicator
               compact
@@ -123,7 +123,7 @@ export function AppLayout({
         mobileHeader={
           <div className="flex items-center gap-2">
             <span className="text-lg font-semibold text-text-primary">
-              Claude Code
+              Forge
             </span>
             <ConnectionStatusIndicator compact showDetails={false} />
           </div>

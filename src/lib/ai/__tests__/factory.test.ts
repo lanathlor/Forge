@@ -14,9 +14,10 @@ describe('AIProvider Factory', () => {
     delete process.env.OPENAI_API_KEY;
   });
 
-  it('creates ClaudeCodeProvider by default', () => {
+  it('creates ClaudeSDKProvider by default', () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key';
     const provider = createAIProvider();
-    expect(provider).toBeInstanceOf(ClaudeCodeProvider);
+    expect(provider).toBeInstanceOf(ClaudeSDKProvider);
   });
 
   it('creates ClaudeCodeProvider when AI_PROVIDER is claude-code', () => {

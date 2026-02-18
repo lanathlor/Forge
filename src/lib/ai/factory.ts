@@ -7,7 +7,7 @@ import { CodexSDKProvider } from './providers/codex-sdk-provider';
 
 export function createAIProvider(): AIProvider {
   const providerType =
-    (process.env.AI_PROVIDER as AIProviderType) || AIProviderType.CLAUDE_CODE;
+    (process.env.AI_PROVIDER as AIProviderType) || AIProviderType.CLAUDE_SDK;
 
   console.log(`[AIFactory] Creating AI provider: ${providerType}`);
 

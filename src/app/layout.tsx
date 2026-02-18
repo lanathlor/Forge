@@ -7,8 +7,8 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Forge - Claude Code Oversight',
-  description: 'QA gate dashboard for Claude Code',
+  title: 'Forge - AI Oversight Dashboard',
+  description: 'Deterministic QA gate dashboard for AI coding agents',
 };
 
 export default function RootLayout({

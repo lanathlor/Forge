@@ -8,9 +8,9 @@ Copy `.env.example` to `.env` and set these values:
 |---|---|---|
 | `WORKSPACE_ROOT` | — | Path to the directory containing your git repositories |
 | `DATABASE_URL` | `./forge.db` | SQLite file path, or a PostgreSQL connection string for production |
-| `AI_PROVIDER` | `claude-code` | AI provider: `claude-code`, `claude-sdk`, `codex-sdk`, or `fake` |
-| `CLAUDE_CODE_PATH` | `claude` | Path or name of the Claude Code CLI binary (used when `AI_PROVIDER=claude-code`) |
+| `AI_PROVIDER` | `claude-sdk` | AI provider: `claude-sdk`, `codex-sdk`, `claude-code`, or `fake` |
 | `ANTHROPIC_API_KEY` | — | Anthropic API key (used when `AI_PROVIDER=claude-sdk`) |
+| `CLAUDE_CODE_PATH` | `claude` | Path or name of the Claude Code CLI binary (used when `AI_PROVIDER=claude-code`) |
 | `OPENAI_API_KEY` | — | OpenAI API key (used when `AI_PROVIDER=codex-sdk`) |
 | `NODE_ENV` | `development` | `development` or `production` |
 | `PORT` | `3000` | HTTP port |

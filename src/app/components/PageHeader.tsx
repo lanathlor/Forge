@@ -10,7 +10,7 @@ export function PageHeader() {
           <div>
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-sm text-muted-foreground">
-              Claude Code Oversight
+              AI Oversight
             </p>
           </div>
           <ConnectionStatusIndicator showDetails compact={false} />
