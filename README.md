@@ -353,6 +353,24 @@ Each repository is configured independently. Create a `.forge.json` at the root 
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for the full schema and examples for Python, Go, and Rust.
 
+### QA gate tool availability (Docker)
+
+When running Forge in Docker, QA gate commands execute **inside the container**. The production image is based on `node:20-alpine` and includes:
+
+- Node.js 20
+- `pnpm` and `yarn` (via corepack)
+- `git`
+
+Tools outside that set — `go`, `cargo`, `bun`, `python`, `maven`, `gradle`, etc. — are **not available** in the container and will fail with "command not found".
+
+**Workarounds:**
+
+- **Run Forge on the host** (DB in Docker, app on host via `pnpm start`). All tools installed on your machine are then available to QA gates.
+- **Wrap commands in a script** that uses `docker run` to pull the right toolchain image, and mount the repo path.
+- **Install extra tools** by adding `RUN apk add ...` layers to the `runner` stage in the Dockerfile and rebuilding.
+
+This is a known limitation. A proper host-runner escape hatch is planned.
+
 ## Tech stack
 
 | | |
