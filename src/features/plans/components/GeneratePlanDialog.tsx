@@ -105,15 +105,6 @@ const TEMPLATES: Template[] = [
   },
 ];
 
-const PROGRESS_MESSAGES = [
-  'Analyzing your repository...',
-  'Understanding the codebase structure...',
-  'Designing phases and tasks...',
-  'Creating implementation plan...',
-  'Optimizing task dependencies...',
-  'Finalizing plan details...',
-];
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -136,8 +127,11 @@ export function GeneratePlanDialog({
   const [generatePlan] = useGeneratePlanMutation();
   const [executePlan] = useExecutePlanMutation();
   const [updatePlan] = useUpdatePlanMutation();
-  const [progressIndex, setProgressIndex] = useState(0);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState('');
   const [generationError, setGenerationError] = useState<string | null>(null);
+  // planId populated once the SSE 'done' event arrives, used to fetch plan data
+  const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
 
   // Preview step
   const [generatedPlan, setGeneratedPlan] = useState<Plan | null>(null);
@@ -161,10 +155,27 @@ export function GeneratePlanDialog({
   const refinementEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Fetch newly generated plan data once the SSE stream reports 'done'
+  const { data: newlyGeneratedPlanData } = useGetPlanQuery(
+    generatingPlanId ?? '',
+    { skip: !generatingPlanId }
+  );
+
   // Re-fetch plan data after refinement
   const { data: latestPlanData } = useGetPlanQuery(generatedPlan?.id ?? '', {
     skip: !generatedPlan?.id || changesApplied === 0,
   });
+
+  // Transition to preview once RTK Query returns the newly generated plan data
+  useEffect(() => {
+    if (!newlyGeneratedPlanData || !generatingPlanId) return;
+    setGeneratedPlan(newlyGeneratedPlanData.plan);
+    setGeneratedPhases(newlyGeneratedPlanData.phases);
+    setGeneratedTasks(newlyGeneratedPlanData.tasks);
+    setExpandedPhases(new Set(newlyGeneratedPlanData.phases.map((p) => p.id)));
+    setGeneratingPlanId(null);
+    setStep('preview');
+  }, [newlyGeneratedPlanData, generatingPlanId]);
 
   // Sync latest plan data after refinement
   useEffect(() => {
@@ -174,15 +185,6 @@ export function GeneratePlanDialog({
       setGeneratedTasks(latestPlanData.tasks);
     }
   }, [latestPlanData, changesApplied]);
-
-  // Progress animation
-  useEffect(() => {
-    if (step !== 'generating') return;
-    const interval = setInterval(() => {
-      setProgressIndex((prev) => (prev + 1) % PROGRESS_MESSAGES.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [step]);
 
   // Auto-scroll refinement chat
   useEffect(() => {
@@ -205,8 +207,10 @@ export function GeneratePlanDialog({
           setTitle('');
           setDescription('');
           setSelectedTemplate(null);
-          setProgressIndex(0);
+          setGenerationProgress(0);
+          setGenerationStatus('');
           setGenerationError(null);
+          setGeneratingPlanId(null);
           setGeneratedPlan(null);
           setGeneratedPhases([]);
           setGeneratedTasks([]);
@@ -249,7 +253,8 @@ export function GeneratePlanDialog({
 
     setStep('generating');
     setGenerationError(null);
-    setProgressIndex(0);
+    setGenerationProgress(0);
+    setGenerationStatus('Starting...');
 
     try {
       const result = await generatePlan({
@@ -258,24 +263,24 @@ export function GeneratePlanDialog({
         description: description.trim(),
       }).unwrap();
 
-      setGeneratedPlan(result.plan);
-      setGeneratedPhases(result.phases);
-      setGeneratedTasks(result.tasks);
+      const resolvedPlanId = result?.plan?.id;
 
-      // Expand all phases by default
-      setExpandedPhases(new Set(result.phases.map((p) => p.id)));
+      if (!resolvedPlanId) {
+        throw new Error('Plan generation completed without a plan ID');
+      }
 
       if (autoLaunch) {
-        // Auto-launch: mark ready and execute
+        // Auto-launch: mark ready and execute immediately
         await updatePlan({
-          id: result.plan.id,
+          id: resolvedPlanId,
           data: { status: 'ready' },
         }).unwrap();
-        await executePlan(result.plan.id).unwrap();
-        onPlanCreated?.(result.plan.id);
+        await executePlan(resolvedPlanId).unwrap();
+        onPlanCreated?.(resolvedPlanId);
         handleOpenChange(false);
       } else {
-        setStep('preview');
+        // Signal to the useGetPlanQuery effect that it should fetch and show preview
+        setGeneratingPlanId(resolvedPlanId);
       }
     } catch (error) {
       console.error('Failed to generate plan:', error);
@@ -634,24 +639,31 @@ export function GeneratePlanDialog({
             </p>
 
             {/* Progress bar */}
-            <div className="mb-4 w-full max-w-xs">
+            <div className="mb-3 w-full max-w-xs">
               <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-1000 ease-in-out"
+                  className="h-full rounded-full bg-primary transition-all duration-500 ease-in-out"
                   style={{
-                    width: `${Math.min(15 + progressIndex * 15, 90)}%`,
+                    width: `${generationProgress > 0 ? generationProgress : 5}%`,
                   }}
                 />
               </div>
+              {generationProgress > 0 && (
+                <p className="mt-1 text-right text-[10px] text-muted-foreground/60">
+                  {generationProgress}%
+                </p>
+              )}
             </div>
 
-            {/* Rotating message */}
-            <p
-              key={progressIndex}
-              className="text-xs text-muted-foreground duration-500 animate-in fade-in"
-            >
-              {PROGRESS_MESSAGES[progressIndex]}
-            </p>
+            {/* Live status message from the LLM stream */}
+            {generationStatus && (
+              <p
+                key={generationStatus}
+                className="text-xs text-muted-foreground duration-300 animate-in fade-in"
+              >
+                {generationStatus}
+              </p>
+            )}
           </div>
         )}
 

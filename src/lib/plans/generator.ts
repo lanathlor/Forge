@@ -21,15 +21,29 @@ interface GeneratedPlanStructure {
   }[];
 }
 
+export type GenerationProgressEvent =
+  | { type: 'status'; message: string }
+  | { type: 'progress'; percent: number }
+  | { type: 'chunk'; content: string }
+  | { type: 'done'; planId: string }
+  | { type: 'error'; message: string };
+
+export type ProgressCallback = (event: GenerationProgressEvent) => void;
+
 /**
  * Generate a plan structure using Claude Code CLI
  */
 export async function generatePlanFromDescription(
   repositoryId: string,
   title: string,
-  description: string
+  description: string,
+  onProgress?: ProgressCallback
 ): Promise<string> {
+  const emit = (event: GenerationProgressEvent) => onProgress?.(event);
+
   // Get repository info
+  emit({ type: 'status', message: 'Analyzing repository...' });
+
   const repository = await db.query.repositories.findFirst({
     where: eq(repositories.id, repositoryId),
   });
@@ -37,6 +51,8 @@ export async function generatePlanFromDescription(
   if (!repository) {
     throw new Error(`Repository not found: ${repositoryId}`);
   }
+
+  emit({ type: 'progress', percent: 10 });
 
   // Create draft plan
   const [plan] = await db
@@ -58,26 +74,42 @@ export async function generatePlanFromDescription(
 
   try {
     // Build prompt for Claude
+    emit({ type: 'status', message: 'Building generation prompt...' });
     const prompt = buildGenerationPrompt(title, description, repository.path);
+
+    emit({ type: 'progress', percent: 20 });
+    emit({ type: 'status', message: 'Calling LLM...' });
 
     // Call Claude to generate plan structure
     const workingDir = getContainerPath(repository.path);
+
     const response = await claudeWrapper.executeOneShot(
       prompt,
       workingDir,
       300000 // 5 minute timeout - plan generation can take time
     );
 
-    console.log(`[PlanGenerator] Claude response:`, response);
+    console.log(`[PlanGenerator] Claude response received (${response.length} chars)`);
+
+    emit({ type: 'progress', percent: 70 });
+    emit({ type: 'status', message: 'Parsing plan structure...' });
 
     // Parse response as JSON
     const planStructure = parseClaudeResponse(response);
 
+    emit({ type: 'progress', percent: 80 });
+    emit({ type: 'status', message: 'Saving phases and tasks...' });
+
     // Save phases and tasks to database
     await savePlanStructure(planId, planStructure, prompt);
 
+    emit({ type: 'progress', percent: 95 });
+
     // Update plan stats
     await updatePlanStats(planId);
+
+    emit({ type: 'progress', percent: 100 });
+    emit({ type: 'done', planId });
 
     return planId;
   } catch (error) {
@@ -95,6 +127,9 @@ export async function generatePlanFromDescription(
     // Provide a more helpful error message
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
+
+    emit({ type: 'error', message: `Failed to generate plan: ${errorMessage}` });
+
     throw new Error(`Failed to generate plan: ${errorMessage}`);
   }
 }
