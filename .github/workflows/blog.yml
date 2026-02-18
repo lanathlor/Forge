@@ -3,7 +3,7 @@ name: Blog
 on:
   push:
     branches: [main]
-    paths: [blog.md]
+    paths: [README.md]
   workflow_dispatch:
 
 permissions:
@@ -57,14 +57,14 @@ jobs:
 
           # Use GitHub's own markdown renderer via the API (no extra tooling needed)
           # Fall back to a simple sed-based conversion if the API is unavailable
-          MARKDOWN=$(cat blog.md)
+          MARKDOWN=$(cat README.md)
 
           HTML=$(curl -sf -X POST https://api.github.com/markdown \
             -H "Accept: application/vnd.github+json" \
             -d "$(jq -n --arg text "$MARKDOWN" '{text: $text, mode: "gfm"}')" 2>/dev/null) || {
             # Fallback: install and use pandoc
             sudo apt-get update -qq && sudo apt-get install -y -qq pandoc > /dev/null 2>&1
-            HTML=$(pandoc --from=gfm --to=html5 blog.md)
+            HTML=$(pandoc --from=gfm --to=html5 README.md)
           }
 
           echo "$HTML" >> index.html
