@@ -38,7 +38,7 @@ export default function TasksPage() {
 
   return (
     <AppLayout activeNavItem="tasks">
-      <div className="h-full p-4 lg:p-6">
+      <div className="flex h-full flex-col overflow-hidden p-4 lg:p-6">
         <TasksTabContent
           sessionId={currentSessionId}
           connected={connected}
