@@ -171,15 +171,10 @@ export class PlanExecutor {
 
         await this.executePhase(planId, phase.id);
 
-        // Check if should pause after this phase (only if there are more phases to run)
+        // Check if should pause after this phase
         if (phase.pauseAfter) {
-          const remainingPhases = planPhases.filter(
-            (p) => p.order > phase.order && p.status !== 'completed'
-          );
-          if (remainingPhases.length > 0) {
-            await this.pausePlan(planId, 'phase_complete');
-            return; // Wait for user to resume
-          }
+          await this.pausePlan(planId, 'phase_complete');
+          return; // Wait for user to resume
         }
       }
 
