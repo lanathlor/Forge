@@ -28,7 +28,7 @@
     },
     {
       "name": "Build",
-      "enabled": false,
+      "enabled": true,
       "command": "pnpm build",
       "timeout": 180000,
       "failOnError": false,

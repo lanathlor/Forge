@@ -34,8 +34,7 @@ describe('Status Service', () => {
       const mockChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(mockRepo),
+        limit: vi.fn().mockResolvedValue([mockRepo]),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -44,15 +43,14 @@ describe('Status Service', () => {
 
       expect(result).toEqual(mockRepo);
       expect(db.select).toHaveBeenCalled();
-      expect(mockChain.get).toHaveBeenCalled();
+      expect(mockChain.limit).toHaveBeenCalled();
     });
 
     it('should return undefined when repository not found', async () => {
       const mockChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(undefined),
+        limit: vi.fn().mockResolvedValue([]),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -66,8 +64,7 @@ describe('Status Service', () => {
       const mockChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockRejectedValue(new Error('Database error')),
+        limit: vi.fn().mockRejectedValue(new Error('Database error')),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -89,8 +86,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(mockRun),
+        limit: vi.fn().mockResolvedValue([mockRun]),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -107,8 +103,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(undefined),
+        limit: vi.fn().mockResolvedValue([]),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -123,8 +118,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(null),
+        limit: vi.fn().mockResolvedValue([]),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -139,8 +133,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockRejectedValue(new Error('DB connection failed')),
+        limit: vi.fn().mockRejectedValue(new Error('DB connection failed')),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -231,8 +224,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(null),
+        limit: vi.fn().mockResolvedValue([]),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -268,8 +260,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(mockRun),
+        limit: vi.fn().mockResolvedValue([mockRun]),
       };
 
       const gatesChain = {
@@ -303,8 +294,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(mockRun),
+        limit: vi.fn().mockResolvedValue([mockRun]),
       };
 
       const gatesChain = {
@@ -331,8 +321,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockRejectedValue(new Error('DB error')),
+        limit: vi.fn().mockRejectedValue(new Error('DB error')),
       };
 
       vi.mocked(db.select).mockReturnValue(mockChain as any);
@@ -352,8 +341,7 @@ describe('Status Service', () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        get: vi.fn().mockResolvedValue(mockRun),
+        limit: vi.fn().mockResolvedValue([mockRun]),
       };
 
       const gatesChain = {

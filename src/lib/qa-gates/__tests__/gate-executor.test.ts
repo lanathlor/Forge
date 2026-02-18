@@ -8,11 +8,10 @@ vi.mock('@/db', () => {
   const mockDb = {
     insert: vi.fn(() => mockDb),
     values: vi.fn(() => mockDb),
-    returning: vi.fn(() => mockDb),
-    get: vi.fn(),
+    returning: vi.fn(() => Promise.resolve([])),
     update: vi.fn(() => mockDb),
     set: vi.fn(() => mockDb),
-    where: vi.fn(),
+    where: vi.fn(() => Promise.resolve()),
   };
   return { db: mockDb };
 });
@@ -52,8 +51,8 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    // Mock database operations
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    // Mock database operations - returning() resolves to an array
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     // Mock successful command execution
     vi.spyOn(commandExecutor, 'execAsync').mockResolvedValue({
@@ -89,8 +88,8 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    // Mock database operations
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    // Mock database operations - returning() resolves to an array
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     // Mock failed command execution
     const error = new Error('Command failed with exit code 1') as any;
@@ -123,7 +122,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     // Mock getContainerPath to transform the path
     vi.spyOn(commandExecutor, 'getContainerPath').mockReturnValue(
@@ -159,7 +158,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     vi.spyOn(commandExecutor, 'execAsync').mockResolvedValue({
       stdout: 'Success',
@@ -191,7 +190,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     vi.spyOn(commandExecutor, 'execAsync').mockResolvedValue({
       stdout: 'Test output',
@@ -224,7 +223,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     const error = new Error('Command failed with exit code 2') as any;
     error.stdout = 'Output before failure';
@@ -259,7 +258,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     const error = new Error('Spawn error') as any;
 
@@ -291,7 +290,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     vi.spyOn(commandExecutor, 'execAsync').mockResolvedValue({
       stdout: 'Success',
@@ -320,7 +319,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     // Mock execAsync to take some time
     vi.spyOn(commandExecutor, 'execAsync').mockImplementation(
@@ -355,7 +354,7 @@ describe('Gate Executor', () => {
       status: 'running' as const,
     };
 
-    vi.mocked(db.get).mockResolvedValue(mockExecution);
+    vi.mocked((db as any).returning).mockResolvedValue([mockExecution]);
 
     vi.spyOn(commandExecutor, 'execAsync').mockResolvedValue({
       stdout: 'Success',

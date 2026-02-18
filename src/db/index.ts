@@ -1,8 +1,8 @@
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
-import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { default as PgDefault } from 'postgres';
+import type { drizzle as DrizzlePg } from 'drizzle-orm/postgres-js';
 import Database from 'better-sqlite3';
-import postgres from 'postgres';
 import * as sqliteSchema from './schema';
 import * as pgSchema from './pg-schema';
 
@@ -68,10 +68,16 @@ function getDb(): BetterSQLite3Database<typeof sqliteSchema> {
 
     if (isPostgresUrl(url)) {
       patchSchemaForPg();
+      // Lazy-load postgres and drizzle-orm/postgres-js so that SQLite environments
+      // do not require the postgres package to be installed.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pg = require('postgres') as typeof PgDefault;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { drizzle: drizzlePg } = require('drizzle-orm/postgres-js') as { drizzle: typeof DrizzlePg };
       // Cast to the SQLite type: the query API and inferred column types
       // (string, Date, boolean, number) are compatible between drivers,
       // so the rest of the codebase sees consistent TypeScript types.
-      _db = drizzlePg(postgres(url), {
+      _db = drizzlePg(pg(url), {
         schema: pgSchema,
       }) as unknown as BetterSQLite3Database<typeof sqliteSchema>;
     } else {

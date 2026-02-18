@@ -4,6 +4,9 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('test'),
+  },
   test: {
     globals: true,
     environment: 'happy-dom',
@@ -23,12 +26,16 @@ export default defineConfig({
         'src/db/migrations/**', // Generated migrations
         'src/db/seed.ts', // Seed script
         'src/db/schema/**', // DB schema type definitions
+        'src/db/pg-schema/**', // PG schema type definitions
         'src/db/init.ts', // DB init script
+        'src/db/init-pg.ts', // PG DB init script
         'src/db/index.ts', // DB connection (tested via integration)
         'src/lib/qa-gates/runner.ts', // Complex integration testing needed
         'src/lib/qa-gates/command-executor.ts', // Spawns child processes (tested via integration)
         'src/lib/git/pre-flight.ts', // Uses command-executor (tested via integration)
         'src/lib/claude/wrapper.ts', // Complex integration with Claude SDK
+        'src/lib/ai/providers/claude-sdk-provider.ts', // Complex integration with Claude SDK (tested via E2E)
+        'src/lib/ai/providers/codex-sdk-provider.ts', // Complex integration with Codex SDK (tested via E2E)
         'src/lib/tasks/orchestrator.ts', // Complex orchestration (tested via integration)
         'src/lib/plans/activity-tracker.ts', // Activity tracking (tested via integration)
         'src/lib/plans/executor.ts', // Complex plan execution with polling (tested via integration)
@@ -48,6 +55,7 @@ export default defineConfig({
         'src/features/repositories/store/**', // Redux store (tested via integration)
         'src/features/sessions/store/**', // Redux store (tested via integration)
         'src/features/plans/store/**', // RTK Query store (tested via integration)
+        'src/features/dashboard/store/**', // Redux store (tested via integration)
         'src/features/plans/components/PlanDetailView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanExecutionView.tsx', // Complex component (tested via E2E)
         'src/features/plans/components/PlanIterationChat.tsx', // Complex component (tested via E2E)
