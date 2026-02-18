@@ -202,16 +202,37 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Docker
+### Deployment
 
-Docker handles native build dependencies (better-sqlite3) automatically. There are two compose files:
+#### Recommended: run on the host
 
-| File | Purpose |
-|---|---|
-| `docker-compose.yml` | Development — hot-reload, source mounted |
-| `docker-compose.prod.yml` | Production — optimized standalone image, health checks, restart policy |
+The simplest and most capable setup is to run Forge directly on your machine, with only the database in Docker if you want PostgreSQL:
 
-#### Development
+```bash
+# Optional: start PostgreSQL in Docker
+docker run -d --name forge-pg \
+  -e POSTGRES_USER=forge -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=forge \
+  -p 5432:5432 postgres:16-alpine
+
+# Build and start Forge
+pnpm install
+pnpm build
+DATABASE_URL=postgresql://forge:secret@localhost:5432/forge \
+WORKSPACE_ROOT="/path/to/your/projects" \
+AI_PROVIDER=claude-sdk \
+ANTHROPIC_API_KEY=sk-ant-... \
+node .next/standalone/server.js
+```
+
+**Why this is the right default:** QA gate commands run with all the tools that exist on your machine — `pnpm`, `bun`, `go`, `cargo`, `python`, `maven`, whatever your repos actually use. The containerised image is limited to `node:20-alpine` + corepack (pnpm/yarn); anything outside that will fail.
+
+#### Docker (limited QA gate support)
+
+Docker is available if you need process isolation or a self-contained deployment, but **QA gate commands run inside the container** and are restricted to what the image provides: Node 20, pnpm, yarn, and git. Other runtimes (`bun`, `go`, `cargo`, `python`, etc.) are not available.
+
+If your repos only use Node.js tooling and you accept that constraint, Docker works fine.
+
+**Development:**
 
 ```bash
 cp .env.example .env
@@ -221,104 +242,29 @@ docker compose up
 
 The app hot-reloads on source changes and is available at [http://localhost:3001](http://localhost:3001).
 
-To use PostgreSQL instead of SQLite during development:
+**Docker Compose files:**
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Development — hot-reload, source mounted |
+| `docker-compose.prod.yml` | Production — standalone image, health checks, restart policy |
+
+**Production (pre-built image):**
 
 ```bash
-docker compose --profile postgres up
-```
-
-Then set `DATABASE_URL=postgresql://forge:forge@postgres:5432/forge` in your `.env`.
-
-#### Production (pre-built image)
-
-A pre-built image is published at `ghcr.io/lanathlor/forge`. This is the fastest way to get Forge running in production — no build step required.
-
-**1. Create a `docker-compose.prod.yml`** (or use the one from the repo):
-
-```yaml
-services:
-  app:
-    image: ghcr.io/lanathlor/forge:latest
-    restart: unless-stopped
-    ports:
-      - '${PORT:-3000}:3000'
-    volumes:
-      - ${WORKSPACE_ROOT}:/workspace
-      - ${CLAUDE_CONFIG_DIR:-~/.claude}:/home/nextjs/.claude:ro
-      - forge_data:/app/data
-    environment:
-      - DATABASE_URL=${DATABASE_URL:-/app/data/forge.db}
-      - WORKSPACE_ROOT=/workspace
-      - AI_PROVIDER=${AI_PROVIDER:-claude-code}
-      - CLAUDE_CODE_PATH=${CLAUDE_CODE_PATH:-claude}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - NODE_ENV=production
-      - PORT=3000
-      - NEXT_TELEMETRY_DISABLED=1
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-volumes:
-  forge_data:
-```
-
-**2. Create a `.env` file:**
-
-```env
-# Required — path to the directory containing your git repositories
-WORKSPACE_ROOT="/path/to/your/projects"
-
-# AI provider: claude-sdk | codex-sdk | claude-code | fake
-AI_PROVIDER=claude-sdk
-
-# Anthropic API key (for claude-sdk provider)
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Optional — override the host port (default: 3000)
-# PORT=3000
-```
-
-**3. Start Forge:**
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-**With PostgreSQL** (recommended for production):
-
-Add a postgres service to your compose file, or use the full `docker-compose.prod.yml` from the repo with the `postgres` profile:
-
-```bash
-POSTGRES_PASSWORD=your-secret-password \
-DATABASE_URL=postgresql://forge:your-secret-password@postgres:5432/forge \
+POSTGRES_PASSWORD=your-secret \
+DATABASE_URL=postgresql://forge:your-secret@postgres:5432/forge \
+WORKSPACE_ROOT=/path/to/your/projects \
+AI_PROVIDER=claude-sdk \
+ANTHROPIC_API_KEY=sk-ant-... \
 docker compose -f docker-compose.prod.yml --profile postgres up -d
 ```
 
-#### Production (build from source)
-
-If you prefer to build the image yourself:
+**Production (build from source):**
 
 ```bash
-cp .env.example .env
-# Edit .env — set WORKSPACE_ROOT, AI_PROVIDER, API keys, etc.
 docker compose -f docker-compose.prod.yml up -d --build
 ```
-
-#### Production image details
-
-The production image:
-- Runs the Next.js standalone server (minimal footprint)
-- Automatically initializes a fresh SQLite database on first start
-- Persists the SQLite database in a named Docker volume (`forge_data`)
-- Exposes port `3000` (mapped to `$PORT` on the host, default `3000`)
-- Includes health checks and restarts automatically on failure
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for all environment variables.
 
@@ -352,24 +298,6 @@ Each repository is configured independently. Create a `.forge.json` at the root 
 ```
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for the full schema and examples for Python, Go, and Rust.
-
-### QA gate tool availability (Docker)
-
-When running Forge in Docker, QA gate commands execute **inside the container**. The production image is based on `node:20-alpine` and includes:
-
-- Node.js 20
-- `pnpm` and `yarn` (via corepack)
-- `git`
-
-Tools outside that set — `go`, `cargo`, `bun`, `python`, `maven`, `gradle`, etc. — are **not available** in the container and will fail with "command not found".
-
-**Workarounds:**
-
-- **Run Forge on the host** (DB in Docker, app on host via `pnpm start`). All tools installed on your machine are then available to QA gates.
-- **Wrap commands in a script** that uses `docker run` to pull the right toolchain image, and mount the repo path.
-- **Install extra tools** by adding `RUN apk add ...` layers to the `runner` stage in the Dockerfile and rebuilding.
-
-This is a known limitation. A proper host-runner escape hatch is planned.
 
 ## Tech stack
 
