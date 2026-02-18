@@ -141,9 +141,7 @@ export async function captureDiff(
     statOutput,
     nameStatusOutput,
     fullDiff,
-    untrackedFiles,
-    untrackedDiffs,
-    untrackedPaths
+    { files: untrackedFiles, diffs: untrackedDiffs, paths: untrackedPaths }
   );
   const stats = calculateStats(changedFiles);
 
@@ -159,10 +157,11 @@ function parseChangedFiles(
   statOutput: string,
   nameStatusOutput: string,
   fullDiff: string,
-  untrackedFiles: string,
-  untrackedDiffs: { diff: string; additions: number }[] = [],
-  untrackedPaths: string[] = []
+  untracked: { files: string; diffs?: { diff: string; additions: number }[]; paths?: string[] } = { files: '' }
 ): FileChange[] {
+  const untrackedFiles = untracked.files;
+  const untrackedDiffs = untracked.diffs ?? [];
+  const untrackedPaths = untracked.paths ?? [];
   const statLines = statOutput.trim().split('\n').filter(Boolean);
   const nameStatusLines = nameStatusOutput.trim().split('\n').filter(Boolean);
 

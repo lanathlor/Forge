@@ -553,8 +553,7 @@ describe('DiffViewer', () => {
 
   describe('Keyboard Shortcuts', () => {
     it('should navigate to next file with j key', async () => {
-      const fetchMock = vi.fn();
-      fetchMock
+      (global.fetch as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => mockDiffResult,
@@ -568,13 +567,18 @@ describe('DiffViewer', () => {
           json: async () => ({ before: 'b2', after: 'a2' }),
         });
 
-      global.fetch = fetchMock;
-
       render(<DiffViewer taskId="test-task-1" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('selected-file')).toHaveTextContent(
           'src/file1.ts'
+        );
+      });
+
+      // Wait for file content to load so the component is fully settled
+      await waitFor(() => {
+        expect(screen.getByTestId('modified-content')).toHaveTextContent(
+          'modified content'
         );
       });
 

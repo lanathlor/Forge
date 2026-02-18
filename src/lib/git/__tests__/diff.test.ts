@@ -167,5 +167,174 @@ M\tfile3.ts`;
         { cwd: '/repo/path', timeout: 30000 }
       );
     });
+
+    it('should use empty tree hash for initial commit', async () => {
+      mockExecAsync
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await diffModule.captureDiff('/repo', 'initial');
+
+      const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+      expect(mockExecAsync).toHaveBeenNthCalledWith(
+        1,
+        `git diff ${EMPTY_TREE_HASH}`,
+        { cwd: '/repo', timeout: 30000 }
+      );
+    });
+
+    it('should include untracked files in diff', async () => {
+      const untrackedDiff = `diff --git a/dev/null b/newfile.ts
++line 1
++line 2
++line 3`;
+
+      mockExecAsync
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git diff
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // --numstat
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // --name-status
+        .mockResolvedValueOnce({ stdout: 'newfile.ts', stderr: '' }) // untracked files
+        .mockResolvedValueOnce({ stdout: untrackedDiff, stderr: '' }); // git diff --no-index for untracked
+
+      const result = await diffModule.captureDiff('/repo', 'abc123');
+
+      expect(result.changedFiles).toHaveLength(1);
+      expect(result.changedFiles[0]?.path).toBe('newfile.ts');
+      expect(result.changedFiles[0]?.status).toBe('added');
+      expect(result.fullDiff).toContain(untrackedDiff);
+    });
+
+    it('should handle untracked file diff failure gracefully', async () => {
+      mockExecAsync
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git diff
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // --numstat
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // --name-status
+        .mockResolvedValueOnce({ stdout: 'newfile.ts', stderr: '' }) // untracked files
+        .mockRejectedValueOnce(new Error('diff failed')); // git diff --no-index fails
+
+      const result = await diffModule.captureDiff('/repo', 'abc123');
+
+      expect(result.changedFiles).toHaveLength(1);
+      expect(result.changedFiles[0]?.path).toBe('newfile.ts');
+      expect(result.changedFiles[0]?.additions).toBe(0);
+    });
+  });
+
+  describe('getDiffForFiles', () => {
+    it('should generate diff for deleted files', async () => {
+      mockExecAsync.mockResolvedValueOnce({
+        stdout: 'deleted file diff',
+        stderr: '',
+      });
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'removed.ts', status: 'deleted', additions: 0, deletions: 10, patch: '' },
+      ]);
+
+      expect(result).toBe('deleted file diff');
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        'git diff abc123 -- "removed.ts"',
+        { cwd: '/repo', timeout: 15000 }
+      );
+    });
+
+    it('should generate diff for added files using --no-index', async () => {
+      mockExecAsync.mockRejectedValueOnce({
+        stdout: 'new file diff',
+      });
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'new.ts', status: 'added', additions: 5, deletions: 0, patch: '' },
+      ]);
+
+      expect(result).toBe('new file diff');
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        'git diff --no-index /dev/null "new.ts"',
+        { cwd: '/repo', timeout: 15000 }
+      );
+    });
+
+    it('should generate diff for modified files', async () => {
+      mockExecAsync.mockResolvedValueOnce({
+        stdout: 'modified file diff',
+        stderr: '',
+      });
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'file.ts', status: 'modified', additions: 3, deletions: 2, patch: 'existing' },
+      ]);
+
+      expect(result).toBe('modified file diff');
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        'git diff abc123 -- "file.ts"',
+        { cwd: '/repo', timeout: 15000 }
+      );
+    });
+
+    it('should handle files with empty patch as added', async () => {
+      mockExecAsync.mockRejectedValueOnce({
+        stdout: 'untracked diff',
+      });
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'file.ts', status: 'modified', additions: 3, deletions: 0, patch: '' },
+      ]);
+
+      expect(result).toBe('untracked diff');
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        'git diff --no-index /dev/null "file.ts"',
+        { cwd: '/repo', timeout: 15000 }
+      );
+    });
+
+    it('should handle multiple files', async () => {
+      mockExecAsync
+        .mockResolvedValueOnce({ stdout: 'diff1', stderr: '' })
+        .mockResolvedValueOnce({ stdout: 'diff2', stderr: '' });
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'a.ts', status: 'modified', additions: 1, deletions: 1, patch: 'p' },
+        { path: 'b.ts', status: 'deleted', additions: 0, deletions: 5, patch: 'p' },
+      ]);
+
+      expect(result).toContain('diff1');
+      expect(result).toContain('diff2');
+    });
+
+    it('should handle exec failure gracefully', async () => {
+      mockExecAsync.mockRejectedValueOnce(new Error('git error'));
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'file.ts', status: 'deleted', additions: 0, deletions: 5, patch: 'p' },
+      ]);
+
+      expect(result).toBe('');
+    });
+
+    it('should use empty tree hash for initial commit', async () => {
+      mockExecAsync.mockResolvedValueOnce({ stdout: 'diff', stderr: '' });
+
+      await diffModule.getDiffForFiles('/repo', 'initial', [
+        { path: 'file.ts', status: 'modified', additions: 1, deletions: 0, patch: 'p' },
+      ]);
+
+      const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        `git diff ${EMPTY_TREE_HASH} -- "file.ts"`,
+        { cwd: '/repo', timeout: 15000 }
+      );
+    });
+
+    it('should handle added file exec failure with no stdout', async () => {
+      mockExecAsync.mockRejectedValueOnce(new Error('no stdout'));
+
+      const result = await diffModule.getDiffForFiles('/repo', 'abc123', [
+        { path: 'new.ts', status: 'added', additions: 5, deletions: 0, patch: '' },
+      ]);
+
+      expect(result).toBe('');
+    });
   });
 });
