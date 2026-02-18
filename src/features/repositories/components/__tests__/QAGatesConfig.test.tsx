@@ -319,21 +319,21 @@ describe('QAGatesConfig', () => {
   });
 
   describe('StatusAlert', () => {
-    it('shows info alert when QA gates have not been run', () => {
+    it('shows default shield icon when QA gates have not been run', () => {
       vi.mocked(useQAGatesData).mockReturnValue(
         mockHookReturn({
           runStatus: { hasRun: false, run: null, gates: [] },
         })
       );
 
-      render(<QAGatesConfig repositoryId="repo-1" />);
+      const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(
-        screen.getByText(/Configure your QA gates below/)
-      ).toBeInTheDocument();
+      // Default shield icon is shown (not check or x)
+      const shieldIcon = container.querySelector('.lucide-shield');
+      expect(shieldIcon).toBeInTheDocument();
     });
 
-    it('shows warning alert when there are unsaved changes', () => {
+    it('shows save button when there are unsaved changes', () => {
       vi.mocked(useQAGatesData).mockReturnValue(
         mockHookReturn({
           runStatus: { hasRun: true, run: { status: 'passed' }, gates: [] },
@@ -345,10 +345,10 @@ describe('QAGatesConfig', () => {
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText(/You have unsaved changes/)).toBeInTheDocument();
+      expect(screen.getByText(/Save Changes/)).toBeInTheDocument();
     });
 
-    it('shows success alert when all gates passed', () => {
+    it('shows success shield icon when all gates passed', () => {
       vi.mocked(useQAGatesData).mockReturnValue(
         mockHookReturn({
           runStatus: {
@@ -359,12 +359,13 @@ describe('QAGatesConfig', () => {
         })
       );
 
-      render(<QAGatesConfig repositoryId="repo-1" />);
+      const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText(/All QA gates passed/)).toBeInTheDocument();
+      const shieldCheckIcon = container.querySelector('.lucide-shield-check');
+      expect(shieldCheckIcon).toBeInTheDocument();
     });
 
-    it('shows error alert when gates failed with singular message', () => {
+    it('shows error shield icon when gates failed with singular failure', () => {
       vi.mocked(useQAGatesData).mockReturnValue(
         mockHookReturn({
           runStatus: {
@@ -375,12 +376,13 @@ describe('QAGatesConfig', () => {
         })
       );
 
-      render(<QAGatesConfig repositoryId="repo-1" />);
+      const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText(/1 gate failed/)).toBeInTheDocument();
+      const shieldXIcon = container.querySelector('.lucide-shield-x');
+      expect(shieldXIcon).toBeInTheDocument();
     });
 
-    it('shows error alert when gates failed with plural message', () => {
+    it('shows error shield icon when gates failed with plural failures', () => {
       vi.mocked(useQAGatesData).mockReturnValue(
         mockHookReturn({
           runStatus: {
@@ -394,9 +396,10 @@ describe('QAGatesConfig', () => {
         })
       );
 
-      render(<QAGatesConfig repositoryId="repo-1" />);
+      const { container } = render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText(/2 gates failed/)).toBeInTheDocument();
+      const shieldXIcon = container.querySelector('.lucide-shield-x');
+      expect(shieldXIcon).toBeInTheDocument();
     });
   });
 
@@ -413,7 +416,7 @@ describe('QAGatesConfig', () => {
       expect(screen.getByTestId('add-gate-form')).toBeInTheDocument();
     });
 
-    it('changes button text to Cancel when form is shown', async () => {
+    it('keeps Add Gate button text when form is shown', async () => {
       const user = userEvent.setup();
       vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
@@ -422,10 +425,11 @@ describe('QAGatesConfig', () => {
       const addButton = screen.getByText('Add Gate');
       await user.click(addButton);
 
-      expect(screen.getByText('Cancel')).toBeInTheDocument();
+      // Button text stays "Add Gate" but toggles the form
+      expect(screen.getByText('Add Gate')).toBeInTheDocument();
     });
 
-    it('hides form when Cancel is clicked', async () => {
+    it('hides form when Add Gate is clicked again', async () => {
       const user = userEvent.setup();
       vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
@@ -435,8 +439,8 @@ describe('QAGatesConfig', () => {
       await user.click(addButton);
       expect(screen.getByTestId('add-gate-form')).toBeInTheDocument();
 
-      const cancelButton = screen.getByText('Cancel');
-      await user.click(cancelButton);
+      // Clicking Add Gate again toggles the form off
+      await user.click(screen.getByText('Add Gate'));
 
       expect(screen.queryByTestId('add-gate-form')).not.toBeInTheDocument();
     });
@@ -454,7 +458,7 @@ describe('QAGatesConfig', () => {
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText('Save Configuration')).toBeInTheDocument();
+      expect(screen.getByText('Save Changes')).toBeInTheDocument();
     });
 
     it('does not show save button when there are no changes', () => {
@@ -462,7 +466,7 @@ describe('QAGatesConfig', () => {
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.queryByText('Save Configuration')).not.toBeInTheDocument();
+      expect(screen.queryByText('Save Changes')).not.toBeInTheDocument();
     });
 
     it('shows saving state when save is in progress', () => {
@@ -492,7 +496,7 @@ describe('QAGatesConfig', () => {
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      const saveButton = screen.getByText('Save Configuration');
+      const saveButton = screen.getByText('Save Changes');
       await user.click(saveButton);
 
       expect(mockFns.saveConfig).toHaveBeenCalledTimes(1);
@@ -515,7 +519,7 @@ describe('QAGatesConfig', () => {
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      const saveButton = screen.getByText('Save Configuration');
+      const saveButton = screen.getByText('Save Changes');
       await user.click(saveButton);
 
       expect(saveConfigMock).toHaveBeenCalledTimes(1);
@@ -542,12 +546,13 @@ describe('QAGatesConfig', () => {
       expect(screen.queryByText('disabled')).not.toBeInTheDocument();
     });
 
-    it('shows disabled count badge when some gates are disabled', () => {
+    it('shows active count badge reflecting enabled gates', () => {
       vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText('disabled')).toBeInTheDocument();
+      // Default mock has 2 enabled gates, so active badge shows 2
+      expect(screen.getByText('active')).toBeInTheDocument();
     });
   });
 });

@@ -126,8 +126,10 @@ describe('RepositorySelector', () => {
   describe('Loading State', () => {
     it('shows loading state when isLoading is true', () => {
       setupMockData({ isLoading: true });
-      render(<RepositorySelector onSelect={mockOnSelect} />);
-      expect(screen.getByText('Loading repositories...')).toBeInTheDocument();
+      const { container } = render(<RepositorySelector onSelect={mockOnSelect} />);
+      // Loading state renders skeleton shimmer elements
+      const skeletons = container.querySelectorAll('.animate-skeleton-shimmer');
+      expect(skeletons.length).toBeGreaterThan(0);
     });
   });
 

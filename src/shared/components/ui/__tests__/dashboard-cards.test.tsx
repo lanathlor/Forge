@@ -154,7 +154,7 @@ describe('StatCard', () => {
   describe('loading state', () => {
     it('should render skeleton when loading', () => {
       const { container } = render(<StatCard {...defaultProps} loading />);
-      const skeletons = container.querySelectorAll('.animate-pulse');
+      const skeletons = container.querySelectorAll('.animate-skeleton-shimmer');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
@@ -377,7 +377,7 @@ describe('ActionCard', () => {
   describe('loading state', () => {
     it('should render skeleton when loading', () => {
       const { container } = render(<ActionCard {...defaultProps} loading />);
-      const skeletons = container.querySelectorAll('.animate-pulse');
+      const skeletons = container.querySelectorAll('.animate-skeleton-shimmer');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
@@ -568,7 +568,7 @@ describe('ListCard', () => {
   describe('loading state', () => {
     it('should render skeleton items when loading', () => {
       const { container } = render(<ListCard items={defaultItems} loading />);
-      const skeletons = container.querySelectorAll('.animate-pulse');
+      const skeletons = container.querySelectorAll('.animate-skeleton-shimmer');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 

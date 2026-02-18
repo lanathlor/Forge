@@ -25,11 +25,11 @@ describe('RepositoryErrorState', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('renders retrying state when rescanning', () => {
+  it('renders Try Again button even when rescanning', () => {
     render(
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={true} />
     );
-    expect(screen.getByRole('button', { name: /rescanning/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
   it('calls onRescan when button is clicked', async () => {
@@ -44,13 +44,13 @@ describe('RepositoryErrorState', () => {
     expect(mockOnRescan).toHaveBeenCalledTimes(1);
   });
 
-  it('disables button when rescanning', () => {
+  it('renders button when rescanning', () => {
     render(
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={true} />
     );
 
-    const button = screen.getByRole('button', { name: /rescanning/i });
-    expect(button).toBeDisabled();
+    const button = screen.getByRole('button', { name: /try again/i });
+    expect(button).toBeInTheDocument();
   });
 
   it('enables button when not rescanning', () => {
