@@ -213,22 +213,89 @@ docker compose --profile postgres up
 
 Then set `DATABASE_URL=postgresql://forge:forge@postgres:5432/forge` in your `.env`.
 
-#### Production
+#### Production (pre-built image)
+
+A pre-built image is published at `ghcr.io/lanathlor/forge`. This is the fastest way to get Forge running in production — no build step required.
+
+**1. Create a `docker-compose.prod.yml`** (or use the one from the repo):
+
+```yaml
+services:
+  app:
+    image: ghcr.io/lanathlor/forge:latest
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    volumes:
+      - ${WORKSPACE_ROOT}:/workspace
+      - ${CLAUDE_CONFIG_DIR:-~/.claude}:/home/nextjs/.claude:ro
+      - forge_data:/app/data
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-/app/data/forge.db}
+      - WORKSPACE_ROOT=/workspace
+      - AI_PROVIDER=${AI_PROVIDER:-claude-code}
+      - CLAUDE_CODE_PATH=${CLAUDE_CODE_PATH:-claude}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_TELEMETRY_DISABLED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  forge_data:
+```
+
+**2. Create a `.env` file:**
+
+```env
+# Required — path to the directory containing your git repositories
+WORKSPACE_ROOT="/path/to/your/projects"
+
+# AI provider: claude-sdk | codex-sdk | claude-code | fake
+AI_PROVIDER=claude-sdk
+
+# Anthropic API key (for claude-sdk provider)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional — override the host port (default: 3000)
+# PORT=3000
+```
+
+**3. Start Forge:**
 
 ```bash
-cp .env.example .env
-# Edit .env — set WORKSPACE_ROOT, AI_PROVIDER, API keys, etc.
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-With PostgreSQL (recommended for production):
+Open [http://localhost:3000](http://localhost:3000).
+
+**With PostgreSQL** (recommended for production):
+
+Add a postgres service to your compose file, or use the full `docker-compose.prod.yml` from the repo with the `postgres` profile:
 
 ```bash
-# Set required variables in .env, then:
 POSTGRES_PASSWORD=your-secret-password \
 DATABASE_URL=postgresql://forge:your-secret-password@postgres:5432/forge \
 docker compose -f docker-compose.prod.yml --profile postgres up -d
 ```
+
+#### Production (build from source)
+
+If you prefer to build the image yourself:
+
+```bash
+cp .env.example .env
+# Edit .env — set WORKSPACE_ROOT, AI_PROVIDER, API keys, etc.
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+#### Production image details
 
 The production image:
 - Runs the Next.js standalone server (minimal footprint)
