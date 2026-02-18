@@ -12,25 +12,27 @@ export interface QAGateStatus {
  * Get repository by ID
  */
 export async function getRepository(id: string) {
-  return await db
-    .select()
-    .from(repositories)
-    .where(eq(repositories.id, id))
-    .limit(1)
-    .get();
+  return (
+    await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.id, id))
+      .limit(1)
+  )[0];
 }
 
 /**
  * Get latest QA run for a repository
  */
 export async function getLatestQARun(repositoryId: string) {
-  return await db
-    .select()
-    .from(qaRuns)
-    .where(eq(qaRuns.repositoryId, repositoryId))
-    .orderBy(desc(qaRuns.startedAt))
-    .limit(1)
-    .get();
+  return (
+    await db
+      .select()
+      .from(qaRuns)
+      .where(eq(qaRuns.repositoryId, repositoryId))
+      .orderBy(desc(qaRuns.startedAt))
+      .limit(1)
+  )[0];
 }
 
 /**

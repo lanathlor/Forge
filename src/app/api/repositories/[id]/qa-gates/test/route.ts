@@ -5,12 +5,13 @@ import { eq } from 'drizzle-orm';
 import { execAsync, type CommandError } from '@/lib/qa-gates/command-executor';
 
 async function getRepository(id: string) {
-  return db
-    .select()
-    .from(repositories)
-    .where(eq(repositories.id, id))
-    .limit(1)
-    .get();
+  return (
+    await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.id, id))
+      .limit(1)
+  )[0];
 }
 
 async function executeGateCommand(command: string, cwd: string) {

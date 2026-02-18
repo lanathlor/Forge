@@ -25,17 +25,18 @@ interface ExecuteGateParams {
  * Create a gate execution record in the database
  */
 async function createGateExecution(runId: string, gate: QAGateConfig) {
-  return await db
-    .insert(qaGateExecutions)
-    .values({
-      runId,
-      gateName: gate.name,
-      command: gate.command,
-      status: 'running',
-      order: gate.order || 0,
-    })
-    .returning()
-    .get();
+  return (
+    await db
+      .insert(qaGateExecutions)
+      .values({
+        runId,
+        gateName: gate.name,
+        command: gate.command,
+        status: 'running',
+        order: gate.order || 0,
+      })
+      .returning()
+  )[0];
 }
 
 /**
@@ -94,6 +95,10 @@ export async function executeGate({
 
   // Create gate execution record
   const execution = await createGateExecution(runId, gate);
+
+  if (!execution) {
+    throw new Error(`Failed to create gate execution record for gate "${gate.name}"`);
+  }
 
   try {
     // Execute command with timeout using container path

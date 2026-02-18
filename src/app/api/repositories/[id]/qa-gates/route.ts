@@ -10,7 +10,7 @@ async function fetchRepository(id: string) {
     .from(repositories)
     .where(eq(repositories.id, id))
     .limit(1)
-    .get();
+    .then((rows) => rows[0]);
 
   return Promise.race([
     repoPromise,

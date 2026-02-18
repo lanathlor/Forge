@@ -15,20 +15,21 @@ export async function PUT(
     const { id } = await params;
     const data = await request.json();
 
-    const gate = await db
-      .update(qaGateConfigs)
-      .set({
-        name: data.name,
-        enabled: data.enabled,
-        command: data.command,
-        timeout: data.timeout,
-        failOnError: data.failOnError,
-        order: data.order,
-        updatedAt: new Date(),
-      })
-      .where(eq(qaGateConfigs.id, id))
-      .returning()
-      .get();
+    const gate = (
+      await db
+        .update(qaGateConfigs)
+        .set({
+          name: data.name,
+          enabled: data.enabled,
+          command: data.command,
+          timeout: data.timeout,
+          failOnError: data.failOnError,
+          order: data.order,
+          updatedAt: new Date(),
+        })
+        .where(eq(qaGateConfigs.id, id))
+        .returning()
+    )[0];
 
     return NextResponse.json({ gate });
   } catch (error) {

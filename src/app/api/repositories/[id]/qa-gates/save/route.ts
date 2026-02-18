@@ -15,12 +15,13 @@ interface QAGateInput {
 }
 
 async function getRepository(id: string) {
-  return db
-    .select()
-    .from(repositories)
-    .where(eq(repositories.id, id))
-    .limit(1)
-    .get();
+  return (
+    await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.id, id))
+      .limit(1)
+  )[0];
 }
 
 function normalizeGate(gate: QAGateInput) {
