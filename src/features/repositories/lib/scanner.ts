@@ -15,18 +15,19 @@ interface CommandError extends Error {
  */
 function getBashPath(): string {
   const paths = [
-    '/bin/bash', // Docker/Alpine/Ubuntu
+    '/bin/bash', // Ubuntu / full Docker images
     '/run/current-system/sw/bin/bash', // NixOS
-    'bash', // Fallback to PATH
+    '/bin/sh', // Alpine Linux (no bash by default)
+    '/usr/bin/sh', // Some other environments
   ];
 
-  for (const path of paths) {
-    if (path === 'bash' || existsSync(path)) {
-      return path;
+  for (const p of paths) {
+    if (existsSync(p)) {
+      return p;
     }
   }
 
-  return 'bash'; // Final fallback
+  return 'sh'; // Final fallback to PATH
 }
 
 /**
