@@ -70,7 +70,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
 # Compile the db-init script to plain JS for use in the runner
-RUN node_modules/.bin/esbuild src/db/init.ts \
+RUN pnpm exec esbuild src/db/init.ts \
       --bundle \
       --platform=node \
       --target=node20 \
