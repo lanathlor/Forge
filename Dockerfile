@@ -94,6 +94,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # curl for health checks, git for repository scanning
 RUN apk add --no-cache curl git
 
+# Enable corepack so pnpm/yarn are available for QA gate commands
+RUN corepack enable
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
