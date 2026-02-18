@@ -8,6 +8,8 @@ vi.mock('lucide-react', () => ({
   PackagePlus: (props: Record<string, unknown>) => (
     <svg data-testid="package-icon" {...props} />
   ),
+  Terminal: (props: Record<string, unknown>) => <svg data-testid="terminal-icon" {...props} />,
+  AlertTriangle: (props: Record<string, unknown>) => <svg data-testid="alert-icon" {...props} />,
   X: (props: Record<string, unknown>) => (
     <svg data-testid="x-icon" {...props} />
   ),
@@ -62,12 +64,25 @@ describe('GatePresets', () => {
     expect(screen.getAllByText('3 gates')).toHaveLength(3); // Python, Go, Rust
   });
 
-  it('calls onApplyPreset with gates when preset is selected', async () => {
+  it('shows confirmation before applying preset', async () => {
     const user = userEvent.setup();
     render(<GatePresets {...defaultProps} />);
 
     await user.click(screen.getByRole('button', { name: /presets/i }));
     await user.click(screen.getByText('JavaScript'));
+
+    // Should show confirmation, not directly apply
+    expect(defaultProps.onApplyPreset).not.toHaveBeenCalled();
+    expect(screen.getByText('Apply Preset')).toBeInTheDocument();
+  });
+
+  it('calls onApplyPreset after confirmation', async () => {
+    const user = userEvent.setup();
+    render(<GatePresets {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: /presets/i }));
+    await user.click(screen.getByText('JavaScript'));
+    await user.click(screen.getByText('Apply Preset'));
 
     expect(defaultProps.onApplyPreset).toHaveBeenCalledWith([
       expect.objectContaining({ name: 'ESLint', command: 'npm run lint' }),

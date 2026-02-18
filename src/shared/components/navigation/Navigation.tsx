@@ -315,7 +315,7 @@ function NavItemButton({
   const sharedClassName = cn(
     'group relative flex w-full items-center gap-3 rounded-lg text-sm font-medium',
     'transition-all duration-200 ease-in-out',
-    'hover:bg-surface-interactive',
+    'hover:bg-surface-interactive active:scale-[0.98]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset',
     // Priority-based sizing
     isPrimary ? 'px-3 py-2.5' : 'px-3 py-2',

@@ -22,18 +22,14 @@ describe('RepositoryErrorState', () => {
     render(
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={false} />
     );
-    expect(
-      screen.getByRole('button', { name: 'Try Again' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('renders Rescanning... button when rescanning', () => {
+  it('renders retrying state when rescanning', () => {
     render(
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={true} />
     );
-    expect(
-      screen.getByRole('button', { name: 'Rescanning...' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /rescanning/i })).toBeInTheDocument();
   });
 
   it('calls onRescan when button is clicked', async () => {
@@ -42,7 +38,7 @@ describe('RepositoryErrorState', () => {
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={false} />
     );
 
-    const button = screen.getByRole('button', { name: 'Try Again' });
+    const button = screen.getByRole('button', { name: /try again/i });
     await user.click(button);
 
     expect(mockOnRescan).toHaveBeenCalledTimes(1);
@@ -53,7 +49,7 @@ describe('RepositoryErrorState', () => {
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={true} />
     );
 
-    const button = screen.getByRole('button', { name: 'Rescanning...' });
+    const button = screen.getByRole('button', { name: /rescanning/i });
     expect(button).toBeDisabled();
   });
 
@@ -62,15 +58,7 @@ describe('RepositoryErrorState', () => {
       <RepositoryErrorState onRescan={mockOnRescan} isRescanning={false} />
     );
 
-    const button = screen.getByRole('button', { name: 'Try Again' });
+    const button = screen.getByRole('button', { name: /try again/i });
     expect(button).not.toBeDisabled();
-  });
-
-  it('applies destructive styling to error message', () => {
-    render(
-      <RepositoryErrorState onRescan={mockOnRescan} isRescanning={false} />
-    );
-    const errorText = screen.getByText('Failed to load repositories');
-    expect(errorText).toHaveClass('text-destructive');
   });
 });

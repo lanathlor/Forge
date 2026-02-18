@@ -634,12 +634,14 @@ function MobileTab({
   return (
     <button
       onClick={onSel}
+      aria-label={`${repo.repositoryName}: ${c.label}${hasA ? ' - needs attention' : ''}${sel ? ' (selected)' : ''}`}
+      aria-current={sel ? 'true' : undefined}
       className={cn(
-        'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors duration-150 active:bg-slate-100 dark:active:bg-slate-800',
+        'flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors duration-150 min-h-[56px] active:bg-slate-100 dark:active:bg-slate-800',
         sel && 'bg-primary/5'
       )}
     >
-      <div className="relative">
+      <div className="relative" aria-hidden="true">
         <Icon className={cn('h-5 w-5', sel ? 'text-primary' : c.textColor)} />
         <span
           className={cn(
@@ -689,8 +691,11 @@ function MobileTabBar({
     more = repos.length > 4,
     stuck = alerts.size > 0;
   return (
-    <div className="safe-bottom fixed bottom-0 left-0 right-0 z-30 border-t bg-background/95 backdrop-blur-sm md:hidden">
-      <div className="flex items-stretch">
+    <nav
+      aria-label="Repository switcher"
+      className="safe-bottom fixed bottom-0 left-0 right-0 z-30 border-t bg-background/95 backdrop-blur-sm md:hidden"
+    >
+      <div className="flex items-stretch" role="tablist">
         {vis.map((r) => (
           <MobileTab
             key={r.repositoryId}
@@ -702,6 +707,7 @@ function MobileTabBar({
         ))}
         <button
           onClick={onExp}
+          aria-label={more ? `Show ${repos.length - 4} more repositories` : 'Show all repositories'}
           className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-3 py-2 transition-colors active:bg-slate-100 dark:active:bg-slate-800"
         >
           <div className="relative">
@@ -724,7 +730,7 @@ function MobileTabBar({
           </span>
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
 
@@ -810,7 +816,11 @@ function SheetCard({
   const sev = getSeverity(alert?.severity || 'low');
   const dur = useLiveStuckDuration(alert);
   return (
-    <button onClick={onSel} className={getCardClasses(c, sel, hasA, sev)}>
+    <button
+      onClick={onSel}
+      aria-label={`${repo.repositoryName}: ${c.label}${hasA ? ' - needs attention' : ''}`}
+      className={getCardClasses(c, sel, hasA, sev)}
+    >
       <CardIcon c={c} />
       <CardInfo
         c={c}
@@ -825,6 +835,7 @@ function SheetCard({
             'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold',
             sev.badge
           )}
+          aria-hidden="true"
         >
           !
         </span>
@@ -864,8 +875,12 @@ function MobileSheet({
       <div
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
         onClick={onClose}
+        aria-hidden="true"
       />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Switch repository"
         className={cn(
           'fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-background shadow-xl transition-transform duration-200 ease-out md:hidden',
           drag && 'transition-none'
@@ -891,6 +906,7 @@ function MobileSheet({
             variant="ghost"
             size="sm"
             onClick={onClose}
+            aria-label="Close repository switcher"
             className="h-8 w-8 rounded-full p-0"
           >
             <X className="h-4 w-4" />

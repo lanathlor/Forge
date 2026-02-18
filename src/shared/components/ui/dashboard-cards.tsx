@@ -9,12 +9,23 @@ const { memo } = React;
 // Skeleton Component (for loading states)
 // =============================================================================
 
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Use shimmer for a more polished loading effect */
+  variant?: 'pulse' | 'shimmer';
+}
+
 const Skeleton = memo(
-  React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ className, ...props }, ref) => (
+  React.forwardRef<HTMLDivElement, SkeletonProps>(
+    ({ className, variant = 'pulse', ...props }, ref) => (
       <div
         ref={ref}
-        className={cn('animate-pulse rounded-md bg-muted', className)}
+        className={cn(
+          'rounded-md',
+          variant === 'shimmer'
+            ? 'animate-skeleton-shimmer'
+            : 'animate-pulse bg-muted',
+          className
+        )}
         {...props}
       />
     )
@@ -145,12 +156,12 @@ const StatCardSkeleton = memo(
       {...props}
     >
       <div className="flex items-start justify-between">
-        <Skeleton className="h-10 w-10 rounded-lg" />
-        <Skeleton className="h-5 w-16 rounded-full" />
+        <Skeleton variant="shimmer" className="h-10 w-10 rounded-lg" />
+        <Skeleton variant="shimmer" className="h-5 w-16 rounded-full" />
       </div>
       <div className="mt-4 space-y-2">
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-4 w-32" />
+        <Skeleton variant="shimmer" className="h-8 w-24" />
+        <Skeleton variant="shimmer" className="h-4 w-32" />
       </div>
     </div>
   ))
@@ -300,15 +311,15 @@ const ActionCardSkeleton = memo(
       {...props}
     >
       <div className="flex items-start gap-4">
-        <Skeleton className="h-12 w-12 shrink-0 rounded-lg" />
+        <Skeleton variant="shimmer" className="h-12 w-12 shrink-0 rounded-lg" />
         <div className="flex-1 space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-4 w-48" />
+          <Skeleton variant="shimmer" className="h-5 w-32" />
+          <Skeleton variant="shimmer" className="h-4 w-48" />
         </div>
       </div>
       {hasAction && (
         <div className="mt-4 border-t border-border pt-4">
-          <Skeleton className="h-9 w-24" />
+          <Skeleton variant="shimmer" className="h-9 w-24" />
         </div>
       )}
     </div>
@@ -629,13 +640,16 @@ interface ListCardSkeletonProps {
   hasHeaderAction: boolean;
 }
 
-const ListCardSkeletonItem = memo(() => (
-  <div className="border-b border-border p-4 last:border-b-0">
+const ListCardSkeletonItem = memo(({ index }: { index: number }) => (
+  <div
+    className="border-b border-border p-4 last:border-b-0 animate-fade-in-up"
+    style={{ animationDelay: `${index * 50}ms` }}
+  >
     <div className="flex items-center gap-3">
-      <Skeleton className="h-8 w-8 rounded-full" />
+      <Skeleton variant="shimmer" className="h-8 w-8 rounded-full" />
       <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
+        <Skeleton variant="shimmer" className="h-4 w-3/4" />
+        <Skeleton variant="shimmer" className="h-3 w-1/2" />
       </div>
     </div>
   </div>
@@ -668,10 +682,10 @@ const ListCardSkeleton = memo(
         {hasHeader && (
           <div className="flex items-center justify-between border-b border-border p-4">
             <div className="space-y-1">
-              <Skeleton className="h-5 w-32" />
-              {hasDescription && <Skeleton className="h-4 w-48" />}
+              <Skeleton variant="shimmer" className="h-5 w-32" />
+              {hasDescription && <Skeleton variant="shimmer" className="h-4 w-48" />}
             </div>
-            {hasHeaderAction && <Skeleton className="h-8 w-20" />}
+            {hasHeaderAction && <Skeleton variant="shimmer" className="h-8 w-20" />}
           </div>
         )}
         <div
@@ -682,7 +696,7 @@ const ListCardSkeleton = memo(
           }}
         >
           {Array.from({ length: loadingItemCount }).map((_, i) => (
-            <ListCardSkeletonItem key={i} />
+            <ListCardSkeletonItem key={i} index={i} />
           ))}
         </div>
       </div>

@@ -72,7 +72,7 @@ export const PlanCard = React.memo(function PlanCard({
     return (
       <Card
         className={cn(
-          'group flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/40',
+          'group flex items-center gap-4 px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-muted/40 active:scale-[0.995]',
           isActive && 'border-l-2 border-l-amber-500'
         )}
         onClick={() => onView(plan.id)}
@@ -165,7 +165,7 @@ export const PlanCard = React.memo(function PlanCard({
   return (
     <Card
       className={cn(
-        'group flex cursor-pointer flex-col transition-all hover:border-primary/20 hover:shadow-md',
+        'group flex flex-col cursor-pointer transition-all duration-150 hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm',
         isActive && 'border-l-2 border-l-amber-500'
       )}
       onClick={() => onView(plan.id)}

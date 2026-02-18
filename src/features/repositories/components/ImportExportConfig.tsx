@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
-import { Download, Upload } from 'lucide-react';
+import { Download, Upload, Check, AlertTriangle } from 'lucide-react';
 import type { QAGate } from '../types/qa-gates';
 
 interface ImportExportConfigProps {
@@ -19,6 +19,8 @@ export function ImportExportConfig({
   onImport,
 }: ImportExportConfigProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exportDone, setExportDone] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   function handleExport() {
     const config = {
@@ -37,12 +39,15 @@ export function ImportExportConfig({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    setExportDone(true);
+    setTimeout(() => setExportDone(false), 2000);
   }
 
   function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setImportError(null);
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -51,9 +56,13 @@ export function ImportExportConfig({
           onImport(content.qaGates);
         } else if (Array.isArray(content)) {
           onImport(content);
+        } else {
+          setImportError('Invalid config format');
+          setTimeout(() => setImportError(null), 3000);
         }
       } catch {
-        console.error('Failed to parse config file');
+        setImportError('Failed to parse file');
+        setTimeout(() => setImportError(null), 3000);
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -69,8 +78,17 @@ export function ImportExportConfig({
         title="Export configuration as .forge.json"
         className="gap-1.5"
       >
-        <Download className="h-4 w-4" />
-        Export
+        {exportDone ? (
+          <>
+            <Check className="h-4 w-4 text-green-600" />
+            <span className="hidden sm:inline">Exported</span>
+          </>
+        ) : (
+          <>
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Export</span>
+          </>
+        )}
       </Button>
       <Button
         variant="outline"
@@ -79,8 +97,17 @@ export function ImportExportConfig({
         title="Import configuration from .forge.json"
         className="gap-1.5"
       >
-        <Upload className="h-4 w-4" />
-        Import
+        {importError ? (
+          <>
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <span className="hidden sm:inline text-amber-600">{importError}</span>
+          </>
+        ) : (
+          <>
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Import</span>
+          </>
+        )}
       </Button>
       <input
         ref={fileInputRef}

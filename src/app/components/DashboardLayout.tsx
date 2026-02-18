@@ -19,7 +19,6 @@ import { Loader2 } from 'lucide-react';
 import { useGetSessionQuery } from '@/features/sessions/store/sessionsApi';
 import {
   SessionControlsBar,
-  SessionHistoryModal,
   SessionSummaryModal,
 } from '@/features/sessions/components';
 import { LivePlanMonitor } from '@/features/plans/components';
@@ -32,6 +31,11 @@ import { KeyboardShortcutsFAB } from '@/shared/components/KeyboardShortcutsFAB';
 import { TasksTabContent } from './DashboardLayout/TasksTabContent';
 
 // Lazy load heavy components for better code splitting
+const SessionHistoryModal = lazy(() =>
+  import('@/features/sessions/components/SessionHistoryModal').then((mod) => ({
+    default: mod.SessionHistoryModal,
+  }))
+);
 const SessionSummary = lazy(() =>
   import('@/features/sessions/components').then((mod) => ({
     default: mod.SessionSummary,
@@ -234,6 +238,7 @@ function useRegisterDashboardShortcuts(params: {
  * - Performance optimized with React.memo and lazy loading
  */
 
+// eslint-disable-next-line max-lines-per-function
 export function DashboardLayout({
   sessionId,
   repositoryId,
@@ -276,7 +281,6 @@ export function DashboardLayout({
 
   const session = sessionData?.session;
 
-  // Count active plans for the tab badge
   const activePlanCount = useMemo(() => {
     if (!plansData?.plans) return 0;
     return plansData.plans.filter(
@@ -284,7 +288,6 @@ export function DashboardLayout({
     ).length;
   }, [plansData]);
 
-  // Navigate to initial task from snapshot resume
   useEffect(() => {
     if (initialTaskId) {
       setSelectedTaskId(initialTaskId);
@@ -292,7 +295,6 @@ export function DashboardLayout({
     }
   }, [initialTaskId, onInitialTaskConsumed]);
 
-  // Report task selection to parent for snapshot tracking
   const handleSelectTask = useCallback(
     (taskId: string | null) => {
       setSelectedTaskId(taskId);
@@ -399,6 +401,26 @@ export function DashboardLayout({
     [activeTab, handleTabChange]
   );
 
+  const handleOpenHistory = useCallback(() => setShowHistoryModal(true), []);
+  const handleCloseHistory = useCallback(() => setShowHistoryModal(false), []);
+  const handleSetReviewPlan = useCallback((planId: string) => setReviewPlanId(planId), []);
+  const handleCloseReview = useCallback(() => setReviewPlanId(null), []);
+  const handleCloseSummary = useCallback(() => setShowSummaryModal(false), []);
+  const handleLaunchDialogChange = useCallback((open: boolean) => {
+    setShowLaunchDialog(open);
+    if (!open) setLaunchPlan(null);
+  }, []);
+  const handleSummaryTaskClick = useCallback((taskId: string) => {
+    handleSelectTask(taskId);
+    handleTabChange('tasks');
+  }, [handleSelectTask, handleTabChange]);
+  const handleReviewLaunch = useCallback(() => {
+    if (reviewPlanId) {
+      setReviewPlanId(null);
+      handleOpenLaunch(reviewPlanId);
+    }
+  }, [reviewPlanId, handleOpenLaunch]);
+
   // Register keyboard shortcuts
   useRegisterDashboardShortcuts({
     registerShortcut,
@@ -425,7 +447,7 @@ export function DashboardLayout({
               <SessionControlsBar
                 session={session}
                 repositoryName={repositoryName}
-                onOpenHistory={() => setShowHistoryModal(true)}
+                onOpenHistory={handleOpenHistory}
                 onSessionEnded={handleSessionEnded}
               />
             </ErrorBoundary>
@@ -548,7 +570,7 @@ export function DashboardLayout({
                       <PlanExecutionView
                         planId={selectedPlanId}
                         onBack={handleBackToList}
-                        onReview={(planId) => setReviewPlanId(planId)}
+                        onReview={handleSetReviewPlan}
                         justLaunched={justLaunchedPlanId === selectedPlanId}
                       />
                     </div>
@@ -558,7 +580,7 @@ export function DashboardLayout({
                         <PlanDetailView
                           planId={selectedPlanId}
                           onBack={handleBackToList}
-                          onReview={(planId) => setReviewPlanId(planId)}
+                          onReview={handleSetReviewPlan}
                           onLaunch={handleOpenLaunch}
                           onViewExecution={handleViewExecution}
                         />
@@ -567,11 +589,8 @@ export function DashboardLayout({
                         <PlanRefinementChat
                           planId={reviewPlanId}
                           open={!!reviewPlanId}
-                          onClose={() => setReviewPlanId(null)}
-                          onLaunch={() => {
-                            setReviewPlanId(null);
-                            handleOpenLaunch(reviewPlanId);
-                          }}
+                          onClose={handleCloseReview}
+                          onLaunch={handleReviewLaunch}
                         />
                       )}
                     </div>
@@ -611,10 +630,7 @@ export function DashboardLayout({
                 >
                   <SessionSummary
                     sessionId={sessionId}
-                    onTaskClick={(taskId) => {
-                      handleSelectTask(taskId);
-                      handleTabChange('tasks');
-                    }}
+                    onTaskClick={handleSummaryTaskClick}
                   />
                 </Suspense>
               </ErrorBoundary>
@@ -628,10 +644,7 @@ export function DashboardLayout({
                 plan={launchPlan}
                 repositoryId={repositoryId}
                 open={showLaunchDialog}
-                onOpenChange={(open) => {
-                  setShowLaunchDialog(open);
-                  if (!open) setLaunchPlan(null);
-                }}
+                onOpenChange={handleLaunchDialogChange}
                 onLaunched={handleLaunched}
                 onLaunchAndSwitch={handleLaunchAndSwitch}
               />
@@ -639,20 +652,22 @@ export function DashboardLayout({
           )}
 
           {/* Session History Modal */}
-          <SessionHistoryModal
-            repositoryId={repositoryId}
-            repositoryName={repositoryName}
-            currentSessionId={sessionId}
-            isOpen={showHistoryModal}
-            onClose={() => setShowHistoryModal(false)}
-            onSelectSession={handleSelectSession}
-          />
+          <Suspense fallback={null}>
+            <SessionHistoryModal
+              repositoryId={repositoryId}
+              repositoryName={repositoryName}
+              currentSessionId={sessionId}
+              isOpen={showHistoryModal}
+              onClose={handleCloseHistory}
+              onSelectSession={handleSelectSession}
+            />
+          </Suspense>
 
           {/* Session Summary Modal */}
           <SessionSummaryModal
             sessionId={sessionId}
             isOpen={showSummaryModal}
-            onClose={() => setShowSummaryModal(false)}
+            onClose={handleCloseSummary}
             onNewSession={handleNewSession}
           />
 

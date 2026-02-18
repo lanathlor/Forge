@@ -138,9 +138,9 @@ function getActionCardClasses(
     'min-h-[88px] sm:min-h-[96px]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
     isPrimary
-      ? 'border-accent-primary/20 shadow-sm hover:border-accent-primary/40 hover:shadow-md hover:bg-accent-primary/5'
-      : 'border-border hover:border-border-strong hover:shadow-sm',
-    isInteractive && !disabled && 'cursor-pointer',
+      ? 'border-accent-primary/20 shadow-sm hover:border-accent-primary/40 hover:shadow-md hover:bg-accent-primary/5 hover:-translate-y-0.5'
+      : 'border-border hover:border-border-strong hover:shadow-sm hover:-translate-y-px',
+    isInteractive && !disabled && 'cursor-pointer active:translate-y-0 active:shadow-none',
     disabled && 'pointer-events-none opacity-50',
     loading && 'animate-pulse'
   );
@@ -226,15 +226,18 @@ function ActionCard({ action, loading }: ActionCardProps) {
    SKELETON LOADER
    ============================================ */
 
-function ActionCardSkeleton() {
+function ActionCardSkeleton({ index = 0 }: { index?: number }) {
   return (
-    <div className="flex min-h-[88px] items-center gap-4 rounded-xl border border-border bg-card p-4 sm:min-h-[96px] sm:p-5">
-      <div className="h-12 w-12 animate-pulse rounded-xl bg-muted" />
+    <div
+      className="flex min-h-[88px] items-center gap-4 rounded-xl border border-border bg-card p-4 sm:min-h-[96px] sm:p-5 animate-fade-in-up"
+      style={{ animationDelay: `${index * 75}ms` }}
+    >
+      <div className="h-12 w-12 rounded-xl bg-muted animate-skeleton-shimmer" />
       <div className="flex flex-1 flex-col gap-2">
-        <div className="h-5 w-24 animate-pulse rounded bg-muted" />
-        <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+        <div className="h-5 w-24 rounded bg-muted animate-skeleton-shimmer" />
+        <div className="h-4 w-36 rounded bg-muted animate-skeleton-shimmer" />
       </div>
-      <div className="hidden h-5 w-12 animate-pulse rounded bg-muted sm:block" />
+      <div className="hidden h-5 w-12 rounded bg-muted animate-skeleton-shimmer sm:block" />
     </div>
   );
 }
@@ -336,10 +339,12 @@ export function QuickActions({
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <ActionCardSkeleton key={i} />
+              <ActionCardSkeleton key={i} index={i} />
             ))
-          : actions.map((action) => (
-              <ActionCard key={action.id} action={action} loading={loading} />
+          : actions.map((action, index) => (
+              <div key={action.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 60}ms` }}>
+                <ActionCard action={action} loading={loading} />
+              </div>
             ))}
       </div>
     </section>

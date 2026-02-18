@@ -248,6 +248,46 @@ const config: Config = {
           from: { transform: 'rotate(0deg)' },
           to: { transform: 'rotate(360deg)' },
         },
+        // Micro-interaction keyframes
+        'success-check': {
+          '0%': { transform: 'scale(0) rotate(-45deg)', opacity: '0' },
+          '50%': { transform: 'scale(1.2) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
+        },
+        'error-shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-4px)' },
+          '20%, 40%, 60%, 80%': { transform: 'translateX(4px)' },
+        },
+        'slide-in-up': {
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'slide-in-down': {
+          '0%': { transform: 'translateY(-8px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'scale-in': {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'collapse-in': {
+          '0%': { maxHeight: '0', opacity: '0', overflow: 'hidden' },
+          '100%': { maxHeight: 'var(--collapse-height, 500px)', opacity: '1', overflow: 'hidden' },
+        },
+        'collapse-out': {
+          '0%': { maxHeight: 'var(--collapse-height, 500px)', opacity: '1', overflow: 'hidden' },
+          '100%': { maxHeight: '0', opacity: '0', overflow: 'hidden' },
+        },
+        press: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(0.97)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
 
       animation: {
@@ -262,6 +302,16 @@ const config: Config = {
           'indeterminate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
         'skeleton-shimmer': 'skeleton-shimmer 1.6s linear infinite',
         spin: 'spin 1s linear infinite',
+        // Micro-interaction animations
+        'success-check': 'success-check 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards',
+        'error-shake': 'error-shake 0.5s ease-in-out',
+        'slide-in-up': 'slide-in-up 0.2s ease-out',
+        'slide-in-down': 'slide-in-down 0.2s ease-out',
+        'scale-in': 'scale-in 0.15s ease-out',
+        'fade-in': 'fade-in 0.15s ease-out',
+        'collapse-in': 'collapse-in 0.25s ease-out forwards',
+        'collapse-out': 'collapse-out 0.2s ease-in forwards',
+        press: 'press 0.15s ease-out',
       },
 
       transitionTimingFunction: {

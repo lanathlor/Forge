@@ -47,7 +47,7 @@ export type {
 export { useCountUp, easings } from './useCountUp';
 export type { UseCountUpOptions, UseCountUpReturn } from './useCountUp';
 
-// Keyboard navigation hooks
+// Keyboard & accessibility hooks
 export {
   useKeyboardShortcuts,
   useKeyboardShortcut,

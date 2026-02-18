@@ -537,4 +537,166 @@
   .animate-pulse-alert {
     animation: pulse-alert 0.8s ease-in-out infinite;
   }
+
+  /* Skeleton shimmer effect */
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Fade-in-up for staggered content appearance */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out forwards;
+    opacity: 0;
+  }
+
+  /* Progress bar indeterminate animation */
+  @keyframes progress-indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
+  }
+
+  .animate-progress-indeterminate {
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+  }
+
+  /* Spin-in for loading spinners */
+  @keyframes spin-in {
+    from {
+      opacity: 0;
+      transform: rotate(-90deg) scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0) scale(1);
+    }
+  }
+
+  .animate-spin-in {
+    animation: spin-in 0.3s ease-out forwards;
+  }
+
+  /* ============================================
+     MICRO-INTERACTION UTILITIES
+     ============================================ */
+
+  /* Interactive hover lift effect for cards */
+  .hover-lift {
+    transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .hover-lift:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Interactive press effect for buttons */
+  .active-press:active {
+    transform: scale(0.97);
+  }
+
+  /* Smooth expand/collapse for sections */
+  .animate-expand {
+    animation: collapse-in 0.25s ease-out forwards;
+  }
+  .animate-collapse {
+    animation: collapse-out 0.2s ease-in forwards;
+  }
+
+  /* List item stagger animation helper */
+  .stagger-item {
+    animation: slide-in-up 0.2s ease-out both;
+  }
+  .stagger-item:nth-child(1) { animation-delay: 0ms; }
+  .stagger-item:nth-child(2) { animation-delay: 30ms; }
+  .stagger-item:nth-child(3) { animation-delay: 60ms; }
+  .stagger-item:nth-child(4) { animation-delay: 90ms; }
+  .stagger-item:nth-child(5) { animation-delay: 120ms; }
+  .stagger-item:nth-child(6) { animation-delay: 150ms; }
+  .stagger-item:nth-child(7) { animation-delay: 180ms; }
+  .stagger-item:nth-child(8) { animation-delay: 210ms; }
+  .stagger-item:nth-child(n+9) { animation-delay: 240ms; }
+
+  /* ============================================
+     KEYBOARD FOCUS INDICATORS
+     Visible focus rings for keyboard navigation.
+     Only shown for keyboard users (focus-visible).
+     ============================================ */
+
+  .focus-ring {
+    @apply outline-none ring-offset-2 ring-offset-background
+      focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .focus-ring-inset {
+    @apply outline-none
+      focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset;
+  }
+
+  /* List item keyboard focus state */
+  .list-item-focus {
+    @apply outline-none ring-1 ring-ring/40 bg-muted/60;
+  }
+
+  /* ============================================
+     PREFERS-REDUCED-MOTION
+     Respect user's motion preferences.
+     Disable all non-essential animations.
+     ============================================ */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    .hover-lift:hover {
+      transform: none;
+    }
+
+    .active-press:active {
+      transform: none;
+    }
+
+    .stagger-item {
+      animation: none;
+      opacity: 1;
+    }
+  }
 }

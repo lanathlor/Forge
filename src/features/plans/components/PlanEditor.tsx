@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -921,7 +921,7 @@ function PlanHeaderEditor({
 // Editor Phase Item
 // ---------------------------------------------------------------------------
 
-function EditorPhaseItem({
+const EditorPhaseItem = React.memo(function EditorPhaseItem({
   phase,
   phaseNumber,
   phaseTasks,
@@ -1132,13 +1132,13 @@ function EditorPhaseItem({
       )}
     </Card>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Editor Task Row
 // ---------------------------------------------------------------------------
 
-function EditorTaskRow({
+const EditorTaskRow = React.memo(function EditorTaskRow({
   task,
   allTasks,
   isEditable,
@@ -1319,7 +1319,7 @@ function EditorTaskRow({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Dependency Picker

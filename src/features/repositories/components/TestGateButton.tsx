@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog';
-import { Play, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Play, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 
 interface TestGateButtonProps {
   repositoryId: string;
@@ -111,6 +112,17 @@ export function TestGateButton({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               Test Gate: {gateName}
+              {result && result.status !== 'running' && (
+                result.status === 'passed' ? (
+                  <Badge className="h-5 border border-green-500/30 bg-green-500/15 px-2 text-xs font-semibold text-green-700 dark:text-green-400">
+                    Passed
+                  </Badge>
+                ) : (
+                  <Badge className="h-5 border border-red-500/30 bg-red-500/15 px-2 text-xs font-semibold text-red-700 dark:text-red-400">
+                    Failed
+                  </Badge>
+                )
+              )}
             </DialogTitle>
             <DialogDescription className="rounded-md bg-muted/50 p-2 font-mono text-xs">
               {command}
@@ -135,6 +147,9 @@ export function TestGateButton({
                         <span className="font-semibold text-green-600">
                           Passed
                         </span>
+                        {result.exitCode != null && (
+                          <span className="text-xs text-muted-foreground">(exit {result.exitCode})</span>
+                        )}
                       </>
                     )}
                     {result.status === 'failed' && (
@@ -143,12 +158,15 @@ export function TestGateButton({
                         <span className="font-semibold text-red-600">
                           Failed
                         </span>
+                        {result.exitCode != null && (
+                          <span className="text-xs text-muted-foreground">(exit {result.exitCode})</span>
+                        )}
                       </>
                     )}
                   </div>
                   {result.duration != null && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Duration:</span>
+                      <Clock className="h-3.5 w-3.5" />
                       <span className="font-mono font-semibold">
                         {(result.duration / 1000).toFixed(2)}s
                       </span>
@@ -178,6 +196,15 @@ export function TestGateButton({
                         {result.error}
                       </pre>
                     </div>
+                  </div>
+                )}
+
+                {result.status !== 'running' && (
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={handleTest} className="gap-1.5">
+                      <Play className="h-3.5 w-3.5" />
+                      Re-run
+                    </Button>
                   </div>
                 )}
               </>

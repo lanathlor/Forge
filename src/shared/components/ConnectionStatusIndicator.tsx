@@ -241,7 +241,7 @@ function StatusTooltip({
       {status !== 'connected' && isOnline && (
         <button
           onClick={onReconnect}
-          className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           Reconnect Now
         </button>
@@ -280,6 +280,7 @@ function StatusButton({
         canReconnect ? 'cursor-pointer' : 'cursor-default'
       )}
       title={config.description}
+      aria-label={`Connection status: ${config.label}. ${config.description}${canReconnect ? '. Click to reconnect' : ''}`}
     >
       <StatusDot
         color={config.dotColor}
@@ -328,6 +329,9 @@ export function ConnectionStatusIndicator({
       onMouseEnter={() => showDetails && setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {config.label}: {config.description}
+      </span>
       <StatusButton
         config={config}
         status={status}
@@ -367,9 +371,11 @@ export function ConnectionStatusDot({ className }: { className?: string }) {
       className={cn(
         'inline-flex h-6 w-6 items-center justify-center rounded-full',
         'transition-colors hover:bg-muted/50',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         className
       )}
       title={`${config.label}: ${config.description}`}
+      aria-label={`Connection status: ${config.label}`}
     >
       <StatusDot
         color={config.dotColor}
@@ -406,7 +412,8 @@ export function ConnectionStatusInline({ className }: { className?: string }) {
       {canReconnect && (
         <button
           onClick={reconnect}
-          className="ml-1 text-xs text-muted-foreground underline hover:no-underline"
+          className="ml-1 rounded text-xs text-muted-foreground underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Retry connection"
         >
           retry
         </button>

@@ -446,15 +446,16 @@ export function PlanList({
               </span>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {launchablePlans.slice(0, 3).map((plan) => (
-                <PlanLaunchCard
-                  key={plan.id}
-                  plan={plan}
-                  onLaunch={onLaunchPlan}
-                  onView={onViewPlan}
-                  onPause={(id) => pausePlan(id)}
-                  onResume={(id) => resumePlan(id)}
-                />
+              {launchablePlans.slice(0, 3).map((plan, index) => (
+                <div key={plan.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 60}ms` }}>
+                  <PlanLaunchCard
+                    plan={plan}
+                    onLaunch={onLaunchPlan}
+                    onView={onViewPlan}
+                    onPause={(id) => pausePlan(id)}
+                    onResume={(id) => resumePlan(id)}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -476,40 +477,42 @@ export function PlanList({
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {processedPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                variant="grid"
-                onView={onViewPlan}
-                onLaunch={onLaunchPlan}
-                onExecute={(id) => executePlan(id)}
-                onPause={(id) => pausePlan(id)}
-                onResume={(id) => resumePlan(id)}
-                onMarkReady={(id) =>
-                  updatePlan({ id, data: { status: 'ready' } })
-                }
-                onDelete={handleDelete}
-              />
+            {processedPlans.map((plan, index) => (
+              <div key={plan.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 40}ms` }}>
+                <PlanCard
+                  plan={plan}
+                  variant="grid"
+                  onView={onViewPlan}
+                  onLaunch={onLaunchPlan}
+                  onExecute={(id) => executePlan(id)}
+                  onPause={(id) => pausePlan(id)}
+                  onResume={(id) => resumePlan(id)}
+                  onMarkReady={(id) =>
+                    updatePlan({ id, data: { status: 'ready' } })
+                  }
+                  onDelete={handleDelete}
+                />
+              </div>
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {processedPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                variant="list"
-                onView={onViewPlan}
-                onLaunch={onLaunchPlan}
-                onExecute={(id) => executePlan(id)}
-                onPause={(id) => pausePlan(id)}
-                onResume={(id) => resumePlan(id)}
-                onMarkReady={(id) =>
-                  updatePlan({ id, data: { status: 'ready' } })
-                }
-                onDelete={handleDelete}
-              />
+            {processedPlans.map((plan, index) => (
+              <div key={plan.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
+                <PlanCard
+                  plan={plan}
+                  variant="list"
+                  onView={onViewPlan}
+                  onLaunch={onLaunchPlan}
+                  onExecute={(id) => executePlan(id)}
+                  onPause={(id) => pausePlan(id)}
+                  onResume={(id) => resumePlan(id)}
+                  onMarkReady={(id) =>
+                    updatePlan({ id, data: { status: 'ready' } })
+                  }
+                  onDelete={handleDelete}
+                />
+              </div>
             ))}
           </div>
         )}

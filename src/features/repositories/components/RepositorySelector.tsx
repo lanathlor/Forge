@@ -704,10 +704,38 @@ export function RepositorySelector({
   // Loading state
   if (isLoading) {
     return (
-      <Card className="flex h-full items-center justify-center p-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <RefreshCw className="h-4 w-4 animate-spin" />
-          <span>Loading repositories...</span>
+      <Card className="h-full flex flex-col overflow-hidden">
+        {/* Skeleton header */}
+        <div className="flex-shrink-0 p-2 border-b border-border/50">
+          <div className="flex items-center gap-2 mb-2 px-1">
+            <div className="h-4 w-20 rounded bg-muted animate-skeleton-shimmer" />
+            <div className="flex-1" />
+            <div className="h-5 w-5 rounded bg-muted animate-skeleton-shimmer" />
+          </div>
+          <div className="h-8 rounded-md bg-muted animate-skeleton-shimmer" />
+        </div>
+        {/* Skeleton repo rows */}
+        <div className="flex-1 p-1.5">
+          <div className="flex items-center gap-2 px-3 py-1.5 mb-1">
+            <div className="h-3 w-3 rounded bg-muted animate-skeleton-shimmer" />
+            <div className="h-3 w-20 rounded bg-muted animate-skeleton-shimmer" />
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg animate-fade-in-up"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="h-7 w-7 rounded-md bg-muted animate-skeleton-shimmer flex-shrink-0" />
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="h-4 rounded bg-muted animate-skeleton-shimmer" style={{ width: `${55 + (i % 3) * 15}%` }} />
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-muted animate-skeleton-shimmer" />
+                  <div className="h-3 w-12 rounded bg-muted animate-skeleton-shimmer" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </Card>
     );

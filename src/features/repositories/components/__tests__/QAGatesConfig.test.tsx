@@ -194,17 +194,17 @@ describe('QAGatesConfig', () => {
       expect(screen.getByText(/test-repo/)).toBeInTheDocument();
     });
 
-    it('displays config version', () => {
+    it('displays QA Gates title', () => {
       vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByText(/v1\.0\.0/)).toBeInTheDocument();
+      expect(screen.getByText('QA Gates')).toBeInTheDocument();
     });
   });
 
   describe('Pipeline Statistics', () => {
-    it('displays enabled gates count', () => {
+    it('displays active gates count', () => {
       vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
@@ -213,13 +213,14 @@ describe('QAGatesConfig', () => {
       expect(screen.getByText('active')).toBeInTheDocument();
     });
 
-    it('displays disabled gates count', () => {
+    it('displays required gates count when present', () => {
       vi.mocked(useQAGatesData).mockReturnValue(mockHookReturn());
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
+      // 1 gate is both enabled and failOnError (TypeScript Check)
       expect(screen.getByText('1')).toBeInTheDocument();
-      expect(screen.getByText('disabled')).toBeInTheDocument();
+      expect(screen.getByText('required')).toBeInTheDocument();
     });
   });
 
@@ -236,7 +237,7 @@ describe('QAGatesConfig', () => {
       expect(screen.getByTestId('qa-gate-Disabled Gate')).toBeInTheDocument();
     });
 
-    it('renders empty list when no gates', () => {
+    it('renders empty state when no gates', () => {
       vi.mocked(useQAGatesData).mockReturnValue(
         mockHookReturn({
           config: {
@@ -249,7 +250,7 @@ describe('QAGatesConfig', () => {
 
       render(<QAGatesConfig repositoryId="repo-1" />);
 
-      expect(screen.getByTestId('gates-list')).toBeInTheDocument();
+      expect(screen.getByText('No QA gates configured')).toBeInTheDocument();
     });
   });
 

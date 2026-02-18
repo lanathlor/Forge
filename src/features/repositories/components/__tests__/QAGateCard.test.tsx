@@ -307,12 +307,12 @@ describe('QAGateCard', () => {
       expect(onToggle).toHaveBeenCalledWith('TypeScript Check', false);
     });
 
-    it('calls onDelete when delete button is clicked', async () => {
+    it('calls onDelete after confirmation when delete button is clicked', async () => {
       const onDelete = vi.fn();
       const user = userEvent.setup();
       render(<QAGateCard {...defaultProps} onDelete={onDelete} />);
 
-      // The delete button is the last button in the actions area with a Trash2 icon
+      // Find the trash/delete button (not the switch, not the test button)
       const buttons = screen.getAllByRole('button');
       // Find a button that is not the switch, not the test button, and not the toggle
       const trashButton = buttons.find((b) => {
@@ -323,7 +323,20 @@ describe('QAGateCard', () => {
           !b.hasAttribute('data-testid')
         );
       });
-      if (trashButton) await user.click(trashButton);
+      expect(trashButton).toBeDefined();
+
+      // First click shows confirmation
+      await user.click(trashButton!);
+      expect(onDelete).not.toHaveBeenCalled();
+
+      // Find the confirm delete button (destructive variant)
+      const confirmButtons = screen.getAllByRole('button');
+      const confirmButton = confirmButtons.find(b =>
+        b.classList.contains('bg-destructive') || b.className.includes('destructive')
+      );
+      if (confirmButton) {
+        await user.click(confirmButton);
+      }
 
       expect(onDelete).toHaveBeenCalledWith('TypeScript Check');
     });

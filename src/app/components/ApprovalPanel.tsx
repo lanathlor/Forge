@@ -19,7 +19,6 @@ import {
   FileText,
   Plus,
   Minus,
-  ChevronDown,
   ChevronRight,
   Shield,
   Eye,
@@ -106,20 +105,23 @@ function PreFlightChecklist({
           return (
             <button
               key={item.id}
+              role="checkbox"
+              aria-checked={isChecked}
+              aria-label={`${item.label}: ${item.description}`}
               onClick={() => !isDisabled && onToggle(item.id)}
               disabled={isDisabled}
               className={cn(
-                'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors',
-                'hover:bg-muted/50',
+                'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-all duration-150',
+                'hover:bg-muted/50 active:scale-[0.99]',
                 isDisabled && 'cursor-default opacity-80'
               )}
             >
               <div
                 className={cn(
-                  'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors',
+                  'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-all duration-200',
                   isChecked
-                    ? 'border-emerald-600 bg-emerald-600 text-white'
-                    : 'border-border',
+                    ? 'border-emerald-600 bg-emerald-600 text-white scale-110'
+                    : 'border-border scale-100',
                   !isChecked && !isDisabled && 'hover:border-muted-foreground'
                 )}
               >
@@ -184,6 +186,8 @@ function FileChangeSummary({ filesChanged }: { filesChanged: FileChange[] }) {
       <button
         onClick={() => setExpanded(!expanded)}
         className="group flex w-full items-center justify-between gap-2 text-left"
+        aria-expanded={expanded}
+        aria-label={`Files changed: ${fileCount} file${fileCount !== 1 ? 's' : ''}, ${insertions} additions, ${deletions} deletions`}
       >
         <div className="flex items-center gap-2">
           <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -204,12 +208,8 @@ function FileChangeSummary({ filesChanged }: { filesChanged: FileChange[] }) {
             </span>
           </div>
         </div>
-        <span className="text-muted-foreground transition-colors group-hover:text-foreground">
-          {expanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+        <span className="text-muted-foreground transition-all duration-150 group-hover:text-foreground">
+          <ChevronRight className={cn('h-4 w-4 transition-transform duration-200', expanded && 'rotate-90')} />
         </span>
       </button>
 
@@ -228,11 +228,11 @@ function FileChangeSummary({ filesChanged }: { filesChanged: FileChange[] }) {
 
       {/* Expanded file list */}
       {expanded && (
-        <div className="max-h-48 space-y-0.5 overflow-y-auto rounded-md border bg-muted/20 p-2">
+        <div className="max-h-48 space-y-0.5 overflow-y-auto rounded-md border bg-muted/20 p-2 animate-scale-in">
           {filesChanged.map((f) => (
             <div
               key={f.path}
-              className="flex items-center gap-2 rounded px-1 py-1 text-xs hover:bg-muted/40"
+              className="flex items-center gap-2 rounded px-1 py-1 text-xs transition-colors duration-100 hover:bg-muted/40"
             >
               <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
               <span
@@ -424,17 +424,17 @@ function ActionButtons({
         variant="outline"
         onClick={onReject}
         disabled={isLoading}
-        className="flex-1 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+        className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 hover:shadow-sm dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
       >
-        <ThumbsDown className="mr-2 h-4 w-4" />
+        <ThumbsDown className="h-4 w-4 mr-2 transition-transform group-hover:-rotate-12" />
         Reject &amp; Revert
       </Button>
       <Button
         onClick={onApprove}
         disabled={isLoading || !canApprove}
-        className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+        className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-500/25 dark:bg-emerald-700 dark:hover:bg-emerald-600"
       >
-        <ThumbsUp className="mr-2 h-4 w-4" />
+        <ThumbsUp className="h-4 w-4 mr-2 transition-transform group-hover:rotate-12" />
         Approve Changes
       </Button>
     </div>
@@ -447,8 +447,8 @@ function ActionButtons({
 
 function SuccessFeedback({ message }: { message: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300">
-      <CheckCircle className="h-4 w-4 flex-shrink-0" />
+    <div role="status" className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300">
+      <CheckCircle className="h-4 w-4 flex-shrink-0 animate-success-check" />
       {message}
     </div>
   );
@@ -456,7 +456,7 @@ function SuccessFeedback({ message }: { message: string }) {
 
 function ErrorFeedback({ message }: { message: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
+    <div role="alert" className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300 animate-error-shake">
       <XCircle className="h-4 w-4 flex-shrink-0" />
       {message}
     </div>

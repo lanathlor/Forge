@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, type JSX } from 'react';
+import React, { useState, useEffect, useRef, useCallback, type JSX } from 'react';
 import {
   Tabs,
   TabsList,
@@ -30,8 +30,28 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { DiffViewer } from '@/features/diff-viewer/components/DiffViewer';
-import { QAGateResults } from '@/features/qa-gates/components/QAGateResults';
+import dynamic from 'next/dynamic';
+
+// Lazy load Monaco-based DiffViewer (~5MB) and QAGateResults
+const DiffViewer = dynamic(
+  () => import('@/features/diff-viewer/components/DiffViewer').then(m => ({ default: m.DiffViewer })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full min-h-[200px]">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-xs">Loading diff viewer...</span>
+        </div>
+      </div>
+    ),
+  },
+);
+
+const QAGateResults = dynamic(
+  () => import('@/features/qa-gates/components/QAGateResults').then(m => ({ default: m.QAGateResults })),
+  { ssr: false },
+);
 import { ApprovalPanel } from './ApprovalPanel';
 import { TaskOutput } from './TaskOutput';
 import { cn } from '@/shared/lib/utils';
@@ -243,7 +263,7 @@ function CopyButton({ text }: { text: string }) {
 // Panel Header
 // ---------------------------------------------------------------------------
 
-function PanelHeader({
+const PanelHeader = React.memo(function PanelHeader({
   task,
   elapsed,
   onClose,
@@ -325,7 +345,7 @@ function PanelHeader({
       </h2>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Overview Tab
@@ -420,7 +440,7 @@ function FileChangeSummary({ files }: { files: FileChange[] }) {
   );
 }
 
-function OverviewTab({ task }: { task: Task }) {
+const OverviewTab = React.memo(function OverviewTab({ task }: { task: Task }) {
   const created = new Date(task.createdAt);
   const started = task.startedAt ? new Date(task.startedAt) : null;
   const completed = task.completedAt ? new Date(task.completedAt) : null;
@@ -516,7 +536,7 @@ function OverviewTab({ task }: { task: Task }) {
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Changes Tab
@@ -755,8 +775,46 @@ export function TaskDetailPanel({
     >
       {/* Loading State */}
       {loading && (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex-1 flex flex-col animate-fade-in-up">
+          {/* Skeleton header */}
+          <div className="flex-shrink-0 border-b bg-card px-4 py-3 sm:px-5 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-muted animate-skeleton-shimmer" />
+                <div className="h-5 w-20 rounded-full bg-muted animate-skeleton-shimmer" />
+                <div className="h-4 w-14 rounded bg-muted animate-skeleton-shimmer" />
+              </div>
+              <div className="h-7 w-7 rounded-md bg-muted animate-skeleton-shimmer" />
+            </div>
+            <div className="h-4 w-3/4 rounded bg-muted animate-skeleton-shimmer" />
+          </div>
+          {/* Skeleton tabs */}
+          <div className="flex-shrink-0 border-b px-4 py-2">
+            <div className="flex items-center gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-6 w-16 rounded bg-muted animate-skeleton-shimmer" />
+              ))}
+            </div>
+          </div>
+          {/* Skeleton content */}
+          <div className="flex-1 p-4 space-y-5">
+            <div className="space-y-2">
+              <div className="h-3 w-16 rounded bg-muted animate-skeleton-shimmer" />
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="h-4 w-full rounded bg-muted animate-skeleton-shimmer" />
+                <div className="h-4 w-2/3 rounded bg-muted animate-skeleton-shimmer" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 w-20 rounded bg-muted animate-skeleton-shimmer" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="h-3 w-16 rounded bg-muted animate-skeleton-shimmer" />
+                  <div className="h-3 w-32 rounded bg-muted animate-skeleton-shimmer" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

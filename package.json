@@ -46,6 +46,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.1.2",
+    "react-window": "^1.8.11",
     "tailwind-merge": "^2.5.5",
     "zod": "^3.24.1"
   },
@@ -75,7 +76,6 @@
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
-    "react-window": "^1.8.11",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",

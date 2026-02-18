@@ -409,6 +409,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
             multiple
             className="hidden"
             onChange={handleFileSelect}
+            aria-label="Attach files"
           />
 
           {/* Spacer */}
@@ -436,6 +437,9 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder="Describe the task, feature, or bug fix..."
+          aria-label="Task prompt"
+          aria-describedby={error ? 'prompt-error' : undefined}
+          aria-invalid={error ? true : undefined}
           className={cn(
             'w-full bg-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground/50',
             'resize-none text-sm leading-relaxed focus:outline-none',
@@ -466,6 +470,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
                   type="button"
                   onClick={() => removeAttachment(i)}
                   className="ml-0.5 transition-colors hover:text-destructive"
+                  aria-label={`Remove attachment ${att.name}`}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -476,7 +481,7 @@ export function PromptInput({ sessionId, onTaskCreated }: PromptInputProps) {
 
         {/* Error message */}
         {error && (
-          <div className="mx-4 mb-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <div id="prompt-error" role="alert" className="mx-4 mb-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </div>
         )}

@@ -282,8 +282,8 @@ function ActivityItemContent({ item, onClick }: ActivityItemContentProps) {
       <button
         onClick={onClick}
         className={cn(
-          'group w-full px-4 text-left transition-colors duration-150',
-          'hover:bg-surface-interactive focus-visible:bg-surface-interactive',
+          'group w-full px-4 text-left transition-all duration-150',
+          'hover:bg-surface-interactive active:scale-[0.995] focus-visible:bg-surface-interactive',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
         )}
       >
@@ -298,17 +298,20 @@ function ActivityItemContent({ item, onClick }: ActivityItemContentProps) {
   );
 }
 
-function ActivitySkeletonItem() {
+function ActivitySkeletonItem({ index = 0 }: { index?: number }) {
   return (
-    <div className="flex items-start gap-3 px-4 py-3">
-      <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+    <div
+      className="flex items-start gap-3 px-4 py-3 animate-fade-in-up"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      <Skeleton variant="shimmer" className="h-8 w-8 shrink-0 rounded-full" />
       <div className="flex-1 space-y-2">
         <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton variant="shimmer" className="h-4 w-32" />
+          <Skeleton variant="shimmer" className="h-5 w-16 rounded-full" />
         </div>
-        <Skeleton className="h-3 w-48" />
-        <Skeleton className="h-3 w-24" />
+        <Skeleton variant="shimmer" className="h-3 w-48" />
+        <Skeleton variant="shimmer" className="h-3 w-24" />
       </div>
     </div>
   );
@@ -338,8 +341,8 @@ interface ActivityListProps {
 function ActivityList({ items, onItemClick }: ActivityListProps) {
   return (
     <ul className="divide-y divide-border">
-      {items.map((item) => (
-        <li key={item.id}>
+      {items.map((item, index) => (
+        <li key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 40}ms` }}>
           <ActivityItemContent
             item={item}
             onClick={onItemClick ? () => onItemClick(item) : undefined}
@@ -432,7 +435,7 @@ function ActivityLoadingSkeleton({ className }: ActivityLoadingSkeletonProps) {
       <ActivityHeader loading />
       <div className="divide-y divide-border">
         {Array.from({ length: 5 }).map((_, i) => (
-          <ActivitySkeletonItem key={i} />
+          <ActivitySkeletonItem key={i} index={i} />
         ))}
       </div>
     </section>
@@ -469,6 +472,9 @@ function ActivityContentSection(props: ActivityContentSectionProps) {
       className={cn(CARD_CLASSES, className)}
     >
       <ActivityHeader onRefresh={onRefresh} loading={loadingMore} />
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {isEmpty ? 'No activity yet' : `${items?.length} activity items`}
+      </div>
       <div className="overflow-y-auto" style={{ maxHeight }}>
         {isEmpty ? (
           <ActivityEmptyState />

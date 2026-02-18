@@ -211,7 +211,7 @@ export function SessionControlsBar({
               size="sm"
               onClick={onOpenHistory}
               className="h-7 w-7 p-0"
-              title="Session History"
+              title="Session History (Cmd+Shift+H)"
             >
               <History className="h-3.5 w-3.5" />
             </Button>

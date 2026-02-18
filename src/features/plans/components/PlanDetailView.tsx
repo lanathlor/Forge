@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -345,7 +345,7 @@ export function PlanDetailView({
 // Plan Header Card (extracted to reduce main component complexity)
 // ---------------------------------------------------------------------------
 
-function PlanHeaderCard({
+const PlanHeaderCard = React.memo(function PlanHeaderCard({
   plan,
   allTasks,
   isEditMode,
@@ -517,7 +517,7 @@ function PlanHeaderCard({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Breadcrumb
@@ -765,7 +765,7 @@ function StatPill({
 // Phase Item (extracted to reduce complexity)
 // ---------------------------------------------------------------------------
 
-function PhaseItem({
+const PhaseItem = React.memo(function PhaseItem({
   phase,
   phaseNumber,
   phaseTasks,
@@ -1038,7 +1038,7 @@ function PhaseItem({
       )}
     </Card>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Phase Number Badge
@@ -1119,7 +1119,7 @@ function PhaseStatusBadge({ status }: { status: string }) {
 // Task Row
 // ---------------------------------------------------------------------------
 
-function TaskRow({
+const TaskRow = React.memo(function TaskRow({
   task,
   allTasks,
   isEditMode,
@@ -1306,7 +1306,7 @@ function TaskRow({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Task Status Dot

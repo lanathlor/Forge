@@ -254,6 +254,9 @@ export const MetricsGrid = React.memo(function MetricsGrid({
       <h3 id="metrics-grid-heading" className="sr-only">
         Key Performance Metrics
       </h3>
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {loading ? 'Loading metrics...' : `Tasks completed: ${data.tasksCompletedToday}. Success rate: ${data.successRatePercent}%. Pending approvals: ${data.pendingApprovals}.`}
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {METRIC_CARDS.map((card, index) => {
           const hasWarning = card.getWarningState?.(data) ?? false;

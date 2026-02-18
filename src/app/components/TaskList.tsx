@@ -228,6 +228,53 @@ function getConfig(status: string) {
   return STATUS_CONFIG[status] ?? DEFAULT_STATUS_CONFIG;
 }
 
+// ---------------------------------------------------------------------------
+// Task List Skeleton (shown during initial load)
+// ---------------------------------------------------------------------------
+
+const SK = 'bg-muted animate-skeleton-shimmer'; // skeleton shorthand
+
+function TaskListSkeleton() {
+  return (
+    <div className="h-full flex flex-col rounded-xl border bg-card shadow-sm">
+      <div className="flex-shrink-0 px-4 pt-4 pb-2 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn('h-5 w-12 rounded', SK)} />
+            <div className={cn('h-5 w-8 rounded-full', SK)} />
+          </div>
+          <div className="flex items-center gap-1">
+            <div className={cn('h-7 w-7 rounded', SK)} />
+            <div className={cn('h-7 w-7 rounded', SK)} />
+          </div>
+        </div>
+        <div className={cn('h-8 rounded-md', SK)} />
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4].map((n) => <div key={n} className={cn('h-7 w-16 rounded-md', SK)} />)}
+        </div>
+      </div>
+      <div className="flex-1 px-1">
+        {[65, 75, 85, 70, 80, 65].map((w, i) => (
+          <div key={i} className="flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+            <div className={cn('h-4 w-4 rounded-full flex-shrink-0', SK)} />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className={cn('h-4 rounded', SK)} style={{ width: `${w}%` }} />
+              <div className="flex items-center gap-2">
+                <div className={cn('h-3.5 w-16 rounded', SK)} />
+                <div className={cn('h-3 w-12 rounded', SK)} />
+              </div>
+            </div>
+            <div className={cn('h-3.5 w-3.5 rounded flex-shrink-0', SK)} />
+          </div>
+        ))}
+      </div>
+      <div className="flex-shrink-0 px-4 py-2 border-t">
+        <div className={cn('h-3 w-48 mx-auto rounded', SK)} />
+      </div>
+    </div>
+  );
+}
+
 // Filter tabs
 const FILTER_TABS: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -275,7 +322,7 @@ const TaskItem = React.memo(function TaskItem({
         aria-selected={isSelected}
         className={cn(
           'group flex cursor-pointer items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5',
-          'transition-colors duration-100',
+          'transition-all duration-150 ease-out active:scale-[0.995]',
           cfg.accent,
           // Background states
           isSelected
@@ -348,9 +395,9 @@ const TaskItem = React.memo(function TaskItem({
               <button
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  'rounded-md p-1 transition-opacity',
+                  'rounded-md p-1 transition-all duration-150',
                   'opacity-0 focus:opacity-100 group-hover:opacity-100',
-                  'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  'text-muted-foreground hover:bg-muted hover:text-foreground active:scale-90'
                 )}
                 aria-label="Task actions"
                 tabIndex={-1}
@@ -448,7 +495,7 @@ function TaskListHeader({
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Sort tasks">
                 <ArrowUpDown className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -477,6 +524,7 @@ function TaskListHeader({
             size="sm"
             className="h-7 w-7 p-0"
             onClick={onRefresh}
+            aria-label="Refresh tasks"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </Button>
@@ -493,11 +541,13 @@ function TaskListHeader({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-8 border-0 bg-muted/40 pl-8 text-sm focus-visible:ring-1"
+          aria-label="Search tasks"
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange('')}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -505,16 +555,18 @@ function TaskListHeader({
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" role="tablist" aria-label="Filter tasks by status">
         {FILTER_TABS.map((tab) => {
           const count = tabCounts[tab.value];
           const isActive = statusFilter === tab.value;
           return (
             <button
               key={tab.value}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onStatusFilterChange(tab.value)}
               className={cn(
-                'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 active:scale-[0.95]',
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -955,18 +1007,7 @@ export function TaskList({
 
   // ---- Loading state ----
 
-  if (loading) {
-    return (
-      <div className="flex h-full flex-col rounded-xl border bg-card">
-        <div className="border-b p-4">
-          <div className="h-5 w-16 animate-pulse rounded bg-muted" />
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <TaskListSkeleton />;
 
   // ---- Render ----
 
@@ -974,6 +1015,8 @@ export function TaskList({
     <div
       ref={containerRef}
       tabIndex={0}
+      role="region"
+      aria-label="Task list"
       className="flex h-full flex-col rounded-xl border bg-card shadow-sm focus:outline-none"
     >
       <TaskListHeader
@@ -999,6 +1042,13 @@ export function TaskList({
           onBulkAction={handleBulkAction}
         />
       )}
+
+      {/* Screen reader announcements for dynamic content */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {processedTasks.length === 0
+          ? (searchQuery || statusFilter !== 'all' ? 'No matching tasks found' : 'No tasks yet')
+          : `${processedTasks.length} task${processedTasks.length !== 1 ? 's' : ''} shown`}
+      </div>
 
       {/* ---- Task list ---- */}
       <TaskListBody

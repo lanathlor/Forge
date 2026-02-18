@@ -1,5 +1,4 @@
-import { Card } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
+import { ErrorState } from '@/shared/components/error';
 
 interface RepositoryErrorStateProps {
   onRescan: () => void;
@@ -8,14 +7,13 @@ interface RepositoryErrorStateProps {
 
 export function RepositoryErrorState({
   onRescan,
-  isRescanning,
+  isRescanning: _isRescanning,
 }: RepositoryErrorStateProps) {
   return (
-    <Card className="p-6">
-      <p className="mb-4 text-destructive">Failed to load repositories</p>
-      <Button variant="outline" onClick={onRescan} disabled={isRescanning}>
-        {isRescanning ? 'Rescanning...' : 'Try Again'}
-      </Button>
-    </Card>
+    <ErrorState
+      type="network"
+      title="Failed to load repositories"
+      onRetry={onRescan}
+    />
   );
 }

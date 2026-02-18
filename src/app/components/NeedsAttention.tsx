@@ -227,7 +227,7 @@ const AlertItem = memo(function AlertItem({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 rounded-lg border p-3 transition-all',
+        'flex items-start gap-3 rounded-lg border p-3 transition-all duration-200 hover:shadow-sm',
         severityConfig.bgColor,
         severityConfig.borderColor,
         alert.acknowledged && 'opacity-60',
@@ -397,7 +397,7 @@ const SummaryHeader = memo(function SummaryHeader({
     <button
       className={cn(
         '-mx-2 flex w-full cursor-pointer select-none items-center justify-between rounded-lg px-3 py-2 transition-all',
-        'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+        'hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         hasAlerts &&
           isCritical &&
           'bg-red-50/50 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/30',
@@ -425,13 +425,9 @@ const SummaryHeader = memo(function SummaryHeader({
         />
       </div>
       {hasAlerts && (
-        <span aria-hidden="true">
-          {isCollapsed ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronUp className="h-4 w-4" />
-          )}
-        </span>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-hidden="true" tabIndex={-1}>
+          {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </Button>
       )}
     </button>
   );
@@ -577,8 +573,13 @@ function AlertList({
 }) {
   return (
     <div className="space-y-2" role="list" aria-label="Stuck repository alerts">
-      {alerts.map((alert) => (
-        <div key={alert.id} role="listitem">
+      {alerts.map((alert, index) => (
+        <div
+          key={alert.id}
+          role="listitem"
+          className="animate-fade-in-up"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
           <AlertItem
             alert={alert}
             onView={() => onView(alert)}
@@ -659,7 +660,12 @@ export function NeedsAttention({
   if (!status) return null;
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn('overflow-hidden', className)} role="region" aria-label="Repositories needing attention">
+      <div className="sr-only" aria-live="assertive" aria-atomic="true">
+        {status.totalStuckCount > 0
+          ? `${status.totalStuckCount} repository${status.totalStuckCount !== 1 ? 'ies' : ''} need${status.totalStuckCount === 1 ? 's' : ''} attention`
+          : ''}
+      </div>
       <CardHeader className="pb-2">
         <SummaryHeader
           status={status}

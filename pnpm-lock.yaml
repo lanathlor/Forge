@@ -77,6 +77,9 @@ importers:
       react-redux:
         specifier: ^9.1.2
         version: 9.2.0(@types/react@19.2.14)(react@19.2.4)(redux@5.0.1)
+      react-window:
+        specifier: ^1.8.11
+        version: 1.8.11(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tailwind-merge:
         specifier: ^2.5.5
         version: 2.6.1
@@ -159,9 +162,6 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: ^0.6.9
         version: 0.6.14(prettier@3.8.1)
-      react-window:
-        specifier: ^1.8.11
-        version: 1.8.11(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.19(tsx@4.21.0)

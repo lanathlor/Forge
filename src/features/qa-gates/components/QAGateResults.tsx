@@ -182,7 +182,7 @@ function GateResultItem({
     result.output || (result.errors && result.errors.length > 0);
 
   return (
-    <div className="rounded-lg border p-4 transition-colors hover:bg-muted/50">
+    <div className="rounded-lg border p-4 transition-all duration-150 hover:bg-muted/50 hover:shadow-sm">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-3">
@@ -426,13 +426,14 @@ function ResultsView({
         />
 
         <div className="space-y-3">
-          {results.map((result) => (
-            <GateResultItem
-              key={result.gateName}
-              result={result}
-              isExpanded={expandedGates.has(result.gateName)}
-              onToggleExpand={() => onToggleExpand(result.gateName)}
-            />
+          {results.map((result, index) => (
+            <div key={result.gateName} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+              <GateResultItem
+                result={result}
+                isExpanded={expandedGates.has(result.gateName)}
+                onToggleExpand={() => onToggleExpand(result.gateName)}
+              />
+            </div>
           ))}
         </div>
 

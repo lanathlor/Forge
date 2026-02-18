@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -16,6 +15,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Terminal,
 } from 'lucide-react';
 import { TestGateButton } from './TestGateButton';
 import type { QAGate, QAGateExecutionResult } from '../types/qa-gates';
@@ -50,7 +50,7 @@ function ExecutionStatusBadge({ status }: { status: string }) {
     },
     skipped: {
       label: 'Skipped',
-      className: 'h-6 px-3 text-xs font-semibold',
+      className: 'h-6 px-2.5 text-xs font-semibold',
     },
   };
 
@@ -102,6 +102,7 @@ function OutputSection({
   );
 }
 
+// eslint-disable-next-line complexity
 export function QAGateCard({
   gate,
   index,
@@ -113,11 +114,12 @@ export function QAGateCard({
   isDragging = false,
 }: QAGateCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const hasOutput = execution && (execution.output || execution.error);
 
   return (
     <Card
-      className={`group transition-all ${
+      className={`group transition-all duration-200 ${
         isDragging
           ? 'rotate-1 scale-[1.02] shadow-xl ring-2 ring-primary/20'
           : ''
@@ -151,10 +153,8 @@ export function QAGateCard({
 
           {/* Name & command */}
           <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base font-semibold">
-                {gate.name}
-              </CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-base font-semibold">{gate.name}</span>
               {gate.failOnError ? (
                 <Badge className="h-5 border border-red-500/30 bg-red-500/15 px-2 text-[10px] font-bold text-red-700 dark:text-red-400">
                   Required
@@ -167,27 +167,24 @@ export function QAGateCard({
                   Optional
                 </Badge>
               )}
-            </div>
-            <code
-              className="block truncate text-xs text-muted-foreground"
-              title={gate.command}
-            >
-              {gate.command}
-            </code>
-          </div>
-
-          {/* Execution status badges */}
-          {execution && (
-            <div className="flex items-center gap-2">
-              <ExecutionStatusBadge status={execution.status} />
-              {execution.duration != null && (
+              {execution && (
+                <ExecutionStatusBadge status={execution.status} />
+              )}
+              {execution?.duration != null && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   {(execution.duration / 1000).toFixed(1)}s
                 </span>
               )}
             </div>
-          )}
+            <code
+              className="block truncate text-xs text-muted-foreground"
+              title={gate.command}
+            >
+              <Terminal className="mr-1 inline h-3 w-3 opacity-50" />
+              {gate.command}
+            </code>
+          </div>
 
           {/* Timeout badge */}
           <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
@@ -209,22 +206,43 @@ export function QAGateCard({
               onCheckedChange={(enabled) => onToggle(gate.name, enabled)}
               title={gate.enabled ? 'Disable gate' : 'Enable gate'}
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-              onClick={() => onDelete(gate.name)}
-              title="Delete gate"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {confirmDelete ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => { onDelete(gate.name); setConfirmDelete(false); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  No
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => setConfirmDelete(true)}
+                title="Delete gate"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
 
       {/* Expandable output */}
       {hasOutput && (
-        <CardContent className="px-4 pb-3 pt-0">
+        <CardContent className="px-3 pb-3 pt-0 sm:px-4">
           <button
             onClick={() => setExpanded(!expanded)}
             className="flex w-full items-center gap-1.5 rounded-md bg-muted/30 px-3 py-1.5 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"

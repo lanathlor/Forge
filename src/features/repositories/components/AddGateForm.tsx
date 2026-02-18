@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Terminal } from 'lucide-react';
 import type { QAGate } from '../types/qa-gates';
 
 interface AddGateFormProps {
@@ -89,6 +89,7 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="h-10"
+            autoFocus
           />
           {name.trim().length === 0 && (
             <p className="text-xs text-muted-foreground">
@@ -129,13 +130,16 @@ export function AddGateForm({ onAdd, onCancel, nextOrder }: AddGateFormProps) {
         >
           Command
         </Label>
-        <Input
-          id="gate-command"
-          placeholder="e.g. pnpm test --run"
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          className="h-10 font-mono text-sm"
-        />
+        <div className="relative">
+          <Terminal className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
+          <Input
+            id="gate-command"
+            placeholder="e.g. pnpm test --run"
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
+            className="h-10 pl-9 font-mono text-sm"
+          />
+        </div>
         {command.trim().length === 0 && (
           <p className="text-xs text-muted-foreground">
             Enter the shell command to execute this gate
