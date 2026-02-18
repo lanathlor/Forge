@@ -14,6 +14,22 @@
 
 ---
 
+## Preview
+
+**Dashboard** — multi-repo sidebar, live plan monitor, session task input, and task list in one view:
+
+![Forge dashboard](public/screenshots/dashboard.png)
+
+**Plan detail** — phases and tasks with status badges, dependency links, and commit references:
+
+![Plan detail with phases and tasks](public/screenshots/plan-phases.png)
+
+**QA gates** — deterministic pipeline per repository; drag to reorder, toggle required/optional:
+
+![QA gates configuration](public/screenshots/qa-gates.png)
+
+---
+
 # Every AI coding tool gets it backwards
 
 I've been a tech lead for years. I manage teams, I ship products, I care about code quality. And every AI coding tool I've tried has the same fundamental problem: the AI is in charge.
