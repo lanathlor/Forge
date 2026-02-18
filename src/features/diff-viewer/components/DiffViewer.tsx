@@ -466,6 +466,12 @@ function KeyboardHint({ className }: { className?: string }) {
         </kbd>
         <span>navigate</span>
       </span>
+      <span className="flex items-center gap-1">
+        <kbd className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono">
+          f
+        </kbd>
+        <span>fullscreen</span>
+      </span>
     </div>
   );
 }
@@ -596,6 +602,10 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
             e.preventDefault();
             setSidebarOpen((v) => !v);
           }
+          break;
+        case 'f':
+          e.preventDefault();
+          setIsFullscreen((v) => !v);
           break;
         case 'Escape':
           if (isFullscreen) {
