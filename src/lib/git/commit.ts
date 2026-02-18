@@ -134,8 +134,19 @@ async function commitUnchangedFiles(
     `[commitTaskChanges] Uncommitted files from git status: ${uncommittedFiles.join(', ')}`
   );
 
+  // git status --porcelain reports entirely new directories as a single entry
+  // with a trailing slash (e.g. "?? .github/") rather than listing individual
+  // files. We must match both exact paths and directory prefixes.
+  // git status --porcelain reports entirely new directories as a single entry
+  // with a trailing slash (e.g. "?? .github/") rather than listing individual
+  // files. We must match both exact paths and directory prefixes.
   const filesToCommit = filesChanged.filter((f) =>
-    uncommittedFiles.includes(f.path)
+    uncommittedFiles.some(
+      (u) => u === f.path || (u.endsWith('/') && f.path.startsWith(u))
+    )
+  );
+  console.log(
+    `[commitTaskChanges] Files to commit: ${filesToCommit.map((f) => f.path).join(', ') || '(none)'}`
   );
 
   if (filesToCommit.length === 0) {

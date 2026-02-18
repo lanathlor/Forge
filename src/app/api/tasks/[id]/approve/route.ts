@@ -49,32 +49,39 @@ async function approveWithoutChanges(task: Task, id: string) {
   return Response.json({ success: true, noChanges: true });
 }
 
+async function ensureDiffContent(
+  task: Task,
+  id: string,
+  filesChanged: NonNullable<Task['filesChanged']>
+): Promise<string | null> {
+  if (task.diffContent) return task.diffContent;
+  if (!task.startingCommit) return null;
+
+  console.warn(
+    `[Approve API] diffContent is empty for task ${id}, regenerating from repo...`
+  );
+  try {
+    const repoPath = task.session.repository.path;
+    const diffContent = await getDiffForFiles(repoPath, task.startingCommit, filesChanged);
+    if (diffContent) {
+      await db
+        .update(tasks)
+        .set({ diffContent, updatedAt: new Date() })
+        .where(eq(tasks.id, id));
+      console.log(`[Approve API] Regenerated diff successfully`);
+    }
+    return diffContent;
+  } catch (err) {
+    console.error(`[Approve API] Failed to regenerate diff:`, err);
+    return null;
+  }
+}
+
 async function approveWithChanges(task: Task, id: string) {
   const repoPath = task.session.repository.path;
+  const filesChanged = task.filesChanged!;
+  const diffContent = await ensureDiffContent(task, id, filesChanged);
   let commitMessage: string;
-
-  let diffContent = task.diffContent;
-  let filesChanged = task.filesChanged!;
-
-  if (!diffContent && task.startingCommit) {
-    console.warn(
-      `[Approve API] diffContent is empty for task ${id}, regenerating from repo...`
-    );
-    try {
-      // Use getDiffForFiles (not captureDiff) so we only get diffs for the
-      // files the task actually touched — not every untracked file in the repo.
-      diffContent = await getDiffForFiles(repoPath, task.startingCommit, filesChanged);
-      if (diffContent) {
-        await db
-          .update(tasks)
-          .set({ diffContent, updatedAt: new Date() })
-          .where(eq(tasks.id, id));
-        console.log(`[Approve API] Regenerated diff successfully`);
-      }
-    } catch (err) {
-      console.error(`[Approve API] Failed to regenerate diff:`, err);
-    }
-  }
 
   if (!diffContent) {
     console.warn(
@@ -87,10 +94,7 @@ async function approveWithChanges(task: Task, id: string) {
       `[Approve API] Calling Claude Code to generate commit message...`
     );
     commitMessage = await generateCommitMessage(
-      task.prompt,
-      filesChanged,
-      diffContent,
-      repoPath
+      task.prompt, filesChanged, diffContent, repoPath
     );
   }
   await db

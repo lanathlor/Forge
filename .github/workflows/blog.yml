@@ -1,0 +1,90 @@
+name: Blog
+
+on:
+  push:
+    branches: [main]
+    paths: [blog.md]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Convert Markdown to HTML
+        run: |
+          cat > index.html <<'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Forge — Every AI coding tool gets it backwards</title>
+            <link rel="icon" href="favicon.svg" type="image/svg+xml">
+            <style>
+              :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --code-bg: #f5f5f5; --border: #e5e5e5; --link: #0969da; }
+              @media (prefers-color-scheme: dark) {
+                :root { --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e; --code-bg: #161b22; --border: #30363d; --link: #58a6ff; }
+              }
+              *, *::before, *::after { box-sizing: border-box; }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.7; color: var(--fg); background: var(--bg); max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+              h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+              h2 { margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+              a { color: var(--link); text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              code { background: var(--code-bg); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+              pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; }
+              pre code { background: none; padding: 0; }
+              blockquote { border-left: 3px solid var(--border); margin-left: 0; padding-left: 1rem; color: var(--muted); }
+              ol, ul { padding-left: 1.5rem; }
+              hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+              em { color: var(--muted); }
+            </style>
+          </head>
+          <body>
+          HTMLEOF
+
+          # Use GitHub's own markdown renderer via the API (no extra tooling needed)
+          # Fall back to a simple sed-based conversion if the API is unavailable
+          MARKDOWN=$(cat blog.md)
+
+          HTML=$(curl -sf -X POST https://api.github.com/markdown \
+            -H "Accept: application/vnd.github+json" \
+            -d "$(jq -n --arg text "$MARKDOWN" '{text: $text, mode: "gfm"}')" 2>/dev/null) || {
+            # Fallback: install and use pandoc
+            sudo apt-get update -qq && sudo apt-get install -y -qq pandoc > /dev/null 2>&1
+            HTML=$(pandoc --from=gfm --to=html5 blog.md)
+          }
+
+          echo "$HTML" >> index.html
+          echo "</body></html>" >> index.html
+
+          mkdir -p _site
+          mv index.html _site/
+          cp public/favicon.svg _site/ 2>/dev/null || true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
