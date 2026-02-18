@@ -752,10 +752,6 @@ export function TaskList({
 
         // If task doesn't exist in our list (e.g., new plan task), refetch
         if (!taskExists) {
-          console.log(
-            '[TaskList] Received update for unknown task, refetching:',
-            latestUpdate.taskId
-          );
           loadSessionTasks();
           return prev;
         }
