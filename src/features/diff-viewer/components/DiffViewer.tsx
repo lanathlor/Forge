@@ -664,8 +664,8 @@ export function DiffViewer({ taskId }: DiffViewerProps) {
     <div
       ref={containerRef}
       className={cn(
-        'flex h-full flex-col overflow-hidden',
-        isFullscreen && 'fixed inset-0 z-50 bg-surface-base'
+        'flex flex-col overflow-hidden',
+        isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-full'
       )}
     >
       {/* ── Toolbar ── */}
