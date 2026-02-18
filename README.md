@@ -206,25 +206,60 @@ Open [http://localhost:3000](http://localhost:3000).
 
 #### Recommended: run on the host
 
-The simplest and most capable setup is to run Forge directly on your machine, with only the database in Docker if you want PostgreSQL:
+The simplest and most capable setup is to run Forge directly on your machine. QA gate commands then run with whatever tools exist on your machine — `pnpm`, `bun`, `go`, `cargo`, `python`, `maven`, anything. The containerised image is limited to `node:20-alpine` + corepack; anything outside that will fail with "command not found".
 
 ```bash
-# Optional: start PostgreSQL in Docker
+pnpm install
+pnpm build
+```
+
+**With SQLite (no extra setup):**
+
+```bash
+pnpm db:init
+
+DATABASE_URL="./forge.db" \
+WORKSPACE_ROOT="/path/to/your/projects" \
+AI_PROVIDER=claude-code \
+CLAUDE_CODE_PATH=claude \
+PORT=3000 \
+NODE_ENV=production \
+NEXT_TELEMETRY_DISABLED=1 \
+pnpm start
+```
+
+**With PostgreSQL:**
+
+```bash
+# Start PostgreSQL
 docker run -d --name forge-pg \
   -e POSTGRES_USER=forge -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=forge \
   -p 5432:5432 postgres:16-alpine
 
-# Build and start Forge
-pnpm install
-pnpm build
-DATABASE_URL=postgresql://forge:secret@localhost:5432/forge \
+# Initialize schema
+DATABASE_URL="postgresql://forge:secret@localhost:5432/forge" \
+npx tsx src/db/init-pg.ts
+
+# Start Forge
+DATABASE_URL="postgresql://forge:secret@localhost:5432/forge" \
 WORKSPACE_ROOT="/path/to/your/projects" \
-AI_PROVIDER=claude-sdk \
-ANTHROPIC_API_KEY=sk-ant-... \
-node .next/standalone/server.js
+AI_PROVIDER=claude-code \
+CLAUDE_CODE_PATH=claude \
+PORT=3000 \
+NODE_ENV=production \
+NEXT_TELEMETRY_DISABLED=1 \
+pnpm start
 ```
 
-**Why this is the right default:** QA gate commands run with all the tools that exist on your machine — `pnpm`, `bun`, `go`, `cargo`, `python`, `maven`, whatever your repos actually use. The containerised image is limited to `node:20-alpine` + corepack (pnpm/yarn); anything outside that will fail.
+If you use `claude-sdk` or `codex-sdk` instead of `claude-code`, add the relevant key:
+
+```bash
+# Claude SDK
+AI_PROVIDER=claude-sdk ANTHROPIC_API_KEY=sk-ant-... pnpm start
+
+# Codex SDK
+AI_PROVIDER=codex-sdk OPENAI_API_KEY=sk-... pnpm start
+```
 
 #### Docker (limited QA gate support)
 
