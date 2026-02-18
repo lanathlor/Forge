@@ -282,16 +282,6 @@ const PanelHeader = React.memo(function PanelHeader({
   );
   const canRetry = ['failed', 'qa_failed', 'rejected'].includes(task.status);
 
-  // Debug logging
-  console.log(
-    'TaskDetailPanel - Status:',
-    task.status,
-    'canRetry:',
-    canRetry,
-    'canCancel:',
-    canCancel
-  );
-
   return (
     <div className="flex-shrink-0 border-b bg-card px-4 py-3 sm:px-5">
       {/* Top row: status + close */}
@@ -708,6 +698,9 @@ export function TaskDetailPanel({
           'qa_failed',
           'completed',
           'approved',
+          'failed',
+          'rejected',
+          'cancelled',
         ].includes(newStatus)
       ) {
         loadTask();
