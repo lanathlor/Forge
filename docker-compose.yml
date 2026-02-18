@@ -20,6 +20,7 @@ services:
       - DATABASE_URL=${DATABASE_URL:-/app/dev.db}
       - WORKSPACE_ROOT=/workspace
       - CLAUDE_CODE_PATH=${CLAUDE_CODE_PATH:-claude}
+      - SIMULATE_CLAUDE=${SIMULATE_CLAUDE:-false}
       - AI_PROVIDER=${AI_PROVIDER:-claude-code}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
