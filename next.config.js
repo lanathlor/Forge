@@ -48,7 +48,7 @@ const nextConfig = {
   },
 
   // Exclude server-only packages from client bundles
-  serverExternalPackages: ['better-sqlite3', 'drizzle-orm'],
+  serverExternalPackages: ['better-sqlite3', 'drizzle-orm', 'postgres'],
 };
 
 module.exports = nextConfig;

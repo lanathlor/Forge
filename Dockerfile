@@ -9,7 +9,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY package.json pnpm-lock.yaml* .npmrc ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Development target with built native modules
 FROM base AS dev
@@ -69,13 +69,20 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm build
 
-# Compile the db-init script to plain JS for use in the runner
+# Compile the SQLite db-init script to plain JS for use in the runner
 RUN pnpm exec esbuild src/db/init.ts \
       --bundle \
       --platform=node \
       --target=node20 \
       --external:better-sqlite3 \
       --outfile=db-init.js
+
+# Compile the PostgreSQL db-init script (postgres is bundled in)
+RUN pnpm exec esbuild src/db/init-pg.ts \
+      --bundle \
+      --platform=node \
+      --target=node20 \
+      --outfile=db-init-pg.js
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -84,8 +91,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# curl is needed for the Docker Compose health check
-RUN apk add --no-cache curl
+# curl for health checks, git for repository scanning
+RUN apk add --no-cache curl git
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -105,6 +112,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Migrations are placed at ./migrations/ to match the __dirname-relative path
 # used in db-init.js when compiled from src/db/init.ts.
 COPY --from=builder --chown=nextjs:nodejs /app/db-init.js ./db-init.js
+COPY --from=builder --chown=nextjs:nodejs /app/db-init-pg.js ./db-init-pg.js
 COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrations ./migrations
 
 # Copy entrypoint script

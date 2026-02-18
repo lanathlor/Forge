@@ -5,7 +5,7 @@ import { eq, desc } from 'drizzle-orm';
 type Plan = typeof plans.$inferSelect;
 type PlanTask = typeof planTasks.$inferSelect;
 
-async function getRecentPlans() {
+async function getRecentPlans(): Promise<Plan[]> {
   return db.select().from(plans).orderBy(desc(plans.createdAt)).limit(5);
 }
 
@@ -49,7 +49,7 @@ async function fixNoFailedTasks(plan: Plan) {
 async function fixPlan(plan: Plan) {
   console.log(`\n--- Plan: ${plan.title} ---`);
 
-  const tasks = await db.query.planTasks.findMany({
+  const tasks: PlanTask[] = await db.query.planTasks.findMany({
     where: eq(planTasks.planId, plan.id),
   });
 

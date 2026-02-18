@@ -37,6 +37,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@reduxjs/toolkit": "^2.5.0",
     "better-sqlite3": "11.5.0",
+    "postgres": "^3.4.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
