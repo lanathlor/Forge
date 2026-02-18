@@ -1,10 +1,24 @@
-# Forge
+<p align="center">
+  <img src="public/favicon.svg" alt="Forge" width="120" height="120" />
+</p>
+
+<h1 align="center">Forge</h1>
+
+<p align="center">
+  <strong>Deterministic AI orchestrator — you define the plan, AI executes, QA gates decide.</strong>
+</p>
+
+<p align="center">
+  Self-hosted &middot; Multi-repository &middot; Multi-provider
+</p>
+
+---
 
 Most AI coding tools let the AI decide when to run tests, whether the output is good enough, and when to commit. Forge doesn't.
 
 Forge is a deterministic orchestrator that treats AI as a tool — like a compiler or a linter — not a decision-maker. You define the plan. Forge invokes the AI on each task, runs your actual QA gates (the scripts already in your repo), and only commits when they pass. The AI never decides if its own work is good enough.
 
-Self-hosted, multi-repository, works with the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), [OpenAI Codex](https://platform.openai.com/docs/guides/code), or [Claude Code CLI](https://claude.ai/code).
+Works with the [Claude SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), [OpenAI Codex](https://platform.openai.com/docs/guides/code), or [Claude Code CLI](https://claude.ai/code).
 
 ## What it does
 

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <!-- Anvil body -->
+  <path d="M96 288 h320 l48 64 H48z" fill="url(#g)"/>
+  <!-- Anvil top (horn + face) -->
+  <path d="M128 288 V224 h224 v64z" fill="url(#g)"/>
+  <!-- Anvil horn -->
+  <path d="M128 224 L48 256 v32 h80z" fill="url(#g)" opacity="0.85"/>
+  <!-- Anvil base -->
+  <path d="M112 352 h288 v32 q0 16-16 16 H128 q-16 0-16-16z" fill="url(#g)" opacity="0.7"/>
+  <!-- Hammer -->
+  <rect x="296" y="72" width="24" height="168" rx="4" fill="#f8fafc" transform="rotate(-30 308 156)"/>
+  <rect x="264" y="56" width="88" height="44" rx="8" fill="#f8fafc" transform="rotate(-30 308 78)"/>
+  <!-- Sparks -->
+  <circle cx="200" cy="208" r="6" fill="#FBBF24"/>
+  <circle cx="232" cy="192" r="4" fill="#FBBF24"/>
+  <circle cx="176" cy="196" r="5" fill="#F59E0B"/>
+  <circle cx="216" cy="176" r="3" fill="#FCD34D"/>
+</svg>

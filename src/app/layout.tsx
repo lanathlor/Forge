@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Forge - AI Oversight Dashboard',
   description: 'Deterministic QA gate dashboard for AI coding agents',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
