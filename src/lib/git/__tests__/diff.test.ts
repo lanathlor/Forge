@@ -13,7 +13,8 @@ vi.mock('@/lib/qa-gates/command-executor', () => ({
 
 describe('git/diff', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    mockGetContainerPath.mockImplementation((path: string) => path);
   });
 
   describe('captureDiff', () => {

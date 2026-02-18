@@ -98,17 +98,6 @@ async function createCommit(
   }
 }
 
-function parseUncommittedFiles(statusOutput: string): string[] {
-  return statusOutput
-    .trim()
-    .split('\n')
-    .map((line) => {
-      const match = line.match(/^..\s+(.+?)(?:\s+->\s+.+)?$/);
-      return match ? match[1] : null;
-    })
-    .filter((f): f is string => f !== null);
-}
-
 async function getHeadCommitInfo(
   containerPath: string
 ): Promise<{ sha: string; message: string }> {
@@ -123,49 +112,13 @@ async function getHeadCommitInfo(
   return { sha: headSha.trim(), message: existingMessage.trim() };
 }
 
-async function commitUnchangedFiles(
-  containerPath: string,
-  filesChanged: FileChange[],
-  message: string,
-  statusOutput: string
-): Promise<{ sha: string; commitMessage: string }> {
-  const uncommittedFiles = parseUncommittedFiles(statusOutput);
-  console.log(
-    `[commitTaskChanges] Uncommitted files from git status: ${uncommittedFiles.join(', ')}`
-  );
-
-  // git status --porcelain reports entirely new directories as a single entry
-  // with a trailing slash (e.g. "?? .github/") rather than listing individual
-  // files. We must match both exact paths and directory prefixes.
-  // git status --porcelain reports entirely new directories as a single entry
-  // with a trailing slash (e.g. "?? .github/") rather than listing individual
-  // files. We must match both exact paths and directory prefixes.
-  const filesToCommit = filesChanged.filter((f) =>
-    uncommittedFiles.some(
-      (u) => u === f.path || (u.endsWith('/') && f.path.startsWith(u))
-    )
-  );
-  console.log(
-    `[commitTaskChanges] Files to commit: ${filesToCommit.map((f) => f.path).join(', ') || '(none)'}`
-  );
-
-  if (filesToCommit.length === 0) {
-    console.log(
-      `[commitTaskChanges] All task files already committed, using existing HEAD`
-    );
-    const { sha, message: commitMessage } =
-      await getHeadCommitInfo(containerPath);
-    console.log(`[commitTaskChanges] Using existing commit: ${sha}`);
-    return { sha, commitMessage };
-  }
-
-  console.log(
-    `[commitTaskChanges] Committing ${filesToCommit.length} uncommitted files`
-  );
-  await stageFiles(containerPath, filesToCommit);
-  const sha = await createCommit(containerPath, message);
-  console.log(`[commitTaskChanges] Created new commit: ${sha}`);
-  return { sha, commitMessage: message };
+function isNothingToCommitError(error: unknown): boolean {
+  if (error instanceof Error && error.message.includes('nothing to commit')) return true;
+  if (!error || typeof error !== 'object') return false;
+  const e = error as Record<string, unknown>;
+  const stdout = typeof e['stdout'] === 'string' ? e['stdout'] : '';
+  const stderr = typeof e['stderr'] === 'string' ? e['stderr'] : '';
+  return stdout.includes('nothing to commit') || stderr.includes('nothing to commit');
 }
 
 async function resolveCommit(
@@ -173,20 +126,29 @@ async function resolveCommit(
   filesChanged: FileChange[],
   message: string
 ): Promise<{ sha: string; commitMessage: string }> {
-  const { stdout: statusOutput } = await execAsync('git status --porcelain', {
-    cwd: containerPath,
-    timeout: 5000,
-  });
-  const hasUncommittedChanges = statusOutput.trim().length > 0;
-  console.log(`[commitTaskChanges] Uncommitted changes: ${hasUncommittedChanges}`);
+  // Stage all task files unconditionally — this is idempotent and avoids
+  // fragile git status parsing. If a file is already staged or committed,
+  // re-adding it is a no-op.
+  console.log(`[commitTaskChanges] Staging ${filesChanged.length} task files`);
+  await stageFiles(containerPath, filesChanged);
 
-  if (hasUncommittedChanges) {
-    const { sha, commitMessage } = await commitUnchangedFiles(containerPath, filesChanged, message, statusOutput);
-    return { sha, commitMessage };
+  // Attempt the commit. If git reports "nothing to commit" it means all task
+  // files were already committed, so fall back to the existing HEAD.
+  try {
+    const sha = await createCommit(containerPath, message);
+    console.log(`[commitTaskChanges] Created new commit: ${sha}`);
+    return { sha, commitMessage: message };
+  } catch (error) {
+    if (isNothingToCommitError(error)) {
+      console.log(
+        `[commitTaskChanges] Nothing to commit — all task files already committed, using existing HEAD`
+      );
+      const { sha, message: commitMessage } = await getHeadCommitInfo(containerPath);
+      console.log(`[commitTaskChanges] Using existing commit: ${sha}`);
+      return { sha, commitMessage };
+    }
+    throw error;
   }
-  console.log(`[commitTaskChanges] No uncommitted changes, using existing HEAD commit`);
-  const { sha, message: commitMessage } = await getHeadCommitInfo(containerPath);
-  return { sha, commitMessage };
 }
 
 export async function commitTaskChanges(

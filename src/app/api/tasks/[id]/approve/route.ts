@@ -136,9 +136,9 @@ export async function POST(
       );
     }
     const hasChanges = task!.filesChanged && task!.filesChanged.length > 0;
-    return hasChanges
+    return await (hasChanges
       ? approveWithChanges(task!, id)
-      : approveWithoutChanges(task!, id);
+      : approveWithoutChanges(task!, id));
   } catch (error) {
     console.error('[Approve API] Error:', error);
     return Response.json(

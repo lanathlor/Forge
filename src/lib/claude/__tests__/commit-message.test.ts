@@ -266,6 +266,75 @@ describe('claude/commit-message', () => {
       expect(prompt).toContain('- old-file.ts (deleted, +0 -100)');
     });
 
+    it('should filter diff to only include sections for task files', async () => {
+      // The full diff contains sections for both task files and unrelated files.
+      // Only the task-file sections should reach Claude.
+      const fullDiff = [
+        'diff --git a/src/auth.ts b/src/auth.ts\n@@ -1 +1 @@\n-old\n+new',
+        'diff --git a/src/unrelated.ts b/src/unrelated.ts\n@@ -1 +1 @@\n-old\n+new',
+      ].join('\n');
+
+      const taskFiles: FileChange[] = [
+        { path: 'src/auth.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+      ];
+
+      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('fix(auth): fix login');
+
+      await generateCommitMessage('Fix login', taskFiles, fullDiff, '/repo');
+
+      const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
+      expect(prompt).toContain('src/auth.ts');
+      expect(prompt).not.toContain('src/unrelated.ts');
+    });
+
+    it('should fall back to full diff when filter removes all sections', async () => {
+      // If no task files match any diff section, use the raw diff rather than
+      // sending an empty prompt (which would produce a useless commit message).
+      const diff = 'diff --git a/unmatched.ts b/unmatched.ts\n@@ -1 +1 @@\n-old\n+new';
+      const taskFiles: FileChange[] = [
+        { path: 'src/auth.ts', status: 'modified', additions: 1, deletions: 1, patch: '' },
+      ];
+
+      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('fix: fallback');
+
+      await generateCommitMessage('Fix', taskFiles, diff, '/repo');
+
+      const prompt = mockClaudeWrapper.executeOneShot.mock.calls[0]?.[0] as string;
+      // Falls back to full diff content (which contains unmatched.ts)
+      expect(prompt).toContain('unmatched.ts');
+    });
+
+    it('should strip preamble lines from Claude output', async () => {
+      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
+        "Here's the commit message for these changes:\nfeat(auth): add validation"
+      );
+
+      const result = await generateCommitMessage(
+        'Add validation',
+        defaultFilesChanged,
+        defaultDiffContent,
+        '/repo'
+      );
+
+      // Preamble should be stripped, leaving only the actual message
+      expect(result).toBe('feat(auth): add validation');
+    });
+
+    it('should handle Claude output that starts directly with conventional commit', async () => {
+      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
+        'feat(auth): add token validation to login flow'
+      );
+
+      const result = await generateCommitMessage(
+        'Add validation',
+        defaultFilesChanged,
+        defaultDiffContent,
+        '/repo'
+      );
+
+      expect(result).toBe('feat(auth): add token validation to login flow');
+    });
+
     it('should include conventional commit instructions in the prompt', async () => {
       mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
         'feat: new feature'
