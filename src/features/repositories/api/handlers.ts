@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { repositories } from '@/db/schema';
+import {
+  repositories,
+  plans,
+  phases,
+  planTasks,
+  planIterations,
+} from '@/db/schema';
 import { discoverRepositories } from '../lib/scanner';
 import { eq, desc } from 'drizzle-orm';
 
@@ -66,6 +72,22 @@ async function removeStaleRepositories(discoveredPaths: Set<string>) {
     );
     for (const repo of toDelete) {
       console.log(`[Scanner] - Removing: ${repo.name} (${repo.path})`);
+
+      // Delete all plans associated with this repository (and their child records)
+      // to avoid foreign key constraint errors
+      const repoPlans = await db
+        .select()
+        .from(plans)
+        .where(eq(plans.repositoryId, repo.id));
+
+      for (const plan of repoPlans) {
+        console.log(`[Scanner]   - Deleting associated plan: ${plan.title}`);
+        await db.delete(planIterations).where(eq(planIterations.planId, plan.id));
+        await db.delete(planTasks).where(eq(planTasks.planId, plan.id));
+        await db.delete(phases).where(eq(phases.planId, plan.id));
+        await db.delete(plans).where(eq(plans.id, plan.id));
+      }
+
       await db.delete(repositories).where(eq(repositories.id, repo.id));
     }
   }
