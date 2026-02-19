@@ -1,0 +1,1 @@
+ALTER TABLE plan_iterations ADD `conversation_history` text;

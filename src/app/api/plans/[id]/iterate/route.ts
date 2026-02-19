@@ -204,6 +204,7 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
         // Check if Claude included updates
         const updatesMatch = response.match(/<UPDATES>([\s\S]*?)<\/UPDATES>/);
         let updated = false;
+        let iterationId: string | undefined;
 
         console.log('[PlanIterate] Found updates:', !!updatesMatch);
 
@@ -310,13 +311,25 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
 
             // Save iteration if changes were made
             if (updated) {
-              await db.insert(planIterations).values({
+              // Build full conversation history including current exchange
+              const fullConversationHistory = [
+                ...conversationHistory,
+                { role: 'user' as const, content: message },
+                { role: 'assistant' as const, content: response },
+              ];
+
+              const [iteration] = await db.insert(planIterations).values({
                 planId,
-                iterationType: 'refine',
+                iterationType: 'chat',
                 prompt: message,
                 changes: JSON.stringify(updates),
+                conversationHistory: JSON.stringify(fullConversationHistory),
                 changedBy: 'claude',
-              });
+              }).returning();
+
+              if (iteration) {
+                iterationId = iteration.id;
+              }
 
               // Send details about what was updated
               const updateSummary = updates
@@ -343,6 +356,7 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
                 value: true,
                 summary: updateSummary,
                 count: updates.length,
+                iterationId,
               });
             }
           } catch (error) {
@@ -360,7 +374,7 @@ CRITICAL: You must ALWAYS include <UPDATES> when the user asks for changes. Use 
           }
         }
 
-        send({ type: 'done' });
+        send({ type: 'done', iterationId });
         controller.close();
       } catch (error) {
         console.error('Error in plan iteration:', error);
