@@ -41,6 +41,8 @@ import {
   GripVertical,
   AlertCircle,
   RotateCcw,
+  ChevronUp,
+  Wand2,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -145,7 +147,6 @@ export function GeneratePlanDialog({
     message: string;
     detail?: string;
   } | null>(null);
-  const [generationWarnings, setGenerationWarnings] = useState<PlanWarning[]>([]);
   // planId populated once the SSE 'done' event arrives, used to fetch plan data
   const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
   // AbortController for the in-flight SSE generation request
@@ -159,6 +160,7 @@ export function GeneratePlanDialog({
   const [generatedPhases, setGeneratedPhases] = useState<Phase[]>([]);
   const [generatedTasks, setGeneratedTasks] = useState<PlanTask[]>([]);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
+  const [expandedWarnings, setExpandedWarnings] = useState(false);
 
   // Inline editing
   const [editingTask, setEditingTask] = useState<string | null>(null);
@@ -274,12 +276,12 @@ export function GeneratePlanDialog({
           setGenerationStatus('');
           setGenerationLlmOutput('');
           setGenerationError(null);
-          setGenerationWarnings([]);
           setGeneratingPlanId(null);
           setGeneratedPlan(null);
           setGeneratedPhases([]);
           setGeneratedTasks([]);
           setExpandedPhases(new Set());
+          setExpandedWarnings(false);
           setEditingTask(null);
           setShowRefinement(false);
           setRefinementInput('');
@@ -318,7 +320,6 @@ export function GeneratePlanDialog({
 
     setStep('generating');
     setGenerationError(null);
-    setGenerationWarnings([]);
     setGenerationProgress(0);
     setGenerationStatus('Starting...');
     setGenerationLlmOutput('');
@@ -381,10 +382,6 @@ export function GeneratePlanDialog({
             } else if (data.type === 'done' && data.planId) {
               resolvedPlanId = data.planId;
               setGenerationProgress(100);
-              // Capture warnings if present
-              if ((data as { warnings?: PlanWarning[] }).warnings) {
-                setGenerationWarnings((data as { warnings?: PlanWarning[] }).warnings || []);
-              }
               break outer;
             } else if (data.type === 'error' && data.message) {
               // Capture structured error with code
@@ -638,6 +635,43 @@ export function GeneratePlanDialog({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
+  };
+
+  const parsePlanWarnings = (plan: Plan | null): PlanWarning[] => {
+    if (!plan?.warnings) return [];
+    try {
+      return JSON.parse(plan.warnings) as PlanWarning[];
+    } catch {
+      return [];
+    }
+  };
+
+  const getWarningFixPrompt = (warning: PlanWarning): string => {
+    switch (warning.code) {
+      case 'CIRCULAR_DEPENDENCY':
+        if (warning.phaseIndex !== undefined) {
+          return `Fix circular dependency in phase ${warning.phaseIndex + 1}`;
+        }
+        return 'Fix circular dependencies in task dependencies';
+      case 'INVALID_DEPENDENCY':
+        if (warning.phaseIndex !== undefined && warning.taskIndex !== undefined) {
+          return `Fix invalid dependency reference in phase ${warning.phaseIndex + 1}, task ${warning.taskIndex + 1}`;
+        }
+        return 'Fix invalid task dependency references';
+      case 'EMPTY_PHASE':
+        if (warning.phaseIndex !== undefined) {
+          return `Add tasks to empty phase ${warning.phaseIndex + 1} or remove it`;
+        }
+        return 'Remove or populate empty phases';
+      case 'MANY_PHASES':
+        return 'Break down the plan into fewer phases for better manageability';
+      case 'MANY_TASKS':
+        return 'Simplify the plan by reducing the number of tasks or breaking into multiple plans';
+      case 'LARGE_PLAN':
+        return 'Consider breaking this plan into smaller, more focused plans';
+      default:
+        return 'Fix this issue';
+    }
   };
 
   const getErrorMessage = (
@@ -992,31 +1026,82 @@ export function GeneratePlanDialog({
                 )}
               >
                 {/* Validation warnings */}
-                {generationWarnings.length > 0 && (
-                  <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 flex-shrink-0 text-amber-600" />
-                      <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                        Plan Validation Warnings ({generationWarnings.length})
-                      </h3>
-                    </div>
-                    <div className="space-y-1.5 pl-6">
-                      {generationWarnings.map((warning, idx) => (
-                        <div key={idx} className="text-xs text-amber-800 dark:text-amber-200">
-                          <span className={cn(
-                            'mr-2 inline-block rounded px-1.5 py-0.5 font-mono text-[10px]',
-                            warning.severity === 'warning'
-                              ? 'bg-amber-600/20 text-amber-900 dark:text-amber-100'
-                              : 'bg-blue-600/20 text-blue-900 dark:text-blue-100'
-                          )}>
-                            {warning.code}
-                          </span>
-                          {warning.message}
+                {(() => {
+                  const warnings = parsePlanWarnings(generatedPlan);
+                  if (warnings.length === 0) return null;
+
+                  return (
+                    <Card className="border-amber-500/30 bg-amber-500/5">
+                      <button
+                        onClick={() => setExpandedWarnings(!expandedWarnings)}
+                        className="flex w-full items-center gap-2 p-3 text-left transition-colors hover:bg-amber-500/10"
+                      >
+                        <AlertCircle className="h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-500" />
+                        <h3 className="flex-1 text-sm font-medium text-amber-900 dark:text-amber-100">
+                          Plan Validation Warnings ({warnings.length})
+                        </h3>
+                        {expandedWarnings ? (
+                          <ChevronUp className="h-3.5 w-3.5 text-amber-600 dark:text-amber-500" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5 text-amber-600 dark:text-amber-500" />
+                        )}
+                      </button>
+
+                      {expandedWarnings && (
+                        <div className="space-y-2 border-t border-amber-500/20 p-3 pt-2">
+                          <p className="mb-2 text-[10px] text-amber-700 dark:text-amber-300">
+                            These warnings won&apos;t block launch but may affect plan quality.
+                            Click &quot;Fix automatically&quot; to refine.
+                          </p>
+                          {warnings.map((warning, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2"
+                            >
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      'h-4 px-1.5 py-0 font-mono text-[9px]',
+                                      warning.severity === 'warning'
+                                        ? 'border-amber-600/40 bg-amber-600/10 text-amber-900 dark:text-amber-100'
+                                        : 'border-blue-600/40 bg-blue-600/10 text-blue-900 dark:text-blue-100'
+                                    )}
+                                  >
+                                    {warning.code}
+                                  </Badge>
+                                  {warning.phaseIndex !== undefined && (
+                                    <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                                      Phase {warning.phaseIndex + 1}
+                                      {warning.taskIndex !== undefined &&
+                                        `, Task ${warning.taskIndex + 1}`}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+                                  {warning.message}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 flex-shrink-0 border-amber-600/30 bg-amber-600/10 px-2 text-[10px] text-amber-900 hover:bg-amber-600/20 dark:text-amber-100"
+                                onClick={() => {
+                                  setShowRefinement(true);
+                                  setRefinementInput(getWarningFixPrompt(warning));
+                                }}
+                              >
+                                <Wand2 className="mr-1 h-3 w-3" />
+                                Fix automatically
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      )}
+                    </Card>
+                  );
+                })()}
 
                 {generatedPhases.map((phase, phaseIdx) => {
                   const phaseTasks = generatedTasks
