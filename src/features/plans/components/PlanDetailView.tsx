@@ -6,6 +6,14 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Badge } from '@/shared/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
+import { Checkbox } from '@/shared/components/ui/checkbox';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { cn, formatRelativeTime, formatDuration } from '@/shared/lib/utils';
 import {
@@ -49,6 +57,7 @@ import {
   ChevronLeft,
   Rocket,
   Eye,
+  Users,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -309,6 +318,9 @@ export function PlanDetailView({
             editingTaskId={editingTaskId}
             phaseEdits={phaseEdits}
             taskEdits={taskEdits}
+            planId={planId}
+            updatePhase={updatePhase}
+            updateTask={updateTask}
             onToggle={() => togglePhase(phase.id)}
             onStartEditPhase={() => startEditingPhase(phase)}
             onSavePhase={savePhase}
@@ -765,6 +777,7 @@ function StatPill({
 // Phase Item (extracted to reduce complexity)
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line complexity
 const PhaseItem = React.memo(function PhaseItem({
   phase,
   phaseNumber,
@@ -778,6 +791,9 @@ const PhaseItem = React.memo(function PhaseItem({
   editingTaskId,
   phaseEdits,
   taskEdits,
+  planId,
+  updatePhase,
+  updateTask,
   onToggle,
   onStartEditPhase,
   onSavePhase,
@@ -804,6 +820,9 @@ const PhaseItem = React.memo(function PhaseItem({
   editingTaskId: string | null;
   phaseEdits: { title: string; description: string };
   taskEdits: { title: string; description: string };
+  planId: string;
+  updatePhase: ReturnType<typeof useUpdatePhaseMutation>[0];
+  updateTask: ReturnType<typeof useUpdatePlanTaskMutation>[0];
   onToggle: () => void;
   onStartEditPhase: () => void;
   onSavePhase: () => void;
@@ -992,6 +1011,83 @@ const PhaseItem = React.memo(function PhaseItem({
       {/* Phase Content - collapsible task list */}
       {isExpanded && (
         <CardContent className="p-0">
+          {/* Phase settings - only visible in edit mode */}
+          {isEditMode && !isEditingPhase && (
+            <div className="border-b border-border/30 bg-muted/20 px-4 py-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-foreground">
+                      Execution Mode
+                    </label>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      How tasks in this phase should run
+                    </p>
+                  </div>
+                  <Select
+                    value={phase.executionMode}
+                    onValueChange={(value) =>
+                      updatePhase({
+                        id: phase.id,
+                        data: {
+                          executionMode: value as
+                            | 'sequential'
+                            | 'parallel'
+                            | 'manual',
+                          planId,
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[140px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sequential">
+                        <div className="flex items-center gap-1.5">
+                          <Play className="h-3 w-3" />
+                          Sequential
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="parallel">
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-3 w-3" />
+                          Parallel
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="manual">
+                        <div className="flex items-center gap-1.5">
+                          <Pause className="h-3 w-3" />
+                          Manual
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-foreground">
+                      Pause After Phase
+                    </label>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Stop execution after this phase completes
+                    </p>
+                  </div>
+                  <Checkbox
+                    checked={phase.pauseAfter}
+                    onCheckedChange={(checked) =>
+                      updatePhase({
+                        id: phase.id,
+                        data: { pauseAfter: checked === true, planId },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="divide-y divide-border/30">
             {phaseTasks.map((task) => (
               <TaskRow
@@ -1002,6 +1098,8 @@ const PhaseItem = React.memo(function PhaseItem({
                 isEditing={editingTaskId === task.id}
                 taskEdits={taskEdits}
                 isCurrent={currentTaskId === task.id}
+                updateTask={updateTask}
+                planId={planId}
                 onStartEdit={() => onStartEditTask(task)}
                 onSave={onSaveTask}
                 onCancel={onCancelTaskEdit}
@@ -1126,6 +1224,8 @@ const TaskRow = React.memo(function TaskRow({
   isEditing,
   taskEdits,
   isCurrent,
+  updateTask,
+  planId,
   onStartEdit,
   onSave,
   onCancel,
@@ -1139,6 +1239,8 @@ const TaskRow = React.memo(function TaskRow({
   isEditing: boolean;
   taskEdits: { title: string; description: string };
   isCurrent: boolean;
+  updateTask: ReturnType<typeof useUpdatePlanTaskMutation>[0];
+  planId: string;
   onStartEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
@@ -1230,6 +1332,28 @@ const TaskRow = React.memo(function TaskRow({
             <p className="mt-0.5 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">
               {task.description}
             </p>
+
+            {/* Task parallel execution setting - only in edit mode */}
+            {isEditMode && !isEditing && (
+              <div className="mt-2 flex items-center gap-2">
+                <Checkbox
+                  checked={task.canRunInParallel}
+                  onCheckedChange={(checked) =>
+                    updateTask({
+                      id: task.id,
+                      data: { canRunInParallel: checked === true, planId },
+                    })
+                  }
+                  id={`parallel-${task.id}`}
+                />
+                <label
+                  htmlFor={`parallel-${task.id}`}
+                  className="cursor-pointer text-[11px] text-muted-foreground"
+                >
+                  Can run in parallel with other tasks
+                </label>
+              </div>
+            )}
 
             {/* Dependencies */}
             {depTasks.length > 0 && (

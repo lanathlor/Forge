@@ -6,6 +6,14 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Badge } from '@/shared/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
+import { Checkbox } from '@/shared/components/ui/checkbox';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { cn, formatRelativeTime } from '@/shared/lib/utils';
 import {
@@ -39,6 +47,8 @@ import {
   Zap,
   Users,
   Loader2,
+  Pause,
+  Play,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -762,6 +772,9 @@ export function PlanEditor({ planId, onBack }: PlanEditorProps) {
               dragState={dragState}
               dragOverId={dragOverId}
               depPickerTaskId={depPickerTaskId}
+              planId={planId}
+              updatePhase={updatePhase}
+              updateTask={updateTask}
               onToggle={() => togglePhase(phase.id)}
               onSavePhaseTitle={(title) =>
                 handleSavePhaseTitle(phase.id, title)
@@ -921,6 +934,7 @@ function PlanHeaderEditor({
 // Editor Phase Item
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line complexity
 const EditorPhaseItem = React.memo(function EditorPhaseItem({
   phase,
   phaseNumber,
@@ -932,6 +946,9 @@ const EditorPhaseItem = React.memo(function EditorPhaseItem({
   dragState,
   dragOverId,
   depPickerTaskId,
+  planId,
+  updatePhase,
+  updateTask,
   onToggle,
   onSavePhaseTitle,
   onSavePhaseDescription,
@@ -960,6 +977,9 @@ const EditorPhaseItem = React.memo(function EditorPhaseItem({
   dragState: DragState | null;
   dragOverId: string | null;
   depPickerTaskId: string | null;
+  planId: string;
+  updatePhase: ReturnType<typeof useUpdatePhaseMutation>[0];
+  updateTask: ReturnType<typeof useUpdatePlanTaskMutation>[0];
   onToggle: () => void;
   onSavePhaseTitle: (title: string) => Promise<void>;
   onSavePhaseDescription: (desc: string) => Promise<void>;
@@ -1055,6 +1075,15 @@ const EditorPhaseItem = React.memo(function EditorPhaseItem({
                 {phase.executionMode}
               </Badge>
             )}
+            {phase.pauseAfter && (
+              <Badge
+                variant="outline"
+                className="h-5 border-orange-500/30 px-1.5 py-0 text-[10px] text-orange-400"
+              >
+                <Pause className="mr-0.5 h-2.5 w-2.5" />
+                Pause after
+              </Badge>
+            )}
           </div>
           {(phase.description || isEditable) && (
             <InlineEditable
@@ -1086,6 +1115,83 @@ const EditorPhaseItem = React.memo(function EditorPhaseItem({
 
       {isExpanded && (
         <CardContent className="p-0">
+          {/* Phase settings - only visible in edit mode */}
+          {isEditable && (
+            <div className="border-b border-border/30 bg-muted/20 px-4 py-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-foreground">
+                      Execution Mode
+                    </label>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      How tasks in this phase should run
+                    </p>
+                  </div>
+                  <Select
+                    value={phase.executionMode}
+                    onValueChange={(value) =>
+                      updatePhase({
+                        id: phase.id,
+                        data: {
+                          executionMode: value as
+                            | 'sequential'
+                            | 'parallel'
+                            | 'manual',
+                          planId,
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[140px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sequential">
+                        <div className="flex items-center gap-1.5">
+                          <Play className="h-3 w-3" />
+                          Sequential
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="parallel">
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-3 w-3" />
+                          Parallel
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="manual">
+                        <div className="flex items-center gap-1.5">
+                          <Pause className="h-3 w-3" />
+                          Manual
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-foreground">
+                      Pause After Phase
+                    </label>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Stop execution after this phase completes
+                    </p>
+                  </div>
+                  <Checkbox
+                    checked={phase.pauseAfter}
+                    onCheckedChange={(checked) =>
+                      updatePhase({
+                        id: phase.id,
+                        data: { pauseAfter: checked === true, planId },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="divide-y divide-border/30">
             {phaseTasks.map((task) => (
               <EditorTaskRow
@@ -1111,6 +1217,8 @@ const EditorPhaseItem = React.memo(function EditorPhaseItem({
                 onToggleDependency={(depId) =>
                   onToggleDependency(task.id, depId)
                 }
+                updateTask={updateTask}
+                planId={planId}
               />
             ))}
           </div>
@@ -1154,6 +1262,8 @@ const EditorTaskRow = React.memo(function EditorTaskRow({
   onDragEnd,
   onToggleDepPicker,
   onToggleDependency,
+  updateTask,
+  planId,
 }: {
   task: PlanTask;
   allTasks: PlanTask[];
@@ -1170,6 +1280,8 @@ const EditorTaskRow = React.memo(function EditorTaskRow({
   onDragEnd: (e: React.DragEvent) => void;
   onToggleDepPicker: () => void;
   onToggleDependency: (depId: string) => void;
+  updateTask: ReturnType<typeof useUpdatePlanTaskMutation>[0];
+  planId: string;
 }) {
   const rawDeps = task.dependsOn;
   const deps: string[] = Array.isArray(rawDeps)
@@ -1245,6 +1357,27 @@ const EditorTaskRow = React.memo(function EditorTaskRow({
             placeholder="Describe what this task should accomplish..."
             multiline
           />
+
+          {isEditable && (
+            <div className="mt-2 flex items-center gap-2">
+              <Checkbox
+                checked={task.canRunInParallel}
+                onCheckedChange={(checked) =>
+                  updateTask({
+                    id: task.id,
+                    data: { canRunInParallel: checked === true, planId },
+                  })
+                }
+                id={`parallel-${task.id}`}
+              />
+              <label
+                htmlFor={`parallel-${task.id}`}
+                className="cursor-pointer text-[11px] text-muted-foreground"
+              >
+                Can run in parallel with other tasks
+              </label>
+            </div>
+          )}
 
           {depTasks.length > 0 && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
