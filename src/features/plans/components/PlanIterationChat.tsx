@@ -14,7 +14,7 @@ import { Textarea } from '@/shared/components/ui/textarea';
 import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { useGetPlanQuery } from '../store/plansApi';
-import { Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 
 interface PlanIterationChatProps {
   planId: string | null;
@@ -38,6 +38,7 @@ export function PlanIterationChat({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [changesCount, setChangesCount] = useState(0);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,17 +46,72 @@ export function PlanIterationChat({
   }, [messages]);
 
   useEffect(() => {
-    if (open && data) {
-      // Initialize with a welcome message
-      setMessages([
-        {
-          role: 'assistant',
-          content: `I'm ready to help you iterate on "${data.plan.title}". You can ask me to:\n\n• Refine or expand any phase or task descriptions\n• Add missing steps or tasks\n• Reorganize phases or tasks\n• Break down complex tasks into smaller steps\n• Add error handling or edge cases\n\nJust tell me what you'd like to change in plain English!`,
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [open, data]);
+    if (!open || !data || historyLoaded) return;
+
+    const loadHistory = async () => {
+      try {
+        // Find the latest chat iteration with conversation history
+        const chatIterations = data.iterations
+          ?.filter((iter) => iter.iterationType === 'chat' && iter.conversationHistory)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        if (chatIterations && chatIterations.length > 0) {
+          const latestIteration = chatIterations[0];
+          if (!latestIteration) {
+            setMessages([
+              {
+                role: 'assistant',
+                content: `I'm ready to help you iterate on "${data.plan.title}". You can ask me to:\n\n• Refine or expand any phase or task descriptions\n• Add missing steps or tasks\n• Reorganize phases or tasks\n• Break down complex tasks into smaller steps\n• Add error handling or edge cases\n\nJust tell me what you'd like to change in plain English!`,
+                timestamp: new Date(),
+              },
+            ]);
+            setHistoryLoaded(true);
+            return;
+          }
+
+          const history = latestIteration.conversationHistory as Array<{
+            role: 'user' | 'assistant';
+            content: string;
+          }>;
+
+          if (history && history.length > 0) {
+            // Convert persisted history to Message format
+            const loadedMessages: Message[] = history.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(latestIteration.createdAt),
+            }));
+            setMessages(loadedMessages);
+            setHistoryLoaded(true);
+            return;
+          }
+        }
+
+        // No history found, show welcome message
+        setMessages([
+          {
+            role: 'assistant',
+            content: `I'm ready to help you iterate on "${data.plan.title}". You can ask me to:\n\n• Refine or expand any phase or task descriptions\n• Add missing steps or tasks\n• Reorganize phases or tasks\n• Break down complex tasks into smaller steps\n• Add error handling or edge cases\n\nJust tell me what you'd like to change in plain English!`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHistoryLoaded(true);
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        // Fallback to welcome message on error
+        setMessages([
+          {
+            role: 'assistant',
+            content: `I'm ready to help you iterate on "${data.plan.title}". You can ask me to:\n\n• Refine or expand any phase or task descriptions\n• Add missing steps or tasks\n• Reorganize phases or tasks\n• Break down complex tasks into smaller steps\n• Add error handling or edge cases\n\nJust tell me what you'd like to change in plain English!`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHistoryLoaded(true);
+      }
+    };
+
+    loadHistory();
+  }, [open, data, historyLoaded]);
 
   const handleSendMessage = async () => {
     if (!input.trim() || !planId || isLoading) return;
@@ -212,6 +268,31 @@ export function PlanIterationChat({
     }
   };
 
+  const handleClearHistory = () => {
+    if (!data) return;
+
+    setMessages([
+      {
+        role: 'assistant',
+        content: `I'm ready to help you iterate on "${data.plan.title}". You can ask me to:\n\n• Refine or expand any phase or task descriptions\n• Add missing steps or tasks\n• Reorganize phases or tasks\n• Break down complex tasks into smaller steps\n• Add error handling or edge cases\n\nJust tell me what you'd like to change in plain English!`,
+        timestamp: new Date(),
+      },
+    ]);
+    setInput('');
+    setChangesCount(0);
+  };
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setHistoryLoaded(false);
+      setMessages([]);
+      setInput('');
+      setChangesCount(0);
+      setIsLoading(false);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80vh] max-w-3xl flex-col">
@@ -223,13 +304,27 @@ export function PlanIterationChat({
                 Have a conversation with Claude to refine and improve your plan
               </DialogDescription>
             </div>
-            {changesCount > 0 && (
-              <Badge variant="default" className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" />
-                {changesCount} {changesCount === 1 ? 'change' : 'changes'}{' '}
-                applied
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {changesCount > 0 && (
+                <Badge variant="default" className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {changesCount} {changesCount === 1 ? 'change' : 'changes'}{' '}
+                  applied
+                </Badge>
+              )}
+              {messages.length > 1 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleClearHistory}
+                  disabled={isLoading}
+                  title="Clear chat history"
+                >
+                  <Trash2 className="mr-1 h-3 w-3" />
+                  Clear History
+                </Button>
+              )}
+            </div>
           </div>
         </DialogHeader>
 

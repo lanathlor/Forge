@@ -147,21 +147,78 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [totalApplied, setTotalApplied] = useState(0);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initialize welcome message when opened
+  // Load persisted conversation history from planIterations
   useEffect(() => {
-    if (enabled && planData && messages.length === 0) {
-      setMessages([
-        {
-          role: 'assistant',
-          content: `Ready to refine **"${planData.plan.title}"**. Tell me what to change, or use a quick action below.`,
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [enabled, planData, messages.length]);
+    if (!enabled || !planData || historyLoaded) return;
+
+    const loadHistory = async () => {
+      try {
+        // Find the latest chat iteration with conversation history
+        const chatIterations = planData.iterations
+          ?.filter((iter) => iter.iterationType === 'chat' && iter.conversationHistory)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        if (chatIterations && chatIterations.length > 0) {
+          const latestIteration = chatIterations[0];
+          if (!latestIteration || !planData) {
+            setMessages([
+              {
+                role: 'assistant',
+                content: `Ready to refine **"${planData?.plan.title || 'your plan'}"**. Tell me what to change, or use a quick action below.`,
+                timestamp: new Date(),
+              },
+            ]);
+            setHistoryLoaded(true);
+            return;
+          }
+
+          const history = latestIteration.conversationHistory as Array<{
+            role: 'user' | 'assistant';
+            content: string;
+          }>;
+
+          if (history && history.length > 0) {
+            // Convert persisted history to ChatMessage format
+            const loadedMessages: ChatMessage[] = history.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(latestIteration.createdAt),
+            }));
+            setMessages(loadedMessages);
+            setHistoryLoaded(true);
+            return;
+          }
+        }
+
+        // No history found, show welcome message
+        setMessages([
+          {
+            role: 'assistant',
+            content: `Ready to refine **"${planData.plan.title}"**. Tell me what to change, or use a quick action below.`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHistoryLoaded(true);
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        // Fallback to welcome message on error
+        setMessages([
+          {
+            role: 'assistant',
+            content: `Ready to refine **"${planData.plan.title}"**. Tell me what to change, or use a quick action below.`,
+            timestamp: new Date(),
+          },
+        ]);
+        setHistoryLoaded(true);
+      }
+    };
+
+    loadHistory();
+  }, [enabled, planData, historyLoaded]);
 
   // Auto-scroll
   useEffect(() => {
@@ -172,6 +229,13 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
   useEffect(() => {
     if (enabled) {
       setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [enabled]);
+
+  // Reset state when chat is closed
+  useEffect(() => {
+    if (!enabled) {
+      setHistoryLoaded(false);
     }
   }, [enabled]);
 
@@ -348,7 +412,23 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
     setMessages([]);
     setInput('');
     setTotalApplied(0);
+    setHistoryLoaded(false);
   }, []);
+
+  // Clear chat history and start fresh
+  const clearHistory = useCallback(() => {
+    if (!planData) return;
+
+    setMessages([
+      {
+        role: 'assistant',
+        content: `Ready to refine **"${planData.plan.title}"**. Tell me what to change, or use a quick action below.`,
+        timestamp: new Date(),
+      },
+    ]);
+    setInput('');
+    setTotalApplied(0);
+  }, [planData]);
 
   return {
     // Plan data
@@ -372,5 +452,6 @@ export function usePlanRefinementChat(planId: string, enabled: boolean) {
     applyAccepted,
     acceptAllAndApply,
     resetChat,
+    clearHistory,
   };
 }

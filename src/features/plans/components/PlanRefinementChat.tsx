@@ -33,6 +33,7 @@ import {
   Layers,
   Eye,
   MessageSquare,
+  Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -129,6 +130,19 @@ export function PlanRefinementChat({
           )}
         </div>
         <div className="flex items-center gap-1">
+          {chat.messages.length > 1 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs"
+              onClick={chat.clearHistory}
+              disabled={chat.isLoading}
+              title="Clear chat history"
+            >
+              <Trash2 className="mr-1 h-3 w-3" />
+              Clear
+            </Button>
+          )}
           {onLaunch && (
             <Button
               size="sm"

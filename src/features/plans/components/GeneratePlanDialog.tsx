@@ -918,12 +918,15 @@ export function GeneratePlanDialog({
 
             {/* Live status message from the LLM stream */}
             {generationStatus && (
-              <p
-                key={generationStatus}
-                className="text-xs text-muted-foreground duration-300 animate-in fade-in"
-              >
-                {generationStatus}
-              </p>
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                <p
+                  key={generationStatus}
+                  className="text-xs text-muted-foreground duration-300 animate-in fade-in"
+                >
+                  {generationStatus}
+                </p>
+              </div>
             )}
 
             {/* Live LLM output preview - shows what Claude is generating */}

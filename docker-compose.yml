@@ -5,25 +5,25 @@ services:
       dockerfile: Dockerfile
       target: dev
       args:
-        USER_UID: ${USER_UID:-1000}
-        USER_GID: ${USER_GID:-100}
-    user: '${USER_UID:-1000}:${USER_GID:-100}'
+        USER_UID: ${DEV_USER_UID:-1000}
+        USER_GID: ${DEV_USER_GID:-100}
+    user: '${DEV_USER_UID:-1000}:${DEV_USER_GID:-100}'
     ports:
       - '3001:3000'
     volumes:
       - .:/app
       - /app/.next
       - /app/node_modules
-      - ${WORKSPACE_ROOT:-/tmp/forge-workspace}:/workspace
-      - ${CLAUDE_CONFIG_DIR:-~/.claude}:/home/node/.claude
+      - ${DEV_WORKSPACE_ROOT:-/tmp/forge-workspace}:/workspace
+      - ${DEV_CLAUDE_CONFIG_DIR:-~/.claude}:/home/node/.claude
     environment:
-      - DATABASE_URL=${DATABASE_URL:-/app/dev.db}
+      - DATABASE_URL=${DEV_DATABASE_URL:-/app/dev.db}
       - WORKSPACE_ROOT=/workspace
-      - CLAUDE_CODE_PATH=${CLAUDE_CODE_PATH:-claude}
-      - SIMULATE_CLAUDE=${SIMULATE_CLAUDE:-false}
-      - AI_PROVIDER=${AI_PROVIDER:-claude-code}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - CLAUDE_CODE_PATH=${DEV_CLAUDE_CODE_PATH:-claude}
+      - SIMULATE_CLAUDE=${DEV_SIMULATE_CLAUDE:-false}
+      - AI_PROVIDER=${DEV_AI_PROVIDER:-claude-code}
+      - ANTHROPIC_API_KEY=${DEV_ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${DEV_OPENAI_API_KEY:-}
       - NODE_ENV=development
     stdin_open: true
     tty: true
