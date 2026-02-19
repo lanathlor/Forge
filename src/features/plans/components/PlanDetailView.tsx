@@ -857,13 +857,21 @@ const PhaseItem = React.memo(function PhaseItem({
       )}
     >
       {/* Phase Header - always visible, acts as toggle */}
-      <button
+      <div
         className={cn(
-          'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
+          'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer',
           'hover:bg-muted/40',
           isExpanded && 'border-b border-border/50'
         )}
         onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
       >
         {/* Expand/collapse chevron */}
         <div className="flex-shrink-0 text-muted-foreground">
@@ -992,7 +1000,10 @@ const PhaseItem = React.memo(function PhaseItem({
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
-              onClick={onStartEditPhase}
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartEditPhase();
+              }}
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
@@ -1000,13 +1011,16 @@ const PhaseItem = React.memo(function PhaseItem({
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-              onClick={onDeletePhase}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeletePhase();
+              }}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         )}
-      </button>
+      </div>
 
       {/* Phase Content - collapsible task list */}
       {isExpanded && (
@@ -1335,7 +1349,7 @@ const TaskRow = React.memo(function TaskRow({
 
             {/* Task parallel execution setting - only in edit mode */}
             {isEditMode && !isEditing && (
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2">
                 <Checkbox
                   checked={task.canRunInParallel}
                   onCheckedChange={(checked) =>
@@ -1344,14 +1358,9 @@ const TaskRow = React.memo(function TaskRow({
                       data: { canRunInParallel: checked === true, planId },
                     })
                   }
-                  id={`parallel-${task.id}`}
+                  label="Can run in parallel with other tasks"
+                  labelClassName="text-[11px] text-muted-foreground"
                 />
-                <label
-                  htmlFor={`parallel-${task.id}`}
-                  className="cursor-pointer text-[11px] text-muted-foreground"
-                >
-                  Can run in parallel with other tasks
-                </label>
               </div>
             )}
 

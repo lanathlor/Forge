@@ -1359,7 +1359,7 @@ const EditorTaskRow = React.memo(function EditorTaskRow({
           />
 
           {isEditable && (
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2">
               <Checkbox
                 checked={task.canRunInParallel}
                 onCheckedChange={(checked) =>
@@ -1368,14 +1368,9 @@ const EditorTaskRow = React.memo(function EditorTaskRow({
                     data: { canRunInParallel: checked === true, planId },
                   })
                 }
-                id={`parallel-${task.id}`}
+                label="Can run in parallel with other tasks"
+                labelClassName="text-[11px] text-muted-foreground"
               />
-              <label
-                htmlFor={`parallel-${task.id}`}
-                className="cursor-pointer text-[11px] text-muted-foreground"
-              >
-                Can run in parallel with other tasks
-              </label>
             </div>
           )}
 
