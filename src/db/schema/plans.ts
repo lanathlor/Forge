@@ -29,6 +29,7 @@ export const plans = sqliteTable('plans', {
     .notNull()
     .default('user'),
   sourceFile: text('source_file'), // if imported from markdown
+  warnings: text('warnings'), // JSON array of validation warnings
 
   // Execution state
   currentPhaseId: text('current_phase_id'),

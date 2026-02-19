@@ -93,6 +93,7 @@ describe('plansApi', () => {
           completedAt: null,
           createdBy: 'user',
           sourceFile: null,
+    warnings: null,
           currentPhaseId: null,
           currentTaskId: null,
         },

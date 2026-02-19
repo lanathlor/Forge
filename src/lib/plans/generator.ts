@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { claudeWrapper } from '@/lib/claude/wrapper';
 import { getContainerPath } from '@/lib/qa-gates/command-executor';
 
-interface GeneratedPlanStructure {
+export interface GeneratedPlanStructure {
   phases: {
     title: string;
     description?: string;
@@ -19,6 +19,22 @@ interface GeneratedPlanStructure {
       canRunInParallel: boolean;
     }[];
   }[];
+}
+
+export type PlanWarningCode =
+  | 'CIRCULAR_DEPENDENCY'
+  | 'INVALID_DEPENDENCY'
+  | 'EMPTY_PHASE'
+  | 'LARGE_PLAN'
+  | 'MANY_PHASES'
+  | 'MANY_TASKS';
+
+export interface PlanWarning {
+  code: PlanWarningCode;
+  message: string;
+  severity: 'warning' | 'info';
+  phaseIndex?: number;
+  taskIndex?: number;
 }
 
 /**
@@ -36,7 +52,7 @@ export type GenerationProgressEvent =
   | { type: 'status'; message: string }
   | { type: 'progress'; percent: number }
   | { type: 'chunk'; content: string }
-  | { type: 'done'; planId: string }
+  | { type: 'done'; planId: string; warnings?: PlanWarning[] }
   | { type: 'error'; code: GenerationErrorCode; message: string; detail?: string };
 
 export type ProgressCallback = (event: GenerationProgressEvent) => void;
@@ -208,11 +224,20 @@ export async function generatePlanFromDescription(
       throw parseError;
     }
 
+    emit({ type: 'progress', percent: 75 });
+    emit({ type: 'status', message: 'Validating plan structure...' });
+
+    // Validate plan structure and collect warnings
+    const warnings = validatePlanStructure(planStructure);
+    if (warnings.length > 0) {
+      console.log(`[PlanGenerator] Validation found ${warnings.length} warning(s):`, warnings);
+    }
+
     emit({ type: 'progress', percent: 80 });
     emit({ type: 'status', message: 'Saving phases and tasks...' });
 
     // Save phases and tasks to database
-    await savePlanStructure(planId, planStructure, prompt);
+    await savePlanStructure(planId, planStructure, prompt, warnings);
 
     emit({ type: 'progress', percent: 95 });
 
@@ -220,7 +245,7 @@ export async function generatePlanFromDescription(
     await updatePlanStats(planId);
 
     emit({ type: 'progress', percent: 100 });
-    emit({ type: 'done', planId });
+    emit({ type: 'done', planId, warnings: warnings.length > 0 ? warnings : undefined });
 
     return planId;
   } catch (error) {
@@ -348,10 +373,168 @@ function parseClaudeResponse(response: string): GeneratedPlanStructure {
   }
 }
 
+/**
+ * Validates the structure of a generated plan and returns warnings for potential issues.
+ *
+ * Checks for:
+ * - Circular dependencies within phases (using topological sort)
+ * - Tasks that reference non-existent sibling indices in dependsOn
+ * - Phases with zero tasks
+ * - Suspiciously large plans (>10 phases or >50 tasks total)
+ *
+ * @param planStructure - The parsed plan structure to validate
+ * @returns Array of warnings found during validation
+ */
+export function validatePlanStructure(planStructure: GeneratedPlanStructure): PlanWarning[] {
+  const warnings: PlanWarning[] = [];
+  let totalTasks = 0;
+
+  // Check overall plan size
+  if (planStructure.phases.length > 10) {
+    warnings.push({
+      code: 'MANY_PHASES',
+      severity: 'warning',
+      message: `Plan has ${planStructure.phases.length} phases, which may be difficult to manage. Consider breaking it into multiple plans.`,
+    });
+  }
+
+  // Validate each phase
+  for (let phaseIdx = 0; phaseIdx < planStructure.phases.length; phaseIdx++) {
+    const phase = planStructure.phases[phaseIdx];
+    if (!phase) continue;
+
+    const tasks = phase.tasks;
+    totalTasks += tasks.length;
+
+    // Check for empty phases
+    if (tasks.length === 0) {
+      warnings.push({
+        code: 'EMPTY_PHASE',
+        severity: 'warning',
+        message: `Phase ${phaseIdx + 1} "${phase.title}" has no tasks.`,
+        phaseIndex: phaseIdx,
+      });
+      continue;
+    }
+
+    // Build dependency graph for topological sort
+    const adjacencyList = new Map<number, number[]>();
+    const inDegree = new Map<number, number>();
+
+    // Initialize all tasks with in-degree 0
+    for (let i = 0; i < tasks.length; i++) {
+      adjacencyList.set(i, []);
+      inDegree.set(i, 0);
+    }
+
+    // Build the graph and check for invalid dependencies
+    for (let taskIdx = 0; taskIdx < tasks.length; taskIdx++) {
+      const task = tasks[taskIdx];
+      if (!task) continue;
+
+      for (const depIdx of task.dependsOn) {
+        // Check if dependency index is valid
+        if (depIdx < 0 || depIdx >= tasks.length) {
+          warnings.push({
+            code: 'INVALID_DEPENDENCY',
+            severity: 'warning',
+            message: `Task ${taskIdx + 1} in phase ${phaseIdx + 1} references non-existent task index ${depIdx}.`,
+            phaseIndex: phaseIdx,
+            taskIndex: taskIdx,
+          });
+          continue;
+        }
+
+        // Check for self-dependency
+        if (depIdx === taskIdx) {
+          warnings.push({
+            code: 'CIRCULAR_DEPENDENCY',
+            severity: 'warning',
+            message: `Task ${taskIdx + 1} in phase ${phaseIdx + 1} depends on itself.`,
+            phaseIndex: phaseIdx,
+            taskIndex: taskIdx,
+          });
+          continue;
+        }
+
+        // Add edge: depIdx -> taskIdx (taskIdx depends on depIdx)
+        const neighbors = adjacencyList.get(depIdx);
+        if (neighbors) {
+          neighbors.push(taskIdx);
+        }
+        inDegree.set(taskIdx, (inDegree.get(taskIdx) ?? 0) + 1);
+      }
+    }
+
+    // Topological sort using Kahn's algorithm to detect circular dependencies
+    const queue: number[] = [];
+    const sorted: number[] = [];
+
+    // Start with all nodes that have in-degree 0
+    for (let i = 0; i < tasks.length; i++) {
+      if (inDegree.get(i) === 0) {
+        queue.push(i);
+      }
+    }
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (current === undefined) break;
+
+      sorted.push(current);
+
+      const neighbors = adjacencyList.get(current) ?? [];
+      for (const neighbor of neighbors) {
+        const newInDegree = (inDegree.get(neighbor) ?? 0) - 1;
+        inDegree.set(neighbor, newInDegree);
+        if (newInDegree === 0) {
+          queue.push(neighbor);
+        }
+      }
+    }
+
+    // If we couldn't sort all tasks, there's a cycle
+    if (sorted.length < tasks.length) {
+      // Find which tasks are part of the cycle
+      const cycleNodes: number[] = [];
+      for (let i = 0; i < tasks.length; i++) {
+        if ((inDegree.get(i) ?? 0) > 0) {
+          cycleNodes.push(i);
+        }
+      }
+
+      warnings.push({
+        code: 'CIRCULAR_DEPENDENCY',
+        severity: 'warning',
+        message: `Phase ${phaseIdx + 1} "${phase.title}" has circular dependencies among tasks: ${cycleNodes.map((i) => i + 1).join(', ')}.`,
+        phaseIndex: phaseIdx,
+      });
+    }
+  }
+
+  // Check total task count
+  if (totalTasks > 50) {
+    warnings.push({
+      code: 'MANY_TASKS',
+      severity: 'warning',
+      message: `Plan has ${totalTasks} total tasks, which may be difficult to track. Consider simplifying or breaking into multiple plans.`,
+    });
+  } else if (totalTasks > 30) {
+    warnings.push({
+      code: 'LARGE_PLAN',
+      severity: 'info',
+      message: `Plan has ${totalTasks} total tasks. This is a substantial plan that may take significant time to complete.`,
+    });
+  }
+
+  return warnings;
+}
+
 async function savePlanStructure(
   planId: string,
   planStructure: GeneratedPlanStructure,
-  prompt: string
+  prompt: string,
+  warnings: PlanWarning[]
 ): Promise<void> {
   for (let phaseIdx = 0; phaseIdx < planStructure.phases.length; phaseIdx++) {
     const phaseData = planStructure.phases[phaseIdx];
@@ -433,6 +616,14 @@ async function savePlanStructure(
     changes: JSON.stringify(planStructure),
     changedBy: 'claude',
   });
+
+  // Persist warnings to the plan
+  if (warnings.length > 0) {
+    await db
+      .update(plans)
+      .set({ warnings: JSON.stringify(warnings) })
+      .where(eq(plans.id, planId));
+  }
 }
 
 async function updatePlanStats(planId: string): Promise<void> {

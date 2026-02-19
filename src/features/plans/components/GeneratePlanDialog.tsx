@@ -69,6 +69,14 @@ interface RefinementMessage {
   content: string;
 }
 
+interface PlanWarning {
+  code: string;
+  message: string;
+  severity: 'warning' | 'info';
+  phaseIndex?: number;
+  taskIndex?: number;
+}
+
 // ---------------------------------------------------------------------------
 // Templates
 // ---------------------------------------------------------------------------
@@ -137,6 +145,7 @@ export function GeneratePlanDialog({
     message: string;
     detail?: string;
   } | null>(null);
+  const [generationWarnings, setGenerationWarnings] = useState<PlanWarning[]>([]);
   // planId populated once the SSE 'done' event arrives, used to fetch plan data
   const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
   // AbortController for the in-flight SSE generation request
@@ -265,6 +274,7 @@ export function GeneratePlanDialog({
           setGenerationStatus('');
           setGenerationLlmOutput('');
           setGenerationError(null);
+          setGenerationWarnings([]);
           setGeneratingPlanId(null);
           setGeneratedPlan(null);
           setGeneratedPhases([]);
@@ -308,6 +318,7 @@ export function GeneratePlanDialog({
 
     setStep('generating');
     setGenerationError(null);
+    setGenerationWarnings([]);
     setGenerationProgress(0);
     setGenerationStatus('Starting...');
     setGenerationLlmOutput('');
@@ -370,6 +381,10 @@ export function GeneratePlanDialog({
             } else if (data.type === 'done' && data.planId) {
               resolvedPlanId = data.planId;
               setGenerationProgress(100);
+              // Capture warnings if present
+              if ((data as { warnings?: PlanWarning[] }).warnings) {
+                setGenerationWarnings((data as { warnings?: PlanWarning[] }).warnings || []);
+              }
               break outer;
             } else if (data.type === 'error' && data.message) {
               // Capture structured error with code
@@ -976,6 +991,33 @@ export function GeneratePlanDialog({
                   showRefinement && 'border-r'
                 )}
               >
+                {/* Validation warnings */}
+                {generationWarnings.length > 0 && (
+                  <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0 text-amber-600" />
+                      <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                        Plan Validation Warnings ({generationWarnings.length})
+                      </h3>
+                    </div>
+                    <div className="space-y-1.5 pl-6">
+                      {generationWarnings.map((warning, idx) => (
+                        <div key={idx} className="text-xs text-amber-800 dark:text-amber-200">
+                          <span className={cn(
+                            'mr-2 inline-block rounded px-1.5 py-0.5 font-mono text-[10px]',
+                            warning.severity === 'warning'
+                              ? 'bg-amber-600/20 text-amber-900 dark:text-amber-100'
+                              : 'bg-blue-600/20 text-blue-900 dark:text-blue-100'
+                          )}>
+                            {warning.code}
+                          </span>
+                          {warning.message}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {generatedPhases.map((phase, phaseIdx) => {
                   const phaseTasks = generatedTasks
                     .filter((t) => t.phaseId === phase.id)
