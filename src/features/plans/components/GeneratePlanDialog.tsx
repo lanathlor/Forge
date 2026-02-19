@@ -133,6 +133,9 @@ export function GeneratePlanDialog({
   const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
   // AbortController for the in-flight SSE generation request
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Elapsed time tracking
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Preview step
   const [generatedPlan, setGeneratedPlan] = useState<Plan | null>(null);
@@ -199,6 +202,29 @@ export function GeneratePlanDialog({
       llmOutputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [generationLlmOutput]);
+
+  // Elapsed time counter - ticks every second while generating
+  useEffect(() => {
+    if (step === 'generating') {
+      setElapsedSeconds(0);
+      timerIntervalRef.current = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      setElapsedSeconds(0);
+    }
+
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [step]);
 
   // Focus textarea on open
   useEffect(() => {
@@ -557,6 +583,17 @@ export function GeneratePlanDialog({
   };
 
   // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  const formatElapsedTime = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+  };
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -721,8 +758,11 @@ export function GeneratePlanDialog({
             </div>
 
             <h3 className="mb-2 text-lg font-semibold">Generating your plan</h3>
-            <p className="mb-6 text-sm text-muted-foreground">
+            <p className="mb-2 text-sm text-muted-foreground">
               &quot;{title}&quot;
+            </p>
+            <p className="mb-6 font-mono text-xs text-primary">
+              {formatElapsedTime(elapsedSeconds)} elapsed
             </p>
 
             {/* Progress bar */}
@@ -754,15 +794,23 @@ export function GeneratePlanDialog({
 
             {/* Live LLM output preview - shows what Claude is generating */}
             {generationLlmOutput && (
-              <div className="mt-4 w-full max-w-lg">
-                <div className="max-h-32 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-3">
-                  <p className="whitespace-pre-wrap text-[10px] leading-relaxed text-muted-foreground/80">
-                    {generationLlmOutput}
+              <div className="mt-6 w-full max-w-2xl">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <p className="text-[10px] font-medium text-muted-foreground">
+                    Live LLM Output
                   </p>
+                  <p className="text-[9px] text-muted-foreground/60">
+                    Streaming in real-time
+                  </p>
+                </div>
+                <div className="max-h-48 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-3 font-mono">
+                  <pre className="whitespace-pre-wrap text-[10px] leading-relaxed text-muted-foreground/80">
+                    {generationLlmOutput}
+                  </pre>
                   <div ref={llmOutputEndRef} />
                 </div>
                 <p className="mt-1 text-right text-[9px] text-muted-foreground/50">
-                  Live output from Claude
+                  {generationLlmOutput.length.toLocaleString()} characters
                 </p>
               </div>
             )}
