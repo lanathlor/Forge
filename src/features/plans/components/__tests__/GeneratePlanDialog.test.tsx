@@ -9,6 +9,7 @@ import { api } from '@/store/api';
 const mockGeneratePlan = vi.fn();
 const mockExecutePlan = vi.fn();
 const mockUpdatePlan = vi.fn();
+const mockFetchPlanWithDetails = vi.fn();
 const mockUnwrap = vi.fn();
 
 vi.mock('@/features/plans/store/plansApi', () => ({
@@ -18,6 +19,10 @@ vi.mock('@/features/plans/store/plansApi', () => ({
   ]),
   useExecutePlanMutation: vi.fn(() => [mockExecutePlan, { isLoading: false }]),
   useUpdatePlanMutation: vi.fn(() => [mockUpdatePlan, { isLoading: false }]),
+  useLazyGetPlanWithDetailsQuery: vi.fn(() => [
+    mockFetchPlanWithDetails,
+    { isLoading: false },
+  ]),
   useGetPlanQuery: vi.fn(() => ({
     data: null,
     refetch: vi.fn(),
@@ -55,6 +60,13 @@ describe('GeneratePlanDialog', () => {
     mockGeneratePlan.mockReturnValue({ unwrap: mockUnwrap });
     mockExecutePlan.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({}) });
     mockUpdatePlan.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({}) });
+    mockFetchPlanWithDetails.mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({
+        plan: { id: 'plan-1', title: 'Test' },
+        phases: [],
+        tasks: [],
+      }),
+    });
     mockUnwrap.mockResolvedValue({
       plan: { id: 'plan-1', title: 'Test' },
       phases: [],

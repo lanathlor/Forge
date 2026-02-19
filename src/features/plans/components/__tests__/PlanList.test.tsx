@@ -23,6 +23,16 @@ vi.mock('@/features/plans/store/plansApi', () => ({
     data: null,
     refetch: vi.fn(),
   })),
+  useLazyGetPlanWithDetailsQuery: vi.fn(() => [
+    vi.fn().mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({
+        plan: { id: 'plan-1', title: 'Test' },
+        phases: [],
+        tasks: [],
+      }),
+    }),
+    { isLoading: false },
+  ]),
   useExecutePlanMutation: vi.fn(() => [mockExecutePlan]),
   usePausePlanMutation: vi.fn(() => [mockPausePlan]),
   useResumePlanMutation: vi.fn(() => [mockResumePlan]),

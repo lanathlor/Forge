@@ -99,6 +99,16 @@ export const plansApi = api.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Plan', id }],
     }),
 
+    // Fetch plan with details and invalidate cache
+    // Used after SSE stream completes to sync RTK Query cache
+    getPlanWithDetails: builder.query<PlanWithDetails, string>({
+      query: (id) => `/plans/${id}`,
+      providesTags: (result, error, id) => [
+        { type: 'Plan', id },
+        { type: 'Plan', id: 'LIST' },
+      ],
+    }),
+
     // Create a new plan manually
     createPlan: builder.mutation<{ plan: Plan }, CreatePlanRequest>({
       query: (data) => ({
@@ -363,6 +373,8 @@ export const plansApi = api.injectEndpoints({
 export const {
   useGetPlansQuery,
   useGetPlanQuery,
+  useGetPlanWithDetailsQuery,
+  useLazyGetPlanWithDetailsQuery,
   useCreatePlanMutation,
   useGeneratePlanMutation,
   useUpdatePlanMutation,

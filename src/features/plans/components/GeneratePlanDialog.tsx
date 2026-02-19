@@ -19,6 +19,7 @@ import {
   useExecutePlanMutation,
   useUpdatePlanMutation,
   useGetPlanQuery,
+  useLazyGetPlanWithDetailsQuery,
 } from '../store/plansApi';
 import type { Plan, Phase, PlanTask } from '@/db/schema';
 import {
@@ -127,6 +128,7 @@ export function GeneratePlanDialog({
   // Generation
   const [executePlan] = useExecutePlanMutation();
   const [updatePlan] = useUpdatePlanMutation();
+  const [fetchPlanWithDetails] = useLazyGetPlanWithDetailsQuery();
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStatus, setGenerationStatus] = useState('');
   const [generationLlmOutput, setGenerationLlmOutput] = useState('');
@@ -166,27 +168,35 @@ export function GeneratePlanDialog({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const llmOutputEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch newly generated plan data once the SSE stream reports 'done'
-  const { data: newlyGeneratedPlanData } = useGetPlanQuery(
-    generatingPlanId ?? '',
-    { skip: !generatingPlanId }
-  );
-
   // Re-fetch plan data after refinement
   const { data: latestPlanData } = useGetPlanQuery(generatedPlan?.id ?? '', {
     skip: !generatedPlan?.id || changesApplied === 0,
   });
 
-  // Transition to preview once RTK Query returns the newly generated plan data
+  // Fetch plan data after SSE stream completes
   useEffect(() => {
-    if (!newlyGeneratedPlanData || !generatingPlanId) return;
-    setGeneratedPlan(newlyGeneratedPlanData.plan);
-    setGeneratedPhases(newlyGeneratedPlanData.phases);
-    setGeneratedTasks(newlyGeneratedPlanData.tasks);
-    setExpandedPhases(new Set(newlyGeneratedPlanData.phases.map((p) => p.id)));
-    setGeneratingPlanId(null);
-    setStep('preview');
-  }, [newlyGeneratedPlanData, generatingPlanId]);
+    if (!generatingPlanId) return;
+
+    // Use lazy query to fetch plan details and update cache
+    fetchPlanWithDetails(generatingPlanId)
+      .unwrap()
+      .then((planData) => {
+        setGeneratedPlan(planData.plan);
+        setGeneratedPhases(planData.phases);
+        setGeneratedTasks(planData.tasks);
+        setExpandedPhases(new Set(planData.phases.map((p) => p.id)));
+        setGeneratingPlanId(null);
+        setStep('preview');
+      })
+      .catch((error) => {
+        console.error('Failed to fetch generated plan:', error);
+        setGenerationError({
+          code: 'FETCH_ERROR',
+          message: 'Failed to load plan details. Please try again.',
+        });
+        setStep('prompt');
+      });
+  }, [generatingPlanId, fetchPlanWithDetails]);
 
   // Sync latest plan data after refinement
   useEffect(() => {
