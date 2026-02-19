@@ -574,14 +574,14 @@ function DesktopDock({
   pos,
   cls,
 }: DeskDockProps) {
+  const containerClasses = cn(
+    'hidden items-center gap-3 bg-background/90 px-4 py-2 backdrop-blur-sm md:flex',
+    pos === 'top' ? 'border-b' : 'border-t',
+    cls
+  );
+
   return (
-    <div
-      className={cn(
-        'hidden items-center gap-3 bg-background/90 px-4 py-2 backdrop-blur-sm md:flex',
-        pos === 'top' ? 'border-b' : 'border-t',
-        cls
-      )}
-    >
+    <div className={containerClasses}>
       <ConnBadge conn={conn} err={err} />
       <div className="h-4 w-px bg-border" />
       <div className="scrollbar-hide flex-1 overflow-x-auto">
@@ -968,11 +968,10 @@ export function QuickSwitchDock({
     [repositories]
   );
   const active = useMemo(() => {
-    const cutoff = Date.now() - 60 * 60 * 1000;
-    return sorted.filter(
-      (r) =>
-        r.claudeStatus !== 'idle' || new Date(r.lastActivity).getTime() > cutoff
-    );
+    // Show all repositories - removed the idle filter
+    // Previously: only showed non-idle or recently active repos
+    // Now: show all repos so the dock is always populated
+    return sorted;
   }, [sorted]);
 
   const handleSel = useCallback(
@@ -983,7 +982,9 @@ export function QuickSwitchDock({
   );
   useKeyboardNav(active, handleSel);
 
-  if (repositories.length === 0 && !error) return null;
+  if (repositories.length === 0 && !error) {
+    return null;
+  }
 
   return (
     <>
