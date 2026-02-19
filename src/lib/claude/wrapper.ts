@@ -393,7 +393,8 @@ class ClaudeCodeWrapper extends EventEmitter {
     prompt: string,
     workingDirectory: string,
     onChunk: (text: string) => void,
-    timeoutMs = 120000
+    timeoutMs = 120000,
+    signal?: AbortSignal
   ): Promise<string> {
     const claudeCodePath = process.env.CLAUDE_CODE_PATH || 'claude';
 
@@ -412,6 +413,11 @@ class ClaudeCodeWrapper extends EventEmitter {
     // Check if we're in simulation mode
     const simulateClaudeCode = process.env.SIMULATE_CLAUDE === 'true';
     console.log(`[ClaudeWrapper] Using simulation mode: ${simulateClaudeCode}`);
+
+    // Reject immediately if already aborted
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
 
     if (simulateClaudeCode) {
       console.log(`[ClaudeWrapper] Simulating streaming execution...`);
@@ -432,13 +438,29 @@ class ClaudeCodeWrapper extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       let fullOutput = '';
+      let childProcess: ReturnType<typeof spawn> | null = null;
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        abortHandler && signal?.removeEventListener('abort', abortHandler);
+      };
 
       const timeout = setTimeout(() => {
         childProcess?.kill('SIGTERM');
+        cleanup();
         reject(new Error(`Streaming execution timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
-      const childProcess = spawn(
+      // Wire up AbortSignal
+      const abortHandler = () => {
+        console.log(`[ClaudeWrapper] Streaming execution aborted via signal`);
+        childProcess?.kill('SIGTERM');
+        cleanup();
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+      signal?.addEventListener('abort', abortHandler);
+
+      childProcess = spawn(
         claudeCodePath,
         [
           '--dangerously-skip-permissions',
@@ -491,7 +513,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       });
 
       childProcess.on('close', (exitCode) => {
-        clearTimeout(timeout);
+        cleanup();
         console.log(
           `[ClaudeWrapper] Streaming process closed with exit code: ${exitCode}`
         );
@@ -507,7 +529,7 @@ class ClaudeCodeWrapper extends EventEmitter {
       });
 
       childProcess.on('error', (err) => {
-        clearTimeout(timeout);
+        cleanup();
         console.error(`[ClaudeWrapper] Streaming process error:`, err);
         reject(err);
       });

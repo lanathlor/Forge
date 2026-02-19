@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Create mock functions
 const mockClaudeWrapper = vi.hoisted(() => ({
   executeOneShot: vi.fn(),
+  executeWithStream: vi.fn(),
 }));
 
 const mockGetContainerPath = vi.hoisted(() => vi.fn((path: string) => path));
@@ -161,7 +162,13 @@ describe('plans/generator', () => {
         .mockResolvedValueOnce([mockPhase]) // phase insert
         .mockResolvedValueOnce([mockTask]) // task insert
         .mockResolvedValueOnce([]); // iteration insert
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(claudeResponse);
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          // Simulate streaming by calling the chunk callback
+          onChunk(claudeResponse);
+          return claudeResponse;
+        }
+      );
       mockSelectOrderBy
         .mockResolvedValueOnce([mockPhase]) // phases select
         .mockResolvedValueOnce([mockTask]); // tasks select
@@ -174,11 +181,11 @@ describe('plans/generator', () => {
       );
 
       expect(result).toBe('plan-1');
-      expect(mockClaudeWrapper.executeOneShot).toHaveBeenCalledWith(
+      expect(mockClaudeWrapper.executeWithStream).toHaveBeenCalledWith(
         expect.stringContaining('Test Plan'),
         '/path/to/repo',
+        expect.any(Function),
         300000,
-        null,
         undefined
       );
     });
@@ -268,7 +275,12 @@ describe('plans/generator', () => {
         .mockResolvedValueOnce([mockPhase])
         .mockResolvedValueOnce([mockTask])
         .mockResolvedValueOnce([]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(claudeResponse);
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          onChunk(claudeResponse);
+          return claudeResponse;
+        }
+      );
       mockSelectOrderBy
         .mockResolvedValueOnce([mockPhase])
         .mockResolvedValueOnce([mockTask]);
@@ -337,7 +349,12 @@ describe('plans/generator', () => {
         .mockResolvedValueOnce([{ id: 'task-1' }])
         .mockResolvedValueOnce([{ id: 'task-2' }])
         .mockResolvedValueOnce([]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(claudeResponse);
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          onChunk(claudeResponse);
+          return claudeResponse;
+        }
+      );
       mockSelectOrderBy
         .mockResolvedValueOnce([mockPhase])
         .mockResolvedValueOnce([{ id: 'task-1' }, { id: 'task-2' }]);
@@ -372,8 +389,12 @@ describe('plans/generator', () => {
 
       mockDb.query.repositories.findFirst.mockResolvedValueOnce(mockRepository);
       mockValuesReturning.mockResolvedValueOnce([mockPlan]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(
-        'invalid json response'
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          const response = 'invalid json response';
+          onChunk(response);
+          return response;
+        }
       );
 
       const { generatePlanFromDescription } = await import('../generator');
@@ -433,7 +454,12 @@ describe('plans/generator', () => {
         .mockResolvedValueOnce([mockPhase])
         .mockResolvedValueOnce([mockTask])
         .mockResolvedValueOnce([]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(claudeResponse);
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          onChunk(claudeResponse);
+          return claudeResponse;
+        }
+      );
       mockSelectOrderBy
         .mockResolvedValueOnce([mockPhase])
         .mockResolvedValueOnce([mockTask]);
@@ -466,7 +492,13 @@ describe('plans/generator', () => {
 
       mockDb.query.repositories.findFirst.mockResolvedValueOnce(mockRepository);
       mockValuesReturning.mockResolvedValueOnce([mockPlan]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce('{"tasks": []}');
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          const response = '{"tasks": []}';
+          onChunk(response);
+          return response;
+        }
+      );
 
       const { generatePlanFromDescription } = await import('../generator');
 
@@ -545,7 +577,12 @@ describe('plans/generator', () => {
         .mockResolvedValueOnce([{ id: 'task-2' }])
         .mockResolvedValueOnce([{ id: 'task-3' }])
         .mockResolvedValueOnce([]);
-      mockClaudeWrapper.executeOneShot.mockResolvedValueOnce(claudeResponse);
+      mockClaudeWrapper.executeWithStream.mockImplementation(
+        async (_prompt, _workingDir, onChunk, _timeout, _signal) => {
+          onChunk(claudeResponse);
+          return claudeResponse;
+        }
+      );
       mockSelectOrderBy
         .mockResolvedValueOnce([{ id: 'phase-1' }, { id: 'phase-2' }])
         .mockResolvedValueOnce([

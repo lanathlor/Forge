@@ -97,13 +97,28 @@ export async function generatePlanFromDescription(
     // Call Claude to generate plan structure
     const workingDir = getContainerPath(repository.path);
 
-    let response: string;
+    let response = '';
+    let tokenCount = 0;
     try {
-      response = await claudeWrapper.executeOneShot(
+      response = await claudeWrapper.executeWithStream(
         prompt,
         workingDir,
+        (chunk: string) => {
+          // Stream token-level updates to the client
+          emit({ type: 'chunk', content: chunk });
+          tokenCount += chunk.length;
+
+          // Update progress gradually as tokens arrive
+          // Start at 20%, reserve 70% for LLM generation (up to 90%)
+          const estimatedProgress = Math.min(
+            20 + Math.floor((tokenCount / 50) * 0.7), // Rough estimate: 50 chars ≈ 1% progress
+            90
+          );
+          if (estimatedProgress > 20) {
+            emit({ type: 'progress', percent: estimatedProgress });
+          }
+        },
         300000, // 5 minute timeout - plan generation can take time
-        null,
         signal
       );
     } catch (llmError) {

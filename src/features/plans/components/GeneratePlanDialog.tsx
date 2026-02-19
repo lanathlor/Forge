@@ -127,6 +127,7 @@ export function GeneratePlanDialog({
   const [updatePlan] = useUpdatePlanMutation();
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStatus, setGenerationStatus] = useState('');
+  const [generationLlmOutput, setGenerationLlmOutput] = useState('');
   const [generationError, setGenerationError] = useState<string | null>(null);
   // planId populated once the SSE 'done' event arrives, used to fetch plan data
   const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
@@ -154,6 +155,7 @@ export function GeneratePlanDialog({
   const [changesApplied, setChangesApplied] = useState(0);
   const refinementEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const llmOutputEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch newly generated plan data once the SSE stream reports 'done'
   const { data: newlyGeneratedPlanData } = useGetPlanQuery(
@@ -191,6 +193,13 @@ export function GeneratePlanDialog({
     refinementEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [refinementMessages]);
 
+  // Auto-scroll LLM output during generation
+  useEffect(() => {
+    if (generationLlmOutput) {
+      llmOutputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [generationLlmOutput]);
+
   // Focus textarea on open
   useEffect(() => {
     if (open && step === 'prompt') {
@@ -212,6 +221,7 @@ export function GeneratePlanDialog({
           setSelectedTemplate(null);
           setGenerationProgress(0);
           setGenerationStatus('');
+          setGenerationLlmOutput('');
           setGenerationError(null);
           setGeneratingPlanId(null);
           setGeneratedPlan(null);
@@ -258,6 +268,7 @@ export function GeneratePlanDialog({
     setGenerationError(null);
     setGenerationProgress(0);
     setGenerationStatus('Starting...');
+    setGenerationLlmOutput('');
 
     // Create a new AbortController for this generation request
     const controller = new AbortController();
@@ -304,12 +315,16 @@ export function GeneratePlanDialog({
               message?: string;
               percent?: number;
               planId?: string;
+              content?: string;
             };
 
             if (data.type === 'status' && data.message) {
               setGenerationStatus(data.message);
             } else if (data.type === 'progress' && data.percent !== undefined) {
               setGenerationProgress(data.percent);
+            } else if (data.type === 'chunk' && data.content) {
+              // Accumulate LLM output chunks for display
+              setGenerationLlmOutput((prev) => prev + data.content);
             } else if (data.type === 'done' && data.planId) {
               resolvedPlanId = data.planId;
               setGenerationProgress(100);
@@ -735,6 +750,21 @@ export function GeneratePlanDialog({
               >
                 {generationStatus}
               </p>
+            )}
+
+            {/* Live LLM output preview - shows what Claude is generating */}
+            {generationLlmOutput && (
+              <div className="mt-4 w-full max-w-lg">
+                <div className="max-h-32 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-3">
+                  <p className="whitespace-pre-wrap text-[10px] leading-relaxed text-muted-foreground/80">
+                    {generationLlmOutput}
+                  </p>
+                  <div ref={llmOutputEndRef} />
+                </div>
+                <p className="mt-1 text-right text-[9px] text-muted-foreground/50">
+                  Live output from Claude
+                </p>
+              </div>
             )}
 
             {/* Cancel button */}
