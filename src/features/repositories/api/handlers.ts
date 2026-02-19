@@ -43,6 +43,35 @@ async function upsertRepository(
     });
 }
 
+async function upsertDiscoveredRepos(
+  discovered: Awaited<ReturnType<typeof discoverRepositories>>
+) {
+  console.log(
+    `[Scanner] Upserting ${discovered.length} repositories to database...`
+  );
+  for (const repo of discovered) {
+    console.log(`[Scanner] - Upserting: ${repo.name} (${repo.path})`);
+    await upsertRepository(repo);
+  }
+  return new Set(discovered.map((r) => r.path));
+}
+
+async function removeStaleRepositories(discoveredPaths: Set<string>) {
+  const allRepos = await db.select().from(repositories);
+  const toDelete = allRepos.filter((repo) => !discoveredPaths.has(repo.path));
+
+  if (toDelete.length > 0) {
+    console.log(
+      `[Scanner] Removing ${toDelete.length} stale repositories from database...`
+    );
+    for (const repo of toDelete) {
+      console.log(`[Scanner] - Removing: ${repo.name} (${repo.path})`);
+      await db.delete(repositories).where(eq(repositories.id, repo.id));
+    }
+  }
+  return toDelete.length;
+}
+
 async function refreshRepositoriesCache() {
   if (refreshInProgress) {
     console.log('[Scanner] Repository refresh already in progress, skipping...');
@@ -60,40 +89,14 @@ async function refreshRepositoriesCache() {
     console.log('[Scanner] ========================================');
 
     const discovered = await discoverRepositories(workspaceRoot);
+    const discoveredPaths = await upsertDiscoveredRepos(discovered);
+    const removedCount = await removeStaleRepositories(discoveredPaths);
 
-    // Upsert each repository to database
+    console.log('[Scanner] ======================================== ');
     console.log(
-      `[Scanner] Upserting ${discovered.length} repositories to database...`
+      `[Scanner] Background scan complete: ${discovered.length} repositories found, ${removedCount} removed`
     );
-    const discoveredPaths = new Set(discovered.map((r) => r.path));
-    for (const repo of discovered) {
-      console.log(`[Scanner] - Upserting: ${repo.name} (${repo.path})`);
-      await upsertRepository(repo);
-    }
-
-    // Delete repositories that no longer exist in the workspace
-    const allRepos = await db.select().from(repositories);
-    const toDelete = allRepos.filter((repo) => !discoveredPaths.has(repo.path));
-
-    if (toDelete.length > 0) {
-      console.log(
-        `[Scanner] Removing ${toDelete.length} stale repositories from database...`
-      );
-      for (const repo of toDelete) {
-        console.log(`[Scanner] - Removing: ${repo.name} (${repo.path})`);
-        await db.delete(repositories).where(eq(repositories.id, repo.id));
-      }
-    }
-
-    console.log(
-      `[Scanner] ======================================== `
-    );
-    console.log(
-      `[Scanner] Background scan complete: ${discovered.length} repositories found, ${toDelete.length} removed`
-    );
-    console.log(
-      `[Scanner] ======================================== `
-    );
+    console.log('[Scanner] ======================================== ');
   } catch (error) {
     console.error('Error in background repository refresh:', error);
   } finally {

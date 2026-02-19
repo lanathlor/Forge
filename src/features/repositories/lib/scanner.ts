@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, type Dirent } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import type { DiscoveredRepository } from '../types';
@@ -127,6 +127,37 @@ export async function discoverRepositories(
   return repos.filter((r) => r !== null) as DiscoveredRepository[];
 }
 
+function shouldIgnoreDirectory(name: string): boolean {
+  return (
+    name === 'node_modules' ||
+    name.startsWith('.') ||
+    name === 'vendor'
+  );
+}
+
+async function processDirectoryEntry(
+  entry: Dirent,
+  rootDir: string,
+  depth: number
+): Promise<string[]> {
+  if (!entry.isDirectory()) return [];
+
+  const fullPath = path.join(rootDir, entry.name);
+
+  if (entry.name === '.git') {
+    console.log(`[Scanner] ✓ Found .git directory at ${fullPath}`);
+    return [fullPath];
+  }
+
+  if (shouldIgnoreDirectory(entry.name)) {
+    console.log(`[Scanner] ⊗ Skipping ignored directory: ${entry.name}`);
+    return [];
+  }
+
+  console.log(`[Scanner] → Recursing into: ${fullPath}`);
+  return await findGitDirectories(fullPath, depth + 1);
+}
+
 async function findGitDirectories(
   rootDir: string,
   depth: number = 0
@@ -136,8 +167,6 @@ async function findGitDirectories(
     return [];
   }
 
-  const gitDirs: string[] = [];
-
   try {
     console.log(`[Scanner] Scanning directory (depth ${depth}): ${rootDir}`);
     const entries = await fs.readdir(rootDir, { withFileTypes: true });
@@ -146,45 +175,25 @@ async function findGitDirectories(
       entries.map((e) => `${e.name}${e.isDirectory() ? '/' : ''}`).join(', ')
     );
 
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
+    const results = await Promise.all(
+      entries.map((entry) => processDirectoryEntry(entry, rootDir, depth))
+    );
+    const gitDirs = results.flat();
 
-      const fullPath = path.join(rootDir, entry.name);
-
-      if (entry.name === '.git') {
-        console.log(`[Scanner] ✓ Found .git directory at ${fullPath}`);
-        gitDirs.push(fullPath);
-        continue;
-      }
-
-      // Skip common ignore patterns
-      if (
-        entry.name === 'node_modules' ||
-        entry.name.startsWith('.') ||
-        entry.name === 'vendor'
-      ) {
-        console.log(`[Scanner] ⊗ Skipping ignored directory: ${entry.name}`);
-        continue;
-      }
-
-      console.log(`[Scanner] → Recursing into: ${fullPath}`);
-      const nested = await findGitDirectories(fullPath, depth + 1);
-      gitDirs.push(...nested);
+    if (gitDirs.length > 0) {
+      console.log(
+        `[Scanner] Found ${gitDirs.length} git dir(s) in ${rootDir} at depth ${depth}`
+      );
     }
+
+    return gitDirs;
   } catch (error) {
     console.log(
       `[Scanner] ✗ Error reading ${rootDir}:`,
       error instanceof Error ? error.message : error
     );
+    return [];
   }
-
-  if (gitDirs.length > 0) {
-    console.log(
-      `[Scanner] Found ${gitDirs.length} git dir(s) in ${rootDir} at depth ${depth}`
-    );
-  }
-
-  return gitDirs;
 }
 
 async function getCurrentBranch(repoPath: string): Promise<string> {
