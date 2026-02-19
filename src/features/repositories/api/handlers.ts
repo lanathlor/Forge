@@ -6,6 +6,10 @@ import {
   phases,
   planTasks,
   planIterations,
+  sessions,
+  tasks,
+  qaRuns,
+  qaGateExecutions,
 } from '@/db/schema';
 import { discoverRepositories } from '../lib/scanner';
 import { eq, desc } from 'drizzle-orm';
@@ -62,6 +66,49 @@ async function upsertDiscoveredRepos(
   return new Set(discovered.map((r) => r.path));
 }
 
+async function deleteRepositoryPlans(repositoryId: string) {
+  const repoPlans = await db
+    .select()
+    .from(plans)
+    .where(eq(plans.repositoryId, repositoryId));
+
+  for (const plan of repoPlans) {
+    console.log(`[Scanner]   - Deleting associated plan: ${plan.title}`);
+    await db.delete(planIterations).where(eq(planIterations.planId, plan.id));
+    await db.delete(planTasks).where(eq(planTasks.planId, plan.id));
+    await db.delete(phases).where(eq(phases.planId, plan.id));
+    await db.delete(plans).where(eq(plans.id, plan.id));
+  }
+}
+
+async function deleteRepositorySessions(repositoryId: string) {
+  const repoSessions = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.repositoryId, repositoryId));
+
+  for (const session of repoSessions) {
+    console.log(`[Scanner]   - Deleting associated session: ${session.id}`);
+    await db.delete(tasks).where(eq(tasks.sessionId, session.id));
+    await db.delete(sessions).where(eq(sessions.id, session.id));
+  }
+}
+
+async function deleteRepositoryQARuns(repositoryId: string) {
+  const repoQARuns = await db
+    .select()
+    .from(qaRuns)
+    .where(eq(qaRuns.repositoryId, repositoryId));
+
+  for (const qaRun of repoQARuns) {
+    console.log(`[Scanner]   - Deleting associated QA run: ${qaRun.id}`);
+    await db
+      .delete(qaGateExecutions)
+      .where(eq(qaGateExecutions.runId, qaRun.id));
+    await db.delete(qaRuns).where(eq(qaRuns.id, qaRun.id));
+  }
+}
+
 async function removeStaleRepositories(discoveredPaths: Set<string>) {
   const allRepos = await db.select().from(repositories);
   const toDelete = allRepos.filter((repo) => !discoveredPaths.has(repo.path));
@@ -73,20 +120,10 @@ async function removeStaleRepositories(discoveredPaths: Set<string>) {
     for (const repo of toDelete) {
       console.log(`[Scanner] - Removing: ${repo.name} (${repo.path})`);
 
-      // Delete all plans associated with this repository (and their child records)
-      // to avoid foreign key constraint errors
-      const repoPlans = await db
-        .select()
-        .from(plans)
-        .where(eq(plans.repositoryId, repo.id));
-
-      for (const plan of repoPlans) {
-        console.log(`[Scanner]   - Deleting associated plan: ${plan.title}`);
-        await db.delete(planIterations).where(eq(planIterations.planId, plan.id));
-        await db.delete(planTasks).where(eq(planTasks.planId, plan.id));
-        await db.delete(phases).where(eq(phases.planId, plan.id));
-        await db.delete(plans).where(eq(plans.id, plan.id));
-      }
+      // Delete all associated records to avoid foreign key constraint errors
+      await deleteRepositoryPlans(repo.id);
+      await deleteRepositorySessions(repo.id);
+      await deleteRepositoryQARuns(repo.id);
 
       await db.delete(repositories).where(eq(repositories.id, repo.id));
     }
