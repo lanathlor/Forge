@@ -38,6 +38,8 @@ import {
   X,
   MessageSquare,
   GripVertical,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -128,7 +130,11 @@ export function GeneratePlanDialog({
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStatus, setGenerationStatus] = useState('');
   const [generationLlmOutput, setGenerationLlmOutput] = useState('');
-  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<{
+    code: string;
+    message: string;
+    detail?: string;
+  } | null>(null);
   // planId populated once the SSE 'done' event arrives, used to fetch plan data
   const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
   // AbortController for the in-flight SSE generation request
@@ -356,6 +362,13 @@ export function GeneratePlanDialog({
               setGenerationProgress(100);
               break outer;
             } else if (data.type === 'error' && data.message) {
+              // Capture structured error with code
+              const errorData = {
+                code: (data as { code?: string }).code || 'UNKNOWN',
+                message: data.message,
+                detail: (data as { detail?: string }).detail,
+              };
+              setGenerationError(errorData);
               throw new Error(data.message);
             }
           } catch (parseErr) {
@@ -386,16 +399,25 @@ export function GeneratePlanDialog({
     } catch (error) {
       // User cancelled – go back to the prompt step silently
       if (error instanceof DOMException && error.name === 'AbortError') {
+        setGenerationError({
+          code: 'ABORTED',
+          message: 'Generation cancelled',
+        });
         setStep('prompt');
         return;
       }
 
       console.error('Failed to generate plan:', error);
-      setGenerationError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to generate plan. Please try again.'
-      );
+      // Only set error if not already set by SSE error event
+      if (!generationError) {
+        setGenerationError({
+          code: 'UNKNOWN',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to generate plan. Please try again.',
+        });
+      }
       setStep('prompt');
     } finally {
       abortControllerRef.current = null;
@@ -593,6 +615,25 @@ export function GeneratePlanDialog({
     return `${mins}m ${secs}s`;
   };
 
+  const getErrorMessage = (
+    code: string,
+    message: string,
+    detail?: string
+  ): string => {
+    switch (code) {
+      case 'TIMEOUT':
+        return `Generation timed out after ${detail || '5 minutes'} — the repository may be too large or the task too complex. Try breaking it down into smaller parts.`;
+      case 'PARSE_ERROR':
+        return 'The AI returned an unexpected format — try rephrasing your description or simplifying your requirements.';
+      case 'ABORTED':
+        return 'Generation cancelled. Your progress was not saved.';
+      case 'LLM_ERROR':
+        return `AI service error: ${message}. Please try again in a moment.`;
+      default:
+        return message || 'An unexpected error occurred. Please try again.';
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -703,8 +744,42 @@ export function GeneratePlanDialog({
 
               {/* Error display */}
               {generationError && (
-                <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {generationError}
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
+                    <div className="flex-1 space-y-2">
+                      <div>
+                        <p className="text-sm font-medium text-destructive">
+                          {generationError.code === 'TIMEOUT'
+                            ? 'Generation Timed Out'
+                            : generationError.code === 'PARSE_ERROR'
+                              ? 'Format Error'
+                              : generationError.code === 'ABORTED'
+                                ? 'Cancelled'
+                                : generationError.code === 'LLM_ERROR'
+                                  ? 'AI Service Error'
+                                  : 'Error'}
+                        </p>
+                        <p className="mt-1 text-xs text-destructive/90">
+                          {getErrorMessage(
+                            generationError.code,
+                            generationError.message,
+                            generationError.detail
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 border-destructive/30 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                        onClick={() => handleGenerate(false)}
+                        disabled={!canGenerate}
+                      >
+                        <RotateCcw className="mr-1.5 h-3 w-3" />
+                        Retry
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
