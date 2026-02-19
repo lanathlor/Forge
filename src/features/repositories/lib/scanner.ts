@@ -88,12 +88,16 @@ async function execAsync(
 export async function discoverRepositories(
   rootDir: string
 ): Promise<DiscoveredRepository[]> {
+  console.log('[Scanner] Starting discoverRepositories with rootDir:', rootDir);
+
   const gitDirs = await findGitDirectories(rootDir);
+  console.log(`[Scanner] Found ${gitDirs.length} .git directories:`, gitDirs);
 
   const repos = await Promise.all(
     gitDirs.map(async (gitDir) => {
       const repoPath = path.dirname(gitDir);
       const name = path.basename(repoPath);
+      console.log(`[Scanner] Processing repository: ${name} at ${repoPath}`);
 
       try {
         const [currentBranch, lastCommit, isClean, uncommittedFiles] =
@@ -127,12 +131,20 @@ async function findGitDirectories(
   rootDir: string,
   depth: number = 0
 ): Promise<string[]> {
-  if (depth > 10) return [];
+  if (depth > 10) {
+    console.log(`[Scanner] Max depth (10) reached at ${rootDir}`);
+    return [];
+  }
 
   const gitDirs: string[] = [];
 
   try {
+    console.log(`[Scanner] Scanning directory (depth ${depth}): ${rootDir}`);
     const entries = await fs.readdir(rootDir, { withFileTypes: true });
+    console.log(
+      `[Scanner] Found ${entries.length} entries in ${rootDir}:`,
+      entries.map((e) => `${e.name}${e.isDirectory() ? '/' : ''}`).join(', ')
+    );
 
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
@@ -140,6 +152,7 @@ async function findGitDirectories(
       const fullPath = path.join(rootDir, entry.name);
 
       if (entry.name === '.git') {
+        console.log(`[Scanner] ✓ Found .git directory at ${fullPath}`);
         gitDirs.push(fullPath);
         continue;
       }
@@ -150,14 +163,25 @@ async function findGitDirectories(
         entry.name.startsWith('.') ||
         entry.name === 'vendor'
       ) {
+        console.log(`[Scanner] ⊗ Skipping ignored directory: ${entry.name}`);
         continue;
       }
 
+      console.log(`[Scanner] → Recursing into: ${fullPath}`);
       const nested = await findGitDirectories(fullPath, depth + 1);
       gitDirs.push(...nested);
     }
-  } catch (_error) {
-    // Permission denied or other errors - skip silently
+  } catch (error) {
+    console.log(
+      `[Scanner] ✗ Error reading ${rootDir}:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+
+  if (gitDirs.length > 0) {
+    console.log(
+      `[Scanner] Found ${gitDirs.length} git dir(s) in ${rootDir} at depth ${depth}`
+    );
   }
 
   return gitDirs;
